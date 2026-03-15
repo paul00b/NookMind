@@ -3,7 +3,7 @@ import { useBooks } from '../context/BooksContext';
 import type { Book, BookStatus } from '../types';
 import BookCard from '../components/BookCard';
 import BookDetailModal from '../components/BookDetailModal';
-import { BookOpen, SortAsc, ChevronDown } from 'lucide-react';
+import { BookOpen, ChevronDown } from 'lucide-react';
 
 type SortKey = 'created_at' | 'title' | 'author' | 'rating';
 
@@ -115,8 +115,7 @@ export default function Library() {
             onChange={setAuthorFilter}
             options={[{ value: '', label: 'All authors' }, ...authors.map(a => ({ value: a, label: a }))]}
           />
-          <div className="flex items-center gap-1.5 flex-shrink-0 text-sm text-gray-500 dark:text-gray-400">
-            <SortAsc size={14} className="flex-shrink-0" />
+          <div className="flex items-center flex-shrink-0">
             <Select
               value={sortKey}
               onChange={v => setSortKey(v as SortKey)}
