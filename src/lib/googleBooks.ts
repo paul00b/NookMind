@@ -2,6 +2,8 @@ import type { GoogleBookVolume } from '../types';
 
 const BASE_URL = 'https://www.googleapis.com/books/v1/volumes';
 
+const API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY as string | undefined;
+
 export async function searchBooks(query: string, maxResults = 8): Promise<GoogleBookVolume[]> {
   if (!query.trim()) return [];
 
@@ -9,7 +11,8 @@ export async function searchBooks(query: string, maxResults = 8): Promise<Google
   const timeoutId = setTimeout(() => controller.abort(), 8000);
 
   try {
-    const url = `${BASE_URL}?q=${encodeURIComponent(query)}&maxResults=${maxResults}&printType=books`;
+    const key = API_KEY ? `&key=${API_KEY}` : '';
+    const url = `${BASE_URL}?q=${encodeURIComponent(query)}&maxResults=${maxResults}&printType=books${key}`;
     const res = await fetch(url, { signal: controller.signal });
     if (!res.ok) throw new Error('Failed to fetch books');
     const data = await res.json();
