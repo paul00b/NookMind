@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Plus, X } from 'lucide-react';
+import { Search, Plus, X, BookOpen } from 'lucide-react';
 import { searchBooks, extractBookData } from '../lib/googleBooks';
-import type { GoogleBookVolume } from '../types';
+import type { GoogleBookVolume, Book } from '../types';
 import AddBookModal from '../components/AddBookModal';
+import BookDetailModal from '../components/BookDetailModal';
+import StarRating from '../components/StarRating';
+import { useBooks } from '../context/BooksContext';
 
 function useDebounce<T>(value: T, delay: number): T {
   const [dv, setDv] = useState(value);
@@ -11,6 +14,60 @@ function useDebounce<T>(value: T, delay: number): T {
     return () => clearTimeout(t);
   }, [value, delay]);
   return dv;
+}
+
+function LastReadSlider({ onSelect }: { onSelect: (book: Book) => void }) {
+  const { books } = useBooks();
+  const sliderRef = useRef<HTMLDivElement>(null);
+
+  const lastRead = books
+    .filter(b => b.status === 'read')
+    .slice(0, 10);
+
+  if (lastRead.length === 0) return null;
+
+  return (
+    <div className="w-full max-w-xl mt-10">
+      <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">
+        Last read
+      </h2>
+      <div
+        ref={sliderRef}
+        className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {lastRead.map(book => (
+          <button
+            key={book.id}
+            onClick={() => onSelect(book)}
+            className="flex-shrink-0 snap-start group"
+          >
+            {/* Cover */}
+            <div className="w-20 aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2 group-hover:scale-[1.03] transition-transform duration-200">
+              {book.cover_url ? (
+                <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" loading="lazy" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <BookOpen size={22} className="text-gray-300 dark:text-gray-600" />
+                </div>
+              )}
+            </div>
+            {/* Info */}
+            <div className="w-20 text-left">
+              <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                {book.title}
+              </p>
+              {book.rating && (
+                <div className="mt-0.5">
+                  <StarRating value={book.rating} readonly size={10} />
+                </div>
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default function Home() {
@@ -22,6 +79,7 @@ export default function Home() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [prefill, setPrefill] = useState<ReturnType<typeof extractBookData> | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -43,7 +101,6 @@ export default function Home() {
 
   useEffect(() => { doSearch(debouncedQuery); }, [debouncedQuery, doSearch]);
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -173,11 +230,22 @@ export default function Home() {
         <Plus size={16} /> Add manually
       </button>
 
-      {/* Modal */}
+      {/* Last read slider */}
+      <LastReadSlider onSelect={setSelectedBook} />
+
+      {/* Add book modal */}
       {modalOpen && (
         <AddBookModal
           prefill={prefill ?? undefined}
           onClose={() => { setModalOpen(false); setPrefill(null); }}
+        />
+      )}
+
+      {/* Book detail modal */}
+      {selectedBook && (
+        <BookDetailModal
+          book={selectedBook}
+          onClose={() => setSelectedBook(null)}
         />
       )}
     </div>
