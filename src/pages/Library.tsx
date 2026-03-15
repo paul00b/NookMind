@@ -27,11 +27,11 @@ function EmptyState({ status }: { status: BookStatus }) {
 
 function Select({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }) {
   return (
-    <div className="relative">
+    <div className="relative w-full md:w-auto">
       <select
         value={value}
         onChange={e => onChange(e.target.value)}
-        className="appearance-none input py-2 pr-8 text-sm cursor-pointer"
+        className="appearance-none input py-2 pr-8 text-sm cursor-pointer w-full"
       >
         {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
@@ -104,29 +104,31 @@ export default function Library() {
 
       {/* Filters */}
       {tabBooks.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-6">
-          <Select
-            value={genreFilter}
-            onChange={setGenreFilter}
-            options={[{ value: '', label: 'All genres' }, ...genres.map(g => ({ value: g, label: g }))]}
-          />
-          <Select
-            value={authorFilter}
-            onChange={setAuthorFilter}
-            options={[{ value: '', label: 'All authors' }, ...authors.map(a => ({ value: a, label: a }))]}
-          />
-          <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
-            <SortAsc size={14} />
+        <div className="mb-6 space-y-2">
+          <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2">
             <Select
-              value={sortKey}
-              onChange={v => setSortKey(v as SortKey)}
-              options={[
-                { value: 'created_at', label: 'Date added' },
-                { value: 'title', label: 'Title A→Z' },
-                { value: 'author', label: 'Author A→Z' },
-                ...(activeTab === 'read' ? [{ value: 'rating', label: 'Rating ↓' }] : []),
-              ]}
+              value={genreFilter}
+              onChange={setGenreFilter}
+              options={[{ value: '', label: 'All genres' }, ...genres.map(g => ({ value: g, label: g }))]}
             />
+            <Select
+              value={authorFilter}
+              onChange={setAuthorFilter}
+              options={[{ value: '', label: 'All authors' }, ...authors.map(a => ({ value: a, label: a }))]}
+            />
+            <div className="col-span-2 md:col-span-1 flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+              <SortAsc size={14} className="flex-shrink-0" />
+              <Select
+                value={sortKey}
+                onChange={v => setSortKey(v as SortKey)}
+                options={[
+                  { value: 'created_at', label: 'Date added' },
+                  { value: 'title', label: 'Title A→Z' },
+                  { value: 'author', label: 'Author A→Z' },
+                  ...(activeTab === 'read' ? [{ value: 'rating', label: 'Rating ↓' }] : []),
+                ]}
+              />
+            </div>
           </div>
         </div>
       )}
