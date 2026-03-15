@@ -2,14 +2,14 @@ import type { GoogleBookVolume } from '../types';
 
 const BASE_URL = 'https://www.googleapis.com/books/v1/volumes';
 
-export async function searchBooks(query: string): Promise<GoogleBookVolume[]> {
+export async function searchBooks(query: string, maxResults = 8): Promise<GoogleBookVolume[]> {
   if (!query.trim()) return [];
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 8000);
 
   try {
-    const url = `${BASE_URL}?q=${encodeURIComponent(query)}&maxResults=8&printType=books`;
+    const url = `${BASE_URL}?q=${encodeURIComponent(query)}&maxResults=${maxResults}&printType=books`;
     const res = await fetch(url, { signal: controller.signal });
     if (!res.ok) throw new Error('Failed to fetch books');
     const data = await res.json();
@@ -17,6 +17,14 @@ export async function searchBooks(query: string): Promise<GoogleBookVolume[]> {
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+export async function fetchByGenre(genre: string, maxResults = 12): Promise<GoogleBookVolume[]> {
+  return searchBooks(`subject:${genre}`, maxResults);
+}
+
+export async function fetchByAuthor(author: string, maxResults = 12): Promise<GoogleBookVolume[]> {
+  return searchBooks(`inauthor:"${author}"`, maxResults);
 }
 
 export function extractBookData(volume: GoogleBookVolume) {

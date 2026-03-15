@@ -129,10 +129,10 @@ export default function Home() {
       {/* Heading */}
       <div className="text-center mb-10">
         <h1 className="font-serif text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-3">
-          What are you reading?
+          Reading tracker
         </h1>
         <p className="text-gray-500 dark:text-gray-400 text-lg max-w-md mx-auto">
-          Search for a book to track your reading journey, or add one manually.
+          Search for a book to track your reading journey (or add one manually)
         </p>
       </div>
 
