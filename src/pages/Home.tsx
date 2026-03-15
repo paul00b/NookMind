@@ -37,10 +37,10 @@ function LastReadSlider({ onSelect }: { onSelect: (book: Book) => void }) {
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {lastRead.map(book => (
-          <button
+          <div
             key={book.id}
             onClick={() => onSelect(book)}
-            className="flex-shrink-0 snap-start group"
+            className="flex-shrink-0 snap-start group cursor-pointer"
           >
             {/* Cover */}
             <div className="w-20 aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2 group-hover:scale-[1.03] transition-transform duration-200">
@@ -63,7 +63,7 @@ function LastReadSlider({ onSelect }: { onSelect: (book: Book) => void }) {
                 </div>
               )}
             </div>
-          </button>
+          </div>
         ))}
       </div>
     </div>

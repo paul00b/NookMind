@@ -22,6 +22,18 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        // Never let the service worker intercept external API calls
+        navigateFallbackDenylist: [/^\/api\//],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/www\.googleapis\.com\/.*/i,
+            handler: 'NetworkOnly',
+          },
+          {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+            handler: 'NetworkOnly',
+          },
+        ],
       },
     }),
   ],
