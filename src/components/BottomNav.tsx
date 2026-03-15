@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { Home, Library, Compass } from 'lucide-react';
 
 const TABS = [
@@ -8,6 +8,9 @@ const TABS = [
 ];
 
 export default function BottomNav() {
+  const { pathname } = useLocation();
+  if (pathname === '/login') return null;
+
   return (
     <nav className="fixed bottom-4 left-4 right-4 z-30 md:hidden">
       <div className="flex items-center bg-white/85 dark:bg-[#1a1f2e]/85 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.08] rounded-full shadow-lg overflow-hidden">
