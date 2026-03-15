@@ -72,7 +72,7 @@ function LastReadSlider({ onSelect }: { onSelect: (book: Book) => void }) {
 
 export default function Home() {
   const [query, setQuery] = useState('');
-  const debouncedQuery = useDebounce(query, 400);
+  const debouncedQuery = useDebounce(query, 600);
   const [results, setResults] = useState<GoogleBookVolume[]>([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
@@ -84,7 +84,7 @@ export default function Home() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const doSearch = useCallback(async (q: string) => {
-    if (!q.trim()) { setResults([]); setDropdownOpen(false); return; }
+    if (q.trim().length < 3) { setResults([]); setDropdownOpen(false); return; }
     setSearching(true);
     setSearchError('');
     try {

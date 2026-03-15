@@ -97,9 +97,28 @@ function topItems(arr: (string | null)[], n: number): string[] {
     .map(([k]) => k);
 }
 
+const CACHE_KEY = 'bm_discover_cache';
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+function getCache(): Section[] | null {
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    if (Date.now() - ts > CACHE_TTL) { sessionStorage.removeItem(CACHE_KEY); return null; }
+    return data;
+  } catch { return null; }
+}
+
+function setCache(data: Section[]) {
+  try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data })); } catch {}
+}
+
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
 export default function Discover() {
   const { books } = useBooks();
-  const [sections, setSections] = useState<Section[]>([]);
+  const [sections, setSections] = useState<Section[]>(() => getCache() ?? []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [prefill, setPrefill] = useState<ReturnType<typeof extractBookData> | null>(null);
@@ -115,45 +134,44 @@ export default function Discover() {
     ).slice(0, 8),
   [books]);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (force = false) => {
     if (books.length === 0) return;
+    if (!force) {
+      const cached = getCache();
+      if (cached) { setSections(cached); return; }
+    }
     setLoading(true);
     setError('');
     setSections([]);
 
     const topGenres = topItems(books.map(b => b.genre), 2);
     const topAuthors = topItems(books.map(b => b.author), 2);
+    const queries = [
+      ...topGenres.map(g => ({ type: 'genre', value: g })),
+      ...topAuthors.map(a => ({ type: 'author', value: a })),
+    ];
 
     try {
       const results: Section[] = [];
 
-      // Genre sections
-      for (const genre of topGenres) {
-        const vols = await fetchByGenre(genre);
+      for (let i = 0; i < queries.length; i++) {
+        if (i > 0) await sleep(600); // stagger to avoid 429
+        const q = queries[i];
+        const vols = q.type === 'genre'
+          ? await fetchByGenre(q.value)
+          : await fetchByAuthor(q.value);
         const filtered = filterNew(vols);
         if (filtered.length > 0) {
-          results.push({
-            title: `More ${genre}`,
-            reason: `Because you enjoy ${genre}`,
-            books: filtered,
-          });
-        }
-      }
-
-      // Author sections
-      for (const author of topAuthors) {
-        const vols = await fetchByAuthor(author);
-        const filtered = filterNew(vols);
-        if (filtered.length > 0) {
-          results.push({
-            title: `More from ${author}`,
-            reason: `Other books by an author in your library`,
-            books: filtered,
-          });
+          results.push(
+            q.type === 'genre'
+              ? { title: `More ${q.value}`, reason: `Because you enjoy ${q.value}`, books: filtered }
+              : { title: `More from ${q.value}`, reason: `Other books by an author in your library`, books: filtered }
+          );
         }
       }
 
       setSections(results);
+      setCache(results);
     } catch {
       setError('Failed to load recommendations. Please try again.');
     } finally {
@@ -161,7 +179,7 @@ export default function Discover() {
     }
   }, [books, filterNew]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (sections.length === 0) load(false); }, [books.length]);
 
   const handleAdd = (vol: GoogleBookVolume) => {
     setPrefill(extractBookData(vol));
@@ -179,7 +197,7 @@ export default function Discover() {
           <p className="text-gray-500 dark:text-gray-400 text-sm">Books picked from your reading taste</p>
         </div>
         {hasBooks && !loading && (
-          <button onClick={load} className="btn-ghost flex items-center gap-1.5 text-sm mt-1">
+          <button onClick={() => { sessionStorage.removeItem(CACHE_KEY); load(true); }} className="btn-ghost flex items-center gap-1.5 text-sm mt-1">
             <RefreshCw size={14} /> Refresh
           </button>
         )}
@@ -213,7 +231,7 @@ export default function Discover() {
       {error && (
         <div className="card p-6 text-center">
           <p className="text-red-500 text-sm mb-3">{error}</p>
-          <button onClick={load} className="btn-primary text-sm">Try again</button>
+          <button onClick={() => load(true)} className="btn-primary text-sm">Try again</button>
         </div>
       )}
 
@@ -228,7 +246,7 @@ export default function Discover() {
           <p className="text-gray-500 dark:text-gray-400 text-sm mb-3">
             No new suggestions found right now.
           </p>
-          <button onClick={load} className="btn-ghost text-sm flex items-center gap-1.5 mx-auto">
+          <button onClick={() => load(true)} className="btn-ghost text-sm flex items-center gap-1.5 mx-auto">
             <RefreshCw size={14} /> Try again
           </button>
         </div>
