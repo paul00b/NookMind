@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import BottomNav from './BottomNav';
 import MobileTopBar from './MobileTopBar';
 import SettingsPanel from './SettingsPanel';
 
@@ -22,9 +21,6 @@ export default function AppLayout() {
       <main className="md:ml-60 min-h-screen pb-20 md:pb-0">
         <Outlet />
       </main>
-
-      {/* Mobile bottom nav */}
-      <BottomNav />
 
       {/* Settings panel */}
       {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}

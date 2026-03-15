@@ -5,6 +5,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { BooksProvider } from './context/BooksContext';
 import ProtectedRoute from './router/ProtectedRoute';
 import AppLayout from './components/AppLayout';
+import BottomNav from './components/BottomNav';
 import Login from './pages/Login';
 import Home from './pages/Home';
 import Library from './pages/Library';
@@ -33,6 +34,9 @@ export default function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>
+
+          {/* Always-visible bottom nav on mobile */}
+          <BottomNav />
 
           <Toaster
             position="bottom-center"
