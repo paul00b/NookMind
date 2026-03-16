@@ -48,7 +48,7 @@ export default function InstallPromptSheet({ onDismiss }: Props) {
               {isFr ? 'Installez BookMind' : 'Install BookMind'}
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-              {isFr ? 'Accès rapide depuis votre écran d'accueil' : 'Quick access from your home screen'}
+              {isFr ? "Accès rapide depuis votre écran d'accueil" : 'Quick access from your home screen'}
             </p>
           </div>
         </div>
@@ -70,7 +70,7 @@ export default function InstallPromptSheet({ onDismiss }: Props) {
             <Step number={2}>
               <span className="text-sm text-gray-600 dark:text-gray-400">
                 {isFr
-                  ? 'Sélectionnez « Sur l'écran d'accueil »'
+                  ? "Sélectionnez « Sur l'écran d'accueil »"
                   : 'Select "Add to Home Screen"'}
               </span>
             </Step>
@@ -84,7 +84,7 @@ export default function InstallPromptSheet({ onDismiss }: Props) {
           // Android/Chrome: one-tap install
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-5">
             {isFr
-              ? 'Ajoutez BookMind à votre écran d'accueil en un tap pour un accès rapide, même hors connexion.'
+              ? "Ajoutez BookMind à votre écran d'accueil en un tap pour un accès rapide, même hors connexion."
               : 'Add BookMind to your home screen for quick access, even offline.'}
           </p>
         ) : (
@@ -92,7 +92,7 @@ export default function InstallPromptSheet({ onDismiss }: Props) {
           <div className="bg-white dark:bg-[#0f1117] rounded-2xl p-4 mb-5">
             <p className="text-sm text-gray-600 dark:text-gray-400">
               {isFr
-                ? 'Ouvrez le menu de votre navigateur et sélectionnez « Ajouter à l'écran d'accueil ».'
+                ? "Ouvrez le menu de votre navigateur et sélectionnez « Ajouter à l'écran d'accueil »."
                 : 'Open your browser menu and select "Add to Home Screen".'}
             </p>
           </div>
