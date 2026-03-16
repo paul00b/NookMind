@@ -1,9 +1,11 @@
-import { useState } from 'react';
-import { X, BookOpen } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { X, BookOpen, AlertTriangle } from 'lucide-react';
 import { useBooks } from '../context/BooksContext';
 import type { Book, BookStatus } from '../types';
 import StarRating from './StarRating';
 import { useTranslation } from 'react-i18next';
+
+const normalize = (s: string) => s.toLowerCase().trim().replace(/\s+/g, ' ');
 
 type BookFormData = Omit<Book, 'id' | 'user_id' | 'created_at'>;
 
@@ -27,10 +29,18 @@ interface Props {
 }
 
 export default function AddBookModal({ prefill, onClose }: Props) {
-  const { addBook } = useBooks();
+  const { addBook, books } = useBooks();
   const { t } = useTranslation();
   const [form, setForm] = useState<BookFormData>({ ...EMPTY, ...prefill });
   const [saving, setSaving] = useState(false);
+
+  const isDuplicate = useMemo(() => {
+    if (!form.title.trim() || !form.author.trim()) return false;
+    return books.some(
+      b => normalize(b.title) === normalize(form.title) &&
+           normalize(b.author) === normalize(form.author)
+    );
+  }, [books, form.title, form.author]);
 
   const set = <K extends keyof BookFormData>(k: K, v: BookFormData[K]) =>
     setForm(f => ({ ...f, [k]: v }));
@@ -166,6 +176,14 @@ export default function AddBookModal({ prefill, onClose }: Props) {
             </div>
           )}
 
+          {/* Duplicate warning */}
+          {isDuplicate && (
+            <div className="flex items-start gap-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl px-4 py-3">
+              <AlertTriangle size={15} className="text-amber-500 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-amber-700 dark:text-amber-300">{t('addBook.alreadyInLibrary')}</p>
+            </div>
+          )}
+
           {/* Submit */}
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="btn-ghost flex-1">{t('addBook.cancel')}</button>
@@ -175,7 +193,7 @@ export default function AddBookModal({ prefill, onClose }: Props) {
               ) : (
                 <BookOpen size={16} />
               )}
-              {saving ? t('addBook.saving') : t('addBook.addToLibrary')}
+              {saving ? t('addBook.saving') : isDuplicate ? t('addBook.addAnyway') : t('addBook.addToLibrary')}
             </button>
           </div>
         </form>

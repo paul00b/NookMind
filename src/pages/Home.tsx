@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Plus, X, BookOpen, Barcode } from 'lucide-react';
+import { Search, Plus, X, BookOpen, Barcode, CheckCircle2 } from 'lucide-react';
 import { searchBooks, extractBookData } from '../lib/googleBooks';
 import type { GoogleBookVolume, Book } from '../types';
 import AddBookModal from '../components/AddBookModal';
@@ -74,8 +74,11 @@ function LastReadSlider({ onSelect }: { onSelect: (book: Book) => void }) {
   );
 }
 
+const normalize = (s: string) => s.toLowerCase().trim().replace(/\s+/g, ' ');
+
 export default function Home() {
   const { t } = useTranslation();
+  const { books } = useBooks();
   const [query, setQuery] = useState('');
   const [scannerOpen, setScannerOpen] = useState(false);
   const debouncedQuery = useDebounce(query, 600);
@@ -198,6 +201,11 @@ export default function Home() {
                 {results.map((vol, idx) => {
                   const info = vol.volumeInfo;
                   const thumb = info.imageLinks?.smallThumbnail;
+                  const firstAuthor = info.authors?.[0] ?? '';
+                  const alreadyAdded = books.some(
+                    b => normalize(b.title) === normalize(info.title) &&
+                         normalize(b.author) === normalize(firstAuthor)
+                  );
                   return (
                     <li key={vol.id}>
                       {idx > 0 && <div className="border-t border-black/[0.06] dark:border-white/[0.06] mx-3" />}
@@ -219,6 +227,12 @@ export default function Home() {
                             {info.publishedDate && ` · ${info.publishedDate.slice(0, 4)}`}
                           </p>
                         </div>
+                        {alreadyAdded && (
+                          <span className="flex-shrink-0 flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full">
+                            <CheckCircle2 size={12} />
+                            {t('addBook.inLibrary')}
+                          </span>
+                        )}
                       </button>
                     </li>
                   );

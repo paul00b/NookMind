@@ -12,7 +12,7 @@ const fr = {
   home: {
     title: 'BookMind',
     subtitle: 'Votre bibliothèque, dans la poche',
-    searchPlaceholder: 'Rechercher par titre, auteur ou ISBN...',
+    searchPlaceholder: 'Rechercher par titre, auteur, etc.',
     searchTimeout: 'La recherche a expiré. Veuillez réessayer.',
     noBooksFound: 'Aucun livre trouvé pour « {{query}} »',
     unknownAuthor: 'Auteur inconnu',
@@ -64,7 +64,10 @@ const fr = {
     descriptionLabel: 'Description',
     cancel: 'Annuler',
     saving: 'Enregistrement...',
-    addToLibrary: 'Ajouter à la bibliothèque',
+    addToLibrary: 'Ajouter',
+    alreadyInLibrary: 'Un titre similaire est déjà dans votre bibliothèque.',
+    addAnyway: 'Ajouter quand même',
+    inLibrary: 'Déjà ajouté',
   },
   bookDetail: {
     yourRating: 'Votre note',

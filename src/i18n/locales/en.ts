@@ -65,6 +65,9 @@ const en = {
     cancel: 'Cancel',
     saving: 'Saving...',
     addToLibrary: 'Add to Library',
+    alreadyInLibrary: 'A book with this title and author is already in your library.',
+    addAnyway: 'Add anyway',
+    inLibrary: 'In library',
   },
   bookDetail: {
     yourRating: 'Your rating',
