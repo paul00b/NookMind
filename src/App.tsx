@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { Analytics } from '@vercel/analytics/react';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { BooksProvider } from './context/BooksContext';
@@ -62,6 +63,7 @@ export default function App() {
               },
             }}
           />
+        <Analytics />
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>
