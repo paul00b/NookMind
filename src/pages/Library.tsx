@@ -3,10 +3,12 @@ import { useBooks } from '../context/BooksContext';
 import type { Book, BookStatus } from '../types';
 import BookCard from '../components/BookCard';
 import BookDetailModal from '../components/BookDetailModal';
-import { BookOpen, ChevronDown } from 'lucide-react';
+import StarRating from '../components/StarRating';
+import { BookOpen, ChevronDown, LayoutGrid, List } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 type SortKey = 'created_at' | 'title' | 'author' | 'rating';
+type ViewMode = 'grid' | 'list';
 
 function EmptyState({ status }: { status: BookStatus }) {
   const { t } = useTranslation();
@@ -40,6 +42,56 @@ function Select({ value, onChange, options }: { value: string; onChange: (v: str
   );
 }
 
+function BookListRow({ book, onClick }: { book: Book; onClick: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-amber-500/5 dark:hover:bg-amber-500/10 transition-colors text-left group"
+    >
+      {/* Cover */}
+      <div className="w-10 h-14 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+        {book.cover_url ? (
+          <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" loading="lazy" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <BookOpen size={16} className="text-gray-300 dark:text-gray-600" />
+          </div>
+        )}
+      </div>
+
+      {/* Title + author */}
+      <div className="flex-1 min-w-0">
+        <p className="font-serif font-semibold text-sm text-gray-900 dark:text-gray-100 truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+          {book.title}
+        </p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{book.author}</p>
+      </div>
+
+      {/* Genre */}
+      {book.genre && (
+        <span className="hidden sm:inline-flex flex-shrink-0 text-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2.5 py-1 rounded-full font-medium">
+          {book.genre}
+        </span>
+      )}
+
+      {/* Rating */}
+      {book.status === 'read' && book.rating && (
+        <div className="hidden sm:flex flex-shrink-0">
+          <StarRating value={book.rating} readonly size={12} />
+        </div>
+      )}
+
+      {/* Status badge */}
+      <span className={`flex-shrink-0 text-xs font-medium px-2.5 py-1 rounded-full text-white ${
+        book.status === 'read' ? 'bg-emerald-500' : 'bg-amber-500'
+      }`}>
+        {book.status === 'read' ? t('bookCard.read') : t('bookCard.wantToRead')}
+      </span>
+    </button>
+  );
+}
+
 export default function Library() {
   const { t } = useTranslation();
   const { books, loading } = useBooks();
@@ -48,6 +100,7 @@ export default function Library() {
   const [authorFilter, setAuthorFilter] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('created_at');
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
   const filtered = useMemo(() => {
     let list = books.filter(b => b.status === activeTab);
@@ -76,9 +129,35 @@ export default function Library() {
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="font-serif text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1">{t('library.title')}</h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm">{t('library.booksCount', { count: books.length })}</p>
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h1 className="font-serif text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1">{t('library.title')}</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">{t('library.booksCount', { count: books.length })}</p>
+        </div>
+
+        {/* View toggle */}
+        <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-0.5">
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`p-2 rounded-lg transition-all ${
+              viewMode === 'grid'
+                ? 'bg-white dark:bg-[#1a1f2e] text-amber-600 dark:text-amber-400 shadow-sm'
+                : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+            }`}
+          >
+            <LayoutGrid size={16} />
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={`p-2 rounded-lg transition-all ${
+              viewMode === 'list'
+                ? 'bg-white dark:bg-[#1a1f2e] text-amber-600 dark:text-amber-400 shadow-sm'
+                : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+            }`}
+          >
+            <List size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -131,7 +210,7 @@ export default function Library() {
         </div>
       )}
 
-      {/* Grid or loading or empty */}
+      {/* Content */}
       {loading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
@@ -146,10 +225,16 @@ export default function Library() {
         </div>
       ) : filtered.length === 0 ? (
         <EmptyState status={activeTab} />
-      ) : (
+      ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {filtered.map(book => (
             <BookCard key={book.id} book={book} onClick={() => setSelectedBook(book)} />
+          ))}
+        </div>
+      ) : (
+        <div className="card divide-y divide-black/[0.05] dark:divide-white/[0.05] overflow-hidden">
+          {filtered.map(book => (
+            <BookListRow key={book.id} book={book} onClick={() => setSelectedBook(book)} />
           ))}
         </div>
       )}

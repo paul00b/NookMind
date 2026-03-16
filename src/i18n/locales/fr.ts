@@ -1,8 +1,8 @@
 const fr = {
   login: {
     tagline: 'Votre compagnon de lecture personnel',
-    logIn: 'Se connecter',
-    signUp: "S'inscrire",
+    logIn: 'Connexion',
+    signUp: "Inscription",
     email: 'E-mail',
     password: 'Mot de passe',
     emailPlaceholder: 'vous@exemple.com',
@@ -10,14 +10,14 @@ const fr = {
     confirmEmail: 'Vérifiez votre e-mail pour confirmer votre compte, puis connectez-vous.',
   },
   home: {
-    title: 'Suivi de lecture',
-    subtitle: 'Recherchez un livre pour suivre votre lecture (ou ajoutez-en un manuellement)',
+    title: 'BookMind',
+    subtitle: 'Votre bibliothèque, dans la poche',
     searchPlaceholder: 'Rechercher par titre, auteur ou ISBN...',
     searchTimeout: 'La recherche a expiré. Veuillez réessayer.',
     noBooksFound: 'Aucun livre trouvé pour « {{query}} »',
     unknownAuthor: 'Auteur inconnu',
     or: 'ou',
-    addManually: 'Ajouter manuellement',
+    addManually: 'Ajout manuel',
     lastRead: 'Derniers lus',
   },
   library: {

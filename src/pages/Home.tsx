@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Plus, X, BookOpen } from 'lucide-react';
+import { Search, Plus, X, BookOpen, Barcode } from 'lucide-react';
 import { searchBooks, extractBookData } from '../lib/googleBooks';
 import type { GoogleBookVolume, Book } from '../types';
 import AddBookModal from '../components/AddBookModal';
 import BookDetailModal from '../components/BookDetailModal';
+import { lazy, Suspense } from 'react';
+const BarcodeScannerModal = lazy(() => import('../components/BarcodeScannerModal'));
 import StarRating from '../components/StarRating';
 import { useBooks } from '../context/BooksContext';
 import { useTranslation } from 'react-i18next';
@@ -75,6 +77,7 @@ function LastReadSlider({ onSelect }: { onSelect: (book: Book) => void }) {
 export default function Home() {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
+  const [scannerOpen, setScannerOpen] = useState(false);
   const debouncedQuery = useDebounce(query, 600);
   const [results, setResults] = useState<GoogleBookVolume[]>([]);
   const [searching, setSearching] = useState(false);
@@ -153,12 +156,20 @@ export default function Home() {
             className="input rounded-full pl-11 pr-10 py-3.5 text-base shadow-sm"
             autoComplete="off"
           />
-          {query && (
+          {query ? (
             <button
               onClick={() => { setQuery(''); setResults([]); setDropdownOpen(false); inputRef.current?.focus(); }}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
               <X size={16} />
+            </button>
+          ) : (
+            <button
+              onClick={() => setScannerOpen(true)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-amber-500 hover:bg-amber-600 text-white transition-colors shadow-sm"
+              title="Scan barcode"
+            >
+              <Barcode size={15} />
             </button>
           )}
         </div>
@@ -250,6 +261,19 @@ export default function Home() {
           book={selectedBook}
           onClose={() => setSelectedBook(null)}
         />
+      )}
+
+      {/* Barcode scanner */}
+      {scannerOpen && (
+        <Suspense fallback={null}>
+          <BarcodeScannerModal
+            onDetected={(isbn) => {
+              setScannerOpen(false);
+              setQuery(isbn);
+            }}
+            onClose={() => setScannerOpen(false)}
+          />
+        </Suspense>
       )}
     </div>
   );
