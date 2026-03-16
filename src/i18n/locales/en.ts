@@ -89,6 +89,8 @@ const en = {
     noteSaved: 'Note saved',
     movedToRead: 'Moved to Read',
     movedToWantToRead: 'Moved to Want to read',
+    seeMore: 'See more',
+    seeLess: 'See less',
   },
   nav: {
     home: 'Home',

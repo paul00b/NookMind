@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Book } from '../types';
 import { useBooks } from '../context/BooksContext';
 import StarRating from './StarRating';
-import { X, Pencil, Check, Trash2, BookOpen, ArrowLeftRight } from 'lucide-react';
+import { X, Pencil, Check, Trash2, BookOpen, ArrowLeftRight, ChevronDown, ChevronUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 
@@ -18,6 +18,7 @@ export default function BookDetailModal({ book, onClose }: Props) {
   const [note, setNote] = useState(book.personal_note || '');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [localBook, setLocalBook] = useState<Book>(book);
+  const [descExpanded, setDescExpanded] = useState(false);
 
   const handleRatingChange = async (rating: number) => {
     setLocalBook(b => ({ ...b, rating }));
@@ -124,9 +125,20 @@ export default function BookDetailModal({ book, onClose }: Props) {
             {localBook.description && (
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('bookDetail.description')}</p>
-                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-4">
-                  {localBook.description}
-                </p>
+                <button
+                  onClick={() => setDescExpanded(e => !e)}
+                  className="w-full text-left group"
+                >
+                  <p className={`text-sm text-gray-700 dark:text-gray-300 leading-relaxed ${descExpanded ? '' : 'line-clamp-4'}`}>
+                    {localBook.description}
+                  </p>
+                  <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 mt-1 group-hover:underline">
+                    {descExpanded
+                      ? <><ChevronUp size={12} />{t('bookDetail.seeLess', 'See less')}</>
+                      : <><ChevronDown size={12} />{t('bookDetail.seeMore', 'See more')}</>
+                    }
+                  </span>
+                </button>
               </div>
             )}
 

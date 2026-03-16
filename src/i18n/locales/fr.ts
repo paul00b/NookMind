@@ -89,6 +89,8 @@ const fr = {
     noteSaved: 'Note enregistrée',
     movedToRead: 'Déplacé vers Lu',
     movedToWantToRead: 'Déplacé vers À lire',
+    seeMore: 'Voir plus',
+    seeLess: 'Voir moins',
   },
   nav: {
     home: 'Accueil',
