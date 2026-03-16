@@ -23,7 +23,7 @@ export default function Sidebar({ onOpenSettings }: Props) {
     <aside className="fixed left-0 top-0 h-full w-60 flex flex-col border-r border-black/[0.08] dark:border-white/[0.08] bg-[#f8f6f1] dark:bg-[#0f1117] z-30 px-4 py-6">
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-3 mb-8">
-        <div className="w-8 h-8 bg-amber-500 rounded-xl flex items-center justify-center text-white font-bold text-sm">B</div>
+        <img src="/logo.svg" className="w-8 h-8" alt="" />
         <span className="font-serif font-bold text-xl text-gray-900 dark:text-gray-100">BookMind</span>
       </div>
 
