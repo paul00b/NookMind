@@ -6,6 +6,7 @@ import AddBookModal from '../components/AddBookModal';
 import BookDetailModal from '../components/BookDetailModal';
 import StarRating from '../components/StarRating';
 import { useBooks } from '../context/BooksContext';
+import { useTranslation } from 'react-i18next';
 
 function useDebounce<T>(value: T, delay: number): T {
   const [dv, setDv] = useState(value);
@@ -18,6 +19,7 @@ function useDebounce<T>(value: T, delay: number): T {
 
 function LastReadSlider({ onSelect }: { onSelect: (book: Book) => void }) {
   const { books } = useBooks();
+  const { t } = useTranslation();
   const sliderRef = useRef<HTMLDivElement>(null);
 
   const lastRead = books
@@ -29,7 +31,7 @@ function LastReadSlider({ onSelect }: { onSelect: (book: Book) => void }) {
   return (
     <div className="w-full max-w-xl mt-10">
       <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">
-        Last read
+        {t('home.lastRead')}
       </h2>
       <div
         ref={sliderRef}
@@ -43,7 +45,7 @@ function LastReadSlider({ onSelect }: { onSelect: (book: Book) => void }) {
             className="flex-shrink-0 snap-start group cursor-pointer"
           >
             {/* Cover */}
-            <div className="w-20 aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2 group-hover:scale-[1.03] transition-transform duration-200">
+            <div className="w-20 md:w-28 aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2 group-hover:scale-[1.03] transition-transform duration-200">
               {book.cover_url ? (
                 <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" loading="lazy" />
               ) : (
@@ -53,7 +55,7 @@ function LastReadSlider({ onSelect }: { onSelect: (book: Book) => void }) {
               )}
             </div>
             {/* Info */}
-            <div className="w-20 text-left">
+            <div className="w-20 md:w-28 text-left">
               <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                 {book.title}
               </p>
@@ -71,6 +73,7 @@ function LastReadSlider({ onSelect }: { onSelect: (book: Book) => void }) {
 }
 
 export default function Home() {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebounce(query, 600);
   const [results, setResults] = useState<GoogleBookVolume[]>([]);
@@ -92,7 +95,7 @@ export default function Home() {
       setResults(res);
       setDropdownOpen(true);
     } catch (err) {
-      setSearchError('Search timed out. Please try again.');
+      setSearchError(t('home.searchTimeout'));
       setDropdownOpen(false);
     } finally {
       setSearching(false);
@@ -129,10 +132,10 @@ export default function Home() {
       {/* Heading */}
       <div className="text-center mb-10">
         <h1 className="font-serif text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-3">
-          Reading tracker
+          {t('home.title')}
         </h1>
         <p className="text-gray-500 dark:text-gray-400 text-lg max-w-md mx-auto">
-          Search for a book to track your reading journey (or add one manually)
+          {t('home.subtitle')}
         </p>
       </div>
 
@@ -146,7 +149,7 @@ export default function Home() {
             value={query}
             onChange={e => setQuery(e.target.value)}
             onFocus={() => results.length > 0 && setDropdownOpen(true)}
-            placeholder="Search by title, author, or ISBN..."
+            placeholder={t('home.searchPlaceholder')}
             className="input rounded-full pl-11 pr-10 py-3.5 text-base shadow-sm"
             autoComplete="off"
           />
@@ -177,7 +180,7 @@ export default function Home() {
               </div>
             ) : results.length === 0 ? (
               <div className="p-6 text-center text-gray-500 dark:text-gray-400 text-sm">
-                No books found for "{query}"
+                {t('home.noBooksFound', { query })}
               </div>
             ) : (
               <ul>
@@ -201,7 +204,7 @@ export default function Home() {
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{info.title}</p>
                           <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                            {info.authors?.join(', ') || 'Unknown author'}
+                            {info.authors?.join(', ') || t('home.unknownAuthor')}
                             {info.publishedDate && ` · ${info.publishedDate.slice(0, 4)}`}
                           </p>
                         </div>
@@ -223,11 +226,11 @@ export default function Home() {
       {/* Add manually */}
       <div className="mt-6 flex items-center gap-3">
         <div className="w-16 h-px bg-gray-200 dark:bg-gray-700" />
-        <span className="text-sm text-gray-400 dark:text-gray-500">or</span>
+        <span className="text-sm text-gray-400 dark:text-gray-500">{t('home.or')}</span>
         <div className="w-16 h-px bg-gray-200 dark:bg-gray-700" />
       </div>
       <button onClick={handleAddManually} className="mt-4 btn-ghost flex items-center gap-2 text-sm">
-        <Plus size={16} /> Add manually
+        <Plus size={16} /> {t('home.addManually')}
       </button>
 
       {/* Last read slider */}

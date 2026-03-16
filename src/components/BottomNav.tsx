@@ -1,15 +1,17 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { Home, Library, Compass } from 'lucide-react';
-
-const TABS = [
-  { to: '/', label: 'Home', icon: Home, end: true },
-  { to: '/library', label: 'Library', icon: Library, end: false },
-  { to: '/discover', label: 'Discover', icon: Compass, end: false },
-];
+import { useTranslation } from 'react-i18next';
 
 export default function BottomNav() {
   const { pathname } = useLocation();
+  const { t } = useTranslation();
   if (pathname === '/login') return null;
+
+  const TABS = [
+    { to: '/', label: t('nav.home'), icon: Home, end: true },
+    { to: '/library', label: t('nav.library'), icon: Library, end: false },
+    { to: '/discover', label: t('nav.discover'), icon: Compass, end: false },
+  ];
 
   return (
     <nav className="fixed bottom-4 left-4 right-4 z-30 md:hidden">

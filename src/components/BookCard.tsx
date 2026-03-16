@@ -1,6 +1,7 @@
 import type { Book } from '../types';
 import StarRating from './StarRating';
 import { BookOpen } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface BookCardProps {
   book: Book;
@@ -8,6 +9,7 @@ interface BookCardProps {
 }
 
 export default function BookCard({ book, onClick }: BookCardProps) {
+  const { t } = useTranslation();
   return (
     <button
       onClick={onClick}
@@ -33,7 +35,7 @@ export default function BookCard({ book, onClick }: BookCardProps) {
             ? 'bg-emerald-500/90 text-white'
             : 'bg-amber-500/90 text-white'
         }`}>
-          {book.status === 'read' ? 'Read' : 'Want to read'}
+          {book.status === 'read' ? t('bookCard.read') : t('bookCard.wantToRead')}
         </div>
       </div>
 

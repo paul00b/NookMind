@@ -4,22 +4,22 @@ import type { Book, BookStatus } from '../types';
 import BookCard from '../components/BookCard';
 import BookDetailModal from '../components/BookDetailModal';
 import { BookOpen, ChevronDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 type SortKey = 'created_at' | 'title' | 'author' | 'rating';
 
 function EmptyState({ status }: { status: BookStatus }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center px-4">
       <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center mb-5">
         <BookOpen size={36} className="text-amber-500" />
       </div>
       <h3 className="font-serif text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
-        {status === 'read' ? 'No books read yet' : 'Your reading list is empty'}
+        {status === 'read' ? t('library.noBooksRead') : t('library.emptyReadingList')}
       </h3>
       <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xs">
-        {status === 'read'
-          ? 'Mark books as read from your want-to-read list or add new ones from the Home page.'
-          : 'Head to the Home page to search for books and add them to your reading list.'}
+        {status === 'read' ? t('library.noBooksReadDesc') : t('library.emptyReadingListDesc')}
       </p>
     </div>
   );
@@ -41,6 +41,7 @@ function Select({ value, onChange, options }: { value: string; onChange: (v: str
 }
 
 export default function Library() {
+  const { t } = useTranslation();
   const { books, loading } = useBooks();
   const [activeTab, setActiveTab] = useState<BookStatus>('read');
   const [genreFilter, setGenreFilter] = useState('');
@@ -76,13 +77,13 @@ export default function Library() {
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="font-serif text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1">My Library</h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm">{books.length} book{books.length !== 1 ? 's' : ''} in your collection</p>
+        <h1 className="font-serif text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1">{t('library.title')}</h1>
+        <p className="text-gray-500 dark:text-gray-400 text-sm">{t('library.booksCount', { count: books.length })}</p>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-black/[0.06] dark:border-white/[0.06] pb-0">
-        {([['read', 'Read'], ['want_to_read', 'Want to read']] as const).map(([status, label]) => (
+        {([['read', t('library.read')], ['want_to_read', t('library.wantToRead')]] as const).map(([status, label]) => (
           <button
             key={status}
             onClick={() => { setActiveTab(status); setGenreFilter(''); setAuthorFilter(''); }}
@@ -108,22 +109,22 @@ export default function Library() {
           <Select
             value={genreFilter}
             onChange={setGenreFilter}
-            options={[{ value: '', label: 'All genres' }, ...genres.map(g => ({ value: g, label: g }))]}
+            options={[{ value: '', label: t('library.allGenres') }, ...genres.map(g => ({ value: g, label: g }))]}
           />
           <Select
             value={authorFilter}
             onChange={setAuthorFilter}
-            options={[{ value: '', label: 'All authors' }, ...authors.map(a => ({ value: a, label: a }))]}
+            options={[{ value: '', label: t('library.allAuthors') }, ...authors.map(a => ({ value: a, label: a }))]}
           />
           <div className="flex items-center flex-shrink-0">
             <Select
               value={sortKey}
               onChange={v => setSortKey(v as SortKey)}
               options={[
-                { value: 'created_at', label: 'Date added' },
-                { value: 'title', label: 'Title A→Z' },
-                { value: 'author', label: 'Author A→Z' },
-                ...(activeTab === 'read' ? [{ value: 'rating', label: 'Rating ↓' }] : []),
+                { value: 'created_at', label: t('library.dateAdded') },
+                { value: 'title', label: t('library.titleAZ') },
+                { value: 'author', label: t('library.authorAZ') },
+                ...(activeTab === 'read' ? [{ value: 'rating', label: t('library.ratingDesc') }] : []),
               ]}
             />
           </div>

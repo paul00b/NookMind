@@ -2,19 +2,21 @@ import { NavLink } from 'react-router-dom';
 import { Home, Library, Compass, Settings } from 'lucide-react';
 import Avatar from './Avatar';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   onOpenSettings: () => void;
 }
 
-const NAV = [
-  { to: '/', label: 'Home', icon: <Home size={18} />, end: true },
-  { to: '/library', label: 'My Library', icon: <Library size={18} />, end: false },
-  { to: '/discover', label: 'Discover', icon: <Compass size={18} />, end: false },
-];
-
 export default function Sidebar({ onOpenSettings }: Props) {
   const { user } = useAuth();
+  const { t } = useTranslation();
+
+  const NAV = [
+    { to: '/', label: t('nav.home'), icon: <Home size={18} />, end: true },
+    { to: '/library', label: t('nav.library'), icon: <Library size={18} />, end: false },
+    { to: '/discover', label: t('nav.discover'), icon: <Compass size={18} />, end: false },
+  ];
   const name = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Reader';
 
   return (

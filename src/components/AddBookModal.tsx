@@ -3,6 +3,7 @@ import { X, BookOpen } from 'lucide-react';
 import { useBooks } from '../context/BooksContext';
 import type { Book, BookStatus } from '../types';
 import StarRating from './StarRating';
+import { useTranslation } from 'react-i18next';
 
 type BookFormData = Omit<Book, 'id' | 'user_id' | 'created_at'>;
 
@@ -27,6 +28,7 @@ interface Props {
 
 export default function AddBookModal({ prefill, onClose }: Props) {
   const { addBook } = useBooks();
+  const { t } = useTranslation();
   const [form, setForm] = useState<BookFormData>({ ...EMPTY, ...prefill });
   const [saving, setSaving] = useState(false);
 
@@ -50,7 +52,7 @@ export default function AddBookModal({ prefill, onClose }: Props) {
       {/* Modal */}
       <div className="relative z-10 w-full md:max-w-lg card animate-slide-up md:rounded-2xl rounded-t-3xl rounded-b-none max-h-[92vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 pb-4 border-b border-black/[0.06] dark:border-white/[0.06]">
-          <h2 className="font-serif text-xl font-bold text-gray-900 dark:text-gray-100">Add to Library</h2>
+          <h2 className="font-serif text-xl font-bold text-gray-900 dark:text-gray-100">{t('addBook.title')}</h2>
           <button onClick={onClose} className="btn-ghost p-2"><X size={18} /></button>
         </div>
 
@@ -67,22 +69,22 @@ export default function AddBookModal({ prefill, onClose }: Props) {
           {/* Title & Author */}
           <div className="grid grid-cols-1 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addBook.titleLabel')}</label>
               <input
                 className="input"
                 value={form.title}
                 onChange={e => set('title', e.target.value)}
-                placeholder="Book title"
+                placeholder={t('addBook.titlePlaceholder')}
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Author *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addBook.authorLabel')}</label>
               <input
                 className="input"
                 value={form.author}
                 onChange={e => set('author', e.target.value)}
-                placeholder="Author name"
+                placeholder={t('addBook.authorPlaceholder')}
                 required
               />
             </div>
@@ -91,30 +93,30 @@ export default function AddBookModal({ prefill, onClose }: Props) {
           {/* Genre & Year */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Genre</label>
-              <input className="input" value={form.genre || ''} onChange={e => set('genre', e.target.value || null)} placeholder="e.g. Fiction" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addBook.genreLabel')}</label>
+              <input className="input" value={form.genre || ''} onChange={e => set('genre', e.target.value || null)} placeholder={t('addBook.genrePlaceholder')} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Published</label>
-              <input className="input" value={form.published_date || ''} onChange={e => set('published_date', e.target.value || null)} placeholder="Year" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addBook.publishedLabel')}</label>
+              <input className="input" value={form.published_date || ''} onChange={e => set('published_date', e.target.value || null)} placeholder={t('addBook.publishedPlaceholder')} />
             </div>
           </div>
 
           {/* Page count & Cover URL */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pages</label>
-              <input className="input" type="number" min="1" value={form.page_count || ''} onChange={e => set('page_count', e.target.value ? parseInt(e.target.value) : null)} placeholder="Page count" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addBook.pagesLabel')}</label>
+              <input className="input" type="number" min="1" value={form.page_count || ''} onChange={e => set('page_count', e.target.value ? parseInt(e.target.value) : null)} placeholder={t('addBook.pagesPlaceholder')} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cover URL</label>
-              <input className="input" value={form.cover_url || ''} onChange={e => set('cover_url', e.target.value || null)} placeholder="Image URL" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addBook.coverUrlLabel')}</label>
+              <input className="input" value={form.cover_url || ''} onChange={e => set('cover_url', e.target.value || null)} placeholder={t('addBook.coverUrlPlaceholder')} />
             </div>
           </div>
 
           {/* Status */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('addBook.statusLabel')}</label>
             <div className="flex gap-2">
               {(['want_to_read', 'read'] as BookStatus[]).map(s => (
                 <button
@@ -127,7 +129,7 @@ export default function AddBookModal({ prefill, onClose }: Props) {
                       : 'bg-transparent text-gray-600 dark:text-gray-400 border-black/10 dark:border-white/10 hover:border-amber-500/50'
                   }`}
                 >
-                  {s === 'read' ? 'Already read' : 'Want to read'}
+                  {s === 'read' ? t('addBook.alreadyRead') : t('addBook.wantToRead')}
                 </button>
               ))}
             </div>
@@ -136,26 +138,26 @@ export default function AddBookModal({ prefill, onClose }: Props) {
           {/* Rating (only if read) */}
           {form.status === 'read' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Rating</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('addBook.ratingLabel')}</label>
               <StarRating value={form.rating} onChange={v => set('rating', v)} size={24} />
             </div>
           )}
 
           {/* Note */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Personal note</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addBook.noteLabel')}</label>
             <textarea
               className="input resize-none h-20 text-sm"
               value={form.personal_note || ''}
               onChange={e => set('personal_note', e.target.value || null)}
-              placeholder="Your thoughts..."
+              placeholder={t('addBook.notePlaceholder')}
             />
           </div>
 
           {/* Description */}
           {form.description && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addBook.descriptionLabel')}</label>
               <textarea
                 className="input resize-none h-20 text-sm"
                 value={form.description}
@@ -166,14 +168,14 @@ export default function AddBookModal({ prefill, onClose }: Props) {
 
           {/* Submit */}
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="btn-ghost flex-1">Cancel</button>
+            <button type="button" onClick={onClose} className="btn-ghost flex-1">{t('addBook.cancel')}</button>
             <button type="submit" disabled={saving || !form.title.trim()} className="btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
               {saving ? (
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <BookOpen size={16} />
               )}
-              {saving ? 'Saving...' : 'Add to Library'}
+              {saving ? t('addBook.saving') : t('addBook.addToLibrary')}
             </button>
           </div>
         </form>

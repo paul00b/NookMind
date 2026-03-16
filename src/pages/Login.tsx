@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { BookOpen, Eye, EyeOff } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function Login() {
   const { user, signIn, signUp } = useAuth();
+  const { t } = useTranslation();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,7 +29,7 @@ export default function Login() {
     } else {
       const { error } = await signUp(email, password);
       if (error) setError(error.message);
-      else setSuccess('Check your email to confirm your account, then log in.');
+      else setSuccess(t('login.confirmEmail'));
     }
     setLoading(false);
   };
@@ -41,7 +43,7 @@ export default function Login() {
             <BookOpen size={28} className="text-white" />
           </div>
           <h1 className="font-serif text-3xl font-bold text-gray-900 dark:text-gray-100">BookMind</h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm text-center">Your personal reading companion</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm text-center">{t('login.tagline')}</p>
         </div>
 
         <div className="card p-6 space-y-5">
@@ -57,7 +59,7 @@ export default function Login() {
                     : 'text-gray-500 dark:text-gray-400'
                 }`}
               >
-                {m === 'login' ? 'Log in' : 'Sign up'}
+                {m === 'login' ? t('login.logIn') : t('login.signUp')}
               </button>
             ))}
           </div>
@@ -65,19 +67,19 @@ export default function Login() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('login.email')}</label>
               <input
                 type="email"
                 className="input"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder={t('login.emailPlaceholder')}
                 required
                 autoComplete="email"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Password</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('login.password')}</label>
               <div className="relative">
                 <input
                   type={showPw ? 'text' : 'password'}
@@ -112,7 +114,7 @@ export default function Login() {
 
             <button type="submit" disabled={loading} className="btn-primary w-full mt-2 flex items-center justify-center gap-2 disabled:opacity-50">
               {loading && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-              {mode === 'login' ? 'Log in' : 'Create account'}
+              {mode === 'login' ? t('login.logIn') : t('login.createAccount')}
             </button>
           </form>
         </div>

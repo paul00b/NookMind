@@ -7,6 +7,7 @@ import ProtectedRoute from './router/ProtectedRoute';
 import AppLayout from './components/AppLayout';
 import BottomNav from './components/BottomNav';
 import Login from './pages/Login';
+import AuthCallback from './pages/AuthCallback';
 import Home from './pages/Home';
 import Library from './pages/Library';
 import Discover from './pages/Discover';
@@ -18,6 +19,7 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route
               path="/"
               element={
