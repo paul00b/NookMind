@@ -35,3 +35,11 @@ export interface GoogleBookVolume {
 }
 
 export type ThemeMode = 'light' | 'dark' | 'system';
+
+export interface BookCategory {
+  id: string;
+  user_id: string;
+  title: string;
+  created_at: string;
+  book_ids: string[];
+}

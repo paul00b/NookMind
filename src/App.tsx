@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { BooksProvider } from './context/BooksContext';
+import { CategoriesProvider } from './context/CategoriesContext';
 import ProtectedRoute from './router/ProtectedRoute';
 import AppLayout from './components/AppLayout';
 import BottomNav from './components/BottomNav';
@@ -25,7 +26,9 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <BooksProvider>
-                    <AppLayout />
+                    <CategoriesProvider>
+                      <AppLayout />
+                    </CategoriesProvider>
                   </BooksProvider>
                 </ProtectedRoute>
               }

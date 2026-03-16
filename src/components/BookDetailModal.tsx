@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import type { Book } from '../types';
 import { useBooks } from '../context/BooksContext';
+import { useCategories } from '../context/CategoriesContext';
 import StarRating from './StarRating';
-import { X, Pencil, Check, Trash2, BookOpen, ArrowLeftRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Pencil, Check, Trash2, BookOpen, ArrowLeftRight, ChevronDown, ChevronUp, FolderPlus, FolderMinus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 
@@ -13,6 +14,7 @@ interface Props {
 
 export default function BookDetailModal({ book, onClose }: Props) {
   const { updateBook, deleteBook } = useBooks();
+  const { categories, addBooksToCategory, removeBookFromCategory } = useCategories();
   const { t } = useTranslation();
   const [editingNote, setEditingNote] = useState(false);
   const [note, setNote] = useState(book.personal_note || '');
@@ -176,6 +178,35 @@ export default function BookDetailModal({ book, onClose }: Props) {
                 </p>
               )}
             </div>
+
+            {/* Collections */}
+            {categories.length > 0 && (
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{t('bookDetail.collections')}</p>
+                <div className="flex flex-wrap gap-2">
+                  {categories.map(cat => {
+                    const isIn = cat.book_ids.includes(localBook.id);
+                    return (
+                      <button
+                        key={cat.id}
+                        onClick={() => isIn
+                          ? removeBookFromCategory(cat.id, localBook.id)
+                          : addBooksToCategory(cat.id, [localBook.id])
+                        }
+                        className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
+                          isIn
+                            ? 'bg-amber-500/15 border-amber-400/50 text-amber-700 dark:text-amber-400 hover:bg-red-500/10 hover:border-red-400/50 hover:text-red-600 dark:hover:text-red-400'
+                            : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-amber-500/10 hover:border-amber-400/50 hover:text-amber-700 dark:hover:text-amber-400'
+                        }`}
+                      >
+                        {isIn ? <FolderMinus size={12} /> : <FolderPlus size={12} />}
+                        {cat.title}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Actions */}
             <div className="flex flex-wrap gap-2 pt-2">
