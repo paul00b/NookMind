@@ -36,7 +36,7 @@ const fr = {
     titleAZ: 'Titre A→Z',
     authorAZ: 'Auteur A→Z',
     ratingDesc: 'Note ↓',
-    newCategory: '+ Nouvelle collection',
+    newCategory: 'Nouvelle collection',
     newCategoryPlaceholder: 'Nom de la collection...',
     addBooks: 'Ajouter des livres',
     addBooksTo: 'Ajouter à {{name}}',
