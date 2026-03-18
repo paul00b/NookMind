@@ -3,8 +3,12 @@ import { Toaster } from 'react-hot-toast';
 import { Analytics } from '@vercel/analytics/react';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { MediaModeProvider } from './context/MediaModeContext';
 import { BooksProvider } from './context/BooksContext';
 import { CategoriesProvider } from './context/CategoriesContext';
+import { MoviesProvider } from './context/MoviesContext';
+import { MovieCategoriesProvider } from './context/MovieCategoriesContext';
+import { useMediaMode } from './context/MediaModeContext';
 import ProtectedRoute from './router/ProtectedRoute';
 import AppLayout from './components/AppLayout';
 import BottomNav from './components/BottomNav';
@@ -13,58 +17,76 @@ import AuthCallback from './pages/AuthCallback';
 import Home from './pages/Home';
 import Library from './pages/Library';
 import Discover from './pages/Discover';
+import MovieHome from './pages/MovieHome';
+import MovieLibrary from './pages/MovieLibrary';
+
+function HomeSwitch() {
+  const { mode } = useMediaMode();
+  return mode === 'movies' ? <MovieHome /> : <Home />;
+}
+
+function LibrarySwitch() {
+  const { mode } = useMediaMode();
+  return mode === 'movies' ? <MovieLibrary /> : <Library />;
+}
 
 export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <BooksProvider>
-                    <CategoriesProvider>
-                      <AppLayout />
-                    </CategoriesProvider>
-                  </BooksProvider>
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Home />} />
-              <Route path="library" element={<Library />} />
-              <Route path="discover" element={<Discover />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Route>
-          </Routes>
+        <MediaModeProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <BooksProvider>
+                      <CategoriesProvider>
+                        <MoviesProvider>
+                          <MovieCategoriesProvider>
+                            <AppLayout />
+                          </MovieCategoriesProvider>
+                        </MoviesProvider>
+                      </CategoriesProvider>
+                    </BooksProvider>
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<HomeSwitch />} />
+                <Route path="library" element={<LibrarySwitch />} />
+                <Route path="discover" element={<Discover />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Route>
+            </Routes>
 
-          {/* Always-visible bottom nav on mobile */}
-          <BottomNav />
+            {/* Always-visible bottom nav on mobile */}
+            <BottomNav />
 
-          <Toaster
-            position="bottom-center"
-            containerStyle={{ bottom: 96 }}
-            toastOptions={{
-              duration: 3000,
-              style: {
-                background: 'var(--toast-bg, #1a1f2e)',
-                color: 'var(--toast-color, #f3f4f6)',
-                borderRadius: '12px',
-                fontSize: '14px',
-                fontFamily: 'Inter, sans-serif',
-                padding: '12px 16px',
-                boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
-              },
-              success: {
-                iconTheme: { primary: '#f59e0b', secondary: '#fff' },
-              },
-            }}
-          />
-        <Analytics />
-        </BrowserRouter>
+            <Toaster
+              position="bottom-center"
+              containerStyle={{ bottom: 96 }}
+              toastOptions={{
+                duration: 3000,
+                style: {
+                  background: 'var(--toast-bg, #1a1f2e)',
+                  color: 'var(--toast-color, #f3f4f6)',
+                  borderRadius: '12px',
+                  fontSize: '14px',
+                  fontFamily: 'Inter, sans-serif',
+                  padding: '12px 16px',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
+                },
+                success: {
+                  iconTheme: { primary: '#f59e0b', secondary: '#fff' },
+                },
+              }}
+            />
+            <Analytics />
+          </BrowserRouter>
+        </MediaModeProvider>
       </AuthProvider>
     </ThemeProvider>
   );

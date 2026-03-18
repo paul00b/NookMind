@@ -36,6 +36,48 @@ export interface GoogleBookVolume {
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
+export type MediaMode = 'books' | 'movies';
+
+export type MovieStatus = 'watched' | 'want_to_watch';
+
+export interface Movie {
+  id: string;
+  user_id: string;
+  tmdb_id: number | null;
+  title: string;
+  director: string;
+  description: string | null;
+  poster_url: string | null;
+  release_date: string | null;
+  runtime: number | null;
+  genre: string | null;
+  status: MovieStatus;
+  rating: number | null;
+  personal_note: string | null;
+  created_at: string;
+}
+
+export interface TmdbMovie {
+  id: number;
+  title: string;
+  overview: string;
+  poster_path: string | null;
+  release_date: string;
+  runtime?: number;
+  genres?: { id: number; name: string }[];
+  credits?: {
+    crew: { job: string; name: string }[];
+  };
+}
+
+export interface MovieCategory {
+  id: string;
+  user_id: string;
+  title: string;
+  created_at: string;
+  movie_ids: string[];
+}
+
 export interface BookCategory {
   id: string;
   user_id: string;

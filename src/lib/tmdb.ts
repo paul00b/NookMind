@@ -1,0 +1,64 @@
+import type { TmdbMovie } from '../types';
+
+const BASE_URL = 'https://api.themoviedb.org/3';
+const IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
+const API_KEY = import.meta.env.VITE_TMDB_API_KEY as string | undefined;
+
+function buildUrl(path: string, params: Record<string, string> = {}): string {
+  const url = new URL(`${BASE_URL}${path}`);
+  if (API_KEY) url.searchParams.set('api_key', API_KEY);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  return url.toString();
+}
+
+export async function searchMovies(query: string, maxResults = 8): Promise<TmdbMovie[]> {
+  if (!query.trim()) return [];
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await fetch(
+      buildUrl('/search/movie', { query, include_adult: 'false', language: 'en-US' }),
+      { signal: controller.signal }
+    );
+    if (!res.ok) throw new Error('Failed to fetch movies');
+    const data = await res.json();
+    return ((data.results as TmdbMovie[]) ?? []).slice(0, maxResults);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+export async function fetchMovieDetails(tmdbId: number): Promise<TmdbMovie | null> {
+  try {
+    const res = await fetch(
+      buildUrl(`/movie/${tmdbId}`, { append_to_response: 'credits', language: 'en-US' })
+    );
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export function getPosterUrl(posterPath: string | null): string | null {
+  if (!posterPath) return null;
+  return `${IMAGE_BASE}${posterPath}`;
+}
+
+export function extractDirector(movie: TmdbMovie): string {
+  const director = movie.credits?.crew.find(c => c.job === 'Director');
+  return director?.name ?? 'Unknown Director';
+}
+
+export function extractMovieData(movie: TmdbMovie) {
+  return {
+    tmdb_id: movie.id,
+    title: movie.title || 'Unknown Title',
+    director: extractDirector(movie),
+    description: movie.overview || null,
+    poster_url: getPosterUrl(movie.poster_path),
+    release_date: movie.release_date || null,
+    runtime: movie.runtime || null,
+    genre: movie.genres?.[0]?.name || null,
+  };
+}

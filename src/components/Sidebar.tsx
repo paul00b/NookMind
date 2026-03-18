@@ -1,7 +1,8 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Library, Compass, Settings } from 'lucide-react';
+import { Home, Library, Compass, Settings, BookOpen, Film } from 'lucide-react';
 import Avatar from './Avatar';
 import { useAuth } from '../context/AuthContext';
+import { useMediaMode } from '../context/MediaModeContext';
 import { useTranslation } from 'react-i18next';
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
 
 export default function Sidebar({ onOpenSettings }: Props) {
   const { user } = useAuth();
+  const { mode, setMode } = useMediaMode();
   const { t } = useTranslation();
 
   const NAV = [
@@ -22,9 +24,35 @@ export default function Sidebar({ onOpenSettings }: Props) {
   return (
     <aside className="fixed left-0 top-0 h-full w-60 flex flex-col border-r border-black/[0.08] dark:border-white/[0.08] bg-[#f8f6f1] dark:bg-[#0f1117] z-30 px-4 py-6">
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-3 mb-8">
+      <div className="flex items-center gap-2.5 px-3 mb-6">
         <img src="/logo.svg" className="w-8 h-8" alt="" />
         <span className="font-serif font-bold text-xl text-gray-900 dark:text-gray-100">BookMind</span>
+      </div>
+
+      {/* Books / Movies toggle */}
+      <div className="flex items-center bg-gray-100 dark:bg-gray-800/60 rounded-xl p-1 gap-0.5 mb-6">
+        <button
+          onClick={() => setMode('books')}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${
+            mode === 'books'
+              ? 'bg-white dark:bg-[#1a1f2e] text-amber-600 dark:text-amber-400 shadow-sm'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+          }`}
+        >
+          <BookOpen size={13} />
+          {t('nav.books')}
+        </button>
+        <button
+          onClick={() => setMode('movies')}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${
+            mode === 'movies'
+              ? 'bg-white dark:bg-[#1a1f2e] text-amber-600 dark:text-amber-400 shadow-sm'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+          }`}
+        >
+          <Film size={13} />
+          {t('nav.movies')}
+        </button>
       </div>
 
       {/* Nav */}
