@@ -36,7 +36,7 @@ export interface GoogleBookVolume {
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
-export type MediaMode = 'books' | 'movies';
+export type MediaMode = 'books' | 'movies' | 'series';
 
 export type MovieStatus = 'watched' | 'want_to_watch';
 
@@ -84,4 +84,42 @@ export interface BookCategory {
   title: string;
   created_at: string;
   book_ids: string[];
+}
+
+export type SeriesStatus = 'watched' | 'want_to_watch';
+
+export interface Series {
+  id: string;
+  user_id: string;
+  tmdb_id: number | null;
+  title: string;
+  creator: string;
+  description: string | null;
+  poster_url: string | null;
+  first_air_date: string | null;
+  seasons: number | null;
+  genre: string | null;
+  status: SeriesStatus;
+  rating: number | null;
+  personal_note: string | null;
+  created_at: string;
+}
+
+export interface TmdbSeries {
+  id: number;
+  name: string;
+  overview: string;
+  poster_path: string | null;
+  first_air_date: string;
+  number_of_seasons?: number;
+  genres?: { id: number; name: string }[];
+  created_by?: { name: string }[];
+}
+
+export interface SeriesCategory {
+  id: string;
+  user_id: string;
+  title: string;
+  created_at: string;
+  series_ids: string[];
 }

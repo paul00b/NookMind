@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Library, Compass, Settings, BookOpen, Film } from 'lucide-react';
+import { Home, Library, Compass, Settings, BookOpen, Film, Tv } from 'lucide-react';
 import Avatar from './Avatar';
 import { useAuth } from '../context/AuthContext';
 import { useMediaMode } from '../context/MediaModeContext';
@@ -52,6 +52,17 @@ export default function Sidebar({ onOpenSettings }: Props) {
         >
           <Film size={13} />
           {t('nav.movies')}
+        </button>
+        <button
+          onClick={() => setMode('series')}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${
+            mode === 'series'
+              ? 'bg-white dark:bg-[#1a1f2e] text-amber-600 dark:text-amber-400 shadow-sm'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+          }`}
+        >
+          <Tv size={13} />
+          {t('nav.series')}
         </button>
       </div>
 

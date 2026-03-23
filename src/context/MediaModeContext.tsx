@@ -11,7 +11,7 @@ const MediaModeContext = createContext<MediaModeContextValue | null>(null);
 export function MediaModeProvider({ children }: { children: React.ReactNode }) {
   const [mode, setModeState] = useState<MediaMode>(() => {
     const stored = localStorage.getItem('media-mode');
-    return stored === 'movies' ? 'movies' : 'books';
+    return stored === 'movies' ? 'movies' : stored === 'series' ? 'series' : 'books';
   });
 
   const setMode = (m: MediaMode) => {

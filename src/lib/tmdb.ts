@@ -1,4 +1,4 @@
-import type { TmdbMovie } from '../types';
+import type { TmdbMovie, TmdbSeries } from '../types';
 
 const BASE_URL = 'https://api.themoviedb.org/3';
 const IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
@@ -60,5 +60,49 @@ export function extractMovieData(movie: TmdbMovie) {
     release_date: movie.release_date || null,
     runtime: movie.runtime || null,
     genre: movie.genres?.[0]?.name || null,
+  };
+}
+
+// --- TV Series ---
+
+export async function searchSeries(query: string, maxResults = 8): Promise<TmdbSeries[]> {
+  if (!query.trim()) return [];
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await fetch(
+      buildUrl('/search/tv', { query, include_adult: 'false', language: 'en-US' }),
+      { signal: controller.signal }
+    );
+    if (!res.ok) throw new Error('Failed to fetch series');
+    const data = await res.json();
+    return ((data.results as TmdbSeries[]) ?? []).slice(0, maxResults);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+export async function fetchSeriesDetails(tmdbId: number): Promise<TmdbSeries | null> {
+  try {
+    const res = await fetch(
+      buildUrl(`/tv/${tmdbId}`, { language: 'en-US' })
+    );
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export function extractSeriesData(series: TmdbSeries) {
+  return {
+    tmdb_id: series.id,
+    title: series.name || 'Unknown Title',
+    creator: series.created_by?.[0]?.name || '',
+    description: series.overview || null,
+    poster_url: getPosterUrl(series.poster_path),
+    first_air_date: series.first_air_date || null,
+    seasons: series.number_of_seasons || null,
+    genre: series.genres?.[0]?.name || null,
   };
 }

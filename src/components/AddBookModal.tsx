@@ -47,7 +47,7 @@ export default function AddBookModal({ prefill, onClose }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title.trim() || !form.author.trim()) return;
+    if (!form.title.trim()) return;
     setSaving(true);
     const result = await addBook(form);
     setSaving(false);
@@ -95,7 +95,6 @@ export default function AddBookModal({ prefill, onClose }: Props) {
                 value={form.author}
                 onChange={e => set('author', e.target.value)}
                 placeholder={t('addBook.authorPlaceholder')}
-                required
               />
             </div>
           </div>

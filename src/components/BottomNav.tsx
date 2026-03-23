@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Library, Compass, BookOpen, Film } from 'lucide-react';
+import { Home, Library, Compass, BookOpen, Film, Tv } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useMediaMode } from '../context/MediaModeContext';
 
@@ -41,6 +41,17 @@ export default function BottomNav() {
           >
             <Film size={12} />
             {t('nav.movies')}
+          </button>
+          <button
+            onClick={() => setMode('series')}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+              mode === 'series'
+                ? 'bg-amber-500 text-white shadow-sm'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
+          >
+            <Tv size={12} />
+            {t('nav.series')}
           </button>
         </div>
       </div>

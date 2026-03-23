@@ -44,7 +44,7 @@ export default function AddMovieModal({ prefill, onClose }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title.trim() || !form.director.trim()) return;
+    if (!form.title.trim()) return;
     setSaving(true);
     const result = await addMovie(form);
     setSaving(false);
@@ -92,7 +92,6 @@ export default function AddMovieModal({ prefill, onClose }: Props) {
                 value={form.director}
                 onChange={e => set('director', e.target.value)}
                 placeholder={t('addMovie.directorPlaceholder')}
-                required
               />
             </div>
           </div>

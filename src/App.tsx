@@ -8,6 +8,8 @@ import { BooksProvider } from './context/BooksContext';
 import { CategoriesProvider } from './context/CategoriesContext';
 import { MoviesProvider } from './context/MoviesContext';
 import { MovieCategoriesProvider } from './context/MovieCategoriesContext';
+import { SeriesProvider } from './context/SeriesContext';
+import { SeriesCategoriesProvider } from './context/SeriesCategoriesContext';
 import { useMediaMode } from './context/MediaModeContext';
 import ProtectedRoute from './router/ProtectedRoute';
 import AppLayout from './components/AppLayout';
@@ -19,15 +21,21 @@ import Library from './pages/Library';
 import Discover from './pages/Discover';
 import MovieHome from './pages/MovieHome';
 import MovieLibrary from './pages/MovieLibrary';
+import SeriesHome from './pages/SeriesHome';
+import SeriesLibrary from './pages/SeriesLibrary';
 
 function HomeSwitch() {
   const { mode } = useMediaMode();
-  return mode === 'movies' ? <MovieHome /> : <Home />;
+  if (mode === 'movies') return <MovieHome />;
+  if (mode === 'series') return <SeriesHome />;
+  return <Home />;
 }
 
 function LibrarySwitch() {
   const { mode } = useMediaMode();
-  return mode === 'movies' ? <MovieLibrary /> : <Library />;
+  if (mode === 'movies') return <MovieLibrary />;
+  if (mode === 'series') return <SeriesLibrary />;
+  return <Library />;
 }
 
 export default function App() {
@@ -47,7 +55,11 @@ export default function App() {
                       <CategoriesProvider>
                         <MoviesProvider>
                           <MovieCategoriesProvider>
-                            <AppLayout />
+                            <SeriesProvider>
+                              <SeriesCategoriesProvider>
+                                <AppLayout />
+                              </SeriesCategoriesProvider>
+                            </SeriesProvider>
                           </MovieCategoriesProvider>
                         </MoviesProvider>
                       </CategoriesProvider>
