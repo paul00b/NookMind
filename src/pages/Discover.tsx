@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Compass, Tv, BookOpen, Film, Sparkles, TrendingUp, Settings2, Eye, EyeOff, X, Plus, GripVertical } from 'lucide-react';
+import { Compass, Tv, BookOpen, Film, Sparkles, TrendingUp, Settings2, Eye, EyeOff, X, Plus, GripVertical, CheckCircle2 } from 'lucide-react';
 import { useMediaMode } from '../context/MediaModeContext';
 import { useBooks } from '../context/BooksContext';
 import { useMovies } from '../context/MoviesContext';
 import { useSeries } from '../context/SeriesContext';
 import { useTranslation } from 'react-i18next';
-import { fetchTrendingMovies, fetchTrendingSeries, fetchMoviesByGenre, fetchSeriesByGenre, getPosterUrl } from '../lib/tmdb';
-import { fetchByGenre as fetchBooksByGenre, fetchByAuthor } from '../lib/googleBooks';
+import { fetchTrendingMovies, fetchTrendingSeries, fetchMoviesByGenre, fetchSeriesByGenre, fetchMovieDetails, fetchSeriesDetails, extractMovieData, extractSeriesData, getPosterUrl } from '../lib/tmdb';
+import { fetchByGenre as fetchBooksByGenre, fetchByAuthor, extractBookData } from '../lib/googleBooks';
+import AddBookModal from '../components/AddBookModal';
+import AddMovieModal from '../components/AddMovieModal';
+import AddSeriesModal from '../components/AddSeriesModal';
 import type { TmdbMovie, TmdbSeries, GoogleBookVolume } from '../types';
 
 // --- Cache helpers ---
@@ -48,15 +51,12 @@ function saveSectionConfig(mode: string, config: SectionConfig[]) {
   try { localStorage.setItem(`${CONFIG_KEY}_${mode}`, JSON.stringify(config)); } catch {}
 }
 
-// Merge saved config with available sections (new sections get appended as visible)
 function mergeConfig(saved: SectionConfig[], available: string[]): SectionConfig[] {
   const map = new Map(saved.map(s => [s.id, s]));
   const ordered: SectionConfig[] = [];
-  // Keep saved order for known sections
   for (const s of saved) {
     if (available.includes(s.id)) ordered.push(s);
   }
-  // Append new sections not in saved config
   for (const id of available) {
     if (!map.has(id)) ordered.push({ id, visible: true });
   }
@@ -64,6 +64,8 @@ function mergeConfig(saved: SectionConfig[], available: string[]): SectionConfig
 }
 
 // --- Collection analysis helpers ---
+
+const normalizeStr = (s: string) => s.toLowerCase().trim().replace(/\s+/g, ' ');
 
 function topGenres(items: { genre: string | null }[], max = 5): string[] {
   const counts: Record<string, number> = {};
@@ -99,46 +101,46 @@ function PosterRow({ children }: { children: React.ReactNode }) {
   );
 }
 
-function MovieCard({ movie }: { movie: TmdbMovie }) {
+function MovieCard({ movie, onClick }: { movie: TmdbMovie; onClick: () => void }) {
   const poster = getPosterUrl(movie.poster_path);
   return (
-    <div className="flex-shrink-0 snap-start w-28 md:w-32">
-      <div className="aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2">
+    <button onClick={onClick} className="flex-shrink-0 snap-start w-28 md:w-32 text-left group">
+      <div className="aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2 group-hover:scale-[1.03] transition-transform duration-200">
         {poster ? <img src={poster} alt={movie.title} className="w-full h-full object-cover" loading="lazy" />
           : <div className="w-full h-full flex items-center justify-center"><Film size={22} className="text-gray-300 dark:text-gray-600" /></div>}
       </div>
-      <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate leading-tight">{movie.title}</p>
+      <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{movie.title}</p>
       <p className="text-[10px] text-gray-500 dark:text-gray-400">{movie.release_date?.slice(0, 4) || '—'}</p>
-    </div>
+    </button>
   );
 }
 
-function SeriesTmdbCard({ series }: { series: TmdbSeries }) {
+function SeriesTmdbCard({ series, onClick }: { series: TmdbSeries; onClick: () => void }) {
   const poster = getPosterUrl(series.poster_path);
   return (
-    <div className="flex-shrink-0 snap-start w-28 md:w-32">
-      <div className="aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2">
+    <button onClick={onClick} className="flex-shrink-0 snap-start w-28 md:w-32 text-left group">
+      <div className="aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2 group-hover:scale-[1.03] transition-transform duration-200">
         {poster ? <img src={poster} alt={series.name} className="w-full h-full object-cover" loading="lazy" />
           : <div className="w-full h-full flex items-center justify-center"><Tv size={22} className="text-gray-300 dark:text-gray-600" /></div>}
       </div>
-      <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate leading-tight">{series.name}</p>
+      <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{series.name}</p>
       <p className="text-[10px] text-gray-500 dark:text-gray-400">{series.first_air_date?.slice(0, 4) || '—'}</p>
-    </div>
+    </button>
   );
 }
 
-function BookCard({ volume }: { volume: GoogleBookVolume }) {
+function BookCard({ volume, onClick }: { volume: GoogleBookVolume; onClick: () => void }) {
   const info = volume.volumeInfo;
   const cover = info.imageLinks?.thumbnail?.replace('http://', 'https://').replace('zoom=1', 'zoom=2') || null;
   return (
-    <div className="flex-shrink-0 snap-start w-28 md:w-32">
-      <div className="aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2">
+    <button onClick={onClick} className="flex-shrink-0 snap-start w-28 md:w-32 text-left group">
+      <div className="aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2 group-hover:scale-[1.03] transition-transform duration-200">
         {cover ? <img src={cover} alt={info.title} className="w-full h-full object-cover" loading="lazy" />
           : <div className="w-full h-full flex items-center justify-center"><BookOpen size={22} className="text-gray-300 dark:text-gray-600" /></div>}
       </div>
-      <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate leading-tight">{info.title}</p>
+      <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{info.title}</p>
       <p className="text-[10px] text-gray-500 dark:text-gray-400">{info.authors?.join(', ') || '—'}</p>
-    </div>
+    </button>
   );
 }
 
@@ -164,7 +166,7 @@ function SkeletonRow() {
   );
 }
 
-// --- Settings panel ---
+// --- Settings panel with drag & drop ---
 
 function SettingsPanel({ sections, onToggle, onReorder, onClose, onAddCustom }: {
   sections: SectionConfig[];
@@ -176,11 +178,8 @@ function SettingsPanel({ sections, onToggle, onReorder, onClose, onAddCustom }: 
   const { t } = useTranslation();
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
-  const listRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
-
-  // Touch drag state
-  const touchState = useRef<{ startY: number; idx: number } | null>(null);
+  const touchState = useRef<{ idx: number } | null>(null);
 
   const getItemIndexAtY = useCallback((clientY: number): number | null => {
     for (let i = 0; i < itemRefs.current.length; i++) {
@@ -204,12 +203,10 @@ function SettingsPanel({ sections, onToggle, onReorder, onClose, onAddCustom }: 
     touchState.current = null;
   }, [sections, onReorder]);
 
-  // Mouse drag
   const handleMouseDown = useCallback((idx: number) => (e: React.MouseEvent) => {
     e.preventDefault();
     setDragIdx(idx);
     setOverIdx(idx);
-
     const onMouseMove = (ev: MouseEvent) => {
       const target = getItemIndexAtY(ev.clientY);
       if (target !== null) setOverIdx(target);
@@ -224,28 +221,24 @@ function SettingsPanel({ sections, onToggle, onReorder, onClose, onAddCustom }: 
     document.addEventListener('mouseup', onMouseUp);
   }, [getItemIndexAtY, finishDrag]);
 
-  // Touch drag
-  const handleTouchStart = useCallback((idx: number) => (e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    touchState.current = { startY: touch.clientY, idx };
+  const handleTouchStart = useCallback((idx: number) => () => {
+    touchState.current = { idx };
     setDragIdx(idx);
     setOverIdx(idx);
   }, []);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (touchState.current === null) return;
+    if (!touchState.current) return;
     e.preventDefault();
-    const touch = e.touches[0];
-    const target = getItemIndexAtY(touch.clientY);
+    const target = getItemIndexAtY(e.touches[0].clientY);
     if (target !== null) setOverIdx(target);
   }, [getItemIndexAtY]);
 
   const handleTouchEnd = useCallback(() => {
-    if (touchState.current === null || dragIdx === null) return;
+    if (!touchState.current || dragIdx === null) return;
     finishDrag(dragIdx, overIdx);
   }, [dragIdx, overIdx, finishDrag]);
 
-  // Compute display order with drag preview
   const displaySections = useMemo(() => {
     if (dragIdx === null || overIdx === null || dragIdx === overIdx) return sections;
     const preview = [...sections];
@@ -265,7 +258,7 @@ function SettingsPanel({ sections, onToggle, onReorder, onClose, onAddCustom }: 
           <button onClick={onClose} className="btn-ghost p-1.5"><X size={16} /></button>
         </div>
       </div>
-      <div ref={listRef} className="space-y-1" onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+      <div className="space-y-1" onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
         {displaySections.map((s, idx) => {
           const isDragging = dragIdx !== null && s.id === sections[dragIdx]?.id;
           return (
@@ -323,13 +316,7 @@ function AddSectionModal({ existingIds, onAdd, onClose }: {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('discover.sectionLabel')}</label>
-            <input
-              className="input"
-              value={value}
-              onChange={e => setValue(e.target.value)}
-              placeholder={t('discover.sectionPlaceholder')}
-              autoFocus
-            />
+            <input className="input" value={value} onChange={e => setValue(e.target.value)} placeholder={t('discover.sectionPlaceholder')} autoFocus />
           </div>
           <div className="flex gap-3">
             <button type="button" onClick={onClose} className="btn-ghost flex-1">{t('discover.cancel')}</button>
@@ -341,28 +328,28 @@ function AddSectionModal({ existingIds, onAdd, onClose }: {
   );
 }
 
-// --- Generic section-based discover ---
+// --- Section config hook (stable, no infinite loops) ---
 
-interface DiscoverSection {
-  id: string;
-  icon: React.ReactNode;
-  render: () => React.ReactNode;
-}
-
-function useDiscoverSections(mode: string, buildSections: () => DiscoverSection[]) {
-  const sections = useMemo(buildSections, [buildSections]);
-  const availableIds = useMemo(() => sections.map(s => s.id), [sections]);
+function useSectionConfig(mode: string, availableIds: string[]) {
+  // Stringify to get a stable dependency
+  const idsKey = availableIds.join('|');
 
   const [config, setConfig] = useState<SectionConfig[]>(() =>
     mergeConfig(loadSectionConfig(mode), availableIds)
   );
 
-  // Re-merge when available sections change (e.g. user adds books to a new genre)
+  // Only re-merge when the set of available IDs actually changes
   useEffect(() => {
-    setConfig(prev => mergeConfig(prev, availableIds));
-  }, [availableIds]);
+    setConfig(prev => {
+      const merged = mergeConfig(prev, availableIds);
+      // Avoid unnecessary state update
+      if (JSON.stringify(merged) === JSON.stringify(prev)) return prev;
+      return merged;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idsKey]);
 
-  // Persist on change
+  // Persist
   useEffect(() => {
     saveSectionConfig(mode, config);
   }, [mode, config]);
@@ -379,17 +366,15 @@ function useDiscoverSections(mode: string, buildSections: () => DiscoverSection[
     setConfig(prev => [...prev, { id: label, visible: true }]);
   }, []);
 
-  const orderedVisible = useMemo(() => {
-    return config
-      .filter(c => c.visible)
-      .map(c => sections.find(s => s.id === c.id))
-      .filter(Boolean) as DiscoverSection[];
-  }, [config, sections]);
+  const visibleIds = useMemo(() =>
+    config.filter(c => c.visible).map(c => c.id),
+    [config]
+  );
 
-  return { config, orderedVisible, toggle, reorder, addCustom, sections };
+  return { config, visibleIds, toggle, reorder, addCustom };
 }
 
-// --- Mode-specific discover ---
+// --- DiscoverBooks ---
 
 function DiscoverBooks() {
   const { books } = useBooks();
@@ -398,90 +383,65 @@ function DiscoverBooks() {
   const [loading, setLoading] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [prefill, setPrefill] = useState<ReturnType<typeof extractBookData> | null>(null);
 
+  const bookTitles = useMemo(() => new Set(books.map(b => normalizeStr(b.title))), [books]);
   const genres = useMemo(() => topGenres(books), [books]);
   const authors = useMemo(() => topAuthors(books), [books]);
+  const trendingLabel = t('discover.trending');
 
-  const buildSections = useCallback((): DiscoverSection[] => {
-    const sections: DiscoverSection[] = [
-      { id: t('discover.trending'), icon: <TrendingUp size={14} />, render: () => {
-        const items = data[t('discover.trending')];
-        if (!items) return <SkeletonRow />;
-        return items.length > 0 ? <PosterRow>{items.map(v => <BookCard key={v.id} volume={v} />)}</PosterRow> : <p className="text-sm text-gray-400">{t('discover.noResults')}</p>;
-      }},
-    ];
-    for (const genre of genres) {
-      sections.push({ id: genre, icon: <Sparkles size={14} />, render: () => {
-        const items = data[genre];
-        if (!items) return <SkeletonRow />;
-        return items.length > 0 ? <PosterRow>{items.map(v => <BookCard key={v.id} volume={v} />)}</PosterRow> : null;
-      }});
+  // Build stable list of section IDs (doesn't depend on fetched data)
+  const availableIds = useMemo(() => {
+    const ids = [trendingLabel, ...genres, ...authors.map(a => t('discover.moreBy', { name: a }))];
+    const knownSet = new Set(ids);
+    const saved = loadSectionConfig('books');
+    for (const s of saved) {
+      if (!knownSet.has(s.id)) ids.push(s.id);
     }
-    for (const author of authors) {
-      const label = t('discover.moreBy', { name: author });
-      sections.push({ id: label, icon: <Sparkles size={14} />, render: () => {
-        const items = data[label];
-        if (!items) return <SkeletonRow />;
-        return items.length > 0 ? <PosterRow>{items.map(v => <BookCard key={v.id} volume={v} />)}</PosterRow> : null;
-      }});
-    }
-    // Custom sections from config that aren't in the default list
-    const knownIds = new Set([t('discover.trending'), ...genres, ...authors.map(a => t('discover.moreBy', { name: a }))]);
-    const savedConfig = loadSectionConfig('books');
-    for (const s of savedConfig) {
-      if (!knownIds.has(s.id)) {
-        sections.push({ id: s.id, icon: <Sparkles size={14} />, render: () => {
-          const items = data[s.id];
-          if (!items) return <SkeletonRow />;
-          return items.length > 0 ? <PosterRow>{items.map(v => <BookCard key={v.id} volume={v} />)}</PosterRow> : <p className="text-sm text-gray-400">{t('discover.noResults')}</p>;
-        }});
+    return ids;
+  }, [trendingLabel, genres, authors, t]);
+
+  const { config, visibleIds, toggle, reorder, addCustom } = useSectionConfig('books', availableIds);
+
+  // Fetch data — only depends on stable keys
+  const configIds = useMemo(() => config.map(c => c.id).join('|'), [config]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const result: Record<string, GoogleBookVolume[]> = {};
+
+      let trending = getCache<GoogleBookVolume[]>('books_trending');
+      if (!trending) { trending = await fetchBooksByGenre('bestseller', 12); setCache('books_trending', trending); }
+      result[trendingLabel] = trending;
+
+      for (const genre of genres) {
+        let items = getCache<GoogleBookVolume[]>(`books_genre_${genre}`);
+        if (!items) { items = await fetchBooksByGenre(genre, 8); setCache(`books_genre_${genre}`, items); }
+        result[genre] = items;
       }
-    }
-    return sections;
-  }, [genres, authors, data, t]);
-
-  const { config, orderedVisible, toggle, reorder, addCustom } = useDiscoverSections('books', buildSections);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    const result: Record<string, GoogleBookVolume[]> = {};
-
-    const trendingKey = t('discover.trending');
-    let trending = getCache<GoogleBookVolume[]>('books_trending');
-    if (!trending) { trending = await fetchBooksByGenre('bestseller', 12); setCache('books_trending', trending); }
-    result[trendingKey] = trending;
-
-    for (const genre of genres) {
-      let items = getCache<GoogleBookVolume[]>(`books_genre_${genre}`);
-      if (!items) { items = await fetchBooksByGenre(genre, 8); setCache(`books_genre_${genre}`, items); }
-      result[genre] = items;
-    }
-
-    for (const author of authors) {
-      const label = t('discover.moreBy', { name: author });
-      let items = getCache<GoogleBookVolume[]>(`books_author_${author}`);
-      if (!items) { items = await fetchByAuthor(author, 8); setCache(`books_author_${author}`, items); }
-      result[label] = items;
-    }
-
-    // Load custom sections
-    for (const s of config) {
-      if (!result[s.id]) {
-        let items = getCache<GoogleBookVolume[]>(`books_custom_${s.id}`);
-        if (!items) { items = await fetchBooksByGenre(s.id, 12); setCache(`books_custom_${s.id}`, items); }
-        result[s.id] = items;
+      for (const author of authors) {
+        const label = t('discover.moreBy', { name: author });
+        let items = getCache<GoogleBookVolume[]>(`books_author_${author}`);
+        if (!items) { items = await fetchByAuthor(author, 8); setCache(`books_author_${author}`, items); }
+        result[label] = items;
       }
-    }
-
-    setData(result);
-    setLoading(false);
-  }, [genres, authors, config, t]);
-
-  useEffect(() => { load(); }, [load]);
+      // Custom sections
+      for (const id of configIds.split('|')) {
+        if (id && !result[id]) {
+          let items = getCache<GoogleBookVolume[]>(`books_custom_${id}`);
+          if (!items) { items = await fetchBooksByGenre(id, 12); setCache(`books_custom_${id}`, items); }
+          result[id] = items;
+        }
+      }
+      if (!cancelled) { setData(result); setLoading(false); }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trendingLabel, genres.join(','), authors.join(','), configIds]);
 
   const handleAddCustom = useCallback((label: string) => {
     addCustom(label);
-    // Trigger fetch for the new section
     (async () => {
       let items = getCache<GoogleBookVolume[]>(`books_custom_${label}`);
       if (!items) { items = await fetchBooksByGenre(label, 12); setCache(`books_custom_${label}`, items); }
@@ -493,22 +453,26 @@ function DiscoverBooks() {
     <>
       {settingsOpen && <SettingsPanel sections={config} onToggle={toggle} onReorder={reorder} onClose={() => setSettingsOpen(false)} onAddCustom={() => setAddModalOpen(true)} />}
       {addModalOpen && <AddSectionModal existingIds={config.map(s => s.id)} onAdd={handleAddCustom} onClose={() => setAddModalOpen(false)} />}
+      {prefill && <AddBookModal prefill={prefill} onClose={() => setPrefill(null)} />}
       <div className="flex justify-end mb-4">
         <button onClick={() => setSettingsOpen(o => !o)} className={`btn-ghost p-2 transition-colors ${settingsOpen ? 'text-amber-500' : ''}`}>
           <Settings2 size={18} />
         </button>
       </div>
-      {loading && orderedVisible.length === 0 ? (
+      {loading ? (
         <div className="space-y-8"><SkeletonRow /><SkeletonRow /></div>
       ) : (
         <div className="space-y-8">
-          {orderedVisible.map(s => {
-            const content = s.render();
-            if (!content) return null;
+          {visibleIds.map(id => {
+            const items = data[id];
+            if (!items || items.length === 0) return null;
+            const filtered = items.filter(v => !bookTitles.has(normalizeStr(v.volumeInfo.title)));
+            if (filtered.length === 0) return null;
+            const isTrending = id === trendingLabel;
             return (
-              <div key={s.id}>
-                <SectionTitle icon={s.icon} label={s.id} />
-                {content}
+              <div key={id}>
+                <SectionTitle icon={isTrending ? <TrendingUp size={14} /> : <Sparkles size={14} />} label={id} />
+                <PosterRow>{filtered.map(v => <BookCard key={v.id} volume={v} onClick={() => setPrefill(extractBookData(v))} />)}</PosterRow>
               </div>
             );
           })}
@@ -518,6 +482,8 @@ function DiscoverBooks() {
   );
 }
 
+// --- DiscoverMovies ---
+
 function DiscoverMovies() {
   const { movies } = useMovies();
   const { t } = useTranslation();
@@ -525,84 +491,62 @@ function DiscoverMovies() {
   const [loading, setLoading] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [prefill, setPrefill] = useState<ReturnType<typeof extractMovieData> | null>(null);
 
+  const movieTitles = useMemo(() => new Set(movies.map(m => normalizeStr(m.title))), [movies]);
   const genres = useMemo(() => topGenres(movies), [movies]);
   const directors = useMemo(() => topDirectors(movies), [movies]);
+  const trendingLabel = t('discover.trending');
 
-  const buildSections = useCallback((): DiscoverSection[] => {
-    const sections: DiscoverSection[] = [
-      { id: t('discover.trending'), icon: <TrendingUp size={14} />, render: () => {
-        const items = data[t('discover.trending')];
-        if (!items) return <SkeletonRow />;
-        return items.length > 0 ? <PosterRow>{items.map(m => <MovieCard key={m.id} movie={m} />)}</PosterRow> : <p className="text-sm text-gray-400">{t('discover.noResults')}</p>;
-      }},
-    ];
-    for (const genre of genres) {
-      sections.push({ id: genre, icon: <Sparkles size={14} />, render: () => {
-        const items = data[genre];
-        if (!items) return <SkeletonRow />;
-        return items.length > 0 ? <PosterRow>{items.map(m => <MovieCard key={m.id} movie={m} />)}</PosterRow> : null;
-      }});
-    }
-    for (const director of directors) {
-      const label = t('discover.moreBy', { name: director });
-      sections.push({ id: label, icon: <Sparkles size={14} />, render: () => {
-        const items = data[label];
-        if (!items) return <SkeletonRow />;
-        return items.length > 0 ? <PosterRow>{items.map(m => <MovieCard key={m.id} movie={m} />)}</PosterRow> : null;
-      }});
-    }
-    const knownIds = new Set([t('discover.trending'), ...genres, ...directors.map(d => t('discover.moreBy', { name: d }))]);
-    const savedConfig = loadSectionConfig('movies');
-    for (const s of savedConfig) {
-      if (!knownIds.has(s.id)) {
-        sections.push({ id: s.id, icon: <Sparkles size={14} />, render: () => {
-          const items = data[s.id];
-          if (!items) return <SkeletonRow />;
-          return items.length > 0 ? <PosterRow>{items.map(m => <MovieCard key={m.id} movie={m} />)}</PosterRow> : <p className="text-sm text-gray-400">{t('discover.noResults')}</p>;
-        }});
+  const availableIds = useMemo(() => {
+    const ids = [trendingLabel, ...genres, ...directors.map(d => t('discover.moreBy', { name: d }))];
+    const knownSet = new Set(ids);
+    const saved = loadSectionConfig('movies');
+    for (const s of saved) { if (!knownSet.has(s.id)) ids.push(s.id); }
+    return ids;
+  }, [trendingLabel, genres, directors, t]);
+
+  const { config, visibleIds, toggle, reorder, addCustom } = useSectionConfig('movies', availableIds);
+
+  const configIds = useMemo(() => config.map(c => c.id).join('|'), [config]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const result: Record<string, TmdbMovie[]> = {};
+
+      let trending = getCache<TmdbMovie[]>('movies_trending');
+      if (!trending) { trending = await fetchTrendingMovies(12); setCache('movies_trending', trending); }
+      result[trendingLabel] = trending;
+
+      for (const genre of genres) {
+        let items = getCache<TmdbMovie[]>(`movies_genre_${genre}`);
+        if (!items) { items = await fetchMoviesByGenre(genre, 12); setCache(`movies_genre_${genre}`, items); }
+        result[genre] = items;
       }
-    }
-    return sections;
-  }, [genres, directors, data, t]);
-
-  const { config, orderedVisible, toggle, reorder, addCustom } = useDiscoverSections('movies', buildSections);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    const result: Record<string, TmdbMovie[]> = {};
-
-    const trendingKey = t('discover.trending');
-    let trending = getCache<TmdbMovie[]>('movies_trending');
-    if (!trending) { trending = await fetchTrendingMovies(12); setCache('movies_trending', trending); }
-    result[trendingKey] = trending;
-
-    for (const genre of genres) {
-      let items = getCache<TmdbMovie[]>(`movies_genre_${genre}`);
-      if (!items) { items = await fetchMoviesByGenre(genre, 12); setCache(`movies_genre_${genre}`, items); }
-      result[genre] = items;
-    }
-
-    for (const director of directors) {
-      const label = t('discover.moreBy', { name: director });
-      let items = getCache<TmdbMovie[]>(`movies_director_${director}`);
-      if (!items) { items = await fetchMoviesByGenre(director, 8); setCache(`movies_director_${director}`, items); }
-      result[label] = items;
-    }
-
-    for (const s of config) {
-      if (!result[s.id]) {
-        let items = getCache<TmdbMovie[]>(`movies_custom_${s.id}`);
-        if (!items) { items = await fetchMoviesByGenre(s.id, 12); setCache(`movies_custom_${s.id}`, items); }
-        result[s.id] = items;
+      for (const director of directors) {
+        const label = t('discover.moreBy', { name: director });
+        let items = getCache<TmdbMovie[]>(`movies_director_${director}`);
+        if (!items) { items = await fetchMoviesByGenre(director, 8); setCache(`movies_director_${director}`, items); }
+        result[label] = items;
       }
-    }
+      for (const id of configIds.split('|')) {
+        if (id && !result[id]) {
+          let items = getCache<TmdbMovie[]>(`movies_custom_${id}`);
+          if (!items) { items = await fetchMoviesByGenre(id, 12); setCache(`movies_custom_${id}`, items); }
+          result[id] = items;
+        }
+      }
+      if (!cancelled) { setData(result); setLoading(false); }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trendingLabel, genres.join(','), directors.join(','), configIds]);
 
-    setData(result);
-    setLoading(false);
-  }, [genres, directors, config, t]);
-
-  useEffect(() => { load(); }, [load]);
+  const handleClickMovie = useCallback(async (tmdbMovie: TmdbMovie) => {
+    const details = await fetchMovieDetails(tmdbMovie.id);
+    setPrefill(extractMovieData(details ?? tmdbMovie));
+  }, []);
 
   const handleAddCustom = useCallback((label: string) => {
     addCustom(label);
@@ -617,25 +561,36 @@ function DiscoverMovies() {
     <>
       {settingsOpen && <SettingsPanel sections={config} onToggle={toggle} onReorder={reorder} onClose={() => setSettingsOpen(false)} onAddCustom={() => setAddModalOpen(true)} />}
       {addModalOpen && <AddSectionModal existingIds={config.map(s => s.id)} onAdd={handleAddCustom} onClose={() => setAddModalOpen(false)} />}
+      {prefill && <AddMovieModal prefill={prefill} onClose={() => setPrefill(null)} />}
       <div className="flex justify-end mb-4">
         <button onClick={() => setSettingsOpen(o => !o)} className={`btn-ghost p-2 transition-colors ${settingsOpen ? 'text-amber-500' : ''}`}>
           <Settings2 size={18} />
         </button>
       </div>
-      {loading && orderedVisible.length === 0 ? (
+      {loading ? (
         <div className="space-y-8"><SkeletonRow /><SkeletonRow /></div>
       ) : (
         <div className="space-y-8">
-          {orderedVisible.map(s => {
-            const content = s.render();
-            if (!content) return null;
-            return <div key={s.id}><SectionTitle icon={s.icon} label={s.id} />{content}</div>;
+          {visibleIds.map(id => {
+            const items = data[id];
+            if (!items || items.length === 0) return null;
+            const filtered = items.filter(m => !movieTitles.has(normalizeStr(m.title)));
+            if (filtered.length === 0) return null;
+            const isTrending = id === trendingLabel;
+            return (
+              <div key={id}>
+                <SectionTitle icon={isTrending ? <TrendingUp size={14} /> : <Sparkles size={14} />} label={id} />
+                <PosterRow>{filtered.map(m => <MovieCard key={m.id} movie={m} onClick={() => handleClickMovie(m)} />)}</PosterRow>
+              </div>
+            );
           })}
         </div>
       )}
     </>
   );
 }
+
+// --- DiscoverSeries ---
 
 function DiscoverSeries() {
   const { series } = useSeries();
@@ -644,84 +599,62 @@ function DiscoverSeries() {
   const [loading, setLoading] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [prefill, setPrefill] = useState<ReturnType<typeof extractSeriesData> | null>(null);
 
+  const seriesTitles = useMemo(() => new Set(series.map(s => normalizeStr(s.title))), [series]);
   const genres = useMemo(() => topGenres(series), [series]);
   const creators = useMemo(() => topCreators(series), [series]);
+  const trendingLabel = t('discover.trending');
 
-  const buildSections = useCallback((): DiscoverSection[] => {
-    const sections: DiscoverSection[] = [
-      { id: t('discover.trending'), icon: <TrendingUp size={14} />, render: () => {
-        const items = data[t('discover.trending')];
-        if (!items) return <SkeletonRow />;
-        return items.length > 0 ? <PosterRow>{items.map(s => <SeriesTmdbCard key={s.id} series={s} />)}</PosterRow> : <p className="text-sm text-gray-400">{t('discover.noResults')}</p>;
-      }},
-    ];
-    for (const genre of genres) {
-      sections.push({ id: genre, icon: <Sparkles size={14} />, render: () => {
-        const items = data[genre];
-        if (!items) return <SkeletonRow />;
-        return items.length > 0 ? <PosterRow>{items.map(s => <SeriesTmdbCard key={s.id} series={s} />)}</PosterRow> : null;
-      }});
-    }
-    for (const creator of creators) {
-      const label = t('discover.moreBy', { name: creator });
-      sections.push({ id: label, icon: <Sparkles size={14} />, render: () => {
-        const items = data[label];
-        if (!items) return <SkeletonRow />;
-        return items.length > 0 ? <PosterRow>{items.map(s => <SeriesTmdbCard key={s.id} series={s} />)}</PosterRow> : null;
-      }});
-    }
-    const knownIds = new Set([t('discover.trending'), ...genres, ...creators.map(c => t('discover.moreBy', { name: c }))]);
-    const savedConfig = loadSectionConfig('series');
-    for (const s of savedConfig) {
-      if (!knownIds.has(s.id)) {
-        sections.push({ id: s.id, icon: <Sparkles size={14} />, render: () => {
-          const items = data[s.id];
-          if (!items) return <SkeletonRow />;
-          return items.length > 0 ? <PosterRow>{items.map(s2 => <SeriesTmdbCard key={s2.id} series={s2} />)}</PosterRow> : <p className="text-sm text-gray-400">{t('discover.noResults')}</p>;
-        }});
+  const availableIds = useMemo(() => {
+    const ids = [trendingLabel, ...genres, ...creators.map(c => t('discover.moreBy', { name: c }))];
+    const knownSet = new Set(ids);
+    const saved = loadSectionConfig('series');
+    for (const s of saved) { if (!knownSet.has(s.id)) ids.push(s.id); }
+    return ids;
+  }, [trendingLabel, genres, creators, t]);
+
+  const { config, visibleIds, toggle, reorder, addCustom } = useSectionConfig('series', availableIds);
+
+  const configIds = useMemo(() => config.map(c => c.id).join('|'), [config]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const result: Record<string, TmdbSeries[]> = {};
+
+      let trending = getCache<TmdbSeries[]>('series_trending');
+      if (!trending) { trending = await fetchTrendingSeries(12); setCache('series_trending', trending); }
+      result[trendingLabel] = trending;
+
+      for (const genre of genres) {
+        let items = getCache<TmdbSeries[]>(`series_genre_${genre}`);
+        if (!items) { items = await fetchSeriesByGenre(genre, 12); setCache(`series_genre_${genre}`, items); }
+        result[genre] = items;
       }
-    }
-    return sections;
-  }, [genres, creators, data, t]);
-
-  const { config, orderedVisible, toggle, reorder, addCustom } = useDiscoverSections('series', buildSections);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    const result: Record<string, TmdbSeries[]> = {};
-
-    const trendingKey = t('discover.trending');
-    let trending = getCache<TmdbSeries[]>('series_trending');
-    if (!trending) { trending = await fetchTrendingSeries(12); setCache('series_trending', trending); }
-    result[trendingKey] = trending;
-
-    for (const genre of genres) {
-      let items = getCache<TmdbSeries[]>(`series_genre_${genre}`);
-      if (!items) { items = await fetchSeriesByGenre(genre, 12); setCache(`series_genre_${genre}`, items); }
-      result[genre] = items;
-    }
-
-    for (const creator of creators) {
-      const label = t('discover.moreBy', { name: creator });
-      let items = getCache<TmdbSeries[]>(`series_creator_${creator}`);
-      if (!items) { items = await fetchSeriesByGenre(creator, 8); setCache(`series_creator_${creator}`, items); }
-      result[label] = items;
-    }
-
-    for (const s of config) {
-      if (!result[s.id]) {
-        let items = getCache<TmdbSeries[]>(`series_custom_${s.id}`);
-        if (!items) { items = await fetchSeriesByGenre(s.id, 12); setCache(`series_custom_${s.id}`, items); }
-        result[s.id] = items;
+      for (const creator of creators) {
+        const label = t('discover.moreBy', { name: creator });
+        let items = getCache<TmdbSeries[]>(`series_creator_${creator}`);
+        if (!items) { items = await fetchSeriesByGenre(creator, 8); setCache(`series_creator_${creator}`, items); }
+        result[label] = items;
       }
-    }
+      for (const id of configIds.split('|')) {
+        if (id && !result[id]) {
+          let items = getCache<TmdbSeries[]>(`series_custom_${id}`);
+          if (!items) { items = await fetchSeriesByGenre(id, 12); setCache(`series_custom_${id}`, items); }
+          result[id] = items;
+        }
+      }
+      if (!cancelled) { setData(result); setLoading(false); }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trendingLabel, genres.join(','), creators.join(','), configIds]);
 
-    setData(result);
-    setLoading(false);
-  }, [genres, creators, config, t]);
-
-  useEffect(() => { load(); }, [load]);
+  const handleClickSeries = useCallback(async (tmdbSeries: TmdbSeries) => {
+    const details = await fetchSeriesDetails(tmdbSeries.id);
+    setPrefill(extractSeriesData(details ?? tmdbSeries));
+  }, []);
 
   const handleAddCustom = useCallback((label: string) => {
     addCustom(label);
@@ -736,19 +669,28 @@ function DiscoverSeries() {
     <>
       {settingsOpen && <SettingsPanel sections={config} onToggle={toggle} onReorder={reorder} onClose={() => setSettingsOpen(false)} onAddCustom={() => setAddModalOpen(true)} />}
       {addModalOpen && <AddSectionModal existingIds={config.map(s => s.id)} onAdd={handleAddCustom} onClose={() => setAddModalOpen(false)} />}
+      {prefill && <AddSeriesModal prefill={prefill} onClose={() => setPrefill(null)} />}
       <div className="flex justify-end mb-4">
         <button onClick={() => setSettingsOpen(o => !o)} className={`btn-ghost p-2 transition-colors ${settingsOpen ? 'text-amber-500' : ''}`}>
           <Settings2 size={18} />
         </button>
       </div>
-      {loading && orderedVisible.length === 0 ? (
+      {loading ? (
         <div className="space-y-8"><SkeletonRow /><SkeletonRow /></div>
       ) : (
         <div className="space-y-8">
-          {orderedVisible.map(s => {
-            const content = s.render();
-            if (!content) return null;
-            return <div key={s.id}><SectionTitle icon={s.icon} label={s.id} />{content}</div>;
+          {visibleIds.map(id => {
+            const items = data[id];
+            if (!items || items.length === 0) return null;
+            const filtered = items.filter(s => !seriesTitles.has(normalizeStr(s.name)));
+            if (filtered.length === 0) return null;
+            const isTrending = id === trendingLabel;
+            return (
+              <div key={id}>
+                <SectionTitle icon={isTrending ? <TrendingUp size={14} /> : <Sparkles size={14} />} label={id} />
+                <PosterRow>{filtered.map(s => <SeriesTmdbCard key={s.id} series={s} onClick={() => handleClickSeries(s)} />)}</PosterRow>
+              </div>
+            );
           })}
         </div>
       )}
@@ -761,7 +703,7 @@ export default function Discover() {
   const { t } = useTranslation();
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
+    <div className="max-w-2xl mx-auto px-4 py-8 pb-36 md:pb-8">
       <div className="flex items-center gap-3 mb-8">
         <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center">
           <Compass size={20} className="text-amber-500" />

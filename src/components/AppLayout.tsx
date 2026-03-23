@@ -36,7 +36,7 @@ export default function AppLayout() {
       <MobileTopBar onOpenSettings={() => setSettingsOpen(true)} />
 
       {/* Main content */}
-      <main className="md:ml-60 min-h-screen pb-20 md:pb-0">
+      <main className="md:ml-60 min-h-screen pb-36 md:pb-0">
         <Outlet />
       </main>
 
