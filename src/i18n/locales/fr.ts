@@ -54,8 +54,11 @@ const fr = {
     removeFromCategory: 'Retirer de la collection',
   },
   discover: {
-    title: 'En cours de développement',
-    description: 'La fonctionnalité Découvrir est en cours de refonte. Revenez bientôt !',
+    title: 'Découvrir',
+    subtitle: 'Recommandations basées sur vos goûts',
+    trending: 'Tendances de la semaine',
+    noResults: 'Rien à afficher pour le moment.',
+    moreBy: 'Plus de {{name}}',
   },
   addBook: {
     title: 'Ajouter à la bibliothèque',

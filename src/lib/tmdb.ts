@@ -63,6 +63,52 @@ export function extractMovieData(movie: TmdbMovie) {
   };
 }
 
+// --- Trending / Discover ---
+
+export async function fetchTrendingMovies(maxResults = 12): Promise<TmdbMovie[]> {
+  try {
+    const res = await fetch(buildUrl('/trending/movie/week', { language: 'en-US' }));
+    if (!res.ok) return [];
+    const data = await res.json();
+    return ((data.results as TmdbMovie[]) ?? []).slice(0, maxResults);
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchTrendingSeries(maxResults = 12): Promise<TmdbSeries[]> {
+  try {
+    const res = await fetch(buildUrl('/trending/tv/week', { language: 'en-US' }));
+    if (!res.ok) return [];
+    const data = await res.json();
+    return ((data.results as TmdbSeries[]) ?? []).slice(0, maxResults);
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchMoviesByGenre(genreQuery: string, maxResults = 12): Promise<TmdbMovie[]> {
+  try {
+    const res = await fetch(buildUrl('/search/movie', { query: genreQuery, include_adult: 'false', language: 'en-US' }));
+    if (!res.ok) return [];
+    const data = await res.json();
+    return ((data.results as TmdbMovie[]) ?? []).slice(0, maxResults);
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchSeriesByGenre(genreQuery: string, maxResults = 12): Promise<TmdbSeries[]> {
+  try {
+    const res = await fetch(buildUrl('/search/tv', { query: genreQuery, include_adult: 'false', language: 'en-US' }));
+    if (!res.ok) return [];
+    const data = await res.json();
+    return ((data.results as TmdbSeries[]) ?? []).slice(0, maxResults);
+  } catch {
+    return [];
+  }
+}
+
 // --- TV Series ---
 
 export async function searchSeries(query: string, maxResults = 8): Promise<TmdbSeries[]> {

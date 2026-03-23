@@ -54,8 +54,11 @@ const en = {
     removeFromCategory: 'Remove from collection',
   },
   discover: {
-    title: 'Work in progress',
-    description: 'The Discover feature is currently being reworked. Check back soon!',
+    title: 'Discover',
+    subtitle: 'Recommendations based on your tastes',
+    trending: 'Trending this week',
+    noResults: 'Nothing to show yet.',
+    moreBy: 'More by {{name}}',
   },
   addBook: {
     title: 'Add to Library',
