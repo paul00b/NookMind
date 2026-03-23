@@ -56,6 +56,48 @@ function WantToWatchSlider({ onSelect }: { onSelect: (s: Series) => void }) {
   );
 }
 
+function WatchingSlider({ onSelect }: { onSelect: (s: Series) => void }) {
+  const { series } = useSeries();
+  const { t } = useTranslation();
+
+  const watching = series
+    .filter(s => s.status === 'watching')
+    .slice(0, 10);
+
+  if (watching.length === 0) return null;
+
+  return (
+    <div className="w-full max-w-xl mt-10">
+      <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">
+        {t('seriesHome.watching')}
+      </h2>
+      <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        {watching.map(s => (
+          <div key={s.id} onClick={() => onSelect(s)} className="flex-shrink-0 snap-start group cursor-pointer">
+            <div className="w-20 md:w-28 aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2 group-hover:scale-[1.03] transition-transform duration-200 relative">
+              {s.poster_url ? (
+                <img src={s.poster_url} alt={s.title} className="w-full h-full object-cover" loading="lazy" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Tv size={22} className="text-gray-300 dark:text-gray-600" />
+                </div>
+              )}
+              <span className="absolute bottom-1.5 right-1.5 text-[10px] font-bold bg-blue-500 text-white px-1.5 py-0.5 rounded-md">
+                S{s.watched_seasons.length}/{s.seasons ?? '?'}
+              </span>
+            </div>
+            <div className="w-20 md:w-28 text-left">
+              <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                {s.title}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function LastWatchedSlider({ onSelect }: { onSelect: (s: Series) => void }) {
   const { series } = useSeries();
   const { t } = useTranslation();
@@ -267,6 +309,7 @@ export default function SeriesHome() {
         <Plus size={16} /> {t('seriesHome.addManually')}
       </button>
 
+      <WatchingSlider onSelect={setSelectedSeries} />
       <WantToWatchSlider onSelect={setSelectedSeries} />
       <LastWatchedSlider onSelect={setSelectedSeries} />
 

@@ -248,6 +248,7 @@ const fr = {
     addManually: 'Ajout manuel',
     lastWatched: 'Dernières vues',
     wantToWatch: 'À voir',
+    watching: 'En cours',
     inList: 'Déjà ajoutée',
   },
   seriesLibrary: {
@@ -255,6 +256,7 @@ const fr = {
     seriesCount_one: '{{count}} série dans votre collection',
     seriesCount_other: '{{count}} séries dans votre collection',
     watched: 'Vues',
+    watching: 'En cours',
     wantToWatch: 'À voir',
     noSeriesWatched: "Aucune série vue pour l'instant",
     allGenres: 'Tous les genres',
@@ -296,6 +298,7 @@ const fr = {
     statusLabel: 'Statut',
     wantToWatch: 'À voir',
     alreadyWatched: 'Déjà vue',
+    watchedSeasonsLabel: 'Saisons vues',
     ratingLabel: 'Note',
     noteLabel: 'Note personnelle',
     notePlaceholder: 'Vos impressions...',
@@ -316,8 +319,10 @@ const fr = {
     save: 'Enregistrer',
     cancel: 'Annuler',
     watched: 'Vue',
+    watching: 'En cours',
     wantToWatch: 'À voir',
     seasons: '{{count}} saisons',
+    seasonsProgress: '{{watched}}/{{total}} saisons vues',
     moveToWatched: 'Déplacer vers Vue',
     moveToWantToWatch: 'Déplacer vers À voir',
     delete: 'Supprimer',
@@ -333,6 +338,7 @@ const fr = {
   },
   seriesCard: {
     watched: 'Vue',
+    watching: 'En cours',
     wantToWatch: 'À voir',
   },
 };

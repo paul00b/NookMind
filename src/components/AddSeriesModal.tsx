@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
 import { X, Tv, AlertTriangle } from 'lucide-react';
 import { useSeries } from '../context/SeriesContext';
-import type { Series, SeriesStatus } from '../types';
+import type { Series } from '../types';
 import StarRating from './StarRating';
+import SeasonGrid, { deriveSeriesStatus } from './SeasonGrid';
 import { useTranslation } from 'react-i18next';
 
 const normalize = (s: string) => s.toLowerCase().trim().replace(/\s+/g, ' ');
@@ -17,6 +18,7 @@ const EMPTY: SeriesFormData = {
   poster_url: null,
   first_air_date: null,
   seasons: null,
+  watched_seasons: [],
   genre: null,
   status: 'want_to_watch',
   rating: null,
@@ -42,11 +44,26 @@ export default function AddSeriesModal({ prefill, onClose }: Props) {
   const set = <K extends keyof SeriesFormData>(k: K, v: SeriesFormData[K]) =>
     setForm(f => ({ ...f, [k]: v }));
 
+  const derivedStatus = deriveSeriesStatus(form.watched_seasons, form.seasons);
+  const showRating = derivedStatus === 'watched';
+
+  const handleSeasonsChange = (watched: number[]) => {
+    const newStatus = deriveSeriesStatus(watched, form.seasons);
+    setForm(f => ({ ...f, watched_seasons: watched, status: newStatus, ...(newStatus === 'want_to_watch' ? { rating: null } : {}) }));
+  };
+
+  const handleTotalSeasonsChange = (total: number | null) => {
+    // If total decreased, remove watched seasons above new total
+    const newWatched = total ? form.watched_seasons.filter(s => s <= total) : form.watched_seasons;
+    const newStatus = deriveSeriesStatus(newWatched, total);
+    setForm(f => ({ ...f, seasons: total, watched_seasons: newWatched, status: newStatus }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim()) return;
     setSaving(true);
-    const result = await addSeries(form);
+    const result = await addSeries({ ...form, status: derivedStatus });
     setSaving(false);
     if (result) onClose();
   };
@@ -95,7 +112,7 @@ export default function AddSeriesModal({ prefill, onClose }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addSeries.seasonsLabel')}</label>
-              <input className="input" type="number" min="1" value={form.seasons || ''} onChange={e => set('seasons', e.target.value ? parseInt(e.target.value) : null)} placeholder={t('addSeries.seasonsPlaceholder')} />
+              <input className="input" type="number" min="1" value={form.seasons || ''} onChange={e => handleTotalSeasonsChange(e.target.value ? parseInt(e.target.value) : null)} placeholder={t('addSeries.seasonsPlaceholder')} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addSeries.posterUrlLabel')}</label>
@@ -103,27 +120,20 @@ export default function AddSeriesModal({ prefill, onClose }: Props) {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('addSeries.statusLabel')}</label>
-            <div className="flex gap-2">
-              {(['want_to_watch', 'watched'] as SeriesStatus[]).map(s => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => { set('status', s); if (s === 'want_to_watch') set('rating', null); }}
-                  className={`flex-1 py-2.5 rounded-full text-sm font-medium border transition-all ${
-                    form.status === s
-                      ? 'bg-amber-500 text-white border-amber-500'
-                      : 'bg-transparent text-gray-600 dark:text-gray-400 border-black/10 dark:border-white/10 hover:border-amber-500/50'
-                  }`}
-                >
-                  {s === 'watched' ? t('addSeries.alreadyWatched') : t('addSeries.wantToWatch')}
-                </button>
-              ))}
+          {/* Season grid */}
+          {form.seasons && form.seasons > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('addSeries.watchedSeasonsLabel')}</label>
+              <SeasonGrid
+                totalSeasons={form.seasons}
+                watchedSeasons={form.watched_seasons}
+                onChange={handleSeasonsChange}
+              />
             </div>
-          </div>
+          )}
 
-          {form.status === 'watched' && (
+          {/* Rating (only if all seasons watched) */}
+          {showRating && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('addSeries.ratingLabel')}</label>
               <StarRating value={form.rating} onChange={v => set('rating', v)} size={24} />

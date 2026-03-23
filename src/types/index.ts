@@ -86,7 +86,7 @@ export interface BookCategory {
   book_ids: string[];
 }
 
-export type SeriesStatus = 'watched' | 'want_to_watch';
+export type SeriesStatus = 'watched' | 'want_to_watch' | 'watching';
 
 export interface Series {
   id: string;
@@ -98,6 +98,7 @@ export interface Series {
   poster_url: string | null;
   first_air_date: string | null;
   seasons: number | null;
+  watched_seasons: number[];
   genre: string | null;
   status: SeriesStatus;
   rating: number | null;

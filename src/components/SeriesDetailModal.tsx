@@ -3,7 +3,8 @@ import type { Series } from '../types';
 import { useSeries } from '../context/SeriesContext';
 import { useSeriesCategories } from '../context/SeriesCategoriesContext';
 import StarRating from './StarRating';
-import { X, Pencil, Check, Trash2, Tv, ArrowLeftRight, ChevronDown, ChevronUp, FolderPlus, FolderMinus } from 'lucide-react';
+import SeasonGrid, { deriveSeriesStatus } from './SeasonGrid';
+import { X, Pencil, Check, Trash2, Tv, ChevronDown, ChevronUp, FolderPlus, FolderMinus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 
@@ -35,13 +36,12 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
     toast.success(t('seriesDetail.noteSaved'));
   };
 
-  const handleToggleStatus = async () => {
-    const newStatus = localSeries.status === 'watched' ? 'want_to_watch' : 'watched';
-    const updates: Partial<Series> = { status: newStatus };
+  const handleSeasonsChange = async (watchedSeasons: number[]) => {
+    const newStatus = deriveSeriesStatus(watchedSeasons, localSeries.seasons);
+    const updates: Partial<Series> = { watched_seasons: watchedSeasons, status: newStatus };
     if (newStatus === 'want_to_watch') updates.rating = null;
     setLocalSeries(s => ({ ...s, ...updates }));
     await updateSeries(series.id, updates);
-    toast.success(newStatus === 'watched' ? t('seriesDetail.movedToWatched') : t('seriesDetail.movedToWantToWatch'));
   };
 
   const handleDelete = async () => {
@@ -88,9 +88,9 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
                 </span>
               )}
               <span className={`px-3 py-1 rounded-full font-medium text-white ${
-                localSeries.status === 'watched' ? 'bg-emerald-500' : 'bg-amber-500'
+                localSeries.status === 'watched' ? 'bg-emerald-500' : localSeries.status === 'watching' ? 'bg-blue-500' : 'bg-amber-500'
               }`}>
-                {localSeries.status === 'watched' ? t('seriesDetail.watched') : t('seriesDetail.wantToWatch')}
+                {localSeries.status === 'watched' ? t('seriesDetail.watched') : localSeries.status === 'watching' ? t('seriesDetail.watching') : t('seriesDetail.wantToWatch')}
               </span>
               {localSeries.first_air_date && (
                 <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-3 py-1 rounded-full">
@@ -103,6 +103,15 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
                 </span>
               )}
             </div>
+
+            {/* Season grid */}
+            {localSeries.seasons && localSeries.seasons > 0 && (
+              <SeasonGrid
+                totalSeasons={localSeries.seasons}
+                watchedSeasons={localSeries.watched_seasons}
+                onChange={handleSeasonsChange}
+              />
+            )}
 
             {localSeries.status === 'watched' && (
               <div>
@@ -185,10 +194,6 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
             )}
 
             <div className="flex flex-wrap gap-2 pt-2">
-              <button onClick={handleToggleStatus} className="btn-ghost text-sm flex items-center gap-1.5">
-                <ArrowLeftRight size={14} />
-                {localSeries.status === 'watched' ? t('seriesDetail.moveToWantToWatch') : t('seriesDetail.moveToWatched')}
-              </button>
               {!confirmDelete ? (
                 <button onClick={() => setConfirmDelete(true)} className="btn-ghost text-sm text-red-500 hover:bg-red-500/10 flex items-center gap-1.5">
                   <Trash2 size={14} /> {t('seriesDetail.delete')}

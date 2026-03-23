@@ -248,6 +248,7 @@ const en = {
     addManually: 'Add manually',
     lastWatched: 'Last watched',
     wantToWatch: 'Want to watch',
+    watching: 'Currently watching',
     inList: 'In list',
   },
   seriesLibrary: {
@@ -255,6 +256,7 @@ const en = {
     seriesCount_one: '{{count}} series in your collection',
     seriesCount_other: '{{count}} series in your collection',
     watched: 'Watched',
+    watching: 'Watching',
     wantToWatch: 'Want to watch',
     noSeriesWatched: 'No series watched yet',
     allGenres: 'All genres',
@@ -296,6 +298,7 @@ const en = {
     statusLabel: 'Status',
     wantToWatch: 'Want to watch',
     alreadyWatched: 'Already watched',
+    watchedSeasonsLabel: 'Watched seasons',
     ratingLabel: 'Rating',
     noteLabel: 'Personal note',
     notePlaceholder: 'Your thoughts...',
@@ -316,8 +319,10 @@ const en = {
     save: 'Save',
     cancel: 'Cancel',
     watched: 'Watched',
+    watching: 'Watching',
     wantToWatch: 'Want to watch',
     seasons: '{{count}} seasons',
+    seasonsProgress: '{{watched}}/{{total}} seasons watched',
     moveToWatched: 'Move to Watched',
     moveToWantToWatch: 'Move to Want to watch',
     delete: 'Delete',
@@ -333,6 +338,7 @@ const en = {
   },
   seriesCard: {
     watched: 'Watched',
+    watching: 'Watching',
     wantToWatch: 'Want to watch',
   },
 };

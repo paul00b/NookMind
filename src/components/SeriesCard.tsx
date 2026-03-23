@@ -33,9 +33,15 @@ export default function SeriesCard({ series, onClick }: SeriesCardProps) {
         <div className={`absolute top-2 right-2 text-xs font-medium px-2 py-0.5 rounded-full ${
           series.status === 'watched'
             ? 'bg-emerald-500/90 text-white'
+            : series.status === 'watching'
+            ? 'bg-blue-500/90 text-white'
             : 'bg-amber-500/90 text-white'
         }`}>
-          {series.status === 'watched' ? t('seriesCard.watched') : t('seriesCard.wantToWatch')}
+          {series.status === 'watched'
+            ? t('seriesCard.watched')
+            : series.status === 'watching'
+            ? `S${series.watched_seasons.length}/${series.seasons ?? '?'}`
+            : t('seriesCard.wantToWatch')}
         </div>
       </div>
 

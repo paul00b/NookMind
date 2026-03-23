@@ -79,8 +79,10 @@ function SeriesListRow({ series, onClick, onRemove }: { series: Series; onClick:
             <StarRating value={series.rating} readonly size={12} />
           </div>
         )}
-        <span className={`flex-shrink-0 text-xs font-medium px-2.5 py-1 rounded-full text-white ${series.status === 'watched' ? 'bg-emerald-500' : 'bg-amber-500'}`}>
-          {series.status === 'watched' ? t('seriesCard.watched') : t('seriesCard.wantToWatch')}
+        <span className={`flex-shrink-0 text-xs font-medium px-2.5 py-1 rounded-full text-white ${
+          series.status === 'watched' ? 'bg-emerald-500' : series.status === 'watching' ? 'bg-blue-500' : 'bg-amber-500'
+        }`}>
+          {series.status === 'watched' ? t('seriesCard.watched') : series.status === 'watching' ? t('seriesCard.watching') : t('seriesCard.wantToWatch')}
         </span>
       </button>
       {onRemove && (
@@ -116,7 +118,7 @@ export default function SeriesLibrary() {
   useEffect(() => { if (creatingCategory) nameInputRef.current?.focus(); }, [creatingCategory]);
 
   const activeCategory = useMemo(() => seriesCategories.find(c => c.id === activeTab) ?? null, [seriesCategories, activeTab]);
-  const isStatusTab = activeTab === 'watched' || activeTab === 'want_to_watch';
+  const isStatusTab = activeTab === 'watched' || activeTab === 'want_to_watch' || activeTab === 'watching';
 
   const filtered = useMemo(() => {
     if (!isStatusTab) return [];
@@ -143,6 +145,7 @@ export default function SeriesLibrary() {
 
   const counts = {
     watched: series.filter(s => s.status === 'watched').length,
+    watching: series.filter(s => s.status === 'watching').length,
     want_to_watch: series.filter(s => s.status === 'want_to_watch').length,
   };
 
@@ -198,7 +201,7 @@ export default function SeriesLibrary() {
       </div>
 
       <div className="flex gap-2 mb-6 border-b border-black/[0.06] dark:border-white/[0.06] overflow-x-auto pb-0" style={{ scrollbarWidth: 'none' }}>
-        {([['watched', t('seriesLibrary.watched')], ['want_to_watch', t('seriesLibrary.wantToWatch')]] as const).map(([status, label]) => (
+        {([['watched', t('seriesLibrary.watched')], ['watching', t('seriesLibrary.watching')], ['want_to_watch', t('seriesLibrary.wantToWatch')]] as const).map(([status, label]) => (
           <button key={status} onClick={() => { setActiveTab(status); setGenreFilter(''); setCreatorFilter(''); }} className={tabClass(activeTab === status)}>
             {label}{countBadge(counts[status], activeTab === status)}
           </button>

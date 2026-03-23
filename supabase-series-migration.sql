@@ -16,8 +16,9 @@ CREATE TABLE IF NOT EXISTS public.series (
   poster_url TEXT,
   first_air_date TEXT,
   seasons INTEGER,
+  watched_seasons JSONB NOT NULL DEFAULT '[]',
   genre TEXT,
-  status TEXT NOT NULL DEFAULT 'want_to_watch' CHECK (status IN ('watched', 'want_to_watch')),
+  status TEXT NOT NULL DEFAULT 'want_to_watch' CHECK (status IN ('watched', 'watching', 'want_to_watch')),
   rating INTEGER CHECK (rating IS NULL OR rating BETWEEN 1 AND 5),
   personal_note TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -86,3 +87,10 @@ DO $$ BEGIN
     );
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
+
+-- If you already ran this migration before season tracking was added,
+-- run these ALTER statements to add the watched_seasons column and update the status constraint:
+--
+-- ALTER TABLE public.series ADD COLUMN IF NOT EXISTS watched_seasons JSONB NOT NULL DEFAULT '[]';
+-- ALTER TABLE public.series DROP CONSTRAINT IF EXISTS series_status_check;
+-- ALTER TABLE public.series ADD CONSTRAINT series_status_check CHECK (status IN ('watched', 'watching', 'want_to_watch'));
