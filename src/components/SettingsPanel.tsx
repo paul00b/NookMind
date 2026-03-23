@@ -125,7 +125,7 @@ export default function SettingsPanel({ onClose }: Props) {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600 dark:text-gray-400">{t('settings.app')}</span>
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">BookMind</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">NookMind</span>
               </div>
               <p className="text-xs text-gray-400 dark:text-gray-500 pt-1 text-center italic">
                 {t('settings.tagline')}

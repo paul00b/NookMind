@@ -26,7 +26,7 @@ export default function Sidebar({ onOpenSettings }: Props) {
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-3 mb-6">
         <img src="/logo.svg" className="w-8 h-8" alt="" />
-        <span className="font-serif font-bold text-xl text-gray-900 dark:text-gray-100">BookMind</span>
+        <span className="font-serif font-bold text-xl text-gray-900 dark:text-gray-100">NookMind</span>
       </div>
 
       {/* Books / Movies toggle */}

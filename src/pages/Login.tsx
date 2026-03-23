@@ -42,7 +42,7 @@ export default function Login() {
           <div className="w-14 h-14 bg-amber-500 rounded-2xl flex items-center justify-center shadow-lg">
             <BookOpen size={28} className="text-white" />
           </div>
-          <h1 className="font-serif text-3xl font-bold text-gray-900 dark:text-gray-100">BookMind</h1>
+          <h1 className="font-serif text-3xl font-bold text-gray-900 dark:text-gray-100">NookMind</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm text-center">{t('login.tagline')}</p>
         </div>
 

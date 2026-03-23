@@ -10,8 +10,8 @@ const fr = {
     confirmEmail: 'Vérifiez votre e-mail pour confirmer votre compte, puis connectez-vous.',
   },
   home: {
-    title: 'BookMind',
-    subtitle: 'Votre bibliothèque, dans la poche',
+    title: 'Livres',
+    subtitle: 'Créez et gérez votre bibliothèque',
     searchPlaceholder: 'Rechercher par titre, auteur, etc.',
     searchTimeout: 'La recherche a expiré. Veuillez réessayer.',
     noBooksFound: 'Aucun livre trouvé pour « {{query}} »',
@@ -140,8 +140,8 @@ const fr = {
     wantToRead: 'À lire',
   },
   movieHome: {
-    title: 'Suivi de films',
-    subtitle: 'Recherchez un film à suivre (ou ajoutez-en un manuellement)',
+    title: 'Films',
+    subtitle: 'Créez et gérez votre liste de films',
     searchPlaceholder: 'Rechercher par titre, réalisateur...',
     searchTimeout: 'La recherche a expiré. Veuillez réessayer.',
     noMoviesFound: 'Aucun film trouvé pour « {{query}} »',

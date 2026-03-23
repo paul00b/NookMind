@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
       manifest: {
-        name: 'BookMind',
-        short_name: 'BookMind',
+        name: 'NookMind',
+        short_name: 'NookMind',
         description: 'Your personal reading tracker',
         theme_color: '#f59e0b',
         background_color: '#0f1117',

@@ -1,5 +1,5 @@
 -- ============================================================
--- BookMind — Supabase SQL Migration
+-- NookMind — Supabase SQL Migration
 -- Run this in: Supabase Dashboard > SQL Editor
 -- ============================================================
 

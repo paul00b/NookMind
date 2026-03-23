@@ -45,7 +45,7 @@ export default function InstallPromptSheet({ onDismiss }: Props) {
           <img src="/logo.svg" className="w-14 h-14" alt="" />
           <div>
             <h2 className="font-serif text-xl font-bold text-gray-900 dark:text-gray-100">
-              {isFr ? 'Installez BookMind' : 'Install BookMind'}
+              {isFr ? 'Installez NookMind' : 'Install NookMind'}
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
               {isFr ? "Accès rapide depuis votre écran d'accueil" : 'Quick access from your home screen'}
@@ -84,8 +84,8 @@ export default function InstallPromptSheet({ onDismiss }: Props) {
           // Android/Chrome: one-tap install
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-5">
             {isFr
-              ? "Ajoutez BookMind à votre écran d'accueil en un tap pour un accès rapide, même hors connexion."
-              : 'Add BookMind to your home screen for quick access, even offline.'}
+              ? "Ajoutez NookMind à votre écran d'accueil en un tap pour un accès rapide, même hors connexion."
+              : 'Add NookMind to your home screen for quick access, even offline.'}
           </p>
         ) : (
           // Other mobile browser: manual
