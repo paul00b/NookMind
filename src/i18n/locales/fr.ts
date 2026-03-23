@@ -59,6 +59,12 @@ const fr = {
     trending: 'Tendances de la semaine',
     noResults: 'Rien à afficher pour le moment.',
     moreBy: 'Plus de {{name}}',
+    settings: 'Personnaliser les sections',
+    addSection: 'Ajouter une section',
+    sectionLabel: 'Genre ou mot-clé',
+    sectionPlaceholder: 'ex. Thriller, Sci-Fi...',
+    cancel: 'Annuler',
+    add: 'Ajouter',
   },
   addBook: {
     title: 'Ajouter à la bibliothèque',

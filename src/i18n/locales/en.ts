@@ -59,6 +59,12 @@ const en = {
     trending: 'Trending this week',
     noResults: 'Nothing to show yet.',
     moreBy: 'More by {{name}}',
+    settings: 'Customize sections',
+    addSection: 'Add a section',
+    sectionLabel: 'Genre or keyword',
+    sectionPlaceholder: 'e.g. Thriller, Sci-Fi...',
+    cancel: 'Cancel',
+    add: 'Add',
   },
   addBook: {
     title: 'Add to Library',
