@@ -19,6 +19,7 @@ const fr = {
     or: 'ou',
     addManually: 'Ajout manuel',
     lastRead: 'Derniers lus',
+    wantToRead: 'À lire',
   },
   library: {
     title: 'Ma bibliothèque',
@@ -148,6 +149,7 @@ const fr = {
     or: 'ou',
     addManually: 'Ajout manuel',
     lastWatched: 'Derniers vus',
+    wantToWatch: 'À voir',
     inWatchlist: 'Déjà ajouté',
   },
   movieLibrary: {

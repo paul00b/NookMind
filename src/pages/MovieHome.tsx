@@ -17,6 +17,52 @@ function useDebounce<T>(value: T, delay: number): T {
   return dv;
 }
 
+function WantToWatchSlider({ onSelect }: { onSelect: (movie: Movie) => void }) {
+  const { movies } = useMovies();
+  const { t } = useTranslation();
+
+  const wantToWatch = movies
+    .filter(m => m.status === 'want_to_watch')
+    .slice(0, 10);
+
+  if (wantToWatch.length === 0) return null;
+
+  return (
+    <div className="w-full max-w-xl mt-10">
+      <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">
+        {t('movieHome.wantToWatch')}
+      </h2>
+      <div
+        className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {wantToWatch.map(movie => (
+          <div
+            key={movie.id}
+            onClick={() => onSelect(movie)}
+            className="flex-shrink-0 snap-start group cursor-pointer"
+          >
+            <div className="w-20 md:w-28 aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2 group-hover:scale-[1.03] transition-transform duration-200">
+              {movie.poster_url ? (
+                <img src={movie.poster_url} alt={movie.title} className="w-full h-full object-cover" loading="lazy" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Film size={22} className="text-gray-300 dark:text-gray-600" />
+                </div>
+              )}
+            </div>
+            <div className="w-20 md:w-28 text-left">
+              <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                {movie.title}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function LastWatchedSlider({ onSelect }: { onSelect: (movie: Movie) => void }) {
   const { movies } = useMovies();
   const { t } = useTranslation();
@@ -242,6 +288,9 @@ export default function MovieHome() {
       <button onClick={handleAddManually} className="mt-4 btn-ghost flex items-center gap-2 text-sm">
         <Plus size={16} /> {t('movieHome.addManually')}
       </button>
+
+      {/* Want to watch slider */}
+      <WantToWatchSlider onSelect={setSelectedMovie} />
 
       {/* Last watched slider */}
       <LastWatchedSlider onSelect={setSelectedMovie} />

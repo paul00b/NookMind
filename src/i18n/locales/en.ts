@@ -19,6 +19,7 @@ const en = {
     or: 'or',
     addManually: 'Add manually',
     lastRead: 'Last read',
+    wantToRead: 'Want to read',
   },
   library: {
     title: 'My Library',
@@ -148,6 +149,7 @@ const en = {
     or: 'or',
     addManually: 'Add manually',
     lastWatched: 'Last watched',
+    wantToWatch: 'Want to watch',
     inWatchlist: 'In watchlist',
   },
   movieLibrary: {
