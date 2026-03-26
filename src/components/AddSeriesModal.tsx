@@ -19,6 +19,7 @@ const EMPTY: SeriesFormData = {
   first_air_date: null,
   seasons: null,
   watched_seasons: [],
+  watched_episodes: {},
   genre: null,
   status: 'want_to_watch',
   rating: null,
@@ -47,7 +48,7 @@ export default function AddSeriesModal({ prefill, onClose }: Props) {
   const derivedStatus = deriveSeriesStatus(form.watched_seasons, form.seasons);
   const showRating = derivedStatus === 'watched';
 
-  const handleSeasonsChange = (watched: number[]) => {
+  const handleSeasonsChange = (watched: number[], _episodes: Record<string, number[]>) => {
     const newStatus = deriveSeriesStatus(watched, form.seasons);
     setForm(f => ({ ...f, watched_seasons: watched, status: newStatus, ...(newStatus === 'want_to_watch' ? { rating: null } : {}) }));
   };

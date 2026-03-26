@@ -128,6 +128,17 @@ export async function searchSeries(query: string, maxResults = 8): Promise<TmdbS
   }
 }
 
+export async function fetchSeasonEpisodeCount(tmdbId: number, seasonNumber: number): Promise<number | null> {
+  try {
+    const res = await fetch(buildUrl(`/tv/${tmdbId}/season/${seasonNumber}`, { language: 'en-US' }));
+    if (!res.ok) return null;
+    const data = await res.json();
+    return (data.episodes as unknown[])?.length ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchSeriesDetails(tmdbId: number): Promise<TmdbSeries | null> {
   try {
     const res = await fetch(

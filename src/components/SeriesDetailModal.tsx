@@ -4,6 +4,7 @@ import { useSeries } from '../context/SeriesContext';
 import { useSeriesCategories } from '../context/SeriesCategoriesContext';
 import StarRating from './StarRating';
 import SeasonGrid, { deriveSeriesStatus } from './SeasonGrid';
+import { fetchSeasonEpisodeCount } from '../lib/tmdb';
 import { X, Pencil, Check, Trash2, Tv, ChevronDown, ChevronUp, FolderPlus, FolderMinus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
@@ -22,6 +23,8 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [localSeries, setLocalSeries] = useState<Series>(series);
   const [descExpanded, setDescExpanded] = useState(false);
+  const [episodeCounts, setEpisodeCounts] = useState<Record<string, number>>({});
+  const [loadingEpisodesSeason, setLoadingEpisodesSeason] = useState<number | null>(null);
 
   const handleRatingChange = async (rating: number) => {
     setLocalSeries(s => ({ ...s, rating }));
@@ -36,12 +39,23 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
     toast.success(t('seriesDetail.noteSaved'));
   };
 
-  const handleSeasonsChange = async (watchedSeasons: number[]) => {
+  const handleSeasonsChange = async (watchedSeasons: number[], watchedEpisodes: Record<string, number[]>) => {
     const newStatus = deriveSeriesStatus(watchedSeasons, localSeries.seasons);
-    const updates: Partial<Series> = { watched_seasons: watchedSeasons, status: newStatus };
+    const updates: Partial<Series> = { watched_seasons: watchedSeasons, watched_episodes: watchedEpisodes, status: newStatus };
     if (newStatus === 'want_to_watch') updates.rating = null;
     setLocalSeries(s => ({ ...s, ...updates }));
     await updateSeries(series.id, updates);
+  };
+
+  const handleSeasonExpand = async (seasonNumber: number) => {
+    if (!localSeries.tmdb_id || episodeCounts[String(seasonNumber)] != null) return;
+    setLoadingEpisodesSeason(seasonNumber);
+    try {
+      const count = await fetchSeasonEpisodeCount(localSeries.tmdb_id, seasonNumber);
+      if (count != null) setEpisodeCounts(prev => ({ ...prev, [String(seasonNumber)]: count }));
+    } finally {
+      setLoadingEpisodesSeason(null);
+    }
   };
 
   const handleDelete = async () => {
@@ -109,7 +123,11 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
               <SeasonGrid
                 totalSeasons={localSeries.seasons}
                 watchedSeasons={localSeries.watched_seasons}
+                watchedEpisodes={localSeries.watched_episodes ?? {}}
                 onChange={handleSeasonsChange}
+                episodeCounts={localSeries.tmdb_id ? episodeCounts : undefined}
+                onSeasonExpand={localSeries.tmdb_id ? handleSeasonExpand : undefined}
+                loadingEpisodesSeason={loadingEpisodesSeason}
               />
             )}
 

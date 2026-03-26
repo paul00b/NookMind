@@ -99,6 +99,7 @@ export interface Series {
   first_air_date: string | null;
   seasons: number | null;
   watched_seasons: number[];
+  watched_episodes: Record<string, number[]>;
   genre: string | null;
   status: SeriesStatus;
   rating: number | null;
