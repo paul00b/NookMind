@@ -71,6 +71,7 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
   };
 
   return (
+    <>
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={onClose} />
 
@@ -259,5 +260,6 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
       genre={localSeries.genre || undefined}
       showAddButton={false}
     />
+    </>
   );
 }
