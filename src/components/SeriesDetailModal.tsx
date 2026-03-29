@@ -5,9 +5,10 @@ import { useSeriesCategories } from '../context/SeriesCategoriesContext';
 import StarRating from './StarRating';
 import SeasonGrid, { deriveSeriesStatus } from './SeasonGrid';
 import { fetchSeasonEpisodeCount } from '../lib/tmdb';
-import { X, Pencil, Check, Trash2, Tv, ChevronDown, ChevronUp, FolderPlus, FolderMinus } from 'lucide-react';
+import { X, Pencil, Check, Trash2, Tv, ChevronDown, ChevronUp, FolderPlus, FolderMinus, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
+import SeriesRatingsModal from './SeriesRatingsModal';
 
 interface Props {
   series: Series;
@@ -21,6 +22,7 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
   const [editingNote, setEditingNote] = useState(false);
   const [note, setNote] = useState(series.personal_note || '');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showRatings, setShowRatings] = useState(false);
   const [localSeries, setLocalSeries] = useState<Series>(series);
   const [descExpanded, setDescExpanded] = useState(false);
   const [descTruncated, setDescTruncated] = useState(false);
@@ -73,9 +75,18 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={onClose} />
 
       <div className="relative z-10 w-full md:max-w-2xl card animate-slide-up md:rounded-2xl rounded-t-3xl rounded-b-none md:max-h-[90vh] overflow-y-auto">
-        <button onClick={onClose} className="absolute top-4 right-4 btn-ghost p-2 z-10">
-          <X size={20} />
-        </button>
+        <div className="absolute top-4 right-4 flex items-center gap-1 z-10">
+          <button
+            onClick={() => setShowRatings(true)}
+            className="btn-ghost p-2"
+            title={t('seriesDetail.viewImdbRatings')}
+          >
+            <Eye size={18} />
+          </button>
+          <button onClick={onClose} className="btn-ghost p-2">
+            <X size={20} />
+          </button>
+        </div>
 
         <div className="flex flex-col md:flex-row gap-6 p-6">
           {/* Poster */}
@@ -235,5 +246,18 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
         </div>
       </div>
     </div>
+
+    <SeriesRatingsModal
+      isOpen={showRatings}
+      onClose={() => setShowRatings(false)}
+      title={localSeries.title}
+      creator={localSeries.creator || undefined}
+      description={localSeries.description}
+      posterUrl={localSeries.poster_url}
+      firstAirDate={localSeries.first_air_date}
+      totalSeasons={localSeries.seasons}
+      genre={localSeries.genre || undefined}
+      showAddButton={false}
+    />
   );
 }
