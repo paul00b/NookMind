@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Plus, X, Tv, CheckCircle2 } from 'lucide-react';
+import { Search, Plus, X, Tv, CheckCircle2, Eye } from 'lucide-react';
 import { searchSeries as searchTmdbSeries, extractSeriesData, fetchSeriesDetails, getPosterUrl } from '../lib/tmdb';
 import type { TmdbSeries, Series } from '../types';
 import AddSeriesModal from '../components/AddSeriesModal';
+import SeriesRatingsModal from '../components/SeriesRatingsModal';
 import SeriesDetailModal from '../components/SeriesDetailModal';
 import StarRating from '../components/StarRating';
 import { useSeries } from '../context/SeriesContext';
@@ -155,6 +156,7 @@ export default function SeriesHome() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [prefill, setPrefill] = useState<ReturnType<typeof extractSeriesData> | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [ratingsTarget, setRatingsTarget] = useState<TmdbSeries | null>(null);
   const [selectedSeries, setSelectedSeries] = useState<Series | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -263,32 +265,41 @@ export default function SeriesHome() {
                   return (
                     <li key={s.id}>
                       {idx > 0 && <div className="border-t border-black/[0.06] dark:border-white/[0.06] mx-3" />}
-                      <button
-                        onClick={() => handleSelectSeries(s)}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-amber-500/5 dark:hover:bg-amber-500/10 transition-colors text-left"
-                      >
-                        <div className="w-10 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-gray-800">
-                          {posterUrl ? (
-                            <img src={posterUrl} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                              <Tv size={16} className="text-gray-400" />
-                            </div>
+                      <div className="flex items-center hover:bg-amber-500/5 dark:hover:bg-amber-500/10 transition-colors">
+                        <button
+                          onClick={() => handleSelectSeries(s)}
+                          className="flex-1 flex items-center gap-3 px-4 py-3 text-left min-w-0"
+                        >
+                          <div className="w-10 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-gray-800">
+                            {posterUrl ? (
+                              <img src={posterUrl} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                <Tv size={16} className="text-gray-400" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{s.name}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                              {s.first_air_date?.slice(0, 4) || '—'}
+                            </p>
+                          </div>
+                          {alreadyAdded && (
+                            <span className="flex-shrink-0 flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full">
+                              <CheckCircle2 size={12} />
+                              {t('seriesHome.inList')}
+                            </span>
                           )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{s.name}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                            {s.first_air_date?.slice(0, 4) || '—'}
-                          </p>
-                        </div>
-                        {alreadyAdded && (
-                          <span className="flex-shrink-0 flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full">
-                            <CheckCircle2 size={12} />
-                            {t('seriesHome.inList')}
-                          </span>
-                        )}
-                      </button>
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setRatingsTarget(s); }}
+                          className="flex-shrink-0 mr-3 p-1.5 rounded-lg text-gray-400 hover:text-amber-500 hover:bg-amber-500/10 transition-colors"
+                          title={t('seriesDetail.viewImdbRatings')}
+                        >
+                          <Eye size={15} />
+                        </button>
+                      </div>
                     </li>
                   );
                 })}
@@ -324,6 +335,20 @@ export default function SeriesHome() {
         <SeriesDetailModal
           series={selectedSeries}
           onClose={() => setSelectedSeries(null)}
+        />
+      )}
+
+      {ratingsTarget && (
+        <SeriesRatingsModal
+          isOpen={true}
+          onClose={() => setRatingsTarget(null)}
+          title={ratingsTarget.name}
+          description={ratingsTarget.overview || null}
+          posterUrl={getPosterUrl(ratingsTarget.poster_path)}
+          firstAirDate={ratingsTarget.first_air_date || null}
+          totalSeasons={(ratingsTarget as any).number_of_seasons ?? null}
+          showAddButton={true}
+          onAdd={() => handleSelectSeries(ratingsTarget)}
         />
       )}
     </div>
