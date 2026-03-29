@@ -184,30 +184,26 @@ export default function SeriesRatingsModal({
           {/* Stats */}
           {stats && (
             <div className="flex border-t border-b border-black/[0.06] dark:border-white/[0.06]">
-              <div className="flex-1 py-3 text-center border-r border-black/[0.06] dark:border-white/[0.06]">
-                <div className="text-lg font-extrabold" style={getRatingStyle(parseFloat(stats.average))}>
-                  {stats.average}
-                </div>
-                <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 uppercase tracking-wide">
-                  {t('seriesDetail.imdbAverage')}
-                </div>
-              </div>
-              <div className="flex-1 py-3 text-center border-r border-black/[0.06] dark:border-white/[0.06]">
-                <div className="text-lg font-extrabold" style={getRatingStyle(parseFloat(stats.best))}>
-                  {stats.best}
-                </div>
-                <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 uppercase tracking-wide">
-                  {t('seriesDetail.imdbBest')}
-                </div>
-              </div>
-              <div className="flex-1 py-3 text-center">
-                <div className="text-lg font-extrabold" style={getRatingStyle(parseFloat(stats.worst))}>
-                  {stats.worst}
-                </div>
-                <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 uppercase tracking-wide">
-                  {t('seriesDetail.imdbWorst')}
-                </div>
-              </div>
+              {[
+                { value: stats.average, label: t('seriesDetail.imdbAverage'), border: true },
+                { value: stats.best,    label: t('seriesDetail.imdbBest'),    border: true },
+                { value: stats.worst,   label: t('seriesDetail.imdbWorst'),   border: false },
+              ].map(({ value, label, border }) => {
+                const style = getRatingStyle(parseFloat(value));
+                return (
+                  <div key={label} className={`flex-1 py-3 flex flex-col items-center gap-1.5${border ? ' border-r border-black/[0.06] dark:border-white/[0.06]' : ''}`}>
+                    <div
+                      className="px-3 py-1 rounded-md text-sm font-extrabold"
+                      style={style}
+                    >
+                      {value}
+                    </div>
+                    <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                      {label}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
 
