@@ -16,6 +16,7 @@ interface SeasonGridProps {
 
 type PendingFill =
   | { type: 'episode'; season: number; episode: number }
+  | { type: 'episode-remove'; season: number; episode: number; nextWatched: number }
   | { type: 'season'; season: number }
   | null;
 
@@ -103,12 +104,26 @@ export default function SeasonGrid({
         .some(e => !newEps.includes(e));
       if (hasPrevUnwatched) setPendingFill({ type: 'episode', season, episode });
     }
+
+    // Offer to remove following watched episodes
+    if (!isMarking) {
+      const nextWatched = newEps.filter(e => e > episode).length;
+      if (nextWatched > 0) setPendingFill({ type: 'episode-remove', season, episode, nextWatched });
+    }
   };
 
   const confirmFill = (yes: boolean) => {
     if (!yes || !pendingFill || !onChange) { setPendingFill(null); return; }
 
-    if (pendingFill.type === 'episode') {
+    if (pendingFill.type === 'episode-remove') {
+      const { season, episode } = pendingFill;
+      const key = String(season);
+      const currentEps = watchedEpisodes[key] ?? [];
+      const newEps = currentEps.filter(e => e <= episode);
+      const newWatchedEpisodes = { ...watchedEpisodes, [key]: newEps };
+      const newWatchedSeasons = watchedSeasons.filter(s => s !== season);
+      onChange(newWatchedSeasons, newWatchedEpisodes);
+    } else if (pendingFill.type === 'episode') {
       const { season, episode } = pendingFill;
       const key = String(season);
       const currentEps = watchedEpisodes[key] ?? [];
@@ -166,9 +181,11 @@ export default function SeasonGrid({
 
   const PendingFillBanner = () => {
     if (!pendingFill || readonly) return null;
-    const label = pendingFill.type === 'episode'
-      ? t('seriesDetail.addPreviousEpisodes', { n: pendingFill.episode - 1, episode: pendingFill.episode })
-      : t('seriesDetail.addPreviousSeasons', { n: pendingFill.season - 1, season: pendingFill.season });
+    const label = pendingFill.type === 'episode-remove'
+      ? t('seriesDetail.removeFollowingEpisodes', { count: pendingFill.nextWatched })
+      : pendingFill.type === 'episode'
+      ? t('seriesDetail.addPreviousEpisodes', { count: pendingFill.episode - 1 })
+      : t('seriesDetail.addPreviousSeasons', { count: pendingFill.season - 1 });
     return (
       <div className="mt-2 flex items-center gap-2 text-xs bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-lg px-3 py-2">
         <span className="flex-1 text-amber-800 dark:text-amber-300">{label}</span>

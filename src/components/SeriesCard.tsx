@@ -46,7 +46,7 @@ export default function SeriesCard({ series, onClick }: SeriesCardProps) {
       </div>
 
       {/* Info */}
-      <div className="px-1 pb-1 flex-1 flex flex-col gap-1">
+      <div className="px-2 pb-2 flex-1 flex flex-col gap-1">
         <h3 className="font-serif font-semibold text-sm leading-tight text-gray-900 dark:text-gray-100 line-clamp-2 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
           {series.title}
         </h3>

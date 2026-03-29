@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { Book } from '../types';
 import { useBooks } from '../context/BooksContext';
 import { useCategories } from '../context/CategoriesContext';
@@ -21,6 +21,11 @@ export default function BookDetailModal({ book, onClose }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [localBook, setLocalBook] = useState<Book>(book);
   const [descExpanded, setDescExpanded] = useState(false);
+  const [descTruncated, setDescTruncated] = useState(false);
+  const descRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (descRef.current) setDescTruncated(descRef.current.scrollHeight > descRef.current.clientHeight);
+  }, [localBook.description]);
 
   const handleRatingChange = async (rating: number) => {
     setLocalBook(b => ({ ...b, rating }));
@@ -128,18 +133,20 @@ export default function BookDetailModal({ book, onClose }: Props) {
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('bookDetail.description')}</p>
                 <button
-                  onClick={() => setDescExpanded(e => !e)}
+                  onClick={() => (descTruncated || descExpanded) && setDescExpanded(e => !e)}
                   className="w-full text-left group"
                 >
-                  <p className={`text-sm text-gray-700 dark:text-gray-300 leading-relaxed ${descExpanded ? '' : 'line-clamp-4'}`}>
+                  <p ref={descRef} className={`text-sm text-gray-700 dark:text-gray-300 leading-relaxed ${descExpanded ? '' : 'line-clamp-4'}`}>
                     {localBook.description}
                   </p>
+                  {(descTruncated || descExpanded) && (
                   <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 mt-1 group-hover:underline">
                     {descExpanded
                       ? <><ChevronUp size={12} />{t('bookDetail.seeLess', 'See less')}</>
                       : <><ChevronDown size={12} />{t('bookDetail.seeMore', 'See more')}</>
                     }
                   </span>
+                  )}
                 </button>
               </div>
             )}

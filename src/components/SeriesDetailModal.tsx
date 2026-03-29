@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { Series } from '../types';
 import { useSeries } from '../context/SeriesContext';
 import { useSeriesCategories } from '../context/SeriesCategoriesContext';
@@ -23,6 +23,11 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [localSeries, setLocalSeries] = useState<Series>(series);
   const [descExpanded, setDescExpanded] = useState(false);
+  const [descTruncated, setDescTruncated] = useState(false);
+  const descRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (descRef.current) setDescTruncated(descRef.current.scrollHeight > descRef.current.clientHeight);
+  }, [localSeries.description]);
   const [episodeCounts, setEpisodeCounts] = useState<Record<string, number>>({});
   const [loadingEpisodesSeason, setLoadingEpisodesSeason] = useState<number | null>(null);
 
@@ -141,16 +146,18 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
             {localSeries.description && (
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('seriesDetail.description')}</p>
-                <button onClick={() => setDescExpanded(e => !e)} className="w-full text-left group">
-                  <p className={`text-sm text-gray-700 dark:text-gray-300 leading-relaxed ${descExpanded ? '' : 'line-clamp-4'}`}>
+                <button onClick={() => (descTruncated || descExpanded) && setDescExpanded(e => !e)} className="w-full text-left group">
+                  <p ref={descRef} className={`text-sm text-gray-700 dark:text-gray-300 leading-relaxed ${descExpanded ? '' : 'line-clamp-4'}`}>
                     {localSeries.description}
                   </p>
-                  <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 mt-1 group-hover:underline">
-                    {descExpanded
-                      ? <><ChevronUp size={12} />{t('seriesDetail.seeLess')}</>
-                      : <><ChevronDown size={12} />{t('seriesDetail.seeMore')}</>
-                    }
-                  </span>
+                  {(descTruncated || descExpanded) && (
+                    <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 mt-1 group-hover:underline">
+                      {descExpanded
+                        ? <><ChevronUp size={12} />{t('seriesDetail.seeLess')}</>
+                        : <><ChevronDown size={12} />{t('seriesDetail.seeMore')}</>
+                      }
+                    </span>
+                  )}
                 </button>
               </div>
             )}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { Movie } from '../types';
 import { useMovies } from '../context/MoviesContext';
 import { useMovieCategories } from '../context/MovieCategoriesContext';
@@ -21,6 +21,11 @@ export default function MovieDetailModal({ movie, onClose }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [localMovie, setLocalMovie] = useState<Movie>(movie);
   const [descExpanded, setDescExpanded] = useState(false);
+  const [descTruncated, setDescTruncated] = useState(false);
+  const descRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (descRef.current) setDescTruncated(descRef.current.scrollHeight > descRef.current.clientHeight);
+  }, [localMovie.description]);
 
   const handleRatingChange = async (rating: number) => {
     setLocalMovie(m => ({ ...m, rating }));
@@ -124,16 +129,18 @@ export default function MovieDetailModal({ movie, onClose }: Props) {
             {localMovie.description && (
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('movieDetail.description')}</p>
-                <button onClick={() => setDescExpanded(e => !e)} className="w-full text-left group">
-                  <p className={`text-sm text-gray-700 dark:text-gray-300 leading-relaxed ${descExpanded ? '' : 'line-clamp-4'}`}>
+                <button onClick={() => (descTruncated || descExpanded) && setDescExpanded(e => !e)} className="w-full text-left group">
+                  <p ref={descRef} className={`text-sm text-gray-700 dark:text-gray-300 leading-relaxed ${descExpanded ? '' : 'line-clamp-4'}`}>
                     {localMovie.description}
                   </p>
-                  <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 mt-1 group-hover:underline">
-                    {descExpanded
-                      ? <><ChevronUp size={12} />{t('movieDetail.seeLess')}</>
-                      : <><ChevronDown size={12} />{t('movieDetail.seeMore')}</>
-                    }
-                  </span>
+                  {(descTruncated || descExpanded) && (
+                    <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 mt-1 group-hover:underline">
+                      {descExpanded
+                        ? <><ChevronUp size={12} />{t('movieDetail.seeLess')}</>
+                        : <><ChevronDown size={12} />{t('movieDetail.seeMore')}</>
+                      }
+                    </span>
+                  )}
                 </button>
               </div>
             )}
