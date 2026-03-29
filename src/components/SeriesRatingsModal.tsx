@@ -17,9 +17,9 @@ interface SeriesRatingsModalProps {
   onAdd?: () => void;
 }
 
-type SeasonState = EpisodeRating[] | 'loading' | 'error';
+export type SeasonState = EpisodeRating[] | 'loading' | 'error';
 
-function getRatingStyle(rating: number | null): { background: string; color: string } {
+export function getRatingStyle(rating: number | null): { background: string; color: string } {
   if (rating === null) return { background: '#374151', color: '#6b7280' };
   if (rating >= 9) return { background: '#16a34a', color: '#ffffff' };
   if (rating >= 8) return { background: '#4ade80', color: '#14532d' };
@@ -65,6 +65,13 @@ export default function SeriesRatingsModal({
   const [imdbError, setImdbError] = useState<'not_found' | 'no_key' | null>(null);
   const [seasonRatings, setSeasonRatings] = useState<Record<number, SeasonState>>({});
   const [fetchKey, setFetchKey] = useState(0); // pour le bouton Réessayer
+
+  // Verrouillage du scroll body à l'ouverture
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen]);
 
   // Reset et recherche imdbID à l'ouverture
   useEffect(() => {
@@ -122,7 +129,7 @@ export default function SeriesRatingsModal({
     <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center p-0 md:p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={onClose} />
 
-      <div className="relative z-10 w-full md:max-w-2xl card animate-slide-up md:rounded-2xl rounded-t-3xl rounded-b-none md:max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="relative z-10 w-full md:max-w-2xl card animate-slide-up md:rounded-2xl rounded-t-3xl rounded-b-none max-h-[90vh] flex flex-col overflow-hidden">
         {/* Close */}
         <button onClick={onClose} className="absolute top-4 right-4 btn-ghost p-2 z-10">
           <X size={20} />
@@ -147,7 +154,7 @@ export default function SeriesRatingsModal({
                 .join(' · ')}
             </p>
             {description && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 line-clamp-2 leading-relaxed">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">
                 {description}
               </p>
             )}
@@ -293,10 +300,10 @@ export default function SeriesRatingsModal({
 
           {/* Bouton ajout (uniquement depuis recherche) */}
           {showAddButton && onAdd && (
-            <div className="px-6 pb-6 pt-2 flex-shrink-0">
+            <div className="px-6 pb-6 pt-2 flex-shrink-0 flex justify-center">
               <button
                 onClick={() => { onClose(); onAdd(); }}
-                className="w-full btn-primary flex items-center justify-center gap-2 py-2.5"
+                className="btn-primary flex items-center gap-2 px-5 py-2.5"
               >
                 <Plus size={16} />
                 {t('seriesDetail.addToCollection')}

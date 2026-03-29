@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import type { ThemeMode } from '../types';
 import Avatar from './Avatar';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 
@@ -17,6 +17,11 @@ export default function SettingsPanel({ onClose }: Props) {
   const { user, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
   const { t } = useTranslation();
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
   const [displayName, setDisplayName] = useState(
     user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Reader'
   );

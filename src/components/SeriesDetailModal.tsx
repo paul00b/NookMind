@@ -5,10 +5,11 @@ import { useSeriesCategories } from '../context/SeriesCategoriesContext';
 import StarRating from './StarRating';
 import SeasonGrid, { deriveSeriesStatus } from './SeasonGrid';
 import { fetchSeasonEpisodeCount } from '../lib/tmdb';
-import { X, Pencil, Check, Trash2, Tv, ChevronDown, ChevronUp, FolderPlus, FolderMinus, Eye } from 'lucide-react';
+import { X, Pencil, Check, Trash2, Tv, ChevronDown, ChevronUp, FolderPlus, FolderMinus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
-import SeriesRatingsModal from './SeriesRatingsModal';
+import { getRatingStyle, type SeasonState } from './SeriesRatingsModal';
+import { fetchSeriesImdbId, fetchSeasonRatings, type EpisodeRating } from '../lib/omdb';
 
 interface Props {
   series: Series;
@@ -22,14 +23,61 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
   const [editingNote, setEditingNote] = useState(false);
   const [note, setNote] = useState(series.personal_note || '');
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [showRatings, setShowRatings] = useState(false);
+  const [showImdbSection, setShowImdbSection] = useState(false);
+  const [imdbId, setImdbId] = useState<string | null>(null);
+  const [loadingImdb, setLoadingImdb] = useState(false);
+  const [imdbError, setImdbError] = useState<'not_found' | 'no_key' | null>(null);
+  const [seasonRatings, setSeasonRatings] = useState<Record<number, SeasonState>>({});
+  const [fetchKey, setFetchKey] = useState(0);
   const [localSeries, setLocalSeries] = useState<Series>(series);
   const [descExpanded, setDescExpanded] = useState(false);
   const [descTruncated, setDescTruncated] = useState(false);
   const descRef = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
+  useEffect(() => {
     if (descRef.current) setDescTruncated(descRef.current.scrollHeight > descRef.current.clientHeight);
   }, [localSeries.description]);
+
+  // Charge l'imdbID quand la section IMDB s'ouvre pour la première fois
+  useEffect(() => {
+    if (!showImdbSection || imdbId || loadingImdb || imdbError) return;
+    if (!import.meta.env.VITE_OMDB_API_KEY) {
+      setImdbError('no_key');
+      return;
+    }
+    setLoadingImdb(true);
+    fetchSeriesImdbId(localSeries.title).then(id => {
+      setLoadingImdb(false);
+      if (!id) { setImdbError('not_found'); return; }
+      setImdbId(id);
+    });
+  }, [showImdbSection, imdbId, loadingImdb, imdbError, localSeries.title, fetchKey]);
+
+  // Charge les saisons en parallèle une fois l'imdbID obtenu
+  useEffect(() => {
+    if (!imdbId) return;
+    const max = localSeries.seasons ?? 20;
+    for (let s = 1; s <= max; s++) {
+      const season = s;
+      setSeasonRatings(prev => ({ ...prev, [season]: 'loading' }));
+      fetchSeasonRatings(imdbId, season).then(ratings => {
+        if (ratings === null && !localSeries.seasons) {
+          setSeasonRatings(prev => {
+            const next = { ...prev };
+            delete next[season];
+            return next;
+          });
+        } else {
+          setSeasonRatings(prev => ({ ...prev, [season]: ratings ?? 'error' }));
+        }
+      });
+    }
+  }, [imdbId, localSeries.seasons]);
+
   const [episodeCounts, setEpisodeCounts] = useState<Record<string, number>>({});
   const [loadingEpisodesSeason, setLoadingEpisodesSeason] = useState<number | null>(null);
 
@@ -70,71 +118,73 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
     onClose();
   };
 
+  const imdbSeasons = Object.keys(seasonRatings).map(Number).sort((a, b) => a - b);
+  const allImdbRatings: number[] = [];
+  for (const val of Object.values(seasonRatings)) {
+    if (Array.isArray(val)) val.forEach(ep => { if (ep.imdbRating !== null) allImdbRatings.push(ep.imdbRating); });
+  }
+  const imdbStats = allImdbRatings.length > 0 ? {
+    average: (allImdbRatings.reduce((a, b) => a + b, 0) / allImdbRatings.length).toFixed(1),
+    best: Math.max(...allImdbRatings).toFixed(1),
+    worst: Math.min(...allImdbRatings).toFixed(1),
+  } : null;
+
   return (
-    <>
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={onClose} />
 
-      <div className="relative z-10 w-full md:max-w-2xl card animate-slide-up md:rounded-2xl rounded-t-3xl rounded-b-none md:max-h-[90vh] overflow-y-auto">
-        <div className="absolute top-4 right-4 flex items-center gap-1 z-10">
-          <button
-            onClick={() => setShowRatings(true)}
-            className="btn-ghost p-2"
-            title={t('seriesDetail.viewImdbRatings')}
-          >
-            <Eye size={18} />
-          </button>
-          <button onClick={onClose} className="btn-ghost p-2">
-            <X size={20} />
-          </button>
-        </div>
+      <div className="relative z-10 w-full md:max-w-2xl card animate-slide-up md:rounded-2xl rounded-t-3xl rounded-b-none max-h-[90vh] overflow-y-auto">
+        <button onClick={onClose} className="absolute top-4 right-4 btn-ghost p-2 z-10">
+          <X size={20} />
+        </button>
 
-        <div className="flex flex-col md:flex-row gap-6 p-6">
-          {/* Poster */}
-          <div className="flex-shrink-0 mx-auto md:mx-0">
-            <div className="w-32 md:w-40 aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800">
+        {/* Header : poster + titre/badges côte à côte */}
+        <div className="flex gap-4 p-6 pb-4 pr-14">
+          <div className="flex-shrink-0">
+            <div className="w-24 md:w-28 aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800">
               {localSeries.poster_url ? (
                 <img src={localSeries.poster_url} alt={localSeries.title} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                  <Tv size={40} className="text-gray-400" />
+                  <Tv size={32} className="text-gray-400" />
                 </div>
               )}
             </div>
           </div>
-
-          {/* Details */}
-          <div className="flex-1 min-w-0 space-y-4">
+          <div className="flex-1 min-w-0 flex flex-col justify-center gap-2">
             <div>
-              <h2 className="font-serif text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight mb-1">
+              <h2 className="font-serif text-xl font-bold text-gray-900 dark:text-gray-100 leading-tight mb-0.5">
                 {localSeries.title}
               </h2>
-              <p className="text-gray-600 dark:text-gray-400 font-medium">{localSeries.creator}</p>
+              <p className="text-gray-600 dark:text-gray-400 font-medium text-sm">{localSeries.creator}</p>
             </div>
-
-            <div className="flex flex-wrap gap-2 text-sm">
+            <div className="flex flex-wrap gap-1.5 text-sm">
               {localSeries.genre && (
-                <span className="bg-amber-500/10 text-amber-700 dark:text-amber-400 px-3 py-1 rounded-full font-medium">
+                <span className="bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2.5 py-0.5 rounded-full font-medium text-xs">
                   {localSeries.genre}
                 </span>
               )}
-              <span className={`px-3 py-1 rounded-full font-medium text-white ${
+              <span className={`px-2.5 py-0.5 rounded-full font-medium text-white text-xs ${
                 localSeries.status === 'watched' ? 'bg-emerald-500' : localSeries.status === 'watching' ? 'bg-blue-500' : 'bg-amber-500'
               }`}>
                 {localSeries.status === 'watched' ? t('seriesDetail.watched') : localSeries.status === 'watching' ? t('seriesDetail.watching') : t('seriesDetail.wantToWatch')}
               </span>
               {localSeries.first_air_date && (
-                <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-3 py-1 rounded-full">
+                <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2.5 py-0.5 rounded-full text-xs">
                   {localSeries.first_air_date.slice(0, 4)}
                 </span>
               )}
               {localSeries.seasons && (
-                <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-3 py-1 rounded-full">
+                <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2.5 py-0.5 rounded-full text-xs">
                   {t('seriesDetail.seasons', { count: localSeries.seasons })}
                 </span>
               )}
             </div>
+          </div>
+        </div>
 
+        {/* Corps pleine largeur */}
+        <div className="px-6 pb-6 space-y-4">
             {/* Season grid */}
             {localSeries.seasons && localSeries.seasons > 0 && (
               <SeasonGrid
@@ -173,6 +223,164 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
                 </button>
               </div>
             )}
+
+            {/* Section IMDB inline */}
+            <div className="border border-black/[0.06] dark:border-white/[0.06] rounded-xl overflow-hidden">
+              <button
+                className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
+                onClick={() => setShowImdbSection(s => !s)}
+              >
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('seriesDetail.imdbRatings')}</span>
+                {showImdbSection ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+              </button>
+
+              {showImdbSection && (
+                <div className="border-t border-black/[0.06] dark:border-white/[0.06]">
+                  {imdbError === 'no_key' && (
+                    <p className="px-4 py-4 text-sm text-gray-400 text-center">{t('seriesDetail.imdbNoApiKey')}</p>
+                  )}
+                  {imdbError === 'not_found' && (
+                    <div className="px-4 py-4 text-center space-y-2">
+                      <p className="text-sm text-gray-400">{t('seriesDetail.imdbNotAvailable')}</p>
+                      <button
+                        onClick={() => { setImdbError(null); setFetchKey(k => k + 1); }}
+                        className="btn-ghost text-sm"
+                      >{t('seriesDetail.imdbRetry')}</button>
+                    </div>
+                  )}
+
+                  {/* Shimmer stats — visible tant que les données ne sont pas là */}
+                  {!imdbError && !imdbStats && (
+                    <div className="flex border-b border-black/[0.06] dark:border-white/[0.06]">
+                      {[true, true, false].map((border, i) => (
+                        <div key={i} className={`flex-1 py-3 flex flex-col items-center gap-1.5${border ? ' border-r border-black/[0.06] dark:border-white/[0.06]' : ''}`}>
+                          <div className="h-7 w-14 rounded-md bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                          <div className="h-2.5 w-10 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {imdbStats && (
+                    <div className="flex border-b border-black/[0.06] dark:border-white/[0.06]">
+                      {[
+                        { value: imdbStats.average, label: t('seriesDetail.imdbAverage'), border: true },
+                        { value: imdbStats.best,    label: t('seriesDetail.imdbBest'),    border: true },
+                        { value: imdbStats.worst,   label: t('seriesDetail.imdbWorst'),   border: false },
+                      ].map(({ value, label, border }) => {
+                        const style = getRatingStyle(parseFloat(value));
+                        return (
+                          <div key={label} className={`flex-1 py-3 flex flex-col items-center gap-1.5${border ? ' border-r border-black/[0.06] dark:border-white/[0.06]' : ''}`}>
+                            <div className="px-3 py-1 rounded-md text-sm font-extrabold" style={style}>{value}</div>
+                            <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">{label}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Shimmer grille — visible tant qu'aucune saison n'est chargée */}
+                  {!imdbError && imdbSeasons.length === 0 && (
+                    <div className="px-4 py-3">
+                      <div className="overflow-x-auto pb-2">
+                        <div className="flex gap-2.5" style={{ minWidth: 'max-content' }}>
+                          {/* Colonne numéros d'épisodes */}
+                          <div>
+                            <div className="h-[18px] mb-1.5" />
+                            <div className="flex flex-col gap-1">
+                              {Array.from({ length: 6 }).map((_, j) => (
+                                <div key={j} className="w-7 h-7 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                              ))}
+                            </div>
+                          </div>
+                          {Array.from({ length: localSeries.seasons ?? 3 }, (_, i) => (
+                            <div key={i}>
+                              <div className="h-[18px] w-8 rounded bg-gray-200 dark:bg-gray-700 animate-pulse mb-1.5" />
+                              <div className="flex flex-col gap-1">
+                                {Array.from({ length: 6 }).map((_, j) => (
+                                  <div key={j} className="w-11 h-7 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {imdbSeasons.length > 0 && (
+                    <div className="px-4 py-3">
+                      <div className="overflow-x-auto pb-2">
+                        <div className="flex gap-2.5" style={{ minWidth: 'max-content' }}>
+                          {(() => {
+                            const maxEps = Math.max(...imdbSeasons.map(s => Array.isArray(seasonRatings[s]) ? (seasonRatings[s] as EpisodeRating[]).length : 0));
+                            const rowCount = maxEps > 0 ? maxEps : 6;
+                            return (
+                              <div key="ep-labels">
+                                <div className="h-[18px] mb-1.5" />
+                                <div className="flex flex-col gap-1">
+                                  {Array.from({ length: rowCount }, (_, i) => (
+                                    <div key={i} className="w-7 h-7 flex items-center justify-center text-[10px] font-medium text-gray-400 dark:text-gray-500">
+                                      {maxEps > 0 ? `E${i + 1}` : ''}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })()}
+                          {imdbSeasons.map(s => {
+                            const state = seasonRatings[s];
+                            return (
+                              <div key={s}>
+                                <div className="text-[10px] text-gray-500 dark:text-gray-400 font-semibold text-center mb-1.5">S{s}</div>
+                                <div className="flex flex-col gap-1">
+                                  {state === 'loading' ? (
+                                    Array.from({ length: 6 }).map((_, i) => (
+                                      <div key={i} className="w-11 h-7 rounded animate-pulse bg-gray-200 dark:bg-gray-700" />
+                                    ))
+                                  ) : state === 'error' ? (
+                                    <div className="w-11 h-7 rounded bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[9px] text-gray-400">—</div>
+                                  ) : (
+                                    state.map(ep => {
+                                      const style = getRatingStyle(ep.imdbRating);
+                                      return (
+                                        <div
+                                          key={ep.episode}
+                                          title={`E${ep.episode} · ${ep.title}${ep.imdbRating ? ` · ${ep.imdbRating}` : ''}`}
+                                          className="w-11 h-7 rounded flex items-center justify-center text-xs font-bold cursor-default select-none"
+                                          style={style}
+                                        >
+                                          {ep.imdbRating?.toFixed(1) ?? 'N/A'}
+                                        </div>
+                                      );
+                                    })
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-3">
+                        {[
+                          { label: '9–10', style: getRatingStyle(9.5) },
+                          { label: '8–9',  style: getRatingStyle(8.5) },
+                          { label: '7–8',  style: getRatingStyle(7.5) },
+                          { label: '6–7',  style: getRatingStyle(6.5) },
+                          { label: '5–6',  style: getRatingStyle(5.5) },
+                          { label: '<5',   style: getRatingStyle(4)   },
+                        ].map(({ label, style }) => (
+                          <div key={label} className="flex items-center gap-1.5">
+                            <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: style.background }} />
+                            <span className="text-[10px] text-gray-500 dark:text-gray-400">{label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -243,23 +451,8 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
                 </div>
               )}
             </div>
-          </div>
         </div>
       </div>
     </div>
-
-    <SeriesRatingsModal
-      isOpen={showRatings}
-      onClose={() => setShowRatings(false)}
-      title={localSeries.title}
-      creator={localSeries.creator || undefined}
-      description={localSeries.description}
-      posterUrl={localSeries.poster_url}
-      firstAirDate={localSeries.first_air_date}
-      totalSeasons={localSeries.seasons}
-      genre={localSeries.genre || undefined}
-      showAddButton={false}
-    />
-    </>
   );
 }

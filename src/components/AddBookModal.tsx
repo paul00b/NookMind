@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { X, BookOpen, AlertTriangle } from 'lucide-react';
 import { useBooks } from '../context/BooksContext';
 import type { Book, BookStatus } from '../types';
@@ -33,6 +33,7 @@ export default function AddBookModal({ prefill, onClose }: Props) {
   const { t } = useTranslation();
   const [form, setForm] = useState<BookFormData>({ ...EMPTY, ...prefill });
   const [saving, setSaving] = useState(false);
+  useEffect(() => { document.body.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; }; }, []);
 
   const isDuplicate = useMemo(() => {
     if (!form.title.trim() || !form.author.trim()) return false;

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { X, Tv, AlertTriangle } from 'lucide-react';
 import { useSeries } from '../context/SeriesContext';
 import type { Series } from '../types';
@@ -36,6 +36,7 @@ export default function AddSeriesModal({ prefill, onClose }: Props) {
   const { t } = useTranslation();
   const [form, setForm] = useState<SeriesFormData>({ ...EMPTY, ...prefill });
   const [saving, setSaving] = useState(false);
+  useEffect(() => { document.body.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; }; }, []);
 
   const isDuplicate = useMemo(() => {
     if (!form.title.trim()) return false;

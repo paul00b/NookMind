@@ -46,11 +46,12 @@ export default function SeasonGrid({
   const isSeasonPartial = (season: number) => {
     const key = String(season);
     const count = episodeCounts?.[key];
+    const watched = watchedEpisodes[key]?.length ?? 0;
     if (count != null && count > 0) {
-      const watched = watchedEpisodes[key]?.length ?? 0;
       return watched > 0 && watched < count;
     }
-    return false;
+    // Sans compte chargé, on sait qu'une saison est partielle si des épisodes sont vus sans que la saison soit cochée entièrement
+    return watched > 0 && !watchedSeasons.includes(season);
   };
 
   const handleSeasonClick = (season: number) => {
@@ -241,7 +242,7 @@ export default function SeasonGrid({
                 </span>
               )}
             </p>
-            {!readonly && episodeCounts?.[String(expandedSeason)] != null && (
+            {!readonly && (episodeCounts?.[String(expandedSeason)] ?? 0) > 0 && (
               <button
                 type="button"
                 onClick={() => toggleAllEpisodes(expandedSeason)}

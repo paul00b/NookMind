@@ -294,10 +294,10 @@ export default function SeriesHome() {
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); setRatingsTarget(s); }}
-                          className="flex-shrink-0 mr-3 p-1.5 rounded-lg text-gray-400 hover:text-amber-500 hover:bg-amber-500/10 transition-colors"
+                          className="flex-shrink-0 mr-3 p-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors"
                           title={t('seriesDetail.viewImdbRatings')}
                         >
-                          <Eye size={15} />
+                          <Eye size={17} />
                         </button>
                       </div>
                     </li>
