@@ -1,0 +1,299 @@
+import { useEffect, useState } from 'react';
+import { X, Tv, Plus } from 'lucide-react';
+import { fetchSeriesImdbId, fetchSeasonRatings, type EpisodeRating } from '../lib/omdb';
+import { useTranslation } from 'react-i18next';
+
+interface SeriesRatingsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  creator?: string;
+  description?: string | null;
+  posterUrl?: string | null;
+  firstAirDate?: string | null;
+  totalSeasons?: number | null;
+  genre?: string | null;
+  showAddButton?: boolean;
+  onAdd?: () => void;
+}
+
+type SeasonState = EpisodeRating[] | 'loading' | 'error';
+
+function getRatingStyle(rating: number | null): { background: string; color: string } {
+  if (rating === null) return { background: '#374151', color: '#6b7280' };
+  if (rating >= 9) return { background: '#16a34a', color: '#ffffff' };
+  if (rating >= 8) return { background: '#4ade80', color: '#14532d' };
+  if (rating >= 7) return { background: '#facc15', color: '#713f12' };
+  if (rating >= 6) return { background: '#f97316', color: '#ffffff' };
+  if (rating >= 5) return { background: '#ef4444', color: '#ffffff' };
+  return { background: '#7f1d1d', color: '#fca5a5' };
+}
+
+function computeStats(seasonRatings: Record<number, SeasonState>) {
+  const allRatings: number[] = [];
+  for (const val of Object.values(seasonRatings)) {
+    if (Array.isArray(val)) {
+      val.forEach(ep => { if (ep.imdbRating !== null) allRatings.push(ep.imdbRating); });
+    }
+  }
+  if (allRatings.length === 0) return null;
+  return {
+    average: (allRatings.reduce((a, b) => a + b, 0) / allRatings.length).toFixed(1),
+    best: Math.max(...allRatings).toFixed(1),
+    worst: Math.min(...allRatings).toFixed(1),
+  };
+}
+
+const MAX_SEASONS_FALLBACK = 20;
+
+export default function SeriesRatingsModal({
+  isOpen,
+  onClose,
+  title,
+  creator,
+  description,
+  posterUrl,
+  firstAirDate,
+  totalSeasons,
+  genre,
+  showAddButton = false,
+  onAdd,
+}: SeriesRatingsModalProps) {
+  const { t } = useTranslation();
+  const [imdbId, setImdbId] = useState<string | null>(null);
+  const [loadingImdb, setLoadingImdb] = useState(false);
+  const [imdbError, setImdbError] = useState<'not_found' | 'no_key' | null>(null);
+  const [seasonRatings, setSeasonRatings] = useState<Record<number, SeasonState>>({});
+  const [fetchKey, setFetchKey] = useState(0); // pour le bouton Réessayer
+
+  // Reset et recherche imdbID à l'ouverture
+  useEffect(() => {
+    if (!isOpen) return;
+    setImdbId(null);
+    setImdbError(null);
+    setSeasonRatings({});
+    setLoadingImdb(true);
+
+    if (!import.meta.env.VITE_OMDB_API_KEY) {
+      setLoadingImdb(false);
+      setImdbError('no_key');
+      return;
+    }
+
+    fetchSeriesImdbId(title).then(id => {
+      setLoadingImdb(false);
+      if (!id) { setImdbError('not_found'); return; }
+      setImdbId(id);
+    });
+  }, [isOpen, title, fetchKey]);
+
+  // Charge les saisons en parallèle une fois l'imdbID obtenu
+  useEffect(() => {
+    if (!imdbId) return;
+    const max = totalSeasons ?? MAX_SEASONS_FALLBACK;
+
+    for (let s = 1; s <= max; s++) {
+      const season = s;
+      setSeasonRatings(prev => ({ ...prev, [season]: 'loading' }));
+      fetchSeasonRatings(imdbId, season).then(ratings => {
+        if (ratings === null && !totalSeasons) {
+          // Saison inexistante en mode auto-detect : on l'ignore
+          setSeasonRatings(prev => {
+            const next = { ...prev };
+            delete next[season];
+            return next;
+          });
+        } else {
+          setSeasonRatings(prev => ({ ...prev, [season]: ratings ?? 'error' }));
+        }
+      });
+    }
+  }, [imdbId, totalSeasons]);
+
+  if (!isOpen) return null;
+
+  const stats = computeStats(seasonRatings);
+  const seasons = Object.keys(seasonRatings)
+    .map(Number)
+    .sort((a, b) => a - b);
+  const hasData = seasons.length > 0;
+  const allLoaded = seasons.every(s => seasonRatings[s] !== 'loading');
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center p-0 md:p-4">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={onClose} />
+
+      <div className="relative z-10 w-full md:max-w-2xl card animate-slide-up md:rounded-2xl rounded-t-3xl rounded-b-none md:max-h-[90vh] flex flex-col overflow-hidden">
+        {/* Close */}
+        <button onClick={onClose} className="absolute top-4 right-4 btn-ghost p-2 z-10">
+          <X size={20} />
+        </button>
+
+        {/* Header */}
+        <div className="flex items-start gap-4 p-6 pb-4 flex-shrink-0">
+          <div className="w-14 md:w-16 aspect-[2/3] rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0">
+            {posterUrl ? (
+              <img src={posterUrl} alt={title} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Tv size={22} className="text-gray-400" />
+              </div>
+            )}
+          </div>
+          <div className="flex-1 min-w-0 pr-8">
+            <h2 className="font-bold text-base text-gray-900 dark:text-gray-100 leading-tight">{title}</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {[creator, genre, firstAirDate?.slice(0, 4), totalSeasons ? `${totalSeasons} saisons` : null]
+                .filter(Boolean)
+                .join(' · ')}
+            </p>
+            {description && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 line-clamp-2 leading-relaxed">
+                {description}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Corps scrollable */}
+        <div className="overflow-y-auto flex-1">
+          {/* Erreurs */}
+          {imdbError === 'no_key' && (
+            <div className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+              {t('seriesDetail.imdbNoApiKey')}
+            </div>
+          )}
+          {imdbError === 'not_found' && (
+            <div className="px-6 py-8 text-center space-y-3">
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('seriesDetail.imdbNotAvailable')}</p>
+              <button
+                onClick={() => setFetchKey(k => k + 1)}
+                className="btn-ghost text-sm"
+              >
+                {t('seriesDetail.imdbRetry')}
+              </button>
+            </div>
+          )}
+
+          {/* Loading imdb ID */}
+          {loadingImdb && (
+            <div className="px-6 py-8 text-center text-sm text-gray-400 animate-pulse">
+              {t('seriesDetail.imdbLoading')}
+            </div>
+          )}
+
+          {/* Stats */}
+          {stats && (
+            <div className="flex border-t border-b border-black/[0.06] dark:border-white/[0.06]">
+              <div className="flex-1 py-3 text-center border-r border-black/[0.06] dark:border-white/[0.06]">
+                <div className="text-lg font-extrabold" style={getRatingStyle(parseFloat(stats.average))}>
+                  {stats.average}
+                </div>
+                <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 uppercase tracking-wide">
+                  {t('seriesDetail.imdbAverage')}
+                </div>
+              </div>
+              <div className="flex-1 py-3 text-center border-r border-black/[0.06] dark:border-white/[0.06]">
+                <div className="text-lg font-extrabold" style={getRatingStyle(parseFloat(stats.best))}>
+                  {stats.best}
+                </div>
+                <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 uppercase tracking-wide">
+                  {t('seriesDetail.imdbBest')}
+                </div>
+              </div>
+              <div className="flex-1 py-3 text-center">
+                <div className="text-lg font-extrabold" style={getRatingStyle(parseFloat(stats.worst))}>
+                  {stats.worst}
+                </div>
+                <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 uppercase tracking-wide">
+                  {t('seriesDetail.imdbWorst')}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Grille épisodes */}
+          {hasData && (
+            <div className="px-6 py-4">
+              <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">
+                {t('seriesDetail.imdbRatings')}
+              </p>
+              <div className="overflow-x-auto pb-2">
+                <div className="flex gap-2.5" style={{ minWidth: 'max-content' }}>
+                  {seasons.map(s => {
+                    const state = seasonRatings[s];
+                    return (
+                      <div key={s}>
+                        <div className="text-[10px] text-gray-500 dark:text-gray-400 font-semibold text-center mb-1.5">
+                          S{s}
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          {state === 'loading' ? (
+                            Array.from({ length: 6 }).map((_, i) => (
+                              <div
+                                key={i}
+                                className="w-11 h-7 rounded animate-pulse bg-gray-200 dark:bg-gray-700"
+                              />
+                            ))
+                          ) : state === 'error' ? (
+                            <div className="w-11 h-7 rounded bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[9px] text-gray-400">
+                              —
+                            </div>
+                          ) : (
+                            state.map(ep => {
+                              const style = getRatingStyle(ep.imdbRating);
+                              return (
+                                <div
+                                  key={ep.episode}
+                                  title={`E${ep.episode} · ${ep.title}${ep.imdbRating ? ` · ${ep.imdbRating}` : ''}`}
+                                  className="w-11 h-7 rounded flex items-center justify-center text-xs font-bold cursor-default select-none"
+                                  style={style}
+                                >
+                                  {ep.imdbRating?.toFixed(1) ?? 'N/A'}
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Légende */}
+              <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-4">
+                {[
+                  { label: '9–10', style: getRatingStyle(9.5) },
+                  { label: '8–9',  style: getRatingStyle(8.5) },
+                  { label: '7–8',  style: getRatingStyle(7.5) },
+                  { label: '6–7',  style: getRatingStyle(6.5) },
+                  { label: '5–6',  style: getRatingStyle(5.5) },
+                  { label: '<5',   style: getRatingStyle(4)   },
+                ].map(({ label, style }) => (
+                  <div key={label} className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: style.background }} />
+                    <span className="text-[10px] text-gray-500 dark:text-gray-400">{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Bouton ajout (uniquement depuis recherche) */}
+          {showAddButton && onAdd && (
+            <div className="px-6 pb-6 pt-2 flex-shrink-0">
+              <button
+                onClick={() => { onClose(); onAdd(); }}
+                className="w-full btn-primary flex items-center justify-center gap-2 py-2.5"
+              >
+                <Plus size={16} />
+                {t('seriesDetail.addToCollection')}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
