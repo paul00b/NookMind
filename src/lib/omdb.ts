@@ -7,22 +7,27 @@ function getApiKey(): string {
 export interface EpisodeRating {
   episode: number;
   title: string;
-  imdbRating: number | null; // null si "N/A"
+  imdbRating: number | null;
 }
 
 /** Cherche l'imdbID d'une série par titre. Retourne null si non trouvé ou pas de clé API. */
 export async function fetchSeriesImdbId(title: string): Promise<string | null> {
   const key = getApiKey();
   if (!key) return null;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
   try {
     const res = await fetch(
-      `${OMDB_BASE}/?t=${encodeURIComponent(title)}&type=series&apikey=${key}`
+      `${OMDB_BASE}/?t=${encodeURIComponent(title)}&type=series&apikey=${key}`,
+      { signal: controller.signal }
     );
     if (!res.ok) return null;
     const data = await res.json();
     return data.Response === 'True' ? (data.imdbID as string) : null;
   } catch {
     return null;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
@@ -33,9 +38,12 @@ export async function fetchSeasonRatings(
 ): Promise<EpisodeRating[] | null> {
   const key = getApiKey();
   if (!key) return null;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
   try {
     const res = await fetch(
-      `${OMDB_BASE}/?i=${imdbId}&Season=${season}&apikey=${key}`
+      `${OMDB_BASE}/?i=${imdbId}&Season=${season}&apikey=${key}`,
+      { signal: controller.signal }
     );
     if (!res.ok) return null;
     const data = await res.json();
@@ -43,9 +51,11 @@ export async function fetchSeasonRatings(
     return (data.Episodes as Array<{ Episode: string; Title: string; imdbRating: string }>).map(ep => ({
       episode: parseInt(ep.Episode, 10),
       title: ep.Title,
-      imdbRating: ep.imdbRating === 'N/A' ? null : parseFloat(ep.imdbRating),
+      imdbRating: ep.imdbRating === 'N/A' || ep.imdbRating === '' ? null : parseFloat(ep.imdbRating),
     }));
   } catch {
     return null;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
