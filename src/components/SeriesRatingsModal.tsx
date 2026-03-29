@@ -219,6 +219,22 @@ export default function SeriesRatingsModal({
               </p>
               <div className="overflow-x-auto pb-2">
                 <div className="flex gap-2.5" style={{ minWidth: 'max-content' }}>
+                  {/* Colonne numéros d'épisodes */}
+                  {seasons.some(s => Array.isArray(seasonRatings[s]) && (seasonRatings[s] as EpisodeRating[]).length > 0) && (() => {
+                    const maxEps = Math.max(...seasons.map(s => Array.isArray(seasonRatings[s]) ? (seasonRatings[s] as EpisodeRating[]).length : 0));
+                    return (
+                      <div key="ep-labels">
+                        <div className="h-[18px] mb-1.5" />
+                        <div className="flex flex-col gap-1">
+                          {Array.from({ length: maxEps }, (_, i) => (
+                            <div key={i} className="w-7 h-7 flex items-center justify-center text-[10px] font-medium text-gray-400 dark:text-gray-500">
+                              E{i + 1}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
                   {seasons.map(s => {
                     const state = seasonRatings[s];
                     return (
