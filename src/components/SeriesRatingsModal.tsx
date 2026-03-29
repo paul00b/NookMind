@@ -117,7 +117,6 @@ export default function SeriesRatingsModal({
     .map(Number)
     .sort((a, b) => a - b);
   const hasData = seasons.length > 0;
-  const allLoaded = seasons.every(s => seasonRatings[s] !== 'loading');
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center p-0 md:p-4">
@@ -143,7 +142,7 @@ export default function SeriesRatingsModal({
           <div className="flex-1 min-w-0 pr-8">
             <h2 className="font-bold text-base text-gray-900 dark:text-gray-100 leading-tight">{title}</h2>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {[creator, genre, firstAirDate?.slice(0, 4), totalSeasons ? `${totalSeasons} saisons` : null]
+              {[creator, genre, firstAirDate?.slice(0, 4), totalSeasons ? t('seriesDetail.seasons', { count: totalSeasons }) : null]
                 .filter(Boolean)
                 .join(' · ')}
             </p>
