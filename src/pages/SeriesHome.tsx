@@ -346,7 +346,7 @@ export default function SeriesHome() {
           description={ratingsTarget.overview || null}
           posterUrl={getPosterUrl(ratingsTarget.poster_path)}
           firstAirDate={ratingsTarget.first_air_date || null}
-          totalSeasons={(ratingsTarget as any).number_of_seasons ?? null}
+          totalSeasons={ratingsTarget.number_of_seasons ?? null}
           showAddButton={true}
           onAdd={() => handleSelectSeries(ratingsTarget)}
         />
