@@ -1,5 +1,5 @@
-const IMDB_GRAPHQL = 'https://caching.graphql.imdb.com/';
-const IMDB_SUGGEST = 'https://v3.sg.media-imdb.com/suggestion/titles';
+const IMDB_GRAPHQL = '/api/imdb-graphql';
+const IMDB_SUGGEST = '/api/imdb-suggest';
 
 export interface EpisodeRating {
   episode: number;
@@ -42,7 +42,7 @@ async function doFetch(url: string, options?: RequestInit): Promise<Response | n
 export async function fetchSeriesImdbId(title: string): Promise<string | null> {
   const firstChar = encodeURIComponent(title[0].toLowerCase());
   const query = encodeURIComponent(title.toLowerCase());
-  const res = await doFetch(`${IMDB_SUGGEST}/${firstChar}/${query}.json`);
+  const res = await doFetch(`${IMDB_SUGGEST}?firstChar=${firstChar}&query=${query}`);
   if (!res) return null;
   try {
     const data = await res.json();
