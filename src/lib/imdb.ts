@@ -64,10 +64,10 @@ async function fetchAllEpisodesRaw(imdbId: string): Promise<Record<number, Episo
     if (cursor) variables.after = cursor;
 
     const body = {
-      query: `query AllEpisodes($id: ID!, $first: Int!${cursor ? ', $after: String' : ''}) {
+      query: `query AllEpisodes($id: ID!, $first: Int!, $after: String) {
         title(id: $id) {
           episodes {
-            episodes(first: $first${cursor ? ', after: $after' : ''}) {
+            episodes(first: $first, after: $after) {
               pageInfo { hasNextPage endCursor }
               edges {
                 node {

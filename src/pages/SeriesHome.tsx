@@ -293,7 +293,7 @@ export default function SeriesHome() {
                           )}
                         </button>
                         <button
-                          onClick={(e) => { e.stopPropagation(); setRatingsTarget(s); }}
+                          onClick={(e) => { e.stopPropagation(); setDropdownOpen(false); setRatingsTarget(s); }}
                           className="flex-shrink-0 mr-3 p-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors"
                           title={t('seriesDetail.viewImdbRatings')}
                         >
