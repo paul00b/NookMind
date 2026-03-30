@@ -16,7 +16,7 @@ export default function MobileTopBar({ onOpenSettings }: Props) {
         <span className="font-serif font-bold text-lg text-gray-900 dark:text-gray-100">NookMind</span>
       </div>
       <button onClick={onOpenSettings} className="rounded-full transition-opacity hover:opacity-80">
-        <Avatar name={name} size="sm" />
+        <Avatar name={name} size="sm" imageUrl={user?.user_metadata?.avatar_url} />
       </button>
     </header>
   );

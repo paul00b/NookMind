@@ -59,7 +59,7 @@ export default function SettingsPanel({ onClose }: Props) {
           <section>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-4">{t('settings.profile')}</h3>
             <div className="flex flex-col items-center gap-4 card p-5">
-              <Avatar name={name} size="lg" />
+              <Avatar name={name} size="lg" imageUrl={user?.user_metadata?.avatar_url} />
 
               {editingName ? (
                 <div className="w-full space-y-2">
