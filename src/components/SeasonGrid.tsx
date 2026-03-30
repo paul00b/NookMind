@@ -238,7 +238,7 @@ export default function SeasonGrid({
               {t('seriesDetail.season')} {expandedSeason}
               {episodeCounts?.[String(expandedSeason)] != null && (
                 <span className="font-normal text-gray-400 ml-1">
-                  — {watchedEpisodes[String(expandedSeason)]?.length ?? 0}/{episodeCounts[String(expandedSeason)]} {t('seriesDetail.episodes')}
+                  — {watchedEpisodes[String(expandedSeason)]?.length ?? 0}/{episodeCounts?.[String(expandedSeason)]} {t('seriesDetail.episodes')}
                 </span>
               )}
             </p>
