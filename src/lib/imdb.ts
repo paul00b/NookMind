@@ -55,43 +55,60 @@ export async function fetchSeriesImdbId(title: string): Promise<string | null> {
 }
 
 async function fetchAllEpisodesRaw(imdbId: string): Promise<Record<number, EpisodeRating[]> | null> {
-  const body = {
-    query: `query AllEpisodes($id: ID!, $first: Int!) {
-      title(id: $id) {
-        episodes {
-          episodes(first: $first) {
-            edges {
-              node {
-                id
-                titleText { text }
-                ratingsSummary { aggregateRating }
-                series {
-                  displayableEpisodeNumber {
-                    displayableSeason { text }
-                    episodeNumber { episodeNumber }
+  const allEdges: RawEdge[] = [];
+  let cursor: string | null = null;
+
+  // Jusqu'à 10 pages × 100 = 1000 épisodes max
+  for (let page = 0; page < 10; page++) {
+    const variables: Record<string, unknown> = { id: imdbId, first: 100 };
+    if (cursor) variables.after = cursor;
+
+    const body = {
+      query: `query AllEpisodes($id: ID!, $first: Int!${cursor ? ', $after: String' : ''}) {
+        title(id: $id) {
+          episodes {
+            episodes(first: $first${cursor ? ', after: $after' : ''}) {
+              pageInfo { hasNextPage endCursor }
+              edges {
+                node {
+                  id
+                  titleText { text }
+                  ratingsSummary { aggregateRating }
+                  series {
+                    displayableEpisodeNumber {
+                      displayableSeason { text }
+                      episodeNumber { episodeNumber }
+                    }
                   }
                 }
               }
             }
           }
         }
-      }
-    }`,
-    variables: { id: imdbId, first: 250 },
-  };
+      }`,
+      variables,
+    };
 
-  const res = await doFetch(IMDB_GRAPHQL, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+    const res = await doFetch(IMDB_GRAPHQL, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
 
-  if (!res) return null;
-  const data = await res.json();
-  if (data.errors?.length) return null;
+    if (!res) return null;
+    const data = await res.json();
+    if (data.errors?.length) return null;
 
-  const allEdges: RawEdge[] = data?.data?.title?.episodes?.episodes?.edges;
-  if (!allEdges?.length) return null;
+    const episodesData = data?.data?.title?.episodes?.episodes;
+    if (!episodesData?.edges) return null;
+
+    allEdges.push(...(episodesData.edges as RawEdge[]));
+
+    if (!episodesData.pageInfo?.hasNextPage) break;
+    cursor = episodesData.pageInfo.endCursor as string;
+  }
+
+  if (allEdges.length === 0) return null;
 
   // Grouper par saison
   const result: Record<number, EpisodeRating[]> = {};
