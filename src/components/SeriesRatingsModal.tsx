@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { X, Tv, Plus } from 'lucide-react';
 import { fetchSeriesImdbId, fetchSeasonRatings, type EpisodeRating } from '../lib/imdb';
 import { useTranslation } from 'react-i18next';
@@ -60,6 +60,9 @@ export default function SeriesRatingsModal({
   onAdd,
 }: SeriesRatingsModalProps) {
   const { t } = useTranslation();
+  const [descExpanded, setDescExpanded] = useState(false);
+  const [descTruncated, setDescTruncated] = useState(false);
+  const descRef = useRef<HTMLParagraphElement>(null);
   const [imdbId, setImdbId] = useState<string | null>(null);
   const [loadingImdb, setLoadingImdb] = useState(false);
   const [imdbError, setImdbError] = useState<'not_found' | 'no_key' | null>(null);
@@ -72,6 +75,12 @@ export default function SeriesRatingsModal({
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
+
+  // Détecte si la description est tronquée
+  useEffect(() => {
+    if (!descRef.current) return;
+    setDescTruncated(descRef.current.scrollHeight > descRef.current.clientHeight);
+  }, [description, isOpen]);
 
   // Reset et recherche imdbID à l'ouverture
   useEffect(() => {
@@ -147,13 +156,23 @@ export default function SeriesRatingsModal({
                 .filter(Boolean)
                 .join(' · ')}
             </p>
-            {description && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">
-                {description}
-              </p>
-            )}
           </div>
         </div>
+        {description && (
+          <div className="px-6 pb-4 flex-shrink-0">
+            <p
+              ref={descRef}
+              className={`text-xs text-gray-500 dark:text-gray-400 leading-relaxed ${descExpanded ? '' : 'line-clamp-3'}`}
+            >
+              {description}
+            </p>
+            {(descTruncated || descExpanded) && (
+              <button onClick={() => setDescExpanded(e => !e)} className="inline-flex items-center gap-1 text-xs text-amber-600 mt-1">
+                {descExpanded ? '▲ Voir moins' : '▼ Voir plus'}
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Corps scrollable */}
         <div className="overflow-y-auto flex-1">

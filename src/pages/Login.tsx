@@ -5,7 +5,7 @@ import { BookOpen, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export default function Login() {
-  const { user, signIn, signUp } = useAuth();
+  const { user, signIn, signUp, signInWithGoogle } = useAuth();
   const { t } = useTranslation();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
@@ -14,6 +14,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   if (user) return <Navigate to="/" replace />;
 
@@ -119,14 +120,14 @@ export default function Login() {
           </form>
 
           {/* Divider */}
-          {/*<div className="flex items-center gap-3">
+          <div className="flex items-center gap-3">
             <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
             <span className="text-xs text-gray-400 dark:text-gray-500">{t('login.or')}</span>
             <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
-          </div>*/}
+          </div>
 
           {/* Google */}
-          {/*<button
+          <button
             onClick={async () => {
               setGoogleLoading(true);
               const { error } = await signInWithGoogle();
@@ -147,7 +148,7 @@ export default function Login() {
               </svg>
             )}
             {t('login.continueWithGoogle')}
-          </button>*/}
+          </button>
         </div>
       </div>
     </div>
