@@ -23,6 +23,8 @@ import MovieHome from './pages/MovieHome';
 import MovieLibrary from './pages/MovieLibrary';
 import SeriesHome from './pages/SeriesHome';
 import SeriesLibrary from './pages/SeriesLibrary';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
 
 function HomeSwitch() {
   const { mode } = useMediaMode();
@@ -47,6 +49,8 @@ export default function App() {
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
               <Route
                 path="/"
                 element={
