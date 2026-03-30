@@ -9,7 +9,7 @@ import { X, Pencil, Check, Trash2, Tv, ChevronDown, ChevronUp, FolderPlus, Folde
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { getRatingStyle, type SeasonState } from './SeriesRatingsModal';
-import { fetchSeriesImdbId, fetchSeasonRatings, type EpisodeRating } from '../lib/omdb';
+import { fetchSeriesImdbId, fetchSeasonRatings, type EpisodeRating } from '../lib/imdb';
 
 interface Props {
   series: Series;
@@ -45,10 +45,6 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
   // Charge l'imdbID quand la section IMDB s'ouvre pour la première fois
   useEffect(() => {
     if (!showImdbSection || imdbId || loadingImdb || imdbError) return;
-    if (!import.meta.env.VITE_OMDB_API_KEY) {
-      setImdbError('no_key');
-      return;
-    }
     setLoadingImdb(true);
     fetchSeriesImdbId(localSeries.title).then(id => {
       setLoadingImdb(false);
@@ -231,10 +227,11 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
                 onClick={() => setShowImdbSection(s => !s)}
               >
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('seriesDetail.imdbRatings')}</span>
-                {showImdbSection ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+                <ChevronDown size={16} className={`text-gray-400 transition-transform duration-300 ${showImdbSection ? 'rotate-180' : ''}`} />
               </button>
 
-              {showImdbSection && (
+              <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${showImdbSection ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+              <div className="overflow-hidden">
                 <div className="border-t border-black/[0.06] dark:border-white/[0.06]">
                   {imdbError === 'no_key' && (
                     <p className="px-4 py-4 text-sm text-gray-400 text-center">{t('seriesDetail.imdbNoApiKey')}</p>
@@ -343,14 +340,28 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
                                   ) : (
                                     state.map(ep => {
                                       const style = getRatingStyle(ep.imdbRating);
-                                      return (
+                                      const cell = (
                                         <div
-                                          key={ep.episode}
-                                          title={`E${ep.episode} · ${ep.title}${ep.imdbRating ? ` · ${ep.imdbRating}` : ''}`}
-                                          className="w-11 h-7 rounded flex items-center justify-center text-xs font-bold cursor-default select-none"
+                                          className="w-11 h-7 rounded flex items-center justify-center text-xs font-bold select-none"
                                           style={style}
                                         >
                                           {ep.imdbRating?.toFixed(1) ?? 'N/A'}
+                                        </div>
+                                      );
+                                      return ep.imdbId ? (
+                                        <a
+                                          key={ep.episode}
+                                          href={`https://www.imdb.com/title/${ep.imdbId}/`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          title={`E${ep.episode} · ${ep.title}${ep.imdbRating ? ` · ${ep.imdbRating}` : ''}`}
+                                          className="hover:opacity-80 transition-opacity"
+                                        >
+                                          {cell}
+                                        </a>
+                                      ) : (
+                                        <div key={ep.episode} title={`E${ep.episode} · ${ep.title}`} className="cursor-default">
+                                          {cell}
                                         </div>
                                       );
                                     })
@@ -379,7 +390,8 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
                     </div>
                   )}
                 </div>
-              )}
+              </div>
+              </div>
             </div>
 
             <div>

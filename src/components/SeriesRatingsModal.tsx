@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { X, Tv, Plus } from 'lucide-react';
-import { fetchSeriesImdbId, fetchSeasonRatings, type EpisodeRating } from '../lib/omdb';
+import { fetchSeriesImdbId, fetchSeasonRatings, type EpisodeRating } from '../lib/imdb';
 import { useTranslation } from 'react-i18next';
 
 interface SeriesRatingsModalProps {
@@ -80,12 +80,6 @@ export default function SeriesRatingsModal({
     setImdbError(null);
     setSeasonRatings({});
     setLoadingImdb(true);
-
-    if (!import.meta.env.VITE_OMDB_API_KEY) {
-      setLoadingImdb(false);
-      setImdbError('no_key');
-      return;
-    }
 
     fetchSeriesImdbId(title).then(id => {
       setLoadingImdb(false);
@@ -260,14 +254,28 @@ export default function SeriesRatingsModal({
                           ) : (
                             state.map(ep => {
                               const style = getRatingStyle(ep.imdbRating);
-                              return (
+                              const cell = (
                                 <div
-                                  key={ep.episode}
-                                  title={`E${ep.episode} · ${ep.title}${ep.imdbRating ? ` · ${ep.imdbRating}` : ''}`}
-                                  className="w-11 h-7 rounded flex items-center justify-center text-xs font-bold cursor-default select-none"
+                                  className="w-11 h-7 rounded flex items-center justify-center text-xs font-bold select-none"
                                   style={style}
                                 >
                                   {ep.imdbRating?.toFixed(1) ?? 'N/A'}
+                                </div>
+                              );
+                              return ep.imdbId ? (
+                                <a
+                                  key={ep.episode}
+                                  href={`https://www.imdb.com/title/${ep.imdbId}/`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title={`E${ep.episode} · ${ep.title}${ep.imdbRating ? ` · ${ep.imdbRating}` : ''}`}
+                                  className="hover:opacity-80 transition-opacity"
+                                >
+                                  {cell}
+                                </a>
+                              ) : (
+                                <div key={ep.episode} title={`E${ep.episode} · ${ep.title}`} className="cursor-default">
+                                  {cell}
                                 </div>
                               );
                             })
