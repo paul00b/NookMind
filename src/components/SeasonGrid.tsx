@@ -248,7 +248,7 @@ export default function SeasonGrid({
                 onClick={() => toggleAllEpisodes(expandedSeason)}
                 className="text-xs text-amber-600 dark:text-amber-400 hover:underline"
               >
-                {(watchedEpisodes[String(expandedSeason)]?.length ?? 0) >= (episodeCounts[String(expandedSeason)] ?? 0)
+                {(watchedEpisodes[String(expandedSeason)]?.length ?? 0) >= (episodeCounts?.[String(expandedSeason)] ?? 0)
                   ? t('seriesDetail.unmarkAll')
                   : t('seriesDetail.markAll')}
               </button>
