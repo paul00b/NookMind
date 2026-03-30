@@ -60,8 +60,7 @@ async function fetchAllEpisodesRaw(imdbId: string): Promise<Record<number, Episo
 
   // Jusqu'à 10 pages × 100 = 1000 épisodes max
   for (let page = 0; page < 10; page++) {
-    const variables: Record<string, unknown> = { id: imdbId, first: 100 };
-    if (cursor) variables.after = cursor;
+    const variables: Record<string, unknown> = { id: imdbId, first: 100, after: cursor };
 
     const body = {
       query: `query AllEpisodes($id: ID!, $first: Int!, $after: String) {
