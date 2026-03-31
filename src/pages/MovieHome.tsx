@@ -212,7 +212,7 @@ export default function MovieHome() {
 
         {/* Dropdown */}
         {(dropdownOpen || searching) && query && (
-          <div className="absolute top-full mt-2 left-0 right-0 card shadow-xl z-20 overflow-hidden animate-slide-up">
+          <div className="absolute top-full mt-2 left-0 right-0 card shadow-xl z-20 overflow-y-auto animate-slide-up max-h-[60vh]">
             {searching ? (
               <div className="p-3 space-y-2">
                 {[1, 2, 3].map(i => (

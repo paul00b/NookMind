@@ -340,6 +340,7 @@ const en = {
     unmarkAll: 'Unmark all',
     loadingEpisodes: 'Loading episodes...',
     noEpisodeData: 'No episode data available',
+    comingSoon: 'Coming soon',
     clickSeasonHint: 'Tap a season number to track individual episodes',
     removeFollowingEpisodes_one: 'Also remove the next watched episode?',
     removeFollowingEpisodes_other: 'Also remove the next {{count}} watched episodes?',

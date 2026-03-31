@@ -340,6 +340,7 @@ const fr = {
     unmarkAll: 'Tout démarquer',
     loadingEpisodes: 'Chargement des épisodes...',
     noEpisodeData: 'Données d\'épisodes indisponibles',
+    comingSoon: 'Bientôt disponible',
     clickSeasonHint: 'Appuyez sur un numéro de saison pour suivre les épisodes',
     removeFollowingEpisodes_one: 'Enlever également l\'épisode suivant ?',
     removeFollowingEpisodes_other: 'Enlever également les {{count}} épisodes suivants ?',

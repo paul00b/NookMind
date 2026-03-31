@@ -5,6 +5,7 @@ import type { Series } from '../types';
 import StarRating from './StarRating';
 import SeasonGrid, { deriveSeriesStatus } from './SeasonGrid';
 import { useTranslation } from 'react-i18next';
+import { fetchSeasonEpisodeCount } from '../lib/tmdb';
 
 const normalize = (s: string) => s.toLowerCase().trim().replace(/\s+/g, ' ');
 
@@ -36,6 +37,8 @@ export default function AddSeriesModal({ prefill, onClose }: Props) {
   const { t } = useTranslation();
   const [form, setForm] = useState<SeriesFormData>({ ...EMPTY, ...prefill });
   const [saving, setSaving] = useState(false);
+  const [episodeCounts, setEpisodeCounts] = useState<Record<string, number>>({});
+  const [loadingEpisodesSeason, setLoadingEpisodesSeason] = useState<number | null>(null);
   useEffect(() => { document.body.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; }; }, []);
 
   const isDuplicate = useMemo(() => {
@@ -49,9 +52,20 @@ export default function AddSeriesModal({ prefill, onClose }: Props) {
   const derivedStatus = deriveSeriesStatus(form.watched_seasons, form.seasons);
   const showRating = derivedStatus === 'watched';
 
-  const handleSeasonsChange = (watched: number[], _episodes: Record<string, number[]>) => {
+  const handleSeasonsChange = (watched: number[], episodes: Record<string, number[]>) => {
     const newStatus = deriveSeriesStatus(watched, form.seasons);
-    setForm(f => ({ ...f, watched_seasons: watched, status: newStatus, ...(newStatus === 'want_to_watch' ? { rating: null } : {}) }));
+    setForm(f => ({ ...f, watched_seasons: watched, watched_episodes: episodes, status: newStatus, ...(newStatus === 'want_to_watch' ? { rating: null } : {}) }));
+  };
+
+  const handleSeasonExpand = async (seasonNumber: number) => {
+    if (!form.tmdb_id || episodeCounts[String(seasonNumber)] != null) return;
+    setLoadingEpisodesSeason(seasonNumber);
+    try {
+      const count = await fetchSeasonEpisodeCount(form.tmdb_id, seasonNumber);
+      if (count != null) setEpisodeCounts(prev => ({ ...prev, [String(seasonNumber)]: count }));
+    } finally {
+      setLoadingEpisodesSeason(null);
+    }
   };
 
   const handleTotalSeasonsChange = (total: number | null) => {
@@ -129,7 +143,11 @@ export default function AddSeriesModal({ prefill, onClose }: Props) {
               <SeasonGrid
                 totalSeasons={form.seasons}
                 watchedSeasons={form.watched_seasons}
+                watchedEpisodes={form.watched_episodes ?? {}}
                 onChange={handleSeasonsChange}
+                episodeCounts={form.tmdb_id ? episodeCounts : undefined}
+                onSeasonExpand={form.tmdb_id ? handleSeasonExpand : undefined}
+                loadingEpisodesSeason={loadingEpisodesSeason}
               />
             </div>
           )}

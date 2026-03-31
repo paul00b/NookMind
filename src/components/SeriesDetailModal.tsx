@@ -450,7 +450,7 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
               </div>
             )}
 
-            <div className="flex flex-wrap gap-2 pt-2">
+            <div className="flex flex-wrap gap-2 pt-2 justify-center">
               {!confirmDelete ? (
                 <button onClick={() => setConfirmDelete(true)} className="btn-ghost text-sm text-red-500 hover:bg-red-500/10 flex items-center gap-1.5">
                   <Trash2 size={14} /> {t('seriesDetail.delete')}
