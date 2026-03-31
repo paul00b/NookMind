@@ -87,6 +87,17 @@ export async function fetchTrendingSeries(maxResults = 12): Promise<TmdbSeries[]
   }
 }
 
+export async function fetchUpcomingMovies(maxResults = 10): Promise<TmdbMovie[]> {
+  try {
+    const res = await fetch(buildUrl('/movie/upcoming', { language: 'en-US' }));
+    if (!res.ok) return [];
+    const data = await res.json();
+    return ((data.results as TmdbMovie[]) ?? []).slice(0, maxResults);
+  } catch {
+    return [];
+  }
+}
+
 export async function fetchMoviesByGenre(genreQuery: string, maxResults = 12): Promise<TmdbMovie[]> {
   try {
     const res = await fetch(buildUrl('/search/movie', { query: genreQuery, include_adult: 'false', language: 'en-US' }));
