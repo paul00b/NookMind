@@ -35,7 +35,7 @@ export default function BottomNav() {
             onClick={() => setMode('movies')}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
               mode === 'movies'
-                ? 'bg-amber-500 text-white shadow-sm'
+                ? 'bg-indigo-500 text-white shadow-sm'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
@@ -46,7 +46,7 @@ export default function BottomNav() {
             onClick={() => setMode('series')}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
               mode === 'series'
-                ? 'bg-amber-500 text-white shadow-sm'
+                ? 'bg-teal-500 text-white shadow-sm'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >

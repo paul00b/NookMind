@@ -42,7 +42,7 @@ export default function AppLayout() {
       {/* Mode ambiance background */}
       <div
         aria-hidden="true"
-        className={`fixed inset-0 z-0 pointer-events-none transition-opacity duration-700 opacity-[0.08] dark:opacity-[0.14] ${modeGlowClass(mode)}`}
+        className={`fixed inset-0 z-0 pointer-events-none transition-opacity duration-700 opacity-25 dark:opacity-30 ${modeGlowClass(mode)}`}
       />
       {/* Desktop sidebar */}
       <div className="hidden md:block">
