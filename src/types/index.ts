@@ -71,13 +71,6 @@ export interface TmdbMovie {
   };
 }
 
-export interface TmdbEpisode {
-  air_date: string | null;
-  episode_number: number;
-  season_number: number;
-  name: string;
-}
-
 export interface MovieCategory {
   id: string;
   user_id: string;
@@ -113,6 +106,13 @@ export interface Series {
   rating: number | null;
   personal_note: string | null;
   created_at: string;
+}
+
+export interface TmdbEpisode {
+  air_date: string | null;
+  episode_number: number;
+  season_number: number;
+  name: string;
 }
 
 export interface TmdbSeries {
