@@ -69,4 +69,30 @@
   .nav-link.active {
     @apply bg-amber-500/10 text-amber-600 dark:text-amber-400;
   }
+
+  /* ── Mode background ambiance ── */
+
+  .mode-bg-books {
+    background-image:
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/feTurbulence%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"),
+      radial-gradient(ellipse 80% 40% at 50% -10%, #f59e0b, transparent);
+    background-size: 256px 256px, 100% 100%;
+    background-repeat: repeat, no-repeat;
+  }
+
+  .mode-bg-movies {
+    background-image:
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/feTurbulence%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"),
+      radial-gradient(ellipse 80% 40% at 50% -10%, #6366f1, transparent);
+    background-size: 256px 256px, 100% 100%;
+    background-repeat: repeat, no-repeat;
+  }
+
+  .mode-bg-series {
+    background-image:
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/feTurbulence%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"),
+      radial-gradient(ellipse 80% 40% at 50% -10%, #14b8a6, transparent);
+    background-size: 256px 256px, 100% 100%;
+    background-repeat: repeat, no-repeat;
+  }
 }
