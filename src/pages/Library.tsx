@@ -147,7 +147,7 @@ export default function Library() {
     [categories, activeTab]
   );
 
-  const isStatusTab = activeTab === 'read' || activeTab === 'want_to_read';
+  const isStatusTab = activeTab === 'read' || activeTab === 'want_to_read' || activeTab === 'reading';
 
   const filtered = useMemo(() => {
     if (!isStatusTab) return [];
@@ -175,6 +175,7 @@ export default function Library() {
   const counts = {
     read: books.filter(b => b.status === 'read').length,
     want_to_read: books.filter(b => b.status === 'want_to_read').length,
+    reading: books.filter(b => b.status === 'reading').length,
   };
 
   const handleCreateCategory = async (e: React.FormEvent) => {
@@ -250,7 +251,11 @@ export default function Library() {
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-black/[0.06] dark:border-white/[0.06] overflow-x-auto pb-0" style={{ scrollbarWidth: 'none' }}>
         {/* Built-in status tabs */}
-        {([['want_to_read', t('library.wantToRead')], ['read', t('library.read')]] as const).map(([status, label]) => (
+        {([
+          ['reading', t('library.reading')],
+          ['want_to_read', t('library.wantToRead')],
+          ['read', t('library.read')],
+        ] as const).map(([status, label]) => (
           <button
             key={status}
             onClick={() => { setActiveTab(status); setGenreFilter(''); setAuthorFilter(''); }}
