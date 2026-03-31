@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { X, BookOpen, AlertTriangle } from 'lucide-react';
 import { useBooks } from '../context/BooksContext';
-import type { Book, BookStatus } from '../types';
+import type { Book } from '../types';
 import StarRating from './StarRating';
 import { useTranslation } from 'react-i18next';
 
@@ -21,6 +21,7 @@ const EMPTY: BookFormData = {
   status: 'want_to_read',
   rating: null,
   personal_note: null,
+  current_page: null,
 };
 
 interface Props {
@@ -126,24 +127,43 @@ export default function AddBookModal({ prefill, onClose }: Props) {
 
           {/* Status */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('addBook.statusLabel')}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {t('addBook.statusLabel')}
+            </label>
             <div className="flex gap-2">
-              {(['want_to_read', 'read'] as BookStatus[]).map(s => (
+              {(['want_to_read', 'reading', 'read'] as const).map(s => (
                 <button
                   key={s}
                   type="button"
-                  onClick={() => { set('status', s); if (s === 'want_to_read') set('rating', null); }}
-                  className={`flex-1 py-2.5 rounded-full text-sm font-medium border transition-all ${
+                  onClick={() => { set('status', s); if (s !== 'read') set('rating', null); if (s !== 'reading') set('current_page', null); }}
+                  className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-medium border transition-all ${
                     form.status === s
                       ? 'bg-amber-500 text-white border-amber-500'
-                      : 'bg-transparent text-gray-600 dark:text-gray-400 border-black/10 dark:border-white/10 hover:border-amber-500/50'
+                      : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-amber-400'
                   }`}
                 >
-                  {s === 'read' ? t('addBook.alreadyRead') : t('addBook.wantToRead')}
+                  {t(`addBook.status_${s}`)}
                 </button>
               ))}
             </div>
           </div>
+
+          {/* Current page (only if reading) */}
+          {form.status === 'reading' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t('addBook.currentPageLabel')}
+              </label>
+              <input
+                className="input"
+                type="number"
+                min="1"
+                value={form.current_page ?? ''}
+                onChange={e => set('current_page', e.target.value ? parseInt(e.target.value) : null)}
+                placeholder={t('addBook.currentPagePlaceholder')}
+              />
+            </div>
+          )}
 
           {/* Rating (only if read) */}
           {form.status === 'read' && (

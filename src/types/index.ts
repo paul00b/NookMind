@@ -1,4 +1,4 @@
-export type BookStatus = 'read' | 'want_to_read';
+export type BookStatus = 'read' | 'want_to_read' | 'reading';
 
 export interface Book {
   id: string;
@@ -14,6 +14,7 @@ export interface Book {
   status: BookStatus;
   rating: number | null;
   personal_note: string | null;
+  current_page: number | null;
   created_at: string;
 }
 
@@ -107,6 +108,13 @@ export interface Series {
   created_at: string;
 }
 
+export interface TmdbEpisode {
+  air_date: string | null;
+  episode_number: number;
+  season_number: number;
+  name: string;
+}
+
 export interface TmdbSeries {
   id: number;
   name: string;
@@ -116,6 +124,9 @@ export interface TmdbSeries {
   number_of_seasons?: number;
   genres?: { id: number; name: string }[];
   created_by?: { name: string }[];
+  next_episode_to_air?: TmdbEpisode | null;
+  last_episode_to_air?: TmdbEpisode | null;
+  seasons?: { season_number: number; episode_count: number; air_date: string | null }[];
 }
 
 export interface SeriesCategory {
