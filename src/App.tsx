@@ -18,7 +18,9 @@ import Login from './pages/Login';
 import AuthCallback from './pages/AuthCallback';
 import Home from './pages/Home';
 import Library from './pages/Library';
-import Discover from './pages/Discover';
+import NextUpSeries from './pages/NextUpSeries';
+import NextUpBooks from './pages/NextUpBooks';
+import NextUpMovies from './pages/NextUpMovies';
 import MovieHome from './pages/MovieHome';
 import MovieLibrary from './pages/MovieLibrary';
 import SeriesHome from './pages/SeriesHome';
@@ -38,6 +40,13 @@ function LibrarySwitch() {
   if (mode === 'movies') return <MovieLibrary />;
   if (mode === 'series') return <SeriesLibrary />;
   return <Library />;
+}
+
+function NextUpSwitch() {
+  const { mode } = useMediaMode();
+  if (mode === 'movies') return <NextUpMovies />;
+  if (mode === 'series') return <NextUpSeries />;
+  return <NextUpBooks />;
 }
 
 export default function App() {
@@ -73,7 +82,7 @@ export default function App() {
               >
                 <Route index element={<HomeSwitch />} />
                 <Route path="library" element={<LibrarySwitch />} />
-                <Route path="discover" element={<Discover />} />
+                <Route path="discover" element={<NextUpSwitch />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Routes>
