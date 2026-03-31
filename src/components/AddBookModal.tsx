@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { X, BookOpen, AlertTriangle } from 'lucide-react';
 import { useBooks } from '../context/BooksContext';
-import type { Book, BookStatus } from '../types';
+import type { Book } from '../types';
 import StarRating from './StarRating';
 import { useTranslation } from 'react-i18next';
 
