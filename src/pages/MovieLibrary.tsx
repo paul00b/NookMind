@@ -120,7 +120,7 @@ export default function MovieLibrary() {
   const { movies, loading } = useMovies();
   const { movieCategories, createMovieCategory, deleteMovieCategory, addMoviesToCategory, removeMovieFromCategory } = useMovieCategories();
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>('watched');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('want_to_watch');
   const [genreFilter, setGenreFilter] = useState('');
   const [directorFilter, setDirectorFilter] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('created_at');
@@ -184,7 +184,7 @@ export default function MovieLibrary() {
 
   const handleDeleteCategory = async (id: string) => {
     const cat = movieCategories.find(c => c.id === id);
-    if (activeTab === id) setActiveTab('watched');
+    if (activeTab === id) setActiveTab('want_to_watch');
     await deleteMovieCategory(id);
     setDeletingCategoryId(null);
     if (cat) toast.success(`"${cat.title}" deleted`);
@@ -245,7 +245,7 @@ export default function MovieLibrary() {
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-black/[0.06] dark:border-white/[0.06] overflow-x-auto pb-0" style={{ scrollbarWidth: 'none' }}>
-        {([['watched', t('movieLibrary.watched')], ['want_to_watch', t('movieLibrary.wantToWatch')]] as const).map(([status, label]) => (
+        {([['want_to_watch', t('movieLibrary.wantToWatch')], ['watched', t('movieLibrary.watched')]] as const).map(([status, label]) => (
           <button
             key={status}
             onClick={() => { setActiveTab(status); setGenreFilter(''); setDirectorFilter(''); }}

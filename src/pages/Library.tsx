@@ -120,7 +120,7 @@ export default function Library() {
   const { books, loading } = useBooks();
   const { categories, createCategory, deleteCategory, addBooksToCategory, removeBookFromCategory } = useCategories();
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>('read');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('want_to_read');
   const [genreFilter, setGenreFilter] = useState('');
   const [authorFilter, setAuthorFilter] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('created_at');
@@ -188,7 +188,7 @@ export default function Library() {
 
   const handleDeleteCategory = async (id: string) => {
     const cat = categories.find(c => c.id === id);
-    if (activeTab === id) setActiveTab('read');
+    if (activeTab === id) setActiveTab('want_to_read');
     await deleteCategory(id);
     setDeletingCategoryId(null);
     if (cat) toast.success(`"${cat.title}" supprimée`);
@@ -250,7 +250,7 @@ export default function Library() {
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-black/[0.06] dark:border-white/[0.06] overflow-x-auto pb-0" style={{ scrollbarWidth: 'none' }}>
         {/* Built-in status tabs */}
-        {([['read', t('library.read')], ['want_to_read', t('library.wantToRead')]] as const).map(([status, label]) => (
+        {([['want_to_read', t('library.wantToRead')], ['read', t('library.read')]] as const).map(([status, label]) => (
           <button
             key={status}
             onClick={() => { setActiveTab(status); setGenreFilter(''); setAuthorFilter(''); }}

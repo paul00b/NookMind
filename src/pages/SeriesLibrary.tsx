@@ -103,7 +103,7 @@ export default function SeriesLibrary() {
   const { series, loading } = useSeries();
   const { seriesCategories, createSeriesCategory, deleteSeriesCategory, addSeriesToCategory, removeSeriesFromCategory } = useSeriesCategories();
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>('watched');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('watching');
   const [genreFilter, setGenreFilter] = useState('');
   const [creatorFilter, setCreatorFilter] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('created_at');
@@ -160,7 +160,7 @@ export default function SeriesLibrary() {
 
   const handleDeleteCategory = async (id: string) => {
     const cat = seriesCategories.find(c => c.id === id);
-    if (activeTab === id) setActiveTab('watched');
+    if (activeTab === id) setActiveTab('watching');
     await deleteSeriesCategory(id);
     setDeletingCategoryId(null);
     if (cat) toast.success(`"${cat.title}" deleted`);
@@ -201,7 +201,7 @@ export default function SeriesLibrary() {
       </div>
 
       <div className="flex gap-2 mb-6 border-b border-black/[0.06] dark:border-white/[0.06] overflow-x-auto pb-0" style={{ scrollbarWidth: 'none' }}>
-        {([['watched', t('seriesLibrary.watched')], ['watching', t('seriesLibrary.watching')], ['want_to_watch', t('seriesLibrary.wantToWatch')]] as const).map(([status, label]) => (
+        {([['watching', t('seriesLibrary.watching')], ['want_to_watch', t('seriesLibrary.wantToWatch')], ['watched', t('seriesLibrary.watched')]] as const).map(([status, label]) => (
           <button key={status} onClick={() => { setActiveTab(status); setGenreFilter(''); setCreatorFilter(''); }} className={tabClass(activeTab === status)}>
             {label}{countBadge(counts[status], activeTab === status)}
           </button>
