@@ -4,6 +4,17 @@ import Sidebar from './Sidebar';
 import MobileTopBar from './MobileTopBar';
 import SettingsPanel from './SettingsPanel';
 import InstallPromptSheet from './InstallPromptSheet';
+import { useMediaMode } from '../context/MediaModeContext';
+import type { MediaMode } from '../types';
+
+function modeGlowClass(mode: MediaMode): string {
+  const classes: Record<MediaMode, string> = {
+    books:  'mode-bg-books',
+    movies: 'mode-bg-movies',
+    series: 'mode-bg-series',
+  };
+  return classes[mode];
+}
 
 const STORAGE_KEY = 'bm-install-prompted';
 const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
@@ -13,6 +24,7 @@ const isMobile = window.innerWidth < 768;
 export default function AppLayout() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [installSheetOpen, setInstallSheetOpen] = useState(false);
+  const { mode } = useMediaMode();
 
   useEffect(() => {
     if (isStandalone || !isMobile || localStorage.getItem(STORAGE_KEY)) return;
@@ -27,6 +39,11 @@ export default function AppLayout() {
 
   return (
     <div className="min-h-screen bg-[#f8f6f1] dark:bg-[#0f1117]">
+      {/* Mode ambiance background */}
+      <div
+        aria-hidden="true"
+        className={`fixed inset-0 z-0 pointer-events-none transition-opacity duration-700 opacity-[0.08] dark:opacity-[0.14] ${modeGlowClass(mode)}`}
+      />
       {/* Desktop sidebar */}
       <div className="hidden md:block">
         <Sidebar onOpenSettings={() => setSettingsOpen(true)} />
