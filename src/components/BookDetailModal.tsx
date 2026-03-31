@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import type { Book } from '../types';
+import type { Book, BookStatus } from '../types';
 import { useBooks } from '../context/BooksContext';
 import { useCategories } from '../context/CategoriesContext';
 import StarRating from './StarRating';
-import { X, Pencil, Check, Trash2, BookOpen, ArrowLeftRight, ChevronDown, ChevronUp, FolderPlus, FolderMinus } from 'lucide-react';
+import { X, Pencil, Check, Trash2, BookOpen, ChevronDown, ChevronUp, FolderPlus, FolderMinus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 
@@ -20,6 +20,8 @@ export default function BookDetailModal({ book, onClose }: Props) {
   const [note, setNote] = useState(book.personal_note || '');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [localBook, setLocalBook] = useState<Book>(book);
+  const [editingPage, setEditingPage] = useState(false);
+  const [pageInput, setPageInput] = useState(String(book.current_page ?? ''));
   const [descExpanded, setDescExpanded] = useState(false);
   const [descTruncated, setDescTruncated] = useState(false);
   const descRef = useRef<HTMLParagraphElement>(null);
@@ -40,13 +42,26 @@ export default function BookDetailModal({ book, onClose }: Props) {
     toast.success(t('bookDetail.noteSaved'));
   };
 
-  const handleToggleStatus = async () => {
-    const newStatus = localBook.status === 'read' ? 'want_to_read' : 'read';
+  const handleStatusChange = async (newStatus: BookStatus) => {
     const updates: Partial<Book> = { status: newStatus };
-    if (newStatus === 'want_to_read') updates.rating = null;
+    if (newStatus === 'want_to_read') { updates.rating = null; updates.current_page = null; }
+    if (newStatus !== 'reading') updates.current_page = null;
     setLocalBook(b => ({ ...b, ...updates }));
     await updateBook(book.id, updates);
-    toast.success(newStatus === 'read' ? t('bookDetail.movedToRead') : t('bookDetail.movedToWantToRead'));
+    toast.success(
+      newStatus === 'read'
+        ? t('bookDetail.movedToRead')
+        : newStatus === 'reading'
+        ? t('bookDetail.movedToReading')
+        : t('bookDetail.movedToWantToRead')
+    );
+  };
+
+  const handleSavePage = async () => {
+    const page = pageInput ? parseInt(pageInput) : null;
+    setLocalBook(b => ({ ...b, current_page: page }));
+    await updateBook(book.id, { current_page: page });
+    setEditingPage(false);
   };
 
   const handleDelete = async () => {
@@ -104,9 +119,9 @@ export default function BookDetailModal({ book, onClose }: Props) {
                 </span>
               )}
               <span className={`px-3 py-1 rounded-full font-medium text-white ${
-                localBook.status === 'read' ? 'bg-emerald-500' : 'bg-amber-500'
+                localBook.status === 'read' ? 'bg-emerald-500' : localBook.status === 'reading' ? 'bg-blue-500' : 'bg-amber-500'
               }`}>
-                {localBook.status === 'read' ? t('bookDetail.read') : t('bookDetail.wantToRead')}
+                {localBook.status === 'read' ? t('bookDetail.read') : localBook.status === 'reading' ? t('library.reading') : t('bookDetail.wantToRead')}
               </span>
               {localBook.published_date && (
                 <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-3 py-1 rounded-full">
@@ -119,6 +134,76 @@ export default function BookDetailModal({ book, onClose }: Props) {
                 </span>
               )}
             </div>
+
+            {/* Status selector */}
+            <div className="flex gap-2 flex-wrap">
+              {(['want_to_read', 'reading', 'read'] as const).map(s => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => localBook.status !== s && handleStatusChange(s)}
+                  className={`text-sm px-3 py-1.5 rounded-lg font-medium border transition-all ${
+                    localBook.status === s
+                      ? 'bg-amber-500 text-white border-amber-500'
+                      : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-amber-400'
+                  }`}
+                >
+                  {t(`addBook.status_${s}`)}
+                </button>
+              ))}
+            </div>
+
+            {/* Current page */}
+            {localBook.status === 'reading' && (
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('bookDetail.currentPage')}</p>
+                  {!editingPage && (
+                    <button onClick={() => setEditingPage(true)} className="text-gray-400 hover:text-amber-500 transition-colors">
+                      <Pencil size={13} />
+                    </button>
+                  )}
+                </div>
+                {editingPage ? (
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="number"
+                      min="1"
+                      className="input w-28 text-sm"
+                      value={pageInput}
+                      onChange={e => setPageInput(e.target.value)}
+                      autoFocus
+                    />
+                    {localBook.page_count && (
+                      <span className="text-sm text-gray-400">/ {localBook.page_count}</span>
+                    )}
+                    <button onClick={handleSavePage} className="btn-primary text-sm py-1.5 px-3 flex items-center gap-1">
+                      <Check size={14} /> {t('bookDetail.save')}
+                    </button>
+                    <button onClick={() => setEditingPage(false)} className="btn-ghost text-sm py-1.5">
+                      {t('bookDetail.cancel')}
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                    {localBook.current_page != null
+                      ? localBook.page_count
+                        ? `Page ${localBook.current_page} / ${localBook.page_count}`
+                        : `Page ${localBook.current_page}`
+                      : <span className="italic text-gray-400">{t('bookDetail.noPageYet')}</span>
+                    }
+                  </p>
+                )}
+                {localBook.current_page != null && localBook.page_count != null && (
+                  <div className="mt-2 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-amber-500 rounded-full transition-all"
+                      style={{ width: `${Math.min(100, Math.round((localBook.current_page / localBook.page_count) * 100))}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Rating */}
             {localBook.status === 'read' && (
@@ -217,10 +302,6 @@ export default function BookDetailModal({ book, onClose }: Props) {
 
             {/* Actions */}
             <div className="flex flex-wrap gap-2 pt-2">
-              <button onClick={handleToggleStatus} className="btn-ghost text-sm flex items-center gap-1.5">
-                <ArrowLeftRight size={14} />
-                {localBook.status === 'read' ? t('bookDetail.moveToWantToRead') : t('bookDetail.moveToRead')}
-              </button>
               {!confirmDelete ? (
                 <button onClick={() => setConfirmDelete(true)} className="btn-ghost text-sm text-red-500 hover:bg-red-500/10 flex items-center gap-1.5">
                   <Trash2 size={14} /> {t('bookDetail.delete')}
