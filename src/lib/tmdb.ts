@@ -3,6 +3,12 @@ import type { TmdbMovie, TmdbSeries, TmdbSeasonDetails } from '../types';
 const BASE_URL = 'https://api.themoviedb.org/3';
 const IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY as string | undefined;
+
+function getTmdbLocale(): string {
+  const lang = typeof navigator !== 'undefined' ? navigator.language : 'en-US';
+  if (lang.startsWith('fr')) return 'fr-FR';
+  return 'en-US';
+}
 const TMDB_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const seriesDetailsCache = new Map<number, Promise<TmdbSeries | null>>();
 const seasonDetailsCache = new Map<string, Promise<TmdbSeasonDetails | null>>();
@@ -57,7 +63,7 @@ async function fetchMovieListPages(
   const seenIds = new Set<number>();
 
   for (let page = 1; page <= maxPages && results.length < maxResults; page += 1) {
-    const res = await fetch(buildUrl(path, { language: 'en-US', page: String(page) }));
+    const res = await fetch(buildUrl(path, { language: getTmdbLocale(), page: String(page) }));
     if (!res.ok) break;
 
     const data = await res.json();
@@ -83,7 +89,7 @@ export async function searchMovies(query: string, maxResults = 8): Promise<TmdbM
   const timeoutId = setTimeout(() => controller.abort(), 8000);
   try {
     const res = await fetch(
-      buildUrl('/search/movie', { query, include_adult: 'false', language: 'en-US' }),
+      buildUrl('/search/movie', { query, include_adult: 'false', language: getTmdbLocale() }),
       { signal: controller.signal }
     );
     if (!res.ok) throw new Error('Failed to fetch movies');
@@ -97,7 +103,7 @@ export async function searchMovies(query: string, maxResults = 8): Promise<TmdbM
 export async function fetchMovieDetails(tmdbId: number): Promise<TmdbMovie | null> {
   try {
     const res = await fetch(
-      buildUrl(`/movie/${tmdbId}`, { append_to_response: 'credits', language: 'en-US' })
+      buildUrl(`/movie/${tmdbId}`, { append_to_response: 'credits', language: getTmdbLocale() })
     );
     if (!res.ok) return null;
     return await res.json();
@@ -133,7 +139,7 @@ export function extractMovieData(movie: TmdbMovie) {
 
 export async function fetchTrendingMovies(maxResults = 12): Promise<TmdbMovie[]> {
   try {
-    const res = await fetch(buildUrl('/trending/movie/week', { language: 'en-US' }));
+    const res = await fetch(buildUrl('/trending/movie/week', { language: getTmdbLocale() }));
     if (!res.ok) return [];
     const data = await res.json();
     return ((data.results as TmdbMovie[]) ?? []).slice(0, maxResults);
@@ -144,7 +150,7 @@ export async function fetchTrendingMovies(maxResults = 12): Promise<TmdbMovie[]>
 
 export async function fetchTrendingSeries(maxResults = 12): Promise<TmdbSeries[]> {
   try {
-    const res = await fetch(buildUrl('/trending/tv/week', { language: 'en-US' }));
+    const res = await fetch(buildUrl('/trending/tv/week', { language: getTmdbLocale() }));
     if (!res.ok) return [];
     const data = await res.json();
     return ((data.results as TmdbSeries[]) ?? []).slice(0, maxResults);
@@ -183,7 +189,7 @@ export async function fetchRecentMovies(maxResults = 10): Promise<TmdbMovie[]> {
 
 export async function fetchMoviesByGenre(genreQuery: string, maxResults = 12): Promise<TmdbMovie[]> {
   try {
-    const res = await fetch(buildUrl('/search/movie', { query: genreQuery, include_adult: 'false', language: 'en-US' }));
+    const res = await fetch(buildUrl('/search/movie', { query: genreQuery, include_adult: 'false', language: getTmdbLocale() }));
     if (!res.ok) return [];
     const data = await res.json();
     return ((data.results as TmdbMovie[]) ?? []).slice(0, maxResults);
@@ -194,7 +200,7 @@ export async function fetchMoviesByGenre(genreQuery: string, maxResults = 12): P
 
 export async function fetchSeriesByGenre(genreQuery: string, maxResults = 12): Promise<TmdbSeries[]> {
   try {
-    const res = await fetch(buildUrl('/search/tv', { query: genreQuery, include_adult: 'false', language: 'en-US' }));
+    const res = await fetch(buildUrl('/search/tv', { query: genreQuery, include_adult: 'false', language: getTmdbLocale() }));
     if (!res.ok) return [];
     const data = await res.json();
     return ((data.results as TmdbSeries[]) ?? []).slice(0, maxResults);
@@ -211,7 +217,7 @@ export async function searchSeries(query: string, maxResults = 8): Promise<TmdbS
   const timeoutId = setTimeout(() => controller.abort(), 8000);
   try {
     const res = await fetch(
-      buildUrl('/search/tv', { query, include_adult: 'false', language: 'en-US' }),
+      buildUrl('/search/tv', { query, include_adult: 'false', language: getTmdbLocale() }),
       { signal: controller.signal }
     );
     if (!res.ok) throw new Error('Failed to fetch series');
@@ -236,7 +242,7 @@ export async function fetchSeasonDetails(tmdbId: number, seasonNumber: number): 
   if (!seasonDetailsCache.has(requestKey)) {
     seasonDetailsCache.set(requestKey, (async () => {
       try {
-        const res = await fetch(buildUrl(`/tv/${tmdbId}/season/${seasonNumber}`, { language: 'en-US' }));
+        const res = await fetch(buildUrl(`/tv/${tmdbId}/season/${seasonNumber}`, { language: getTmdbLocale() }));
         if (!res.ok) return null;
         const data = await res.json();
         setSessionCache(cacheKey, data);
@@ -261,7 +267,7 @@ export async function fetchSeriesDetails(tmdbId: number): Promise<TmdbSeries | n
     seriesDetailsCache.set(tmdbId, (async () => {
       try {
         const res = await fetch(
-          buildUrl(`/tv/${tmdbId}`, { language: 'en-US' })
+          buildUrl(`/tv/${tmdbId}`, { language: getTmdbLocale() })
         );
         if (!res.ok) return null;
         const data = await res.json();
