@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Library, Compass, BookOpen, Film, Tv } from 'lucide-react';
+import { Search, Library, Compass, BookOpen, Film, Tv } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useMediaMode } from '../context/MediaModeContext';
 
@@ -10,7 +10,7 @@ export default function BottomNav() {
   if (pathname === '/login') return null;
 
   const TABS = [
-    { to: '/', label: t('nav.home'), icon: Home, end: true },
+    { to: '/', label: t('nav.home'), icon: Search, end: true },
     { to: '/library', label: t('nav.library'), icon: Library, end: false },
     { to: '/discover', label: t('nav.discover'), icon: Compass, end: false },
   ];
@@ -21,8 +21,8 @@ export default function BottomNav() {
       <div className="flex items-center justify-center">
         <div className="flex items-center bg-white/85 dark:bg-[#1a1f2e]/85 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.08] rounded-full shadow-md p-1 gap-0.5">
           <button
-            onClick={() => setMode('books')}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+            onPointerDown={(e) => { e.preventDefault(); setMode('books'); }}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all touch-manipulation ${
               mode === 'books'
                 ? 'bg-amber-500 text-white shadow-sm'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
@@ -32,8 +32,8 @@ export default function BottomNav() {
             {t('nav.books')}
           </button>
           <button
-            onClick={() => setMode('movies')}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+            onPointerDown={(e) => { e.preventDefault(); setMode('movies'); }}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all touch-manipulation ${
               mode === 'movies'
                 ? 'bg-indigo-500 text-white shadow-sm'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
@@ -43,8 +43,8 @@ export default function BottomNav() {
             {t('nav.movies')}
           </button>
           <button
-            onClick={() => setMode('series')}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+            onPointerDown={(e) => { e.preventDefault(); setMode('series'); }}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all touch-manipulation ${
               mode === 'series'
                 ? 'bg-teal-500 text-white shadow-sm'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'

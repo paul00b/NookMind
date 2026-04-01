@@ -123,7 +123,7 @@ const en = {
     noCollections: 'No collections yet — create one in the Library.',
   },
   nav: {
-    home: 'Home',
+    home: 'Search',
     library: 'My Library',
     discover: 'Next Up',
     books: 'Books',

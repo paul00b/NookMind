@@ -123,7 +123,7 @@ const fr = {
     noCollections: 'Aucune collection — créez-en une dans la bibliothèque.',
   },
   nav: {
-    home: 'Accueil',
+    home: 'Recherche',
     library: 'Ma bibliothèque',
     discover: 'À suivre',
     books: 'Livres',

@@ -1,5 +1,5 @@
 import {NavLink} from 'react-router-dom';
-import {Home, Library, Compass, Settings, BookOpen, Film, Tv} from 'lucide-react';
+import {Search, Library, Compass, Settings, BookOpen, Film, Tv} from 'lucide-react';
 import Avatar from './Avatar';
 import {useAuth} from '../context/AuthContext';
 import {useMediaMode} from '../context/MediaModeContext';
@@ -15,7 +15,7 @@ export default function Sidebar({onOpenSettings}: Props) {
     const {t} = useTranslation();
 
     const NAV = [
-        {to: '/', label: t('nav.home'), icon: <Home size={18}/>, end: true},
+        {to: '/', label: t('nav.home'), icon: <Search size={18}/>, end: true},
         {to: '/library', label: t('nav.library'), icon: <Library size={18}/>, end: false},
         {to: '/discover', label: t('nav.discover'), icon: <Compass size={18}/>, end: false},
     ];

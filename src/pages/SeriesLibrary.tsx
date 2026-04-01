@@ -204,7 +204,7 @@ export default function SeriesLibrary() {
   );
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto">
+    <div className="p-4 pb-32 md:p-8 md:pb-8 max-w-6xl mx-auto">
       <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="font-serif text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1">{t('seriesLibrary.title')}</h1>

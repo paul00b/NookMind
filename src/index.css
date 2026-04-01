@@ -18,6 +18,17 @@
     min-height: 100svh;
   }
 
+  /* Hide scrollbars on mobile */
+  @media (max-width: 767px) {
+    * {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    *::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
   /* Light mode */
   body {
     @apply bg-[#f8f6f1] text-gray-800;
