@@ -592,7 +592,7 @@ function EpisodeDetailSheet({
           </div>
 
           {state.type === 'available' && onMarkEpisodeWatched && (
-            <div className="mt-6 flex justify-center">
+            <div className="mt-6 pb-4 md:pb-2 flex justify-center">
               <button
                 type="button"
                 onClick={() => {

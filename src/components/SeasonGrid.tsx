@@ -16,9 +16,24 @@ interface SeasonGridProps {
 }
 
 type PendingFill =
-  | { type: 'episode'; season: number; episode: number }
-  | { type: 'episode-remove'; season: number; episode: number; nextWatched: number }
-  | { type: 'season'; season: number }
+  | {
+      type: 'episode';
+      season: number;
+      episode: number;
+      apply: () => void;
+    }
+  | {
+      type: 'episode-remove';
+      season: number;
+      episode: number;
+      nextWatched: number;
+      apply: () => void;
+    }
+  | {
+      type: 'season';
+      season: number;
+      apply: () => void;
+    }
   | null;
 
 export default function SeasonGrid({
@@ -168,48 +183,46 @@ export default function SeasonGrid({
     if (isMarking && episode > 1) {
       const hasPrevUnwatched = Array.from({ length: episode - 1 }, (_, i) => i + 1)
         .some(e => !newEps.includes(e));
-      if (hasPrevUnwatched) setPendingFill({ type: 'episode', season, episode });
+      if (hasPrevUnwatched) {
+        const filledEpisodes = [
+          ...new Set([...newEps, ...Array.from({ length: episode }, (_, i) => i + 1)]),
+        ].sort((a, b) => a - b);
+        const filledWatchedEpisodes = { ...newWatchedEpisodes, [key]: filledEpisodes };
+        const filledAllWatched = count > 0 && filledEpisodes.length >= count;
+        const filledWatchedSeasons = filledAllWatched
+          ? [...new Set([...newWatchedSeasons, season])].sort((a, b) => a - b)
+          : newWatchedSeasons.filter(s => s !== season);
+        setPendingFill({
+          type: 'episode',
+          season,
+          episode,
+          apply: () => onChange(filledWatchedSeasons, filledWatchedEpisodes),
+        });
+      }
     }
 
     // Offer to remove following watched episodes
     if (!isMarking) {
       const nextWatched = newEps.filter(e => e > episode).length;
-      if (nextWatched > 0) setPendingFill({ type: 'episode-remove', season, episode, nextWatched });
+      if (nextWatched > 0) {
+        const trimmedEpisodes = newEps.filter(e => e <= episode);
+        const trimmedWatchedEpisodes = { ...newWatchedEpisodes, [key]: trimmedEpisodes };
+        const trimmedWatchedSeasons = newWatchedSeasons.filter(s => s !== season);
+        setPendingFill({
+          type: 'episode-remove',
+          season,
+          episode,
+          nextWatched,
+          apply: () => onChange(trimmedWatchedSeasons, trimmedWatchedEpisodes),
+        });
+      }
     }
   };
 
   const confirmFill = (yes: boolean) => {
     if (!yes || !pendingFill || !onChange) { setPendingFill(null); return; }
 
-    if (pendingFill.type === 'episode-remove') {
-      const { season, episode } = pendingFill;
-      const key = String(season);
-      const currentEps = watchedEpisodes[key] ?? [];
-      const newEps = currentEps.filter(e => e <= episode);
-      const newWatchedEpisodes = { ...watchedEpisodes, [key]: newEps };
-      const newWatchedSeasons = watchedSeasons.filter(s => s !== season);
-      onChange(newWatchedSeasons, newWatchedEpisodes);
-    } else if (pendingFill.type === 'episode') {
-      const { season, episode } = pendingFill;
-      const key = String(season);
-      const currentEps = watchedEpisodes[key] ?? [];
-      const newEps = [
-        ...new Set([...currentEps, ...Array.from({ length: episode }, (_, i) => i + 1)]),
-      ].sort((a, b) => a - b);
-      const newWatchedEpisodes = { ...watchedEpisodes, [key]: newEps };
-      const count = episodeCounts?.[key] ?? 0;
-      const allWatched = count > 0 && newEps.length >= count;
-      const newWatchedSeasons = allWatched
-        ? [...new Set([...watchedSeasons, season])].sort((a, b) => a - b)
-        : watchedSeasons.filter(s => s !== season);
-      onChange(newWatchedSeasons, newWatchedEpisodes);
-    } else {
-      const { season } = pendingFill;
-      const newWatchedSeasons = [
-        ...new Set([...watchedSeasons, ...Array.from({ length: season }, (_, i) => i + 1)]),
-      ].sort((a, b) => a - b);
-      onChange(newWatchedSeasons, watchedEpisodes);
-    }
+    pendingFill.apply();
 
     setPendingFill(null);
   };
@@ -238,7 +251,16 @@ export default function SeasonGrid({
     if (!allAvailableWatched && season > 1) {
       const hasPrevUnwatched = Array.from({ length: season - 1 }, (_, i) => i + 1)
         .some(s => !watchedSeasons.includes(s));
-      if (hasPrevUnwatched) setPendingFill({ type: 'season', season });
+      if (hasPrevUnwatched) {
+        const filledWatchedSeasons = [
+          ...new Set([...newWatchedSeasons, ...Array.from({ length: season }, (_, i) => i + 1)]),
+        ].sort((a, b) => a - b);
+        setPendingFill({
+          type: 'season',
+          season,
+          apply: () => onChange(filledWatchedSeasons, newWatchedEpisodes),
+        });
+      }
     }
   };
 
@@ -269,14 +291,34 @@ export default function SeasonGrid({
       ? t('seriesDetail.addPreviousEpisodes', { count: pendingFill.episode - 1 })
       : t('seriesDetail.addPreviousSeasons', { count: pendingFill.season - 1 });
     return (
-      <div className="mt-2 flex items-center gap-2 text-xs bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-lg px-3 py-2">
-        <span className="flex-1 text-amber-800 dark:text-amber-300">{label}</span>
-        <button type="button" onClick={() => confirmFill(true)} className="font-semibold text-amber-700 dark:text-amber-400 hover:underline shrink-0">
-          {t('seriesDetail.yes')}
-        </button>
-        <button type="button" onClick={() => confirmFill(false)} className="text-gray-500 dark:text-gray-400 hover:underline shrink-0">
-          {t('seriesDetail.no')}
-        </button>
+      <div
+        className="relative z-10 mt-2 flex flex-col gap-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-xl px-3 py-3 pointer-events-auto"
+        onClick={event => event.stopPropagation()}
+        onMouseDown={event => event.stopPropagation()}
+      >
+        <span className="text-sm text-amber-900 dark:text-amber-200 leading-relaxed font-medium">{label}</span>
+        <div className="flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={event => {
+              event.stopPropagation();
+              confirmFill(false);
+            }}
+            className="min-w-[3.5rem] rounded-full px-3 py-1.5 text-sm font-medium border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/50 text-gray-600 dark:text-gray-300 transition-colors hover:bg-white dark:hover:bg-gray-900 shrink-0"
+          >
+            {t('seriesDetail.no')}
+          </button>
+          <button
+            type="button"
+            onClick={event => {
+              event.stopPropagation();
+              confirmFill(true);
+            }}
+            className="min-w-[3.5rem] rounded-full px-3.5 py-1.5 text-sm font-semibold bg-amber-500 text-white shadow-sm transition-colors hover:bg-amber-600 shrink-0"
+          >
+            {t('seriesDetail.yes')}
+          </button>
+        </div>
       </div>
     );
   };
@@ -351,7 +393,16 @@ export default function SeasonGrid({
                           if (isMarking && expandedSeason > 1) {
                             const hasPrevUnwatched = Array.from({ length: expandedSeason - 1 }, (_, i) => i + 1)
                               .some(s => !watchedSeasons.includes(s));
-                            if (hasPrevUnwatched) setPendingFill({ type: 'season', season: expandedSeason });
+                            if (hasPrevUnwatched) {
+                              const filledWatchedSeasons = [
+                                ...new Set([...next, ...Array.from({ length: expandedSeason }, (_, i) => i + 1)]),
+                              ].sort((a, b) => a - b);
+                              setPendingFill({
+                                type: 'season',
+                                season: expandedSeason,
+                                apply: () => onChange(filledWatchedSeasons, watchedEpisodes),
+                              });
+                            }
                           }
                         }
                       }}

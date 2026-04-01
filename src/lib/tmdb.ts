@@ -39,6 +39,44 @@ function setSessionCache<T>(key: string, data: T) {
   }
 }
 
+function normalizeDate(dateStr: string | null | undefined): Date | null {
+  if (!dateStr) return null;
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return null;
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+async function fetchMovieListPages(
+  path: string,
+  maxResults: number,
+  filter: (movie: TmdbMovie) => boolean,
+  maxPages = 3
+): Promise<TmdbMovie[]> {
+  const results: TmdbMovie[] = [];
+  const seenIds = new Set<number>();
+
+  for (let page = 1; page <= maxPages && results.length < maxResults; page += 1) {
+    const res = await fetch(buildUrl(path, { language: 'en-US', page: String(page) }));
+    if (!res.ok) break;
+
+    const data = await res.json();
+    const pageResults = ((data.results as TmdbMovie[]) ?? []).filter(movie => {
+      if (seenIds.has(movie.id)) return false;
+      if (!filter(movie)) return false;
+      seenIds.add(movie.id);
+      return true;
+    });
+
+    results.push(...pageResults);
+
+    const totalPages = typeof data.total_pages === 'number' ? data.total_pages : page;
+    if (page >= totalPages) break;
+  }
+
+  return results.slice(0, maxResults);
+}
+
 export async function searchMovies(query: string, maxResults = 8): Promise<TmdbMovie[]> {
   if (!query.trim()) return [];
   const controller = new AbortController();
@@ -117,10 +155,27 @@ export async function fetchTrendingSeries(maxResults = 12): Promise<TmdbSeries[]
 
 export async function fetchUpcomingMovies(maxResults = 10): Promise<TmdbMovie[]> {
   try {
-    const res = await fetch(buildUrl('/movie/upcoming', { language: 'en-US' }));
-    if (!res.ok) return [];
-    const data = await res.json();
-    return ((data.results as TmdbMovie[]) ?? []).slice(0, maxResults);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return await fetchMovieListPages('/movie/upcoming', maxResults, movie => {
+      const releaseDate = normalizeDate(movie.release_date);
+      return releaseDate != null && releaseDate > today;
+    });
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchRecentMovies(maxResults = 10): Promise<TmdbMovie[]> {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const recentCutoff = new Date(today);
+    recentCutoff.setDate(recentCutoff.getDate() - 45);
+    return await fetchMovieListPages('/movie/now_playing', maxResults, movie => {
+      const releaseDate = normalizeDate(movie.release_date);
+      return releaseDate != null && releaseDate >= recentCutoff && releaseDate <= today;
+    });
   } catch {
     return [];
   }
