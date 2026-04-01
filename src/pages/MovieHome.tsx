@@ -32,32 +32,34 @@ function WantToWatchSlider({ onSelect }: { onSelect: (movie: Movie) => void }) {
       <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">
         {t('movieHome.wantToWatch')}
       </h2>
-      <div
-        className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-      >
-        {wantToWatch.map(movie => (
-          <div
-            key={movie.id}
-            onClick={() => onSelect(movie)}
-            className="flex-shrink-0 snap-start group cursor-pointer"
-          >
-            <div className="w-20 md:w-28 aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2 group-hover:scale-[1.03] transition-transform duration-200">
-              {movie.poster_url ? (
-                <img src={movie.poster_url} alt={movie.title} className="w-full h-full object-cover" loading="lazy" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Film size={22} className="text-gray-300 dark:text-gray-600" />
-                </div>
-              )}
+      <div className="-mx-4 md:mx-0">
+        <div
+          className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth px-4 md:px-0 scroll-px-4 md:scroll-px-0"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          {wantToWatch.map(movie => (
+            <div
+              key={movie.id}
+              onClick={() => onSelect(movie)}
+              className="flex-shrink-0 snap-start group cursor-pointer"
+            >
+              <div className="w-20 md:w-28 aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2 group-hover:scale-[1.03] transition-transform duration-200">
+                {movie.poster_url ? (
+                  <img src={movie.poster_url} alt={movie.title} className="w-full h-full object-cover" loading="lazy" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Film size={22} className="text-gray-300 dark:text-gray-600" />
+                  </div>
+                )}
+              </div>
+              <div className="w-20 md:w-28 text-left">
+                <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                  {movie.title}
+                </p>
+              </div>
             </div>
-            <div className="w-20 md:w-28 text-left">
-              <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                {movie.title}
-              </p>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -78,37 +80,39 @@ function LastWatchedSlider({ onSelect }: { onSelect: (movie: Movie) => void }) {
       <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">
         {t('movieHome.lastWatched')}
       </h2>
-      <div
-        className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-      >
-        {lastWatched.map(movie => (
-          <div
-            key={movie.id}
-            onClick={() => onSelect(movie)}
-            className="flex-shrink-0 snap-start group cursor-pointer"
-          >
-            <div className="w-20 md:w-28 aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2 group-hover:scale-[1.03] transition-transform duration-200">
-              {movie.poster_url ? (
-                <img src={movie.poster_url} alt={movie.title} className="w-full h-full object-cover" loading="lazy" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Film size={22} className="text-gray-300 dark:text-gray-600" />
-                </div>
-              )}
+      <div className="-mx-4 md:mx-0">
+        <div
+          className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth px-4 md:px-0 scroll-px-4 md:scroll-px-0"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          {lastWatched.map(movie => (
+            <div
+              key={movie.id}
+              onClick={() => onSelect(movie)}
+              className="flex-shrink-0 snap-start group cursor-pointer"
+            >
+              <div className="w-20 md:w-28 aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2 group-hover:scale-[1.03] transition-transform duration-200">
+                {movie.poster_url ? (
+                  <img src={movie.poster_url} alt={movie.title} className="w-full h-full object-cover" loading="lazy" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Film size={22} className="text-gray-300 dark:text-gray-600" />
+                  </div>
+                )}
+              </div>
+              <div className="w-20 md:w-28 text-left">
+                <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                  {movie.title}
+                </p>
+                {movie.rating && (
+                  <div className="mt-0.5">
+                    <StarRating value={movie.rating} readonly size={10} />
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="w-20 md:w-28 text-left">
-              <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                {movie.title}
-              </p>
-              {movie.rating && (
-                <div className="mt-0.5">
-                  <StarRating value={movie.rating} readonly size={10} />
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

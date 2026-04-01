@@ -32,32 +32,34 @@ function WantToReadSlider({ onSelect }: { onSelect: (book: Book) => void }) {
       <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">
         {t('home.wantToRead')}
       </h2>
-      <div
-        className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-      >
-        {wantToRead.map(book => (
-          <div
-            key={book.id}
-            onClick={() => onSelect(book)}
-            className="flex-shrink-0 snap-start group cursor-pointer"
-          >
-            <div className="w-20 md:w-28 aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2 group-hover:scale-[1.03] transition-transform duration-200">
-              {book.cover_url ? (
-                <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" loading="lazy" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <BookOpen size={22} className="text-gray-300 dark:text-gray-600" />
-                </div>
-              )}
+      <div className="-mx-4 md:mx-0">
+        <div
+          className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth px-4 md:px-0 scroll-px-4 md:scroll-px-0"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          {wantToRead.map(book => (
+            <div
+              key={book.id}
+              onClick={() => onSelect(book)}
+              className="flex-shrink-0 snap-start group cursor-pointer"
+            >
+              <div className="w-20 md:w-28 aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2 group-hover:scale-[1.03] transition-transform duration-200">
+                {book.cover_url ? (
+                  <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" loading="lazy" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <BookOpen size={22} className="text-gray-300 dark:text-gray-600" />
+                  </div>
+                )}
+              </div>
+              <div className="w-20 md:w-28 text-left">
+                <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                  {book.title}
+                </p>
+              </div>
             </div>
-            <div className="w-20 md:w-28 text-left">
-              <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                {book.title}
-              </p>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -79,40 +81,42 @@ function LastReadSlider({ onSelect }: { onSelect: (book: Book) => void }) {
       <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">
         {t('home.lastRead')}
       </h2>
-      <div
-        ref={sliderRef}
-        className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-      >
-        {lastRead.map(book => (
-          <div
-            key={book.id}
-            onClick={() => onSelect(book)}
-            className="flex-shrink-0 snap-start group cursor-pointer"
-          >
-            {/* Cover */}
-            <div className="w-20 md:w-28 aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2 group-hover:scale-[1.03] transition-transform duration-200">
-              {book.cover_url ? (
-                <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" loading="lazy" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <BookOpen size={22} className="text-gray-300 dark:text-gray-600" />
-                </div>
-              )}
+      <div className="-mx-4 md:mx-0">
+        <div
+          ref={sliderRef}
+          className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth px-4 md:px-0 scroll-px-4 md:scroll-px-0"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          {lastRead.map(book => (
+            <div
+              key={book.id}
+              onClick={() => onSelect(book)}
+              className="flex-shrink-0 snap-start group cursor-pointer"
+            >
+              {/* Cover */}
+              <div className="w-20 md:w-28 aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2 group-hover:scale-[1.03] transition-transform duration-200">
+                {book.cover_url ? (
+                  <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" loading="lazy" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <BookOpen size={22} className="text-gray-300 dark:text-gray-600" />
+                  </div>
+                )}
+              </div>
+              {/* Info */}
+              <div className="w-20 md:w-28 text-left">
+                <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                  {book.title}
+                </p>
+                {book.rating && (
+                  <div className="mt-0.5">
+                    <StarRating value={book.rating} readonly size={10} />
+                  </div>
+                )}
+              </div>
             </div>
-            {/* Info */}
-            <div className="w-20 md:w-28 text-left">
-              <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                {book.title}
-              </p>
-              {book.rating && (
-                <div className="mt-0.5">
-                  <StarRating value={book.rating} readonly size={10} />
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
