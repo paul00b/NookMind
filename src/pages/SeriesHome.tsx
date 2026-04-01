@@ -166,19 +166,21 @@ export default function SeriesHome() {
     if (document.activeElement === inputRef.current) inputRef.current?.blur();
   }, []);
   const updateMobileDropdownLayout = useCallback(() => {
-    if (window.innerWidth >= 768 || !dropdownRef.current) {
+    if (window.innerWidth >= 768 || !dropdownRef.current || !inputRef.current) {
       setMobileDropdownStyle({});
       return;
     }
-    const rect = dropdownRef.current.getBoundingClientRect();
+    const wrapperRect = dropdownRef.current.getBoundingClientRect();
+    const inputRect = inputRef.current.getBoundingClientRect();
     const nav = document.querySelector<HTMLElement>('[data-mobile-bottom-nav]');
-    const navTop = nav?.getBoundingClientRect().top ?? window.innerHeight - 112;
-    const top = rect.bottom + 8;
+    const viewportOffsetTop = window.visualViewport?.offsetTop ?? 0;
+    const navTop = (nav?.getBoundingClientRect().top ?? window.innerHeight - 112) + viewportOffsetTop;
+    const top = inputRect.bottom + viewportOffsetTop + 8;
     const maxHeight = Math.max(160, navTop - top - 12);
     setMobileDropdownStyle({
       position: 'fixed',
-      left: rect.left,
-      width: rect.width,
+      left: wrapperRect.left,
+      width: wrapperRect.width,
       top,
       maxHeight,
     });
