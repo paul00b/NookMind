@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react';
 import { Search, Plus, X, Film, CheckCircle2 } from 'lucide-react';
 import { searchMovies, extractMovieData, fetchMovieDetails, getPosterUrl } from '../lib/tmdb';
 import type { TmdbMovie, Movie } from '../types';
@@ -130,9 +130,28 @@ export default function MovieHome() {
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [mobileDropdownStyle, setMobileDropdownStyle] = useState<CSSProperties>({});
   const dismissMobileKeyboard = useCallback(() => {
     if (window.innerWidth >= 768) return;
     if (document.activeElement === inputRef.current) inputRef.current?.blur();
+  }, []);
+  const updateMobileDropdownLayout = useCallback(() => {
+    if (window.innerWidth >= 768 || !dropdownRef.current) {
+      setMobileDropdownStyle({});
+      return;
+    }
+    const rect = dropdownRef.current.getBoundingClientRect();
+    const nav = document.querySelector<HTMLElement>('[data-mobile-bottom-nav]');
+    const navTop = nav?.getBoundingClientRect().top ?? window.innerHeight - 112;
+    const top = rect.bottom + 8;
+    const maxHeight = Math.max(160, navTop - top - 12);
+    setMobileDropdownStyle({
+      position: 'fixed',
+      left: rect.left,
+      width: rect.width,
+      top,
+      maxHeight,
+    });
   }, []);
 
   const doSearch = useCallback(async (q: string) => {
@@ -157,10 +176,18 @@ export default function MovieHome() {
     if (window.innerWidth >= 768 || !(dropdownOpen || searching) || !query) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    updateMobileDropdownLayout();
+    const viewport = window.visualViewport;
+    window.addEventListener('resize', updateMobileDropdownLayout);
+    viewport?.addEventListener('resize', updateMobileDropdownLayout);
+    viewport?.addEventListener('scroll', updateMobileDropdownLayout);
     return () => {
       document.body.style.overflow = previousOverflow;
+      window.removeEventListener('resize', updateMobileDropdownLayout);
+      viewport?.removeEventListener('resize', updateMobileDropdownLayout);
+      viewport?.removeEventListener('scroll', updateMobileDropdownLayout);
     };
-  }, [dropdownOpen, searching, query]);
+  }, [dropdownOpen, searching, query, updateMobileDropdownLayout]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -208,7 +235,13 @@ export default function MovieHome() {
             type="text"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            onFocus={() => results.length > 0 && setDropdownOpen(true)}
+            onFocus={() => {
+              if (window.innerWidth < 768) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                window.setTimeout(updateMobileDropdownLayout, 260);
+              }
+              if (results.length > 0) setDropdownOpen(true);
+            }}
             placeholder={t('movieHome.searchPlaceholder')}
             className="input rounded-full pl-11 pr-10 py-3.5 text-base shadow-sm"
             autoComplete="off"
@@ -226,7 +259,8 @@ export default function MovieHome() {
         {/* Dropdown */}
         {(dropdownOpen || searching) && query && (
           <div
-            className="absolute top-full mt-2 left-0 right-0 card shadow-xl z-20 overflow-y-auto overscroll-contain animate-slide-up max-h-[calc(100svh-16rem-env(safe-area-inset-bottom))] md:max-h-[60vh]"
+            className="absolute top-full mt-2 left-0 right-0 card shadow-xl z-40 overflow-y-auto overscroll-contain animate-slide-up max-h-[calc(100svh-16rem-env(safe-area-inset-bottom))] md:max-h-[60vh]"
+            style={mobileDropdownStyle}
             onScroll={dismissMobileKeyboard}
             onTouchMove={dismissMobileKeyboard}
             onWheel={dismissMobileKeyboard}

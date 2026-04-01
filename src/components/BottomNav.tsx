@@ -16,7 +16,7 @@ export default function BottomNav() {
   ];
 
   return (
-    <nav className="fixed left-4 right-4 z-30 md:hidden flex flex-col gap-2" style={{ bottom: 'calc(16px + env(safe-area-inset-bottom))' }}>
+    <nav data-mobile-bottom-nav className="fixed left-4 right-4 z-30 md:hidden flex flex-col gap-2" style={{ bottom: 'calc(16px + env(safe-area-inset-bottom))' }}>
       {/* Books / Movies toggle pill */}
       <div className="flex items-center justify-center">
         <div className="flex items-center bg-white/85 dark:bg-[#1a1f2e]/85 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.08] rounded-full shadow-md p-1 gap-0.5">
