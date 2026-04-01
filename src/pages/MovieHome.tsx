@@ -130,6 +130,7 @@ export default function MovieHome() {
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const focusAlignTimeoutsRef = useRef<number[]>([]);
   const [mobileDropdownStyle, setMobileDropdownStyle] = useState<CSSProperties>({});
   const dismissMobileKeyboard = useCallback(() => {
     if (window.innerWidth >= 768) return;
@@ -154,6 +155,16 @@ export default function MovieHome() {
       top,
       maxHeight,
     });
+  }, []);
+  const alignSearchNearTop = useCallback(() => {
+    if (window.innerWidth >= 768 || !dropdownRef.current) return;
+    const top = window.scrollY + dropdownRef.current.getBoundingClientRect().top - 16;
+    window.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
+    updateMobileDropdownLayout();
+  }, [updateMobileDropdownLayout]);
+
+  useEffect(() => () => {
+    focusAlignTimeoutsRef.current.forEach(window.clearTimeout);
   }, []);
 
   const doSearch = useCallback(async (q: string) => {
@@ -253,8 +264,13 @@ export default function MovieHome() {
             onChange={e => setQuery(e.target.value)}
             onFocus={() => {
               if (window.innerWidth < 768) {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                window.setTimeout(updateMobileDropdownLayout, 260);
+                focusAlignTimeoutsRef.current.forEach(window.clearTimeout);
+                focusAlignTimeoutsRef.current = [];
+                alignSearchNearTop();
+                [80, 180, 320].forEach(delay => {
+                  const timeoutId = window.setTimeout(alignSearchNearTop, delay);
+                  focusAlignTimeoutsRef.current.push(timeoutId);
+                });
               }
               if (results.length > 0) setDropdownOpen(true);
             }}
