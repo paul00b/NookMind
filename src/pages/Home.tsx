@@ -158,6 +158,15 @@ export default function Home() {
   useEffect(() => { doSearch(debouncedQuery); }, [debouncedQuery, doSearch]);
 
   useEffect(() => {
+    if (window.innerWidth >= 768 || !(dropdownOpen || searching) || !query) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [dropdownOpen, searching, query]);
+
+  useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setDropdownOpen(false);
@@ -219,7 +228,7 @@ export default function Home() {
         {/* Dropdown */}
         {(dropdownOpen || searching) && query && (
           <div
-            className="absolute top-full mt-2 left-0 right-0 card shadow-xl z-20 overflow-y-auto animate-slide-up max-h-[60vh]"
+            className="absolute top-full mt-2 left-0 right-0 card shadow-xl z-20 overflow-y-auto overscroll-contain animate-slide-up max-h-[calc(100svh-16rem-env(safe-area-inset-bottom))] md:max-h-[60vh]"
             onScroll={dismissMobileKeyboard}
             onTouchMove={dismissMobileKeyboard}
             onWheel={dismissMobileKeyboard}
