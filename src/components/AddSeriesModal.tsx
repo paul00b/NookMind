@@ -5,7 +5,7 @@ import type { Series } from '../types';
 import StarRating from './StarRating';
 import SeasonGrid, { deriveSeriesStatus } from './SeasonGrid';
 import { useTranslation } from 'react-i18next';
-import { fetchSeasonEpisodeCount } from '../lib/tmdb';
+import { fetchSeasonDetails } from '../lib/tmdb';
 
 const normalize = (s: string) => s.toLowerCase().trim().replace(/\s+/g, ' ');
 
@@ -38,6 +38,7 @@ export default function AddSeriesModal({ prefill, onClose }: Props) {
   const [form, setForm] = useState<SeriesFormData>({ ...EMPTY, ...prefill });
   const [saving, setSaving] = useState(false);
   const [episodeCounts, setEpisodeCounts] = useState<Record<string, number>>({});
+  const [episodeAirDates, setEpisodeAirDates] = useState<Record<string, Record<number, string | null>>>({});
   const [loadingEpisodesSeason, setLoadingEpisodesSeason] = useState<number | null>(null);
   useEffect(() => { document.body.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; }; }, []);
 
@@ -61,8 +62,15 @@ export default function AddSeriesModal({ prefill, onClose }: Props) {
     if (!form.tmdb_id || episodeCounts[String(seasonNumber)] != null) return;
     setLoadingEpisodesSeason(seasonNumber);
     try {
-      const count = await fetchSeasonEpisodeCount(form.tmdb_id, seasonNumber);
-      if (count != null) setEpisodeCounts(prev => ({ ...prev, [String(seasonNumber)]: count }));
+      const details = await fetchSeasonDetails(form.tmdb_id, seasonNumber);
+      if (!details) return;
+      setEpisodeCounts(prev => ({ ...prev, [String(seasonNumber)]: details.episodes.length }));
+      setEpisodeAirDates(prev => ({
+        ...prev,
+        [String(seasonNumber)]: Object.fromEntries(
+          details.episodes.map(ep => [ep.episode_number, ep.air_date ?? null])
+        ),
+      }));
     } finally {
       setLoadingEpisodesSeason(null);
     }
@@ -146,6 +154,7 @@ export default function AddSeriesModal({ prefill, onClose }: Props) {
                 watchedEpisodes={form.watched_episodes ?? {}}
                 onChange={handleSeasonsChange}
                 episodeCounts={form.tmdb_id ? episodeCounts : undefined}
+                episodeAirDates={form.tmdb_id ? episodeAirDates : undefined}
                 onSeasonExpand={form.tmdb_id ? handleSeasonExpand : undefined}
                 loadingEpisodesSeason={loadingEpisodesSeason}
               />

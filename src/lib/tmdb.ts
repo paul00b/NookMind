@@ -1,14 +1,42 @@
-import type { TmdbMovie, TmdbSeries } from '../types';
+import type { TmdbMovie, TmdbSeries, TmdbSeasonDetails } from '../types';
 
 const BASE_URL = 'https://api.themoviedb.org/3';
 const IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY as string | undefined;
+const TMDB_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const seriesDetailsCache = new Map<number, Promise<TmdbSeries | null>>();
+const seasonDetailsCache = new Map<string, Promise<TmdbSeasonDetails | null>>();
 
 function buildUrl(path: string, params: Record<string, string> = {}): string {
   const url = new URL(`${BASE_URL}${path}`);
   if (API_KEY) url.searchParams.set('api_key', API_KEY);
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
   return url.toString();
+}
+
+function getSessionCache<T>(key: string): T | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { ts: number; data: T };
+    if (Date.now() - parsed.ts > TMDB_CACHE_TTL_MS) {
+      sessionStorage.removeItem(key);
+      return null;
+    }
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+function setSessionCache<T>(key: string, data: T) {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
+  } catch {
+    // Ignore cache write failures.
+  }
 }
 
 export async function searchMovies(query: string, maxResults = 8): Promise<TmdbMovie[]> {
@@ -140,26 +168,59 @@ export async function searchSeries(query: string, maxResults = 8): Promise<TmdbS
 }
 
 export async function fetchSeasonEpisodeCount(tmdbId: number, seasonNumber: number): Promise<number | null> {
-  try {
-    const res = await fetch(buildUrl(`/tv/${tmdbId}/season/${seasonNumber}`, { language: 'en-US' }));
-    if (!res.ok) return null;
-    const data = await res.json();
-    return (data.episodes as unknown[])?.length ?? null;
-  } catch {
-    return null;
+  const details = await fetchSeasonDetails(tmdbId, seasonNumber);
+  return details?.episodes.length ?? null;
+}
+
+export async function fetchSeasonDetails(tmdbId: number, seasonNumber: number): Promise<TmdbSeasonDetails | null> {
+  const cacheKey = `nookmind_tmdb_season_${tmdbId}_${seasonNumber}`;
+  const cached = getSessionCache<TmdbSeasonDetails>(cacheKey);
+  if (cached) return cached;
+
+  const requestKey = `${tmdbId}:${seasonNumber}`;
+  if (!seasonDetailsCache.has(requestKey)) {
+    seasonDetailsCache.set(requestKey, (async () => {
+      try {
+        const res = await fetch(buildUrl(`/tv/${tmdbId}/season/${seasonNumber}`, { language: 'en-US' }));
+        if (!res.ok) return null;
+        const data = await res.json();
+        setSessionCache(cacheKey, data);
+        return data;
+      } catch {
+        return null;
+      } finally {
+        seasonDetailsCache.delete(requestKey);
+      }
+    })());
   }
+
+  return seasonDetailsCache.get(requestKey)!;
 }
 
 export async function fetchSeriesDetails(tmdbId: number): Promise<TmdbSeries | null> {
-  try {
-    const res = await fetch(
-      buildUrl(`/tv/${tmdbId}`, { language: 'en-US' })
-    );
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
+  const cacheKey = `nookmind_tmdb_series_${tmdbId}`;
+  const cached = getSessionCache<TmdbSeries>(cacheKey);
+  if (cached) return cached;
+
+  if (!seriesDetailsCache.has(tmdbId)) {
+    seriesDetailsCache.set(tmdbId, (async () => {
+      try {
+        const res = await fetch(
+          buildUrl(`/tv/${tmdbId}`, { language: 'en-US' })
+        );
+        if (!res.ok) return null;
+        const data = await res.json();
+        setSessionCache(cacheKey, data);
+        return data;
+      } catch {
+        return null;
+      } finally {
+        seriesDetailsCache.delete(tmdbId);
+      }
+    })());
   }
+
+  return seriesDetailsCache.get(tmdbId)!;
 }
 
 export function extractSeriesData(series: TmdbSeries) {

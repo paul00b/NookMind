@@ -130,6 +130,10 @@ export default function MovieHome() {
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const dismissMobileKeyboard = useCallback(() => {
+    if (window.innerWidth >= 768) return;
+    if (document.activeElement === inputRef.current) inputRef.current?.blur();
+  }, []);
 
   const doSearch = useCallback(async (q: string) => {
     if (q.trim().length < 3) { setResults([]); setDropdownOpen(false); return; }
@@ -212,7 +216,12 @@ export default function MovieHome() {
 
         {/* Dropdown */}
         {(dropdownOpen || searching) && query && (
-          <div className="absolute top-full mt-2 left-0 right-0 card shadow-xl z-20 overflow-y-auto animate-slide-up max-h-[60vh]">
+          <div
+            className="absolute top-full mt-2 left-0 right-0 card shadow-xl z-20 overflow-y-auto animate-slide-up max-h-[60vh]"
+            onScroll={dismissMobileKeyboard}
+            onTouchMove={dismissMobileKeyboard}
+            onWheel={dismissMobileKeyboard}
+          >
             {searching ? (
               <div className="p-3 space-y-2">
                 {[1, 2, 3].map(i => (

@@ -10,6 +10,7 @@ interface SeasonGridProps {
   readonly?: boolean;
   compact?: boolean;
   episodeCounts?: Record<string, number>;
+  episodeAirDates?: Record<string, Record<number, string | null>>;
   onSeasonExpand?: (seasonNumber: number) => void;
   loadingEpisodesSeason?: number | null;
 }
@@ -22,11 +23,13 @@ type PendingFill =
 
 export default function SeasonGrid({
   totalSeasons, watchedSeasons, watchedEpisodes = {}, onChange, readonly, compact,
-  episodeCounts, onSeasonExpand, loadingEpisodesSeason,
+  episodeCounts, episodeAirDates, onSeasonExpand, loadingEpisodesSeason,
 }: SeasonGridProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [expandedSeason, setExpandedSeason] = useState<number | null>(null);
   const [pendingFill, setPendingFill] = useState<PendingFill>(null);
+  const [episodeMessage, setEpisodeMessage] = useState<string | null>(null);
+  const [episodeMessageTarget, setEpisodeMessageTarget] = useState<{ season: number; episode: number } | null>(null);
   const episodesEnabled = !!onSeasonExpand;
   const episodePanelRef = useRef<HTMLDivElement>(null);
 
@@ -36,10 +39,65 @@ export default function SeasonGrid({
     }
   }, [expandedSeason]);
 
+  const formatEpisodeDate = (dateStr: string) => (
+    new Date(dateStr).toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    })
+  );
+
+  const getFutureEpisodeMessage = (dateStr: string) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const releaseDate = new Date(dateStr);
+    releaseDate.setHours(0, 0, 0, 0);
+    const days = Math.round((releaseDate.getTime() - today.getTime()) / 86400000);
+    return t(days <= 1 ? 'seriesDetail.availableOnSoon' : 'seriesDetail.availableOn', {
+      date: formatEpisodeDate(dateStr),
+      days,
+    });
+  };
+
+  const getResolvedEpisodes = (season: number) => {
+    const key = String(season);
+    const count = episodeCounts?.[key] ?? 0;
+    if ((watchedEpisodes[key]?.length ?? 0) > 0) return watchedEpisodes[key] ?? [];
+    if (watchedSeasons.includes(season) && count > 0) {
+      return Array.from({ length: count }, (_, i) => i + 1);
+    }
+    return watchedEpisodes[key] ?? [];
+  };
+
+  const getEpisodeAvailability = (season: number, episode: number) => {
+    const seasonAirDates = episodeAirDates?.[String(season)];
+    if (!seasonAirDates || !Object.prototype.hasOwnProperty.call(seasonAirDates, episode)) return 'available' as const;
+    const airDate = seasonAirDates[episode];
+    if (!airDate) return 'coming_soon' as const;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const releaseDate = new Date(airDate);
+    releaseDate.setHours(0, 0, 0, 0);
+    return releaseDate.getTime() > today.getTime() ? 'future' as const : 'available' as const;
+  };
+
+  const getAvailableEpisodes = (season: number) => {
+    const count = episodeCounts?.[String(season)] ?? 0;
+    return Array.from({ length: count }, (_, i) => i + 1).filter(
+      ep => getEpisodeAvailability(season, ep) === 'available'
+    );
+  };
+
+  const hasAnyAvailableEpisode = (season: number) => getAvailableEpisodes(season).length > 0;
+
   const isSeasonWatched = (season: number) => {
     const key = String(season);
     const count = episodeCounts?.[key];
-    if (count != null && count > 0) return (watchedEpisodes[key]?.length ?? 0) >= count;
+    if (count != null && count > 0) {
+      const watchedCount = watchedEpisodes[key]?.length ?? 0;
+      if (watchedCount === 0 && watchedSeasons.includes(season)) return true;
+      return watchedCount >= count;
+    }
     return watchedSeasons.includes(season);
   };
 
@@ -62,6 +120,8 @@ export default function SeasonGrid({
   const handleSeasonClick = (season: number) => {
     if (readonly) return;
     setPendingFill(null);
+    setEpisodeMessage(null);
+    setEpisodeMessageTarget(null);
 
     // Always expand/collapse — never toggle the whole season on click
     const newExpanded = expandedSeason === season ? null : season;
@@ -74,15 +134,30 @@ export default function SeasonGrid({
   const toggleEpisode = (season: number, episode: number) => {
     if (readonly || !onChange) return;
     setPendingFill(null);
+    setEpisodeMessage(null);
+    setEpisodeMessageTarget(null);
 
     const key = String(season);
-    const currentEps = watchedEpisodes[key] ?? [];
+    const availability = getEpisodeAvailability(season, episode);
+    const airDate = episodeAirDates?.[key]?.[episode];
+    if (availability === 'coming_soon') {
+      setEpisodeMessage(t('seriesDetail.comingSoon'));
+      setEpisodeMessageTarget({ season, episode });
+      return;
+    }
+    if (availability === 'future' && airDate) {
+      setEpisodeMessage(getFutureEpisodeMessage(airDate));
+      setEpisodeMessageTarget({ season, episode });
+      return;
+    }
+
+    const count = episodeCounts?.[key] ?? 0;
+    const currentEps = getResolvedEpisodes(season);
     const isMarking = !currentEps.includes(episode);
     const newEps = isMarking
       ? [...currentEps, episode].sort((a, b) => a - b)
       : currentEps.filter(e => e !== episode);
     const newWatchedEpisodes = { ...watchedEpisodes, [key]: newEps };
-    const count = episodeCounts?.[key] ?? 0;
     const allWatched = count > 0 && newEps.length >= count;
     const newWatchedSeasons = allWatched
       ? [...new Set([...watchedSeasons, season])].sort((a, b) => a - b)
@@ -142,20 +217,31 @@ export default function SeasonGrid({
   const toggleAllEpisodes = (season: number) => {
     if (readonly || !onChange) return;
     setPendingFill(null);
+    setEpisodeMessage(null);
+    setEpisodeMessageTarget(null);
     const key = String(season);
     const count = episodeCounts?.[key];
     if (!count) return;
-    const currentEps = watchedEpisodes[key] ?? [];
-    const allWatched = currentEps.length >= count;
-    const newEps = allWatched ? [] : Array.from({ length: count }, (_, i) => i + 1);
+    const currentEps = getResolvedEpisodes(season);
+    const availableEpisodes = getAvailableEpisodes(season);
+    const allAvailableWatched = availableEpisodes.length > 0 && availableEpisodes.every(ep => currentEps.includes(ep));
+    const newEps = allAvailableWatched ? [] : availableEpisodes;
     const newWatchedEpisodes = { ...watchedEpisodes, [key]: newEps };
-    const newWatchedSeasons = allWatched
+    const seasonFullyWatched = newEps.length >= count;
+    const newWatchedSeasons = allAvailableWatched
       ? watchedSeasons.filter(s => s !== season)
-      : [...new Set([...watchedSeasons, season])].sort((a, b) => a - b);
+      : seasonFullyWatched
+      ? [...new Set([...watchedSeasons, season])].sort((a, b) => a - b)
+      : watchedSeasons.filter(s => s !== season);
     onChange(newWatchedSeasons, newWatchedEpisodes);
+
+    if (!allAvailableWatched && season > 1) {
+      const hasPrevUnwatched = Array.from({ length: season - 1 }, (_, i) => i + 1)
+        .some(s => !watchedSeasons.includes(s));
+      if (hasPrevUnwatched) setPendingFill({ type: 'season', season });
+    }
   };
 
-  const size = compact ? 'w-6 h-6 text-[10px]' : 'w-8 h-8 text-xs';
   const watchedCount = Array.from({ length: totalSeasons }, (_, i) => i + 1).filter(s => isSeasonWatched(s)).length;
 
   const getSeasonButtonClass = (season: number) => {
@@ -163,11 +249,14 @@ export default function SeasonGrid({
     const partial = isSeasonPartial(season);
     const empty = isSeasonEmpty(season);
     const isExpanded = expandedSeason === season;
+    const base = compact
+      ? 'min-w-[3rem] px-3 py-1 text-xs rounded-xl font-medium whitespace-nowrap transition-all flex items-center justify-center shrink-0'
+      : 'min-w-[3.5rem] px-4 py-1.5 text-sm rounded-xl font-medium whitespace-nowrap transition-all flex items-center justify-center shrink-0';
     const ring = isExpanded ? 'ring-2 ring-offset-1 ring-offset-white dark:ring-offset-gray-900' : '';
-    if (empty) return `${size} rounded-lg font-semibold transition-all flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 ${ring} ${isExpanded ? 'ring-gray-300' : ''}`;
-    if (watched) return `${size} rounded-lg font-semibold transition-all flex items-center justify-center bg-emerald-500 text-white shadow-sm ${ring} ${isExpanded ? 'ring-emerald-300' : ''}`;
-    if (partial) return `${size} rounded-lg font-semibold transition-all flex items-center justify-center bg-blue-400 text-white shadow-sm ${ring} ${isExpanded ? 'ring-blue-300' : ''}`;
-    return `${size} rounded-lg font-semibold transition-all flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 ${
+    if (empty) return `${base} bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 ${ring} ${isExpanded ? 'ring-gray-300' : ''}`;
+    if (watched) return `${base} bg-emerald-500 text-white shadow-sm ${ring} ${isExpanded ? 'ring-emerald-300' : ''}`;
+    if (partial) return `${base} bg-blue-400 text-white shadow-sm ${ring} ${isExpanded ? 'ring-blue-300' : ''}`;
+    return `${base} bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 ${
       !readonly ? 'hover:bg-amber-500/20 hover:text-amber-600 dark:hover:text-amber-400' : ''
     } ${ring} ${isExpanded ? 'ring-amber-300' : ''}`;
   };
@@ -192,6 +281,15 @@ export default function SeasonGrid({
     );
   };
 
+  const EpisodeMessageBanner = () => {
+    if (!episodeMessage) return null;
+    return (
+      <div className="mt-2 text-xs bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-600 dark:text-gray-300">
+        {episodeMessage}
+      </div>
+    );
+  };
+
   return (
     <div>
       {!compact && (
@@ -209,7 +307,7 @@ export default function SeasonGrid({
             className={`${getSeasonButtonClass(season)} ${readonly ? 'cursor-default' : 'cursor-pointer'}`}
             title={`${t('seriesDetail.season')} ${season}`}
           >
-            {season}
+            S{season}
           </button>
         ))}
       </div>
@@ -226,6 +324,7 @@ export default function SeasonGrid({
             const epCount = episodeCounts?.[String(expandedSeason)];
             const hasEpisodeData = epCount != null;
             const isEmpty = hasEpisodeData && epCount === 0;
+            const canMarkAvailableEpisodes = !hasEpisodeData || !epCount || hasAnyAvailableEpisode(expandedSeason);
             return (
               <>
                 <div className="flex items-center justify-between mb-2.5">
@@ -233,11 +332,11 @@ export default function SeasonGrid({
                     {t('seriesDetail.season')} {expandedSeason}
                     {hasEpisodeData && !isEmpty && (
                       <span className="font-normal text-gray-400 ml-1">
-                        — {watchedEpisodes[String(expandedSeason)]?.length ?? 0}/{epCount} {t('seriesDetail.episodes')}
+                        — {isSeasonWatched(expandedSeason) ? epCount : watchedEpisodes[String(expandedSeason)]?.length ?? 0}/{epCount} {t('seriesDetail.episodes')}
                       </span>
                     )}
                   </p>
-                  {!readonly && onChange && !isEmpty && (
+                  {!readonly && onChange && !isEmpty && canMarkAvailableEpisodes && (
                     <button
                       type="button"
                       onClick={() => {
@@ -276,25 +375,33 @@ export default function SeasonGrid({
                   <>
                     <div className="flex flex-wrap gap-1">
                       {Array.from({ length: epCount! }, (_, i) => i + 1).map(ep => {
-                        const isWatched = watchedEpisodes[String(expandedSeason)]?.includes(ep) ?? false;
+                        const resolvedEpisodes = getResolvedEpisodes(expandedSeason);
+                        const isWatched = resolvedEpisodes.includes(ep);
+                        const airDate = episodeAirDates?.[String(expandedSeason)]?.[ep];
+                        const availability = getEpisodeAvailability(expandedSeason, ep);
+                        const isUnavailable = availability !== 'available';
+                        const isMessageTarget = episodeMessageTarget?.season === expandedSeason && episodeMessageTarget.episode === ep;
                         return (
                           <button
                             key={ep}
                             type="button"
                             onClick={() => toggleEpisode(expandedSeason, ep)}
                             disabled={readonly}
-                            className={`w-7 h-7 rounded-md text-[11px] font-medium transition-all flex items-center justify-center ${
+                            className={`w-8 h-8 rounded-md text-xs font-medium transition-all flex items-center justify-center ${
                               isWatched
                                 ? 'bg-emerald-500 text-white'
+                                : isUnavailable
+                                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
                                 : `bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 ${!readonly ? 'hover:bg-amber-500/20 hover:text-amber-600 dark:hover:text-amber-400' : ''}`
-                            } ${readonly ? 'cursor-default' : 'cursor-pointer'}`}
-                            title={`${t('seriesDetail.episode')} ${ep}`}
+                            } ${isMessageTarget ? 'ring-2 ring-amber-400' : ''} ${readonly ? 'cursor-default' : 'cursor-pointer'}`}
+                            title={`${t('seriesDetail.episode')} ${ep}${isUnavailable ? ` · ${airDate ? formatEpisodeDate(airDate) : t('seriesDetail.comingSoon')}` : ''}`}
                           >
                             {ep}
                           </button>
                         );
                       })}
                     </div>
+                    <EpisodeMessageBanner />
                     <PendingFillBanner />
                   </>
                 ) : !episodesEnabled ? (

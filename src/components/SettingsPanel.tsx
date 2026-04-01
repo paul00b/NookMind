@@ -49,7 +49,7 @@ export default function SettingsPanel({ onClose }: Props) {
       {/* Panel */}
       <div className="relative z-10 w-full max-w-sm h-full bg-[#f8f6f1] dark:bg-[#1a1f2e] border-l border-black/[0.08] dark:border-white/[0.08] overflow-y-auto animate-slide-in-right flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 pb-4 border-b border-black/[0.06] dark:border-white/[0.06]">
+        <div className="flex items-center justify-between px-6 pb-4 border-b border-black/[0.06] dark:border-white/[0.06]" style={{ paddingTop: 'calc(1.5rem + env(safe-area-inset-top))' }}>
           <h2 className="font-serif text-xl font-bold text-gray-900 dark:text-gray-100">{t('settings.title')}</h2>
           <button onClick={onClose} className="btn-ghost p-2"><X size={18} /></button>
         </div>

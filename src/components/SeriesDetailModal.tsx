@@ -4,7 +4,7 @@ import { useSeries } from '../context/SeriesContext';
 import { useSeriesCategories } from '../context/SeriesCategoriesContext';
 import StarRating from './StarRating';
 import SeasonGrid, { deriveSeriesStatus } from './SeasonGrid';
-import { fetchSeasonEpisodeCount } from '../lib/tmdb';
+import { fetchSeasonDetails } from '../lib/tmdb';
 import { X, Pencil, Check, Trash2, Tv, ChevronDown, ChevronUp, FolderPlus, FolderMinus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
@@ -75,6 +75,7 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
   }, [imdbId, localSeries.seasons]);
 
   const [episodeCounts, setEpisodeCounts] = useState<Record<string, number>>({});
+  const [episodeAirDates, setEpisodeAirDates] = useState<Record<string, Record<number, string | null>>>({});
   const [loadingEpisodesSeason, setLoadingEpisodesSeason] = useState<number | null>(null);
 
   const handleRatingChange = async (rating: number) => {
@@ -102,8 +103,15 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
     if (!localSeries.tmdb_id || episodeCounts[String(seasonNumber)] != null) return;
     setLoadingEpisodesSeason(seasonNumber);
     try {
-      const count = await fetchSeasonEpisodeCount(localSeries.tmdb_id, seasonNumber);
-      if (count != null) setEpisodeCounts(prev => ({ ...prev, [String(seasonNumber)]: count }));
+      const details = await fetchSeasonDetails(localSeries.tmdb_id, seasonNumber);
+      if (!details) return;
+      setEpisodeCounts(prev => ({ ...prev, [String(seasonNumber)]: details.episodes.length }));
+      setEpisodeAirDates(prev => ({
+        ...prev,
+        [String(seasonNumber)]: Object.fromEntries(
+          details.episodes.map(ep => [ep.episode_number, ep.air_date ?? null])
+        ),
+      }));
     } finally {
       setLoadingEpisodesSeason(null);
     }
@@ -189,6 +197,7 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
                 watchedEpisodes={localSeries.watched_episodes ?? {}}
                 onChange={handleSeasonsChange}
                 episodeCounts={localSeries.tmdb_id ? episodeCounts : undefined}
+                episodeAirDates={localSeries.tmdb_id ? episodeAirDates : undefined}
                 onSeasonExpand={localSeries.tmdb_id ? handleSeasonExpand : undefined}
                 loadingEpisodesSeason={loadingEpisodesSeason}
               />

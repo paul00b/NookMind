@@ -115,6 +115,10 @@ export interface TmdbEpisode {
   name: string;
 }
 
+export interface TmdbSeasonDetails {
+  episodes: TmdbEpisode[];
+}
+
 export interface TmdbSeries {
   id: number;
   name: string;

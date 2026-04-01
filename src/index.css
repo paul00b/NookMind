@@ -95,4 +95,47 @@
     background-size: 256px 256px, 100% 100%;
     background-repeat: repeat, no-repeat;
   }
+
+  .next-up-card-dismiss {
+    transform-origin: center;
+    animation: next-up-slide-out 560ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    pointer-events: none;
+  }
+
+  .next-up-card-enter {
+    animation: next-up-slide-in 520ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+@keyframes next-up-slide-out {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    filter: saturate(1);
+  }
+  45% {
+    opacity: 0.92;
+    transform: translateX(32px) scale(0.985) skewX(1.5deg);
+    filter: saturate(0.92);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(116px) scale(0.92) skewX(3deg);
+    filter: saturate(0.8);
+  }
+}
+
+@keyframes next-up-slide-in {
+  0% {
+    opacity: 0;
+    transform: translateX(-48px) scale(0.97);
+  }
+  55% {
+    opacity: 1;
+    transform: translateX(6px) scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
 }

@@ -1,5 +1,6 @@
 const IMDB_GRAPHQL = '/api/imdb-graphql';
 const IMDB_SUGGEST = '/api/imdb-suggest';
+const IMDB_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 export interface EpisodeRating {
   episode: number;
@@ -24,6 +25,32 @@ type RawEdge = {
 
 // Cache par imdbId — les appels parallèles par saison partagent une seule requête
 const episodeCache = new Map<string, Promise<Record<number, EpisodeRating[]> | null>>();
+const imdbIdCache = new Map<string, Promise<string | null>>();
+
+function getSessionCache<T>(key: string): T | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { ts: number; data: T };
+    if (Date.now() - parsed.ts > IMDB_CACHE_TTL_MS) {
+      sessionStorage.removeItem(key);
+      return null;
+    }
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+function setSessionCache<T>(key: string, data: T) {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
+  } catch {
+    // Ignore cache write failures.
+  }
+}
 
 async function doFetch(url: string, options?: RequestInit): Promise<Response | null> {
   const controller = new AbortController();
@@ -40,18 +67,34 @@ async function doFetch(url: string, options?: RequestInit): Promise<Response | n
 
 /** Cherche l'imdbID d'une série via l'API suggestion IMDb. */
 export async function fetchSeriesImdbId(title: string): Promise<string | null> {
-  const firstChar = encodeURIComponent(title[0].toLowerCase());
-  const query = encodeURIComponent(title.toLowerCase());
-  const res = await doFetch(`${IMDB_SUGGEST}?firstChar=${firstChar}&query=${query}`);
-  if (!res) return null;
-  try {
-    const data = await res.json();
-    const match = (data.d as Array<{ id: string; q?: string }> | undefined)
-      ?.find(item => item.q === 'TV series' || item.q === 'TV mini-series' || item.q === 'TV short');
-    return match?.id ?? null;
-  } catch {
-    return null;
+  const normalizedTitle = title.trim().toLowerCase();
+  if (!normalizedTitle) return null;
+  const cacheKey = `nookmind_imdb_id_${encodeURIComponent(normalizedTitle)}`;
+  const cached = getSessionCache<string | null>(cacheKey);
+  if (cached !== null) return cached;
+
+  if (!imdbIdCache.has(normalizedTitle)) {
+    imdbIdCache.set(normalizedTitle, (async () => {
+      const firstChar = encodeURIComponent(normalizedTitle[0]);
+      const query = encodeURIComponent(normalizedTitle);
+      const res = await doFetch(`${IMDB_SUGGEST}?firstChar=${firstChar}&query=${query}`);
+      if (!res) return null;
+      try {
+        const data = await res.json();
+        const match = (data.d as Array<{ id: string; q?: string }> | undefined)
+          ?.find(item => item.q === 'TV series' || item.q === 'TV mini-series' || item.q === 'TV short');
+        const imdbId = match?.id ?? null;
+        setSessionCache(cacheKey, imdbId);
+        return imdbId;
+      } catch {
+        return null;
+      } finally {
+        imdbIdCache.delete(normalizedTitle);
+      }
+    })());
   }
+
+  return imdbIdCache.get(normalizedTitle)!;
 }
 
 async function fetchAllEpisodesRaw(imdbId: string): Promise<Record<number, EpisodeRating[]> | null> {
