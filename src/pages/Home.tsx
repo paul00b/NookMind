@@ -180,7 +180,7 @@ export default function Home() {
     setQuery('');
     setResults([]);
     setDropdownOpen(false);
-    inputRef.current?.blur();
+    inputRef.current?.focus();
   }, []);
 
   useEffect(() => { doSearch(debouncedQuery); }, [debouncedQuery, doSearch]);

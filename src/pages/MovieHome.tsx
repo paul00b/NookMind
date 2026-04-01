@@ -187,7 +187,7 @@ export default function MovieHome() {
     setQuery('');
     setResults([]);
     setDropdownOpen(false);
-    inputRef.current?.blur();
+    inputRef.current?.focus();
   }, []);
 
   useEffect(() => { doSearch(debouncedQuery); }, [debouncedQuery, doSearch]);
