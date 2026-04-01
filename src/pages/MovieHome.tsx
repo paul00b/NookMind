@@ -130,6 +130,7 @@ export default function MovieHome() {
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchSectionRef = useRef<HTMLDivElement>(null);
   const focusAlignTimeoutsRef = useRef<number[]>([]);
   const [mobileDropdownStyle, setMobileDropdownStyle] = useState<CSSProperties>({});
   const dismissMobileKeyboard = useCallback(() => {
@@ -157,9 +158,8 @@ export default function MovieHome() {
     });
   }, []);
   const alignSearchNearTop = useCallback(() => {
-    if (window.innerWidth >= 768 || !dropdownRef.current) return;
-    const top = window.scrollY + dropdownRef.current.getBoundingClientRect().top - 16;
-    window.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
+    if (window.innerWidth >= 768 || !searchSectionRef.current) return;
+    searchSectionRef.current.scrollIntoView({ block: 'start', behavior: 'auto' });
     updateMobileDropdownLayout();
   }, [updateMobileDropdownLayout]);
 
@@ -182,6 +182,13 @@ export default function MovieHome() {
       setSearching(false);
     }
   }, [t]);
+
+  const handleCloseSearch = useCallback(() => {
+    setQuery('');
+    setResults([]);
+    setDropdownOpen(false);
+    inputRef.current?.blur();
+  }, []);
 
   useEffect(() => { doSearch(debouncedQuery); }, [debouncedQuery, doSearch]);
 
@@ -219,12 +226,12 @@ export default function MovieHome() {
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false);
+        handleCloseSearch();
       }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, []);
+  }, [handleCloseSearch]);
 
   const handleSelectMovie = async (tmdbMovie: TmdbMovie) => {
     // Fetch full details (includes credits/director)
@@ -242,7 +249,7 @@ export default function MovieHome() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh] px-4 py-12">
+    <div ref={searchSectionRef} className="flex flex-col items-center justify-center min-h-[80vh] px-4 py-12 scroll-mt-4">
       {/* Heading */}
       <div className="text-center mb-10">
         <h1 className="font-serif text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-3">
@@ -280,7 +287,7 @@ export default function MovieHome() {
           />
           {query && (
             <button
-              onClick={() => { setQuery(''); setResults([]); setDropdownOpen(false); inputRef.current?.focus(); }}
+              onClick={handleCloseSearch}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
               <X size={16} />

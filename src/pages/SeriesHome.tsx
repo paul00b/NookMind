@@ -202,6 +202,13 @@ export default function SeriesHome() {
     }
   }, [t]);
 
+  const handleCloseSearch = useCallback(() => {
+    setQuery('');
+    setResults([]);
+    setDropdownOpen(false);
+    inputRef.current?.blur();
+  }, []);
+
   useEffect(() => { doSearch(debouncedQuery); }, [debouncedQuery, doSearch]);
 
   useEffect(() => {
@@ -238,12 +245,12 @@ export default function SeriesHome() {
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false);
+        handleCloseSearch();
       }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, []);
+  }, [handleCloseSearch]);
 
   const handleSelectSeries = async (tmdbSeries: TmdbSeries) => {
     const details = await fetchSeriesDetails(tmdbSeries.id);
@@ -291,7 +298,7 @@ export default function SeriesHome() {
           />
           {query && (
             <button
-              onClick={() => { setQuery(''); setResults([]); setDropdownOpen(false); inputRef.current?.focus(); }}
+              onClick={handleCloseSearch}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
               <X size={16} />
