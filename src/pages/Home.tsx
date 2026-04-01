@@ -182,14 +182,28 @@ export default function Home() {
     document.body.style.overflow = 'hidden';
     updateMobileDropdownLayout();
     const viewport = window.visualViewport;
+    const allowScrollWithinDropdown = (target: EventTarget | null) => {
+      const node = target instanceof Node ? target : null;
+      return !!(node && dropdownRef.current?.contains(node));
+    };
+    const blockBackgroundTouchMove = (event: TouchEvent) => {
+      if (!allowScrollWithinDropdown(event.target)) event.preventDefault();
+    };
+    const blockBackgroundWheel = (event: WheelEvent) => {
+      if (!allowScrollWithinDropdown(event.target)) event.preventDefault();
+    };
     window.addEventListener('resize', updateMobileDropdownLayout);
     viewport?.addEventListener('resize', updateMobileDropdownLayout);
     viewport?.addEventListener('scroll', updateMobileDropdownLayout);
+    document.addEventListener('touchmove', blockBackgroundTouchMove, { passive: false });
+    document.addEventListener('wheel', blockBackgroundWheel, { passive: false });
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener('resize', updateMobileDropdownLayout);
       viewport?.removeEventListener('resize', updateMobileDropdownLayout);
       viewport?.removeEventListener('scroll', updateMobileDropdownLayout);
+      document.removeEventListener('touchmove', blockBackgroundTouchMove);
+      document.removeEventListener('wheel', blockBackgroundWheel);
     };
   }, [dropdownOpen, searching, query, updateMobileDropdownLayout]);
 
