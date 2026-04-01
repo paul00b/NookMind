@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { X, Tv, Plus } from 'lucide-react';
 import { fetchSeriesImdbId, fetchSeasonRatings, type EpisodeRating } from '../lib/imdb';
 import { useTranslation } from 'react-i18next';
-import SheetModal from './SheetModal';
+import SheetModal, { SheetCloseButton } from './SheetModal';
 
 interface SeriesRatingsModalProps {
   isOpen: boolean;
@@ -129,9 +129,9 @@ export default function SeriesRatingsModal({
       panelClassName="md:max-w-2xl card animate-slide-up md:rounded-2xl rounded-t-3xl rounded-b-none max-h-[90vh] flex flex-col overflow-hidden"
     >
         {/* Close */}
-        <button onClick={onClose} className="absolute top-4 right-4 btn-ghost p-2 z-10">
+        <SheetCloseButton className="absolute top-4 right-4 btn-ghost p-2 z-10">
           <X size={20} />
-        </button>
+        </SheetCloseButton>
 
         {/* Header */}
         <div className="flex items-start gap-4 p-6 pb-4 flex-shrink-0">

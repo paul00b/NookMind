@@ -4,7 +4,7 @@ import { useSeries } from '../context/SeriesContext';
 import { useSeriesCategories } from '../context/SeriesCategoriesContext';
 import StarRating from './StarRating';
 import SeasonGrid, { deriveSeriesStatus } from './SeasonGrid';
-import SheetModal from './SheetModal';
+import SheetModal, { SheetCloseButton } from './SheetModal';
 import { fetchSeasonDetails } from '../lib/tmdb';
 import { X, Pencil, Check, Trash2, Tv, ChevronDown, ChevronUp, FolderPlus, FolderMinus } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -135,9 +135,9 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
       onClose={onClose}
       panelClassName="md:max-w-2xl card animate-slide-up md:rounded-2xl rounded-t-3xl rounded-b-none max-h-[90vh] overflow-y-auto"
     >
-        <button onClick={onClose} className="absolute top-4 right-4 btn-ghost p-2 z-10">
+        <SheetCloseButton className="absolute top-4 right-4 btn-ghost p-2 z-10">
           <X size={20} />
-        </button>
+        </SheetCloseButton>
 
         {/* Header : poster + titre/badges côte à côte */}
         <div className="flex gap-4 p-6 pb-4 pr-14">

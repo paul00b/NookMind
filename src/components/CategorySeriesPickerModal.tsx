@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { X, Search, Check, Tv } from 'lucide-react';
 import type { Series, SeriesCategory } from '../types';
 import { useTranslation } from 'react-i18next';
-import SheetModal from './SheetModal';
+import SheetModal, { SheetCloseButton } from './SheetModal';
 
 interface Props {
   category: SeriesCategory;
@@ -48,7 +48,7 @@ export default function CategorySeriesPickerModal({ category, series, onConfirm,
           <h2 className="font-serif text-lg font-bold text-gray-900 dark:text-gray-100">
             {t('seriesLibrary.addSeriesTo', { name: category.title })}
           </h2>
-          <button onClick={onClose} className="btn-ghost p-2"><X size={18} /></button>
+          <SheetCloseButton className="btn-ghost p-2"><X size={18} /></SheetCloseButton>
         </div>
 
         <div className="px-5 py-3 flex-shrink-0">

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CalendarDays, Check, Clock3, Star, Tv, X } from 'lucide-react';
 import { useSeries } from '../context/SeriesContext';
-import SheetModal from '../components/SheetModal';
+import SheetModal, { SheetCloseButton } from '../components/SheetModal';
 import { fetchSeasonDetails, fetchSeriesDetails, getPosterUrl } from '../lib/tmdb';
 import type { Series, TmdbSeries, TmdbEpisode } from '../types';
 import { deriveSeriesStatus } from '../components/SeasonGrid';
@@ -509,9 +509,9 @@ function EpisodeDetailSheet({
       onClose={onClose}
       panelClassName="md:max-w-xl card rounded-t-3xl rounded-b-none md:rounded-3xl max-h-[88vh] overflow-y-auto animate-slide-up"
     >
-        <button onClick={onClose} className="absolute top-4 right-4 btn-ghost p-2 z-10">
+        <SheetCloseButton className="absolute top-4 right-4 btn-ghost p-2 z-10">
           <X size={20} />
-        </button>
+        </SheetCloseButton>
 
         <div className="p-6 pb-5">
           <div className="flex gap-4 items-start">

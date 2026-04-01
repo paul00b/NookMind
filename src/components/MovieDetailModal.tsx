@@ -3,7 +3,7 @@ import type { Movie } from '../types';
 import { useMovies } from '../context/MoviesContext';
 import { useMovieCategories } from '../context/MovieCategoriesContext';
 import StarRating from './StarRating';
-import SheetModal from './SheetModal';
+import SheetModal, { SheetCloseButton } from './SheetModal';
 import { X, Pencil, Check, Trash2, Film, ArrowLeftRight, ChevronDown, ChevronUp, FolderPlus, FolderMinus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
@@ -61,9 +61,9 @@ export default function MovieDetailModal({ movie, onClose }: Props) {
       panelClassName="md:max-w-2xl card animate-slide-up md:rounded-2xl rounded-t-3xl rounded-b-none md:max-h-[90vh] overflow-y-auto"
     >
         {/* Close */}
-        <button onClick={onClose} className="absolute top-4 right-4 btn-ghost p-2 z-10">
+        <SheetCloseButton className="absolute top-4 right-4 btn-ghost p-2 z-10">
           <X size={20} />
-        </button>
+        </SheetCloseButton>
 
         <div className="flex flex-col md:flex-row gap-6 p-6">
           {/* Poster */}

@@ -3,7 +3,7 @@ import { X, Film, AlertTriangle } from 'lucide-react';
 import { useMovies } from '../context/MoviesContext';
 import type { Movie, MovieStatus } from '../types';
 import StarRating from './StarRating';
-import SheetModal from './SheetModal';
+import SheetModal, { SheetCloseButton } from './SheetModal';
 import { useTranslation } from 'react-i18next';
 
 const normalize = (s: string) => s.toLowerCase().trim().replace(/\s+/g, ' ');
@@ -59,7 +59,7 @@ export default function AddMovieModal({ prefill, onClose }: Props) {
     >
         <div className="flex items-center justify-between p-6 pb-4 border-b border-black/[0.06] dark:border-white/[0.06]">
           <h2 className="font-serif text-xl font-bold text-gray-900 dark:text-gray-100">{t('addMovie.title')}</h2>
-          <button onClick={onClose} className="btn-ghost p-2"><X size={18} /></button>
+          <SheetCloseButton className="btn-ghost p-2"><X size={18} /></SheetCloseButton>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">

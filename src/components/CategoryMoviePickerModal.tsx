@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { X, Search, Check, Film } from 'lucide-react';
 import type { Movie, MovieCategory } from '../types';
 import { useTranslation } from 'react-i18next';
-import SheetModal from './SheetModal';
+import SheetModal, { SheetCloseButton } from './SheetModal';
 
 interface Props {
   category: MovieCategory;
@@ -49,9 +49,9 @@ export default function CategoryMoviePickerModal({ category, movies, onConfirm, 
           <h2 className="font-serif text-lg font-bold text-gray-900 dark:text-gray-100">
             {t('movieLibrary.addMoviesTo', { name: category.title })}
           </h2>
-          <button onClick={onClose} className="btn-ghost p-2">
+          <SheetCloseButton className="btn-ghost p-2">
             <X size={18} />
-          </button>
+          </SheetCloseButton>
         </div>
 
         {/* Search */}

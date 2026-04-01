@@ -1,7 +1,7 @@
 import { X, Download, Share } from 'lucide-react';
 import { useInstallPrompt } from '../hooks/useInstallPrompt';
 import { useTranslation } from 'react-i18next';
-import SheetModal from './SheetModal';
+import SheetModal, { SheetCloseButton } from './SheetModal';
 
 interface Props {
   onDismiss: () => void;
@@ -28,12 +28,11 @@ export default function InstallPromptSheet({ onDismiss }: Props) {
       panelClassName="bg-[#f8f6f1] dark:bg-[#1a1f2e] rounded-t-3xl shadow-2xl animate-slide-up px-6 pt-5 pb-8"
     >
         {/* Dismiss */}
-        <button
-          onClick={onDismiss}
+        <SheetCloseButton
           className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
         >
           <X size={18} />
-        </button>
+        </SheetCloseButton>
 
         {/* Header */}
         <div className="flex items-center gap-4 mb-4">

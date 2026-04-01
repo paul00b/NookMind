@@ -249,67 +249,69 @@ export default function Library() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b border-black/[0.06] dark:border-white/[0.06] overflow-x-auto pb-0" style={{ scrollbarWidth: 'none' }}>
-        {/* Built-in status tabs */}
-        {([
-          ['reading', t('library.reading')],
-          ['want_to_read', t('library.wantToRead')],
-          ['read', t('library.read')],
-        ] as const).map(([status, label]) => (
-          <button
-            key={status}
-            onClick={() => { setActiveTab(status); setGenreFilter(''); setAuthorFilter(''); }}
-            className={tabClass(activeTab === status)}
-          >
-            {label}{countBadge(counts[status], activeTab === status)}
-          </button>
-        ))}
-
-        {/* Custom category tabs */}
-        {categories.map(cat => (
-          <div key={cat.id} className="relative group flex-shrink-0 flex items-end">
+      <div className="-mx-4 mb-6 overflow-x-auto overflow-y-hidden border-b border-black/[0.06] px-4 pb-0 [touch-action:pan-x] dark:border-white/[0.06] md:mx-0 md:px-0" style={{ scrollbarWidth: 'none' }}>
+        <div className="flex min-w-max gap-2">
+          {/* Built-in status tabs */}
+          {([
+            ['reading', t('library.reading')],
+            ['want_to_read', t('library.wantToRead')],
+            ['read', t('library.read')],
+          ] as const).map(([status, label]) => (
             <button
-              onClick={() => setActiveTab(cat.id)}
-              className={tabClass(activeTab === cat.id) + ' pr-5'}
+              key={status}
+              onClick={() => { setActiveTab(status); setGenreFilter(''); setAuthorFilter(''); }}
+              className={tabClass(activeTab === status)}
             >
-              {cat.title}{countBadge(cat.book_ids.length, activeTab === cat.id)}
+              {label}{countBadge(counts[status], activeTab === status)}
             </button>
-            {/* Delete button on hover */}
-            <button
-              onClick={() => setDeletingCategoryId(cat.id)}
-              className="absolute right-0 bottom-3 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-gray-400 hover:text-red-500"
-            >
-              <X size={12} />
-            </button>
-          </div>
-        ))}
+          ))}
 
-        {/* New category */}
-        {creatingCategory ? (
-          <form onSubmit={handleCreateCategory} className="flex items-center gap-1 pb-3 flex-shrink-0">
-            <input
-              ref={nameInputRef}
-              value={newCategoryName}
-              onChange={e => setNewCategoryName(e.target.value)}
-              placeholder={t('library.newCategoryPlaceholder')}
-              className="input py-1 text-sm w-36"
-              onBlur={() => { if (!newCategoryName.trim()) setCreatingCategory(false); }}
-            />
-            <button type="submit" className="p-1 text-amber-600 hover:text-amber-700">
-              <Check size={16} />
+          {/* Custom category tabs */}
+          {categories.map(cat => (
+            <div key={cat.id} className="relative group flex-shrink-0 flex items-end">
+              <button
+                onClick={() => setActiveTab(cat.id)}
+                className={tabClass(activeTab === cat.id) + ' pr-5'}
+              >
+                {cat.title}{countBadge(cat.book_ids.length, activeTab === cat.id)}
+              </button>
+              {/* Delete button on hover */}
+              <button
+                onClick={() => setDeletingCategoryId(cat.id)}
+                className="absolute right-0 bottom-3 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-gray-400 hover:text-red-500"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          ))}
+
+          {/* New category */}
+          {creatingCategory ? (
+            <form onSubmit={handleCreateCategory} className="flex items-center gap-1 pb-3 flex-shrink-0">
+              <input
+                ref={nameInputRef}
+                value={newCategoryName}
+                onChange={e => setNewCategoryName(e.target.value)}
+                placeholder={t('library.newCategoryPlaceholder')}
+                className="input py-1 text-sm w-36"
+                onBlur={() => { if (!newCategoryName.trim()) setCreatingCategory(false); }}
+              />
+              <button type="submit" className="p-1 text-amber-600 hover:text-amber-700">
+                <Check size={16} />
+              </button>
+              <button type="button" onClick={() => { setCreatingCategory(false); setNewCategoryName(''); }} className="p-1 text-gray-400 hover:text-gray-600">
+                <X size={16} />
+              </button>
+            </form>
+          ) : (
+            <button
+              onClick={() => setCreatingCategory(true)}
+              className="pb-3 px-1 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-amber-500 dark:hover:text-amber-400 -mb-px flex-shrink-0 flex items-center gap-1 transition-colors"
+            >
+              <Plus size={14} />{t('library.newCategory')}
             </button>
-            <button type="button" onClick={() => { setCreatingCategory(false); setNewCategoryName(''); }} className="p-1 text-gray-400 hover:text-gray-600">
-              <X size={16} />
-            </button>
-          </form>
-        ) : (
-          <button
-            onClick={() => setCreatingCategory(true)}
-            className="pb-3 px-1 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-amber-500 dark:hover:text-amber-400 -mb-px flex-shrink-0 flex items-center gap-1 transition-colors"
-          >
-            <Plus size={14} />{t('library.newCategory')}
-          </button>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Delete category confirm */}
@@ -342,27 +344,29 @@ export default function Library() {
 
       {/* Filters — only for status tabs */}
       {isStatusTab && tabBooks.length > 0 && (
-        <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-          <Select
-            value={genreFilter}
-            onChange={setGenreFilter}
-            options={[{ value: '', label: t('library.allGenres') }, ...genres.map(g => ({ value: g, label: g }))]}
-          />
-          <Select
-            value={authorFilter}
-            onChange={setAuthorFilter}
-            options={[{ value: '', label: t('library.allAuthors') }, ...authors.map(a => ({ value: a, label: a }))]}
-          />
-          <Select
-            value={sortKey}
-            onChange={v => setSortKey(v as SortKey)}
-            options={[
-              { value: 'created_at', label: t('library.dateAdded') },
-              { value: 'title', label: t('library.titleAZ') },
-              { value: 'author', label: t('library.authorAZ') },
-              ...(activeTab === 'read' ? [{ value: 'rating', label: t('library.ratingDesc') }] : []),
-            ]}
-          />
+        <div className="-mx-4 mb-6 overflow-x-auto overflow-y-hidden px-4 [touch-action:pan-x] md:mx-0 md:px-0" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex min-w-max items-center gap-2 pb-1">
+            <Select
+              value={genreFilter}
+              onChange={setGenreFilter}
+              options={[{ value: '', label: t('library.allGenres') }, ...genres.map(g => ({ value: g, label: g }))]}
+            />
+            <Select
+              value={authorFilter}
+              onChange={setAuthorFilter}
+              options={[{ value: '', label: t('library.allAuthors') }, ...authors.map(a => ({ value: a, label: a }))]}
+            />
+            <Select
+              value={sortKey}
+              onChange={v => setSortKey(v as SortKey)}
+              options={[
+                { value: 'created_at', label: t('library.dateAdded') },
+                { value: 'title', label: t('library.titleAZ') },
+                { value: 'author', label: t('library.authorAZ') },
+                ...(activeTab === 'read' ? [{ value: 'rating', label: t('library.ratingDesc') }] : []),
+              ]}
+            />
+          </div>
         </div>
       )}
 
