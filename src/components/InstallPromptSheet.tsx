@@ -1,6 +1,7 @@
 import { X, Download, Share } from 'lucide-react';
 import { useInstallPrompt } from '../hooks/useInstallPrompt';
 import { useTranslation } from 'react-i18next';
+import SheetModal from './SheetModal';
 
 interface Props {
   onDismiss: () => void;
@@ -20,18 +21,12 @@ export default function InstallPromptSheet({ onDismiss }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center md:hidden">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in"
-        onClick={onDismiss}
-      />
-
-      {/* Sheet */}
-      <div className="relative z-10 w-full bg-[#f8f6f1] dark:bg-[#1a1f2e] rounded-t-3xl shadow-2xl animate-slide-up px-6 pt-5 pb-8">
-        {/* Handle */}
-        <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-5" />
-
+    <SheetModal
+      onClose={onDismiss}
+      rootClassName="z-50 md:hidden"
+      overlayClassName="bg-black/40 backdrop-blur-sm animate-fade-in"
+      panelClassName="bg-[#f8f6f1] dark:bg-[#1a1f2e] rounded-t-3xl shadow-2xl animate-slide-up px-6 pt-5 pb-8"
+    >
         {/* Dismiss */}
         <button
           onClick={onDismiss}
@@ -116,8 +111,7 @@ export default function InstallPromptSheet({ onDismiss }: Props) {
             </button>
           )}
         </div>
-      </div>
-    </div>
+    </SheetModal>
   );
 }
 

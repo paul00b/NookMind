@@ -300,20 +300,14 @@ export default function SeasonGrid({
         <div className="flex items-center justify-end gap-2">
           <button
             type="button"
-            onClick={event => {
-              event.stopPropagation();
-              confirmFill(false);
-            }}
+            onClick={() => confirmFill(false)}
             className="min-w-[3.5rem] rounded-full px-3 py-1.5 text-sm font-medium border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/50 text-gray-600 dark:text-gray-300 transition-colors hover:bg-white dark:hover:bg-gray-900 shrink-0"
           >
             {t('seriesDetail.no')}
           </button>
           <button
             type="button"
-            onClick={event => {
-              event.stopPropagation();
-              confirmFill(true);
-            }}
+            onClick={() => confirmFill(true)}
             className="min-w-[3.5rem] rounded-full px-3.5 py-1.5 text-sm font-semibold bg-amber-500 text-white shadow-sm transition-colors hover:bg-amber-600 shrink-0"
           >
             {t('seriesDetail.yes')}

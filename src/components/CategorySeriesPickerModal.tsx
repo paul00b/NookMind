@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { X, Search, Check, Tv } from 'lucide-react';
 import type { Series, SeriesCategory } from '../types';
 import { useTranslation } from 'react-i18next';
+import SheetModal from './SheetModal';
 
 interface Props {
   category: SeriesCategory;
@@ -39,10 +40,10 @@ export default function CategorySeriesPickerModal({ category, series, onConfirm,
   const newCount = [...selected].filter(id => !category.series_ids.includes(id)).length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-
-      <div className="relative z-10 w-full md:max-w-lg card animate-slide-up md:rounded-2xl rounded-t-3xl rounded-b-none max-h-[85vh] flex flex-col">
+    <SheetModal
+      onClose={onClose}
+      panelClassName="md:max-w-lg card animate-slide-up md:rounded-2xl rounded-t-3xl rounded-b-none max-h-[85vh] flex flex-col"
+    >
         <div className="flex items-center justify-between p-5 border-b border-black/[0.06] dark:border-white/[0.06] flex-shrink-0">
           <h2 className="font-serif text-lg font-bold text-gray-900 dark:text-gray-100">
             {t('seriesLibrary.addSeriesTo', { name: category.title })}
@@ -108,7 +109,6 @@ export default function CategorySeriesPickerModal({ category, series, onConfirm,
             {newCount > 0 ? t('seriesLibrary.addNSeries', { count: newCount }) : t('seriesLibrary.confirmAdd')}
           </button>
         </div>
-      </div>
-    </div>
+    </SheetModal>
   );
 }

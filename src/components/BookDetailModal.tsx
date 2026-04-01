@@ -3,6 +3,7 @@ import type { Book, BookStatus } from '../types';
 import { useBooks } from '../context/BooksContext';
 import { useCategories } from '../context/CategoriesContext';
 import StarRating from './StarRating';
+import SheetModal from './SheetModal';
 import { X, Pencil, Check, Trash2, BookOpen, ChevronDown, ChevronUp, FolderPlus, FolderMinus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
@@ -70,15 +71,10 @@ export default function BookDetailModal({ book, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
-        onClick={onClose}
-      />
-
-      {/* Modal */}
-      <div className="relative z-10 w-full md:max-w-2xl card animate-slide-up md:rounded-2xl rounded-t-3xl rounded-b-none md:max-h-[90vh] overflow-y-auto">
+    <SheetModal
+      onClose={onClose}
+      panelClassName="md:max-w-2xl card animate-slide-up md:rounded-2xl rounded-t-3xl rounded-b-none md:max-h-[90vh] overflow-y-auto"
+    >
         {/* Close */}
         <button
           onClick={onClose}
@@ -316,7 +312,6 @@ export default function BookDetailModal({ book, onClose }: Props) {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+    </SheetModal>
   );
 }

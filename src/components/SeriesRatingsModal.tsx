@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { X, Tv, Plus } from 'lucide-react';
 import { fetchSeriesImdbId, fetchSeasonRatings, type EpisodeRating } from '../lib/imdb';
 import { useTranslation } from 'react-i18next';
+import SheetModal from './SheetModal';
 
 interface SeriesRatingsModalProps {
   isOpen: boolean;
@@ -69,13 +70,6 @@ export default function SeriesRatingsModal({
   const [seasonRatings, setSeasonRatings] = useState<Record<number, SeasonState>>({});
   const [fetchKey, setFetchKey] = useState(0); // pour le bouton Réessayer
 
-  // Verrouillage du scroll body à l'ouverture
-  useEffect(() => {
-    if (!isOpen) return;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
-  }, [isOpen]);
-
   // Détecte si la description est tronquée
   useEffect(() => {
     if (!descRef.current) return;
@@ -129,10 +123,11 @@ export default function SeriesRatingsModal({
   const hasData = seasons.length > 0;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center p-0 md:p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-
-      <div className="relative z-10 w-full md:max-w-2xl card animate-slide-up md:rounded-2xl rounded-t-3xl rounded-b-none max-h-[90vh] flex flex-col overflow-hidden">
+    <SheetModal
+      onClose={onClose}
+      rootClassName="z-[60]"
+      panelClassName="md:max-w-2xl card animate-slide-up md:rounded-2xl rounded-t-3xl rounded-b-none max-h-[90vh] flex flex-col overflow-hidden"
+    >
         {/* Close */}
         <button onClick={onClose} className="absolute top-4 right-4 btn-ghost p-2 z-10">
           <X size={20} />
@@ -330,15 +325,14 @@ export default function SeriesRatingsModal({
             <div className="px-6 pb-6 pt-2 flex-shrink-0 flex justify-center">
               <button
                 onClick={() => { onClose(); onAdd(); }}
-                className="btn-primary flex items-center gap-2 px-5 py-2.5"
+                className="btn-primary flex items-center gap-2.5 px-6 py-2.5 min-w-52 justify-center"
               >
-                <Plus size={16} />
+                <Plus size={18} strokeWidth={2.4} />
                 {t('seriesDetail.addToCollection')}
               </button>
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </SheetModal>
   );
 }

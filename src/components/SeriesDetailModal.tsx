@@ -4,6 +4,7 @@ import { useSeries } from '../context/SeriesContext';
 import { useSeriesCategories } from '../context/SeriesCategoriesContext';
 import StarRating from './StarRating';
 import SeasonGrid, { deriveSeriesStatus } from './SeasonGrid';
+import SheetModal from './SheetModal';
 import { fetchSeasonDetails } from '../lib/tmdb';
 import { X, Pencil, Check, Trash2, Tv, ChevronDown, ChevronUp, FolderPlus, FolderMinus } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -33,10 +34,6 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
   const [descExpanded, setDescExpanded] = useState(false);
   const [descTruncated, setDescTruncated] = useState(false);
   const descRef = useRef<HTMLParagraphElement>(null);
-  useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
-  }, []);
 
   useEffect(() => {
     if (descRef.current) setDescTruncated(descRef.current.scrollHeight > descRef.current.clientHeight);
@@ -134,10 +131,10 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
   } : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-
-      <div className="relative z-10 w-full md:max-w-2xl card animate-slide-up md:rounded-2xl rounded-t-3xl rounded-b-none max-h-[90vh] overflow-y-auto">
+    <SheetModal
+      onClose={onClose}
+      panelClassName="md:max-w-2xl card animate-slide-up md:rounded-2xl rounded-t-3xl rounded-b-none max-h-[90vh] overflow-y-auto"
+    >
         <button onClick={onClose} className="absolute top-4 right-4 btn-ghost p-2 z-10">
           <X size={20} />
         </button>
@@ -473,7 +470,6 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
               )}
             </div>
         </div>
-      </div>
-    </div>
+    </SheetModal>
   );
 }

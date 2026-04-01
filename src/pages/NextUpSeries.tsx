@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CalendarDays, Check, Clock3, Star, Tv, X } from 'lucide-react';
 import { useSeries } from '../context/SeriesContext';
+import SheetModal from '../components/SheetModal';
 import { fetchSeasonDetails, fetchSeriesDetails, getPosterUrl } from '../lib/tmdb';
 import type { Series, TmdbSeries, TmdbEpisode } from '../types';
 import { deriveSeriesStatus } from '../components/SeasonGrid';
@@ -495,11 +496,6 @@ function EpisodeDetailSheet({
   onClose: () => void;
   onMarkEpisodeWatched?: (series: Series, season: number, episode: number) => void;
 }) {
-  useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
-  }, []);
-
   const seasonNumber = state.type === 'available' ? state.season : state.ep.season_number;
   const episodeNumber = state.type === 'available' ? state.episode : state.ep.episode_number;
   const airDate = episode?.air_date ?? (state.type === 'coming_soon' ? state.ep.air_date : null);
@@ -509,21 +505,15 @@ function EpisodeDetailSheet({
   const statusLabel = state.type === 'available' ? t('nextUp.available') : t('nextUp.detailComingSoon');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
-      <button
-        type="button"
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
-        onClick={onClose}
-        aria-label={t('nextUp.closeEpisodeDetails')}
-      />
-
-      <div className="relative z-10 w-full md:max-w-xl card rounded-t-3xl rounded-b-none md:rounded-3xl max-h-[88vh] overflow-y-auto animate-slide-up">
+    <SheetModal
+      onClose={onClose}
+      panelClassName="md:max-w-xl card rounded-t-3xl rounded-b-none md:rounded-3xl max-h-[88vh] overflow-y-auto animate-slide-up"
+    >
         <button onClick={onClose} className="absolute top-4 right-4 btn-ghost p-2 z-10">
           <X size={20} />
         </button>
 
         <div className="p-6 pb-5">
-          <div className="w-12 h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 mx-auto mb-5 md:hidden" />
           <div className="flex gap-4 items-start">
             <div className="w-20 aspect-[2/3] rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800 shrink-0">
               {series.poster_url ? (
@@ -607,7 +597,6 @@ function EpisodeDetailSheet({
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </SheetModal>
   );
 }

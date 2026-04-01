@@ -18,8 +18,9 @@ export default function SettingsPanel({ onClose }: Props) {
   const { theme, setTheme } = useTheme();
   const { t } = useTranslation();
   useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
+    return () => { document.body.style.overflow = previousOverflow; };
   }, []);
 
   const [displayName, setDisplayName] = useState(

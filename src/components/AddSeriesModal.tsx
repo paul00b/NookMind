@@ -1,9 +1,10 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { X, Tv, AlertTriangle } from 'lucide-react';
 import { useSeries } from '../context/SeriesContext';
 import type { Series } from '../types';
 import StarRating from './StarRating';
 import SeasonGrid, { deriveSeriesStatus } from './SeasonGrid';
+import SheetModal from './SheetModal';
 import { useTranslation } from 'react-i18next';
 import { fetchSeasonDetails } from '../lib/tmdb';
 
@@ -40,7 +41,6 @@ export default function AddSeriesModal({ prefill, onClose }: Props) {
   const [episodeCounts, setEpisodeCounts] = useState<Record<string, number>>({});
   const [episodeAirDates, setEpisodeAirDates] = useState<Record<string, Record<number, string | null>>>({});
   const [loadingEpisodesSeason, setLoadingEpisodesSeason] = useState<number | null>(null);
-  useEffect(() => { document.body.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; }; }, []);
 
   const isDuplicate = useMemo(() => {
     if (!form.title.trim()) return false;
@@ -93,10 +93,10 @@ export default function AddSeriesModal({ prefill, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-
-      <div className="relative z-10 w-full md:max-w-lg card animate-slide-up md:rounded-2xl rounded-t-3xl rounded-b-none max-h-[92vh] overflow-y-auto">
+    <SheetModal
+      onClose={onClose}
+      panelClassName="md:max-w-lg card animate-slide-up md:rounded-2xl rounded-t-3xl rounded-b-none max-h-[92vh] overflow-y-auto"
+    >
         <div className="flex items-center justify-between p-6 pb-4 border-b border-black/[0.06] dark:border-white/[0.06]">
           <h2 className="font-serif text-xl font-bold text-gray-900 dark:text-gray-100">{t('addSeries.title')}</h2>
           <button onClick={onClose} className="btn-ghost p-2"><X size={18} /></button>
@@ -200,7 +200,6 @@ export default function AddSeriesModal({ prefill, onClose }: Props) {
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </SheetModal>
   );
 }
