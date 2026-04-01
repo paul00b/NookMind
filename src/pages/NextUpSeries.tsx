@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CalendarDays, Check, Clock3, Star, Tv, X } from 'lucide-react';
 import { useSeries } from '../context/SeriesContext';
-import { fetchSeasonRatings, fetchSeriesImdbId, type EpisodeRating } from '../lib/imdb';
 import { fetchSeasonDetails, fetchSeriesDetails, getPosterUrl } from '../lib/tmdb';
 import type { Series, TmdbSeries, TmdbEpisode } from '../types';
 import { deriveSeriesStatus } from '../components/SeasonGrid';
@@ -501,9 +500,6 @@ function EpisodeDetailSheet({
     return () => { document.body.style.overflow = ''; };
   }, []);
 
-  const [imdbRating, setImdbRating] = useState<EpisodeRating | null>(null);
-  const [imdbLoading, setImdbLoading] = useState(false);
-
   const seasonNumber = state.type === 'available' ? state.season : state.ep.season_number;
   const episodeNumber = state.type === 'available' ? state.episode : state.ep.episode_number;
   const airDate = episode?.air_date ?? (state.type === 'coming_soon' ? state.ep.air_date : null);
@@ -511,26 +507,6 @@ function EpisodeDetailSheet({
   const overview = episode?.overview?.trim();
   const stillUrl = episode?.still_path ? getPosterUrl(episode.still_path) : null;
   const statusLabel = state.type === 'available' ? t('nextUp.available') : t('nextUp.detailComingSoon');
-
-  useEffect(() => {
-    let active = true;
-    setImdbRating(null);
-    setImdbLoading(true);
-
-    fetchSeriesImdbId(series.title)
-      .then(async imdbId => {
-        if (!active || !imdbId) return;
-        const seasonRatings = await fetchSeasonRatings(imdbId, seasonNumber);
-        if (!active) return;
-        const match = seasonRatings?.find(ep => ep.episode === episodeNumber) ?? null;
-        setImdbRating(match);
-      })
-      .finally(() => {
-        if (active) setImdbLoading(false);
-      });
-
-    return () => { active = false; };
-  }, [episodeNumber, seasonNumber, series.title]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
@@ -584,15 +560,10 @@ function EpisodeDetailSheet({
                 {t('nextUp.runtimeMinutes', { count: episode.runtime })}
               </span>
             )}
-            {imdbLoading ? (
+            {typeof episode?.vote_average === 'number' && episode.vote_average > 0 && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 text-sm">
                 <Star size={14} className="fill-current" />
-                ...
-              </span>
-            ) : typeof imdbRating?.imdbRating === 'number' && imdbRating.imdbRating > 0 && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 text-sm">
-                <Star size={14} className="fill-current" />
-                IMDb {imdbRating.imdbRating.toFixed(1)}
+                {episode.vote_average.toFixed(1)}
               </span>
             )}
           </div>
@@ -603,7 +574,7 @@ function EpisodeDetailSheet({
             </div>
           )}
 
-          <div className="mt-5 space-y-3">
+          <div className={`mt-5 space-y-3 ${!overview ? 'pb-4 md:pb-2' : ''}`}>
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{t('nextUp.episodeSynopsis')}</p>
               {loading ? (
