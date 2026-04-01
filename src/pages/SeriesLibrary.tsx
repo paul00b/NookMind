@@ -8,6 +8,7 @@ import CategorySeriesPickerModal from '../components/CategorySeriesPickerModal';
 import StarRating from '../components/StarRating';
 import { Tv, ChevronDown, LayoutGrid, List, Plus, X, Check, Trash2, FolderOpen } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { formatWaitingLabel } from '../lib/seriesUtils';
 import toast from 'react-hot-toast';
 
 type SortKey = 'created_at' | 'title' | 'creator' | 'rating';
@@ -54,7 +55,7 @@ function SelectDropdown({ value, onChange, options }: { value: string; onChange:
 }
 
 function SeriesListRow({ series, onClick, onRemove }: { series: Series; onClick: () => void; onRemove?: () => void }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   return (
     <div className="relative group">
       <button onClick={onClick} className="w-full flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-amber-500/5 dark:hover:bg-amber-500/10 transition-colors text-left">
@@ -79,11 +80,20 @@ function SeriesListRow({ series, onClick, onRemove }: { series: Series; onClick:
             <StarRating value={series.rating} readonly size={12} />
           </div>
         )}
-        <span className={`flex-shrink-0 text-xs font-medium px-2.5 py-1 rounded-full text-white ${
-          series.status === 'watched' ? 'bg-emerald-500' : series.status === 'watching' ? 'bg-blue-500' : 'bg-amber-500'
-        }`}>
-          {series.status === 'watched' ? t('seriesCard.watched') : series.status === 'watching' ? t('seriesCard.watching') : t('seriesCard.wantToWatch')}
-        </span>
+        {(() => {
+          const isWaiting = series.status === 'watching' && (
+            series.next_season_number !== null
+              ? series.watched_seasons.length >= series.next_season_number - 1
+              : series.seasons !== null && series.watched_seasons.length >= series.seasons
+          );
+          const bgClass = series.status === 'watched' ? 'bg-emerald-500' : isWaiting ? 'bg-purple-500' : series.status === 'watching' ? 'bg-blue-500' : 'bg-amber-500';
+          const label = series.status === 'watched'
+            ? t('seriesCard.watched')
+            : isWaiting
+            ? formatWaitingLabel(series.next_air_date, t('seriesCard.waitingNextSeason'), t('seriesCard.waitingTomorrow'), (d) => t('seriesCard.waitingDays', { count: d }), i18n.language)
+            : series.status === 'watching' ? t('seriesCard.watching') : t('seriesCard.wantToWatch');
+          return <span className={`flex-shrink-0 text-xs font-medium px-2.5 py-1 rounded-full text-white ${bgClass}`}>{label}</span>;
+        })()}
       </button>
       {onRemove && (
         <button
@@ -119,6 +129,16 @@ export default function SeriesLibrary() {
 
   const activeCategory = useMemo(() => seriesCategories.find(c => c.id === activeTab) ?? null, [seriesCategories, activeTab]);
   const isStatusTab = activeTab === 'watched' || activeTab === 'want_to_watch' || activeTab === 'watching';
+
+  const isWaitingForNextSeason = (s: Series) => {
+    if (s.status !== 'watching') return false;
+    // Détection précise : prochain épisode connu, l'utilisateur a tout vu jusqu'à cette saison
+    if (s.next_season_number !== null) {
+      return s.watched_seasons.length >= s.next_season_number - 1;
+    }
+    // Fallback pour les anciennes entrées sans next_season_number
+    return s.seasons !== null && s.watched_seasons.length >= s.seasons;
+  };
 
   const filtered = useMemo(() => {
     if (!isStatusTab) return [];
@@ -302,7 +322,44 @@ export default function SeriesLibrary() {
         )
       ) : filtered.length === 0 ? (
         <EmptyState />
-      ) : viewMode === 'grid' ? (
+      ) : activeTab === 'watching' ? (() => {
+        const active = filtered.filter(s => !isWaitingForNextSeason(s));
+        const waiting = filtered.filter(s => isWaitingForNextSeason(s));
+        return (
+          <div className="space-y-8">
+            {active.length > 0 && (
+              <div>
+                {waiting.length > 0 && (
+                  <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">{t('seriesLibrary.watching')}</h2>
+                )}
+                {viewMode === 'grid' ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {active.map(s => <SeriesCard key={s.id} series={s} onClick={() => setSelectedSeries(s)} />)}
+                  </div>
+                ) : (
+                  <div className="card divide-y divide-black/[0.05] dark:divide-white/[0.05] overflow-hidden">
+                    {active.map(s => <SeriesListRow key={s.id} series={s} onClick={() => setSelectedSeries(s)} />)}
+                  </div>
+                )}
+              </div>
+            )}
+            {waiting.length > 0 && (
+              <div>
+                <h2 className="text-xs font-semibold text-purple-500 dark:text-purple-400 uppercase tracking-wider mb-4">{t('seriesLibrary.waitingNextSeason')}</h2>
+                {viewMode === 'grid' ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {waiting.map(s => <SeriesCard key={s.id} series={s} onClick={() => setSelectedSeries(s)} />)}
+                  </div>
+                ) : (
+                  <div className="card divide-y divide-black/[0.05] dark:divide-white/[0.05] overflow-hidden">
+                    {waiting.map(s => <SeriesListRow key={s.id} series={s} onClick={() => setSelectedSeries(s)} />)}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })() : viewMode === 'grid' ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {filtered.map(s => (
             <SeriesCard key={s.id} series={s} onClick={() => setSelectedSeries(s)} />

@@ -2,6 +2,7 @@ import type { Series } from '../types';
 import StarRating from './StarRating';
 import { Tv } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { formatWaitingLabel } from '../lib/seriesUtils';
 
 interface SeriesCardProps {
   series: Series;
@@ -9,7 +10,7 @@ interface SeriesCardProps {
 }
 
 export default function SeriesCard({ series, onClick }: SeriesCardProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   return (
     <button
       onClick={onClick}
@@ -30,19 +31,38 @@ export default function SeriesCard({ series, onClick }: SeriesCardProps) {
           </div>
         )}
         {/* Status badge */}
-        <div className={`absolute top-2 right-2 text-xs font-medium px-2 py-0.5 rounded-full ${
-          series.status === 'watched'
-            ? 'bg-emerald-500/90 text-white'
+        {(() => {
+          const isWaiting = series.status === 'watching' && (
+            series.next_season_number !== null
+              ? series.watched_seasons.length >= series.next_season_number - 1
+              : series.seasons !== null && series.watched_seasons.length >= series.seasons
+          );
+          const bgClass = series.status === 'watched'
+            ? 'bg-emerald-500/90'
+            : isWaiting
+            ? 'bg-purple-500/90'
             : series.status === 'watching'
-            ? 'bg-blue-500/90 text-white'
-            : 'bg-amber-500/90 text-white'
-        }`}>
-          {series.status === 'watched'
+            ? 'bg-blue-500/90'
+            : 'bg-amber-500/90';
+          const label = series.status === 'watched'
             ? t('seriesCard.watched')
+            : isWaiting
+            ? formatWaitingLabel(
+                series.next_air_date,
+                t('seriesCard.waitingNextSeason'),
+                t('seriesCard.waitingTomorrow'),
+                (d) => t('seriesCard.waitingDays', { count: d }),
+                i18n.language
+              )
             : series.status === 'watching'
             ? `S${series.watched_seasons.length}/${series.seasons ?? '?'}`
-            : t('seriesCard.wantToWatch')}
-        </div>
+            : t('seriesCard.wantToWatch');
+          return (
+            <div className={`absolute top-2 right-2 text-xs font-medium px-2 py-0.5 rounded-full text-white ${bgClass}`}>
+              {label}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Info */}

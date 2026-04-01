@@ -279,6 +279,11 @@ export async function fetchSeriesDetails(tmdbId: number): Promise<TmdbSeries | n
 }
 
 export function extractSeriesData(series: TmdbSeries) {
+  const next = series.next_episode_to_air;
+  // Ne compter que les saisons avec au moins 1 épisode (exclut les saisons annoncées sans contenu)
+  const airedSeasons = series.seasons
+    ? series.seasons.filter(s => s.season_number > 0 && (s.episode_count ?? 0) > 0).length || null
+    : series.number_of_seasons || null;
   return {
     tmdb_id: series.id,
     title: series.name || 'Unknown Title',
@@ -286,7 +291,9 @@ export function extractSeriesData(series: TmdbSeries) {
     description: series.overview || null,
     poster_url: getPosterUrl(series.poster_path),
     first_air_date: series.first_air_date || null,
-    seasons: series.number_of_seasons || null,
+    seasons: airedSeasons,
     genre: series.genres?.[0]?.name || null,
+    next_air_date: next?.air_date ?? null,
+    next_season_number: next?.season_number ?? null,
   };
 }

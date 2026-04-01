@@ -26,6 +26,8 @@ const EMPTY: SeriesFormData = {
   status: 'want_to_watch',
   rating: null,
   personal_note: null,
+  next_air_date: null,
+  next_season_number: null,
 };
 
 interface Props {

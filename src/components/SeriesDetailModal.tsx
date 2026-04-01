@@ -5,7 +5,7 @@ import { useSeriesCategories } from '../context/SeriesCategoriesContext';
 import StarRating from './StarRating';
 import SeasonGrid, { deriveSeriesStatus } from './SeasonGrid';
 import SheetModal, { SheetCloseButton } from './SheetModal';
-import { fetchSeasonDetails } from '../lib/tmdb';
+import { fetchSeasonDetails, fetchSeriesDetails, extractSeriesData } from '../lib/tmdb';
 import { X, Pencil, Check, Trash2, Tv, ChevronDown, ChevronUp, FolderPlus, FolderMinus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
@@ -38,6 +38,28 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
   useEffect(() => {
     if (descRef.current) setDescTruncated(descRef.current.scrollHeight > descRef.current.clientHeight);
   }, [localSeries.description]);
+
+  // Rafraîchissement silencieux des données TMDB à l'ouverture pour les séries en cours
+  useEffect(() => {
+    if (series.status !== 'watching' || !series.tmdb_id) return;
+    fetchSeriesDetails(series.tmdb_id).then(tmdbData => {
+      if (!tmdbData) return;
+      const extracted = extractSeriesData(tmdbData);
+      const nextAirDate = extracted.next_air_date ?? null;
+      const nextSeasonNumber = extracted.next_season_number ?? null;
+      const seasons = extracted.seasons;
+      // Ne mettre à jour que si les données ont changé
+      if (
+        nextAirDate === series.next_air_date &&
+        nextSeasonNumber === series.next_season_number &&
+        seasons === series.seasons
+      ) return;
+      const updates: Partial<Series> = { seasons, next_air_date: nextAirDate, next_season_number: nextSeasonNumber };
+      setLocalSeries(s => ({ ...s, ...updates }));
+      updateSeries(series.id, updates);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Charge l'imdbID quand la section IMDB s'ouvre pour la première fois
   useEffect(() => {
@@ -119,6 +141,13 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
     onClose();
   };
 
+  const isWaitingForNextSeason =
+    localSeries.status === 'watching' && (
+      localSeries.next_season_number !== null
+        ? localSeries.watched_seasons.length >= localSeries.next_season_number - 1
+        : localSeries.seasons !== null && localSeries.watched_seasons.length >= localSeries.seasons
+    );
+
   const imdbSeasons = Object.keys(seasonRatings).map(Number).sort((a, b) => a - b);
   const allImdbRatings: number[] = [];
   for (const val of Object.values(seasonRatings)) {
@@ -166,9 +195,15 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
                 </span>
               )}
               <span className={`px-2.5 py-0.5 rounded-full font-medium text-white text-xs ${
-                localSeries.status === 'watched' ? 'bg-emerald-500' : localSeries.status === 'watching' ? 'bg-blue-500' : 'bg-amber-500'
+                localSeries.status === 'watched' ? 'bg-emerald-500' : isWaitingForNextSeason ? 'bg-purple-500' : localSeries.status === 'watching' ? 'bg-blue-500' : 'bg-amber-500'
               }`}>
-                {localSeries.status === 'watched' ? t('seriesDetail.watched') : localSeries.status === 'watching' ? t('seriesDetail.watching') : t('seriesDetail.wantToWatch')}
+                {localSeries.status === 'watched'
+                  ? t('seriesDetail.watched')
+                  : isWaitingForNextSeason
+                  ? t('seriesDetail.waitingNextSeason')
+                  : localSeries.status === 'watching'
+                  ? t('seriesDetail.watching')
+                  : t('seriesDetail.wantToWatch')}
               </span>
               {localSeries.first_air_date && (
                 <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2.5 py-0.5 rounded-full text-xs">
@@ -457,7 +492,7 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
             )}
 
             <div className="flex flex-wrap gap-2 pt-2 justify-center">
-              {!confirmDelete ? (
+{!confirmDelete ? (
                 <button onClick={() => setConfirmDelete(true)} className="btn-ghost text-sm text-red-500 hover:bg-red-500/10 flex items-center gap-1.5">
                   <Trash2 size={14} /> {t('seriesDetail.delete')}
                 </button>

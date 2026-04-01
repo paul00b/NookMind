@@ -105,6 +105,8 @@ export interface Series {
   status: SeriesStatus;
   rating: number | null;
   personal_note: string | null;
+  next_air_date: string | null;
+  next_season_number: number | null;
   created_at: string;
 }
 

@@ -8,6 +8,7 @@ import SeriesDetailModal from '../components/SeriesDetailModal';
 import StarRating from '../components/StarRating';
 import { useSeries } from '../context/SeriesContext';
 import { useTranslation } from 'react-i18next';
+import { formatWaitingLabel } from '../lib/seriesUtils';
 
 function useDebounce<T>(value: T, delay: number): T {
   const [dv, setDv] = useState(value);
@@ -59,43 +60,67 @@ function WantToWatchSlider({ onSelect }: { onSelect: (s: Series) => void }) {
 
 function WatchingSlider({ onSelect }: { onSelect: (s: Series) => void }) {
   const { series } = useSeries();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
-  const watching = series
-    .filter(s => s.status === 'watching')
-    .slice(0, 10);
+  const isWaiting = (s: Series) => {
+    if (s.next_season_number !== null) {
+      return s.watched_seasons.length >= s.next_season_number - 1;
+    }
+    return s.seasons !== null && s.watched_seasons.length >= s.seasons;
+  };
 
-  if (watching.length === 0) return null;
+  const activeWatching = series.filter(s => s.status === 'watching' && !isWaiting(s)).slice(0, 10);
+  const waitingNextSeason = series.filter(s => s.status === 'watching' && isWaiting(s)).slice(0, 10);
 
-  return (
-    <div className="w-full max-w-xl mt-10">
-      <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">
-        {t('seriesHome.watching')}
-      </h2>
-      <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-        {watching.map(s => (
-          <div key={s.id} onClick={() => onSelect(s)} className="flex-shrink-0 snap-start group cursor-pointer">
-            <div className="w-20 md:w-28 aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2 group-hover:scale-[1.03] transition-transform duration-200 relative">
-              {s.poster_url ? (
-                <img src={s.poster_url} alt={s.title} className="w-full h-full object-cover" loading="lazy" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Tv size={22} className="text-gray-300 dark:text-gray-600" />
-                </div>
-              )}
-              <span className="absolute bottom-1.5 right-1.5 text-[10px] font-bold bg-blue-500 text-white px-1.5 py-0.5 rounded-md">
-                S{s.watched_seasons.length}/{s.seasons ?? '?'}
-              </span>
-            </div>
-            <div className="w-20 md:w-28 text-left">
-              <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                {s.title}
-              </p>
-            </div>
+  if (activeWatching.length === 0 && waitingNextSeason.length === 0) return null;
+
+  const renderSlide = (s: Series) => (
+    <div key={s.id} onClick={() => onSelect(s)} className="flex-shrink-0 snap-start group cursor-pointer">
+      <div className="w-20 md:w-28 aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2 group-hover:scale-[1.03] transition-transform duration-200 relative">
+        {s.poster_url ? (
+          <img src={s.poster_url} alt={s.title} className="w-full h-full object-cover" loading="lazy" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Tv size={22} className="text-gray-300 dark:text-gray-600" />
           </div>
-        ))}
+        )}
+        <span className={`absolute bottom-1.5 right-1.5 text-[10px] font-bold text-white px-1.5 py-0.5 rounded-md ${isWaiting(s) ? 'bg-purple-500' : 'bg-blue-500'}`}>
+          {isWaiting(s)
+            ? formatWaitingLabel(s.next_air_date, t('seriesCard.waitingNextSeason'), t('seriesCard.waitingTomorrow'), (d) => t('seriesCard.waitingDays', { count: d }), i18n.language)
+            : `S${s.watched_seasons.length}/${s.seasons ?? '?'}`}
+        </span>
+      </div>
+      <div className="w-20 md:w-28 text-left">
+        <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+          {s.title}
+        </p>
       </div>
     </div>
+  );
+
+  return (
+    <>
+      {activeWatching.length > 0 && (
+        <div className="w-full max-w-xl mt-10">
+          <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">
+            {t('seriesHome.watching')}
+          </h2>
+          <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            {activeWatching.map(renderSlide)}
+          </div>
+        </div>
+      )}
+      {waitingNextSeason.length > 0 && (
+        <div className="w-full max-w-xl mt-10">
+          <h2 className="text-sm font-semibold text-purple-500 dark:text-purple-400 uppercase tracking-wider mb-3 px-1">
+            {t('seriesHome.waitingNextSeason')}
+          </h2>
+          <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            {waitingNextSeason.map(renderSlide)}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
