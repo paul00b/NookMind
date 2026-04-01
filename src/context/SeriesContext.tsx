@@ -1,8 +1,6 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import type { ReactNode } from 'react';
 import type { Series } from '../types';
-import { supabase } from '../lib/supabase';
-import { useAuth } from './AuthContext';
-import toast from 'react-hot-toast';
+import { createLibraryContext } from './createLibraryContext';
 
 interface SeriesContextValue {
   series: Series[];
@@ -13,90 +11,30 @@ interface SeriesContextValue {
   refetch: () => Promise<void>;
 }
 
-const SeriesContext = createContext<SeriesContextValue | null>(null);
+const { Provider: BaseSeriesProvider, useItems: useSeriesBase } = createLibraryContext<Series>({
+  contextName: 'useSeries',
+  table: 'series',
+  selectMessage: 'Failed to fetch series:',
+  insertMessage: 'Failed to add series',
+  updateMessage: 'Failed to update series',
+  deleteMessage: 'Failed to delete series',
+  deleteSuccessMessage: 'Series removed',
+  addSuccessMessage: 'Series added!',
+});
 
-export function SeriesProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
-  const [series, setSeries] = useState<Series[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const fetchSeries = useCallback(async () => {
-    if (!user) { setSeries([]); return; }
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('series')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      setSeries(data ?? []);
-    } catch (err) {
-      console.error('Failed to fetch series:', err);
-      toast.error('Failed to load your series');
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
-
-  useEffect(() => { fetchSeries(); }, [fetchSeries]);
-
-  const addSeries = async (seriesData: Omit<Series, 'id' | 'user_id' | 'created_at'>) => {
-    if (!user) return null;
-    try {
-      const { data, error } = await supabase
-        .from('series')
-        .insert({ ...seriesData, user_id: user.id })
-        .select()
-        .single();
-      if (error) throw error;
-      setSeries(prev => [data, ...prev]);
-      toast.success('Series added!');
-      return data;
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to add series';
-      toast.error(msg);
-      return null;
-    }
-  };
-
-  const updateSeries = async (id: string, updates: Partial<Series>) => {
-    try {
-      const { data, error } = await supabase
-        .from('series')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      setSeries(prev => prev.map(s => s.id === id ? data : s));
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to update series';
-      toast.error(msg);
-    }
-  };
-
-  const deleteSeries = async (id: string) => {
-    try {
-      const { error } = await supabase.from('series').delete().eq('id', id);
-      if (error) throw error;
-      setSeries(prev => prev.filter(s => s.id !== id));
-      toast.success('Series removed');
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to delete series';
-      toast.error(msg);
-    }
-  };
-
-  return (
-    <SeriesContext.Provider value={{ series, loading, addSeries, updateSeries, deleteSeries, refetch: fetchSeries }}>
-      {children}
-    </SeriesContext.Provider>
-  );
+export function SeriesProvider({ children }: { children: ReactNode }) {
+  return <BaseSeriesProvider>{children}</BaseSeriesProvider>;
 }
 
-export function useSeries() {
-  const ctx = useContext(SeriesContext);
-  if (!ctx) throw new Error('useSeries must be used within SeriesProvider');
-  return ctx;
+export function useSeries(): SeriesContextValue {
+  const { items, loading, addItem, updateItem, deleteItem, refetch } = useSeriesBase();
+
+  return {
+    series: items,
+    loading,
+    addSeries: addItem,
+    updateSeries: updateItem,
+    deleteSeries: deleteItem,
+    refetch,
+  };
 }
