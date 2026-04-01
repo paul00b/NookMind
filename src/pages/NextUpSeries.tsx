@@ -1,10 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, Tv } from 'lucide-react';
 import { useSeries } from '../context/SeriesContext';
 import { fetchSeriesDetails } from '../lib/tmdb';
 import type { Series, TmdbSeries, TmdbEpisode } from '../types';
 import { deriveSeriesStatus } from '../components/SeasonGrid';
+
+const NEXT_UP_DISMISS_DURATION_MS = 380;
+const NEXT_UP_ENTER_DURATION_MS = 420;
 
 // ─── helpers ───────────────────────────────────────────────────────────────
 
@@ -43,6 +46,16 @@ type EpisodeState =
   | { type: 'coming_soon'; ep: TmdbEpisode }
   | { type: 'up_to_date' }
   | { type: 'unknown' };
+
+type DismissingCard = {
+  key: string;
+  series: Series;
+  state: EpisodeState;
+};
+
+type PendingDismiss = {
+  dismissKey: string;
+};
 
 function getEpisodeState(series: Series, tmdb: TmdbSeries | null | undefined): EpisodeState {
   const resolvedWatchedEpisodes = resolveWatchedEpisodes(series, tmdb);
@@ -102,9 +115,9 @@ export default function NextUpSeries() {
 
   const [tmdbData, setTmdbData] = useState<Record<string, TmdbSeries>>({});
   const [loading, setLoading] = useState(watching.length > 0);
-  const [dismissingKeys, setDismissingKeys] = useState<string[]>([]);
+  const [dismissingCards, setDismissingCards] = useState<Record<string, DismissingCard>>({});
+  const [pendingDismisses, setPendingDismisses] = useState<Record<string, PendingDismiss>>({});
   const [enteringKeys, setEnteringKeys] = useState<string[]>([]);
-  const previousActiveKeysRef = useRef<string[]>([]);
 
   useEffect(() => {
     if (watching.length === 0) { setLoading(false); return; }
@@ -133,23 +146,78 @@ export default function NextUpSeries() {
     return { series: s, state };
   });
 
-  const activeCards = seriesCards.filter(({ state }) => state.type !== 'up_to_date');
+  const seriesCardsById = Object.fromEntries(seriesCards.map(card => [card.series.id, card]));
+  const activeCards = watching.flatMap(currentSeries => {
+    const dismissingCard = dismissingCards[currentSeries.id];
+    if (dismissingCard) {
+      return [{
+        series: dismissingCard.series,
+        state: dismissingCard.state,
+        key: dismissingCard.key,
+        dismissing: true,
+        entering: false,
+      }];
+    }
+
+    const liveCard = seriesCardsById[currentSeries.id];
+    if (!liveCard || liveCard.state.type === 'up_to_date') return [];
+
+    const liveKey = getCardKey(liveCard.series, liveCard.state);
+    return [{
+      series: liveCard.series,
+      state: liveCard.state,
+      key: liveKey,
+      dismissing: false,
+      entering: enteringKeys.includes(liveKey),
+    }];
+  });
+
   const upToDateCards = seriesCards.filter(({ state }) => state.type === 'up_to_date');
-  const activeCardKeys = activeCards.map(({ series: currentSeries, state }) => getCardKey(currentSeries, state));
 
   useEffect(() => {
-    const previousActiveKeys = previousActiveKeysRef.current;
-    const newKeys = activeCardKeys.filter(key => !previousActiveKeys.includes(key));
-    if (previousActiveKeys.length > 0 && newKeys.length > 0) {
-      setEnteringKeys(prev => [...new Set([...prev, ...newKeys])]);
+    const readySeriesIds = Object.entries(pendingDismisses).flatMap(([seriesId, pending]) => {
+      const nextCard = seriesCardsById[seriesId];
+      if (!nextCard) return [seriesId];
+
+      const nextKey = getCardKey(nextCard.series, nextCard.state);
+      if (nextCard.state.type === 'up_to_date' || nextKey !== pending.dismissKey) {
+        return [seriesId];
+      }
+
+      return [];
+    });
+
+    if (readySeriesIds.length === 0) return;
+
+    setDismissingCards(prev => {
+      const next = { ...prev };
+      for (const seriesId of readySeriesIds) delete next[seriesId];
+      return next;
+    });
+
+    setPendingDismisses(prev => {
+      const next = { ...prev };
+      for (const seriesId of readySeriesIds) delete next[seriesId];
+      return next;
+    });
+
+    const nextKeys = readySeriesIds.flatMap(seriesId => {
+      const nextCard = seriesCardsById[seriesId];
+      if (!nextCard || nextCard.state.type === 'up_to_date') return [];
+
+      const nextKey = getCardKey(nextCard.series, nextCard.state);
+      const pending = pendingDismisses[seriesId];
+      return nextKey !== pending?.dismissKey ? [nextKey] : [];
+    });
+
+    if (nextKeys.length > 0) {
+      setEnteringKeys(prev => [...new Set([...prev, ...nextKeys])]);
       const timeout = window.setTimeout(() => {
-        setEnteringKeys(prev => prev.filter(key => !newKeys.includes(key)));
-      }, 520);
-      previousActiveKeysRef.current = activeCardKeys;
+        setEnteringKeys(prev => prev.filter(key => !nextKeys.includes(key)));
+      }, NEXT_UP_ENTER_DURATION_MS);
       return () => window.clearTimeout(timeout);
     }
-    previousActiveKeysRef.current = activeCardKeys;
-  }, [activeCardKeys.join('|')]);
+  }, [pendingDismisses, seriesCardsById]);
 
   if (watching.length === 0) {
     return (
@@ -163,6 +231,7 @@ export default function NextUpSeries() {
   const handleMarkEpisodeWatched = async (seriesItem: Series, season: number, episode: number) => {
     const tmdb = tmdbData[seriesItem.id];
     const dismissKey = `${seriesItem.id}-available-${season}-${episode}`;
+    const dismissState: EpisodeState = { type: 'available', season, episode };
     const resolvedWatchedEpisodes = resolveWatchedEpisodes(seriesItem, tmdb);
     const seasonKey = String(season);
     const nextEpisodes = [
@@ -178,17 +247,25 @@ export default function NextUpSeries() {
       }
     }
 
-    setDismissingKeys(prev => [...new Set([...prev, dismissKey])]);
+    setDismissingCards(prev => ({
+      ...prev,
+      [seriesItem.id]: {
+        key: dismissKey,
+        series: seriesItem,
+        state: dismissState,
+      },
+    }));
+    setPendingDismisses(prev => ({
+      ...prev,
+      [seriesItem.id]: { dismissKey },
+    }));
     window.setTimeout(() => {
       void updateSeries(seriesItem.id, {
         watched_episodes: nextWatchedEpisodes,
         watched_seasons: [...nextWatchedSeasons].sort((a, b) => a - b),
         status: deriveSeriesStatus([...nextWatchedSeasons].sort((a, b) => a - b), seriesItem.seasons),
       });
-    }, 420);
-    window.setTimeout(() => {
-      setDismissingKeys(prev => prev.filter(key => key !== dismissKey));
-    }, 900);
+    }, NEXT_UP_DISMISS_DURATION_MS);
   };
 
   return (
@@ -198,15 +275,15 @@ export default function NextUpSeries() {
       </h1>
       {activeCards.length > 0 && (
         <div className="space-y-3">
-          {activeCards.map(({ series: currentSeries, state }) => (
+          {activeCards.map(({ series: currentSeries, state, key, dismissing, entering }) => (
             <SeriesNextCard
-              key={getCardKey(currentSeries, state)}
+              key={key}
               series={currentSeries}
               state={state}
               t={t}
               lang={i18n.language}
-              dismissing={dismissingKeys.includes(getCardKey(currentSeries, state))}
-              entering={enteringKeys.includes(getCardKey(currentSeries, state))}
+              dismissing={dismissing}
+              entering={entering}
               onMarkEpisodeWatched={handleMarkEpisodeWatched}
             />
           ))}
