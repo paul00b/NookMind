@@ -113,6 +113,10 @@ export interface TmdbEpisode {
   episode_number: number;
   season_number: number;
   name: string;
+  overview?: string;
+  runtime?: number | null;
+  still_path?: string | null;
+  vote_average?: number;
 }
 
 export interface TmdbSeasonDetails {

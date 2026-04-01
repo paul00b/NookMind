@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Tv } from 'lucide-react';
+import { CalendarDays, Check, Clock3, Star, Tv, X } from 'lucide-react';
 import { useSeries } from '../context/SeriesContext';
-import { fetchSeriesDetails } from '../lib/tmdb';
+import { fetchSeasonRatings, fetchSeriesImdbId, type EpisodeRating } from '../lib/imdb';
+import { fetchSeasonDetails, fetchSeriesDetails, getPosterUrl } from '../lib/tmdb';
 import type { Series, TmdbSeries, TmdbEpisode } from '../types';
 import { deriveSeriesStatus } from '../components/SeasonGrid';
 
@@ -55,6 +56,11 @@ type DismissingCard = {
 
 type PendingDismiss = {
   dismissKey: string;
+};
+
+type EpisodeSheetState = {
+  series: Series;
+  state: Extract<EpisodeState, { type: 'available' | 'coming_soon' }>;
 };
 
 function getEpisodeState(series: Series, tmdb: TmdbSeries | null | undefined): EpisodeState {
@@ -118,6 +124,9 @@ export default function NextUpSeries() {
   const [dismissingCards, setDismissingCards] = useState<Record<string, DismissingCard>>({});
   const [pendingDismisses, setPendingDismisses] = useState<Record<string, PendingDismiss>>({});
   const [enteringKeys, setEnteringKeys] = useState<string[]>([]);
+  const [selectedEpisode, setSelectedEpisode] = useState<EpisodeSheetState | null>(null);
+  const [episodeDetails, setEpisodeDetails] = useState<TmdbEpisode | null>(null);
+  const [episodeDetailsLoading, setEpisodeDetailsLoading] = useState(false);
 
   useEffect(() => {
     if (watching.length === 0) { setLoading(false); return; }
@@ -139,6 +148,35 @@ export default function NextUpSeries() {
     })();
     return () => { active = false; };
   }, [watching.map(s => s.id).join(',')]);
+
+  useEffect(() => {
+    if (!selectedEpisode?.series.tmdb_id) {
+      setEpisodeDetails(null);
+      setEpisodeDetailsLoading(false);
+      return;
+    }
+
+    const seasonNumber = selectedEpisode.state.type === 'available'
+      ? selectedEpisode.state.season
+      : selectedEpisode.state.ep.season_number;
+    const episodeNumber = selectedEpisode.state.type === 'available'
+      ? selectedEpisode.state.episode
+      : selectedEpisode.state.ep.episode_number;
+
+    let active = true;
+    setEpisodeDetailsLoading(true);
+    fetchSeasonDetails(selectedEpisode.series.tmdb_id, seasonNumber)
+      .then(details => {
+        if (!active) return;
+        const match = details?.episodes.find(ep => ep.episode_number === episodeNumber) ?? null;
+        setEpisodeDetails(match);
+      })
+      .finally(() => {
+        if (active) setEpisodeDetailsLoading(false);
+      });
+
+    return () => { active = false; };
+  }, [selectedEpisode]);
 
   const seriesCards = watching.map(s => {
     const tmdb = tmdbData[s.id];
@@ -268,56 +306,76 @@ export default function NextUpSeries() {
     }, NEXT_UP_DISMISS_DURATION_MS);
   };
 
-  return (
-    <div className="p-4 md:p-8 max-w-2xl mx-auto">
-      <h1 className="font-serif text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
-        {t('discover.title')}
-      </h1>
-      {activeCards.length > 0 && (
-        <div className="space-y-3">
-          {activeCards.map(({ series: currentSeries, state, key, dismissing, entering }) => (
-            <SeriesNextCard
-              key={key}
-              series={currentSeries}
-              state={state}
-              t={t}
-              lang={i18n.language}
-              dismissing={dismissing}
-              entering={entering}
-              onMarkEpisodeWatched={handleMarkEpisodeWatched}
-            />
-          ))}
-        </div>
-      )}
+  const handleOpenEpisode = (seriesItem: Series, state: Extract<EpisodeState, { type: 'available' | 'coming_soon' }>) => {
+    setSelectedEpisode({ series: seriesItem, state });
+  };
 
-      {upToDateCards.length > 0 && (
-        <section className={activeCards.length > 0 ? 'mt-8' : ''}>
-          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400 mb-3">
-            {t('nextUp.upToDateSection')}
-          </h2>
+  return (
+    <>
+      <div className="p-4 md:p-8 max-w-2xl mx-auto">
+        <h1 className="font-serif text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+          {t('discover.title')}
+        </h1>
+        {activeCards.length > 0 && (
           <div className="space-y-3">
-            {upToDateCards.map(({ series: currentSeries, state }) => (
+            {activeCards.map(({ series: currentSeries, state, key, dismissing, entering }) => (
               <SeriesNextCard
-                key={getCardKey(currentSeries, state)}
+                key={key}
                 series={currentSeries}
                 state={state}
                 t={t}
                 lang={i18n.language}
-                dismissing={false}
-                entering={enteringKeys.includes(getCardKey(currentSeries, state))}
+                dismissing={dismissing}
+                entering={entering}
+                onMarkEpisodeWatched={handleMarkEpisodeWatched}
+                onOpenEpisode={handleOpenEpisode}
               />
             ))}
           </div>
-        </section>
+        )}
+
+        {upToDateCards.length > 0 && (
+          <section className={activeCards.length > 0 ? 'mt-8' : ''}>
+            <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400 mb-3">
+              {t('nextUp.upToDateSection')}
+            </h2>
+            <div className="space-y-3">
+              {upToDateCards.map(({ series: currentSeries, state }) => (
+                <SeriesNextCard
+                  key={getCardKey(currentSeries, state)}
+                  series={currentSeries}
+                  state={state}
+                  t={t}
+                  lang={i18n.language}
+                  dismissing={false}
+                  entering={enteringKeys.includes(getCardKey(currentSeries, state))}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+
+      {selectedEpisode && (
+        <EpisodeDetailSheet
+          series={selectedEpisode.series}
+          state={selectedEpisode.state}
+          episode={episodeDetails}
+          loading={episodeDetailsLoading}
+          lang={i18n.language}
+          t={t}
+          onClose={() => setSelectedEpisode(null)}
+          onMarkEpisodeWatched={selectedEpisode.state.type === 'available' ? handleMarkEpisodeWatched : undefined}
+        />
       )}
-    </div>
+    </>
   );
 }
 
 // ─── card sub-component ─────────────────────────────────────────────────────
 
 function SeriesNextCard({
-  series, state, t, lang, dismissing, entering, onMarkEpisodeWatched,
+  series, state, t, lang, dismissing, entering, onMarkEpisodeWatched, onOpenEpisode,
 }: {
   series: Series;
   state: EpisodeState;
@@ -326,6 +384,7 @@ function SeriesNextCard({
   dismissing: boolean;
   entering: boolean;
   onMarkEpisodeWatched?: (series: Series, season: number, episode: number) => void;
+  onOpenEpisode?: (series: Series, state: Extract<EpisodeState, { type: 'available' | 'coming_soon' }>) => void;
 }) {
   const badge = (() => {
     if (state.type === 'unknown') return <span className="text-xs text-gray-400 animate-pulse">…</span>;
@@ -373,8 +432,21 @@ function SeriesNextCard({
     return null;
   })();
 
+  const clickable = (state.type === 'available' || state.type === 'coming_soon') && onOpenEpisode;
+
   return (
-    <div className={`card relative overflow-hidden p-4 flex gap-4 items-center ${dismissing ? 'next-up-card-dismiss' : ''} ${entering ? 'next-up-card-enter' : ''}`}>
+    <div
+      className={`card relative overflow-hidden p-4 flex gap-4 items-center ${dismissing ? 'next-up-card-dismiss' : ''} ${entering ? 'next-up-card-enter' : ''} ${clickable ? 'cursor-pointer transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.02]' : ''}`}
+      onClick={clickable ? () => onOpenEpisode(series, state) : undefined}
+      role={clickable ? 'button' : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onKeyDown={clickable ? (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onOpenEpisode(series, state);
+        }
+      } : undefined}
+    >
       <div className="w-12 aspect-[2/3] rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0">
         {series.poster_url
           ? <img src={series.poster_url} alt={series.title} className="w-full h-full object-cover" />
@@ -389,7 +461,10 @@ function SeriesNextCard({
       {state.type === 'available' && onMarkEpisodeWatched && (
         <button
           type="button"
-          onClick={() => onMarkEpisodeWatched(series, state.season, state.episode)}
+          onClick={(event) => {
+            event.stopPropagation();
+            onMarkEpisodeWatched(series, state.season, state.episode);
+          }}
           disabled={dismissing}
           className="h-10 w-10 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm transition-all duration-150 hover:bg-emerald-600 active:scale-95 shrink-0 self-center disabled:opacity-60"
           title={t('nextUp.markEpisodeWatched')}
@@ -398,6 +473,170 @@ function SeriesNextCard({
           <Check size={18} strokeWidth={2.4} />
         </button>
       )}
+    </div>
+  );
+}
+
+function EpisodeDetailSheet({
+  series,
+  state,
+  episode,
+  loading,
+  lang,
+  t,
+  onClose,
+  onMarkEpisodeWatched,
+}: {
+  series: Series;
+  state: Extract<EpisodeState, { type: 'available' | 'coming_soon' }>;
+  episode: TmdbEpisode | null;
+  loading: boolean;
+  lang: string;
+  t: (key: string, opts?: Record<string, unknown>) => string;
+  onClose: () => void;
+  onMarkEpisodeWatched?: (series: Series, season: number, episode: number) => void;
+}) {
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
+  const [imdbRating, setImdbRating] = useState<EpisodeRating | null>(null);
+  const [imdbLoading, setImdbLoading] = useState(false);
+
+  const seasonNumber = state.type === 'available' ? state.season : state.ep.season_number;
+  const episodeNumber = state.type === 'available' ? state.episode : state.ep.episode_number;
+  const airDate = episode?.air_date ?? (state.type === 'coming_soon' ? state.ep.air_date : null);
+  const episodeName = episode?.name ?? (state.type === 'coming_soon' ? state.ep.name : '');
+  const overview = episode?.overview?.trim();
+  const stillUrl = episode?.still_path ? getPosterUrl(episode.still_path) : null;
+  const statusLabel = state.type === 'available' ? t('nextUp.available') : t('nextUp.detailComingSoon');
+
+  useEffect(() => {
+    let active = true;
+    setImdbRating(null);
+    setImdbLoading(true);
+
+    fetchSeriesImdbId(series.title)
+      .then(async imdbId => {
+        if (!active || !imdbId) return;
+        const seasonRatings = await fetchSeasonRatings(imdbId, seasonNumber);
+        if (!active) return;
+        const match = seasonRatings?.find(ep => ep.episode === episodeNumber) ?? null;
+        setImdbRating(match);
+      })
+      .finally(() => {
+        if (active) setImdbLoading(false);
+      });
+
+    return () => { active = false; };
+  }, [episodeNumber, seasonNumber, series.title]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
+        onClick={onClose}
+        aria-label={t('nextUp.closeEpisodeDetails')}
+      />
+
+      <div className="relative z-10 w-full md:max-w-xl card rounded-t-3xl rounded-b-none md:rounded-3xl max-h-[88vh] overflow-y-auto animate-slide-up">
+        <button onClick={onClose} className="absolute top-4 right-4 btn-ghost p-2 z-10">
+          <X size={20} />
+        </button>
+
+        <div className="p-6 pb-5">
+          <div className="w-12 h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 mx-auto mb-5 md:hidden" />
+          <div className="flex gap-4 items-start">
+            <div className="w-20 aspect-[2/3] rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800 shrink-0">
+              {series.poster_url ? (
+                <img src={series.poster_url} alt={series.title} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Tv size={28} className="text-gray-400" />
+                </div>
+              )}
+            </div>
+            <div className="min-w-0 flex-1 pr-10">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-600 dark:text-teal-400 mb-2">
+                {statusLabel}
+              </p>
+              <h2 className="font-serif text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
+                {episodeName || t('nextUp.episodeFallback', { season: seasonNumber, episode: episodeNumber })}
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {series.title} · {t('nextUp.seasonEpisode', { season: seasonNumber, episode: episodeNumber })}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 mt-4">
+            {airDate && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-300">
+                <CalendarDays size={14} />
+                {formatDate(airDate, lang)}
+              </span>
+            )}
+            {typeof episode?.runtime === 'number' && episode.runtime > 0 && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-300">
+                <Clock3 size={14} />
+                {t('nextUp.runtimeMinutes', { count: episode.runtime })}
+              </span>
+            )}
+            {imdbLoading ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 text-sm">
+                <Star size={14} className="fill-current" />
+                ...
+              </span>
+            ) : typeof imdbRating?.imdbRating === 'number' && imdbRating.imdbRating > 0 && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 text-sm">
+                <Star size={14} className="fill-current" />
+                IMDb {imdbRating.imdbRating.toFixed(1)}
+              </span>
+            )}
+          </div>
+
+          {stillUrl && (
+            <div className="mt-5 rounded-2xl overflow-hidden border border-black/[0.06] dark:border-white/[0.06] bg-gray-100 dark:bg-gray-900/40">
+              <img src={stillUrl} alt={episodeName || `${series.title} ${t('nextUp.seasonEpisode', { season: seasonNumber, episode: episodeNumber })}`} className="w-full h-auto object-cover" />
+            </div>
+          )}
+
+          <div className="mt-5 space-y-3">
+            <div>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{t('nextUp.episodeSynopsis')}</p>
+              {loading ? (
+                <div className="space-y-2">
+                  <div className="h-3.5 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                  <div className="h-3.5 rounded bg-gray-200 dark:bg-gray-700 animate-pulse w-11/12" />
+                  <div className="h-3.5 rounded bg-gray-200 dark:bg-gray-700 animate-pulse w-8/12" />
+                </div>
+              ) : overview ? (
+                <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">{overview}</p>
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('nextUp.noEpisodeOverview')}</p>
+              )}
+            </div>
+          </div>
+
+          {state.type === 'available' && onMarkEpisodeWatched && (
+            <div className="mt-6 flex justify-center">
+              <button
+                type="button"
+                onClick={() => {
+                  onMarkEpisodeWatched(series, seasonNumber, episodeNumber);
+                  onClose();
+                }}
+                className="btn-primary inline-flex items-center justify-center gap-2 min-w-36"
+              >
+                <Check size={18} />
+                {t('nextUp.markEpisodeWatched')}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -388,6 +388,13 @@ const en = {
     seasonEpisode: 'S{{season}}E{{episode}}',
     seasonProgress: 'Season {{season}} · Episode {{episode}}',
     episodeName: '{{name}}',
+    detailComingSoon: 'Coming soon',
+    closeEpisodeDetails: 'Close episode details',
+    episodeFallback: 'Episode {{season}}x{{episode}}',
+    episodeSynopsis: 'Synopsis',
+    noEpisodeOverview: 'No synopsis is available for this episode yet.',
+    runtimeMinutes_one: '{{count}} min',
+    runtimeMinutes_other: '{{count}} min',
     // Books
     noReading: 'No book in progress.',
     startReading: 'Start reading',

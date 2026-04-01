@@ -98,6 +98,10 @@ export async function fetchSeriesImdbId(title: string): Promise<string | null> {
 }
 
 async function fetchAllEpisodesRaw(imdbId: string): Promise<Record<number, EpisodeRating[]> | null> {
+  const cacheKey = `nookmind_imdb_episodes_${imdbId}`;
+  const cached = getSessionCache<Record<number, EpisodeRating[]>>(cacheKey);
+  if (cached) return cached;
+
   const allEdges: RawEdge[] = [];
   let cursor: string | null = null;
 
@@ -174,7 +178,10 @@ async function fetchAllEpisodesRaw(imdbId: string): Promise<Record<number, Episo
     episodes.sort((a, b) => a.episode - b.episode);
   }
 
-  return Object.keys(result).length > 0 ? result : null;
+  if (Object.keys(result).length === 0) return null;
+
+  setSessionCache(cacheKey, result);
+  return result;
 }
 
 function getAllEpisodes(imdbId: string): Promise<Record<number, EpisodeRating[]> | null> {
