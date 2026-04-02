@@ -9,7 +9,7 @@ import { fetchSeasonDetails, fetchSeriesDetails, extractSeriesData } from '../li
 import { X, Pencil, Check, Trash2, Tv, ChevronDown, ChevronUp, FolderPlus, FolderMinus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
-import { getRatingStyle, type SeasonState } from './SeriesRatingsModal';
+import { getRatingStyle, type SeasonState } from '../lib/imdbRatingStyle';
 import { fetchSeriesImdbId, fetchSeasonRatings, type EpisodeRating } from '../lib/imdb';
 
 interface Props {

@@ -378,6 +378,8 @@ const en = {
     imdbNoApiKey: 'Set VITE_OMDB_API_KEY to display ratings',
     addToCollection: 'Add to my collection',
     viewImdbRatings: 'View IMDB ratings',
+    episodesSection: 'Episodes',
+    viewOnImdb: 'View on IMDb',
   },
   nextUp: {
     // Series

@@ -455,6 +455,7 @@ export default function SeriesHome() {
           posterUrl={getPosterUrl(ratingsTarget.poster_path)}
           firstAirDate={ratingsTarget.first_air_date || null}
           totalSeasons={ratingsTarget.number_of_seasons ?? null}
+          tmdbId={ratingsTarget.id}
           showAddButton={true}
           onAdd={() => handleSelectSeries(ratingsTarget)}
         />

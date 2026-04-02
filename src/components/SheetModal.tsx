@@ -154,7 +154,7 @@ export default function SheetModal({
           }}
         >
           {showHandle && (
-            <div className="md:hidden px-6 pt-3 pb-1">
+            <div className="md:hidden sticky top-0 z-10 px-6 pt-3 pb-1 bg-white dark:bg-[#1a1f2e]">
               <div
                 className="mx-auto flex h-8 w-40 max-w-full items-center justify-center touch-none"
                 onPointerDown={handlePointerDown}

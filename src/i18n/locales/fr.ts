@@ -378,6 +378,8 @@ const fr = {
     imdbNoApiKey: 'Configurez VITE_OMDB_API_KEY pour afficher les notes',
     addToCollection: 'Ajouter à ma collection',
     viewImdbRatings: 'Voir les notes IMDB',
+    episodesSection: 'Épisodes',
+    viewOnImdb: 'Voir sur IMDb',
   },
   nextUp: {
     // Séries
