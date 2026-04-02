@@ -62,7 +62,9 @@ function EpisodeDetailSheet({ info, onClose }: { info: SelectedEpisodeInfo; onCl
         <X size={20} />
       </SheetCloseButton>
 
-      <div className="overflow-y-auto flex-1 pt-6 pb-4">
+      <div className="flex-shrink-0 h-6" />
+
+      <div className="overflow-y-auto flex-1 pb-4">
         {stillUrl && (
           <div className="rounded-xl mx-3 overflow-hidden aspect-video bg-gray-100 dark:bg-gray-800">
             <img src={stillUrl} alt={name} className="w-full h-full object-cover" loading="lazy" />
