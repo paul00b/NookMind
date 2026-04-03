@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import toast from 'react-hot-toast';
 
 export interface NotificationPreferences {
   notify_episodes: boolean;
@@ -17,6 +18,14 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   const arr = new Uint8Array(buffer);
   for (let i = 0; i < rawData.length; i++) arr[i] = rawData.charCodeAt(i);
   return arr;
+}
+
+/** Résout quand le service worker est actif, ou null après timeout */
+async function waitForSW(timeoutMs = 6000): Promise<ServiceWorkerRegistration | null> {
+  return Promise.race([
+    navigator.serviceWorker.ready,
+    new Promise<null>(resolve => setTimeout(() => resolve(null), timeoutMs)),
+  ]);
 }
 
 async function getAuthToken(): Promise<string | null> {
@@ -63,21 +72,32 @@ export function useNotificationSubscription() {
   // Check if already subscribed on mount
   useEffect(() => {
     if (!supported) return;
-    navigator.serviceWorker.ready
-      .then((reg) => reg.pushManager.getSubscription())
+    waitForSW(3000)
+      .then((reg) => reg?.pushManager.getSubscription() ?? null)
       .then((sub) => setSubscribed(!!sub))
       .catch(() => {});
   }, [supported]);
 
   const subscribe = useCallback(async (): Promise<boolean> => {
-    if (!supported || !VAPID_PUBLIC_KEY) return false;
+    if (!supported) return false;
+    if (!VAPID_PUBLIC_KEY) {
+      toast.error('VAPID_PUBLIC_KEY manquante — vérifiez les variables d\'environnement.');
+      console.error('[push] VITE_VAPID_PUBLIC_KEY is not set');
+      return false;
+    }
     setLoading(true);
     try {
       const perm = await Notification.requestPermission();
       setPermission(perm);
       if (perm !== 'granted') return false;
 
-      const reg = await navigator.serviceWorker.ready;
+      const reg = await waitForSW(8000);
+      if (!reg) {
+        toast.error('Le service worker n\'est pas prêt. Rechargez la page et réessayez.');
+        console.error('[push] serviceWorker.ready timed out');
+        return false;
+      }
+
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
@@ -88,9 +108,16 @@ export function useNotificationSubscription() {
         ...preferences,
       });
 
+      if (!ok) {
+        toast.error('Erreur lors de l\'enregistrement en base. Vérifiez les logs Vercel.');
+        console.error('[push] /api/push/subscribe returned error');
+      }
+
       if (ok) setSubscribed(true);
       return ok;
-    } catch {
+    } catch (err) {
+      console.error('[push] subscribe error:', err);
+      toast.error('Erreur : ' + (err instanceof Error ? err.message : String(err)));
       return false;
     } finally {
       setLoading(false);
@@ -101,7 +128,8 @@ export function useNotificationSubscription() {
     if (!supported) return false;
     setLoading(true);
     try {
-      const reg = await navigator.serviceWorker.ready;
+      const reg = await waitForSW(6000);
+      if (!reg) { setSubscribed(false); return false; }
       const sub = await reg.pushManager.getSubscription();
       if (!sub) { setSubscribed(false); return true; }
 
@@ -109,7 +137,8 @@ export function useNotificationSubscription() {
       await sub.unsubscribe();
       setSubscribed(false);
       return true;
-    } catch {
+    } catch (err) {
+      console.error('[push] unsubscribe error:', err);
       return false;
     } finally {
       setLoading(false);
@@ -122,7 +151,8 @@ export function useNotificationSubscription() {
 
     if (!subscribed) return true;
 
-    const reg = await navigator.serviceWorker.ready;
+    const reg = await waitForSW(6000);
+    if (!reg) return false;
     const sub = await reg.pushManager.getSubscription();
     if (!sub) return false;
 
