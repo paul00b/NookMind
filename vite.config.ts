@@ -15,7 +15,7 @@ export default defineConfig({
         name: 'NookMind',
         short_name: 'NookMind',
         description: 'Your personal reading tracker',
-        theme_color: '#f59e0b',
+        theme_color: '#f8f6f1',
         background_color: '#0f1117',
         display: 'standalone',
         icons: [
