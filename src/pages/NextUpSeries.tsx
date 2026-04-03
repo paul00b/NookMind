@@ -135,14 +135,8 @@ export default function NextUpSeries() {
       const results: Record<string, TmdbSeries> = {};
       await Promise.all(watching.map(async s => {
         if (!s.tmdb_id) return;
-        const cacheKey = `nookmind_tmdb_series_${s.tmdb_id}`;
-        const cached = sessionStorage.getItem(cacheKey);
-        if (cached) { results[s.id] = JSON.parse(cached); return; }
         const info = await fetchSeriesDetails(s.tmdb_id);
-        if (info) {
-          results[s.id] = info;
-          sessionStorage.setItem(cacheKey, JSON.stringify(info));
-        }
+        if (info) results[s.id] = info;
       }));
       if (active) { setTmdbData(results); setLoading(false); }
     })();
