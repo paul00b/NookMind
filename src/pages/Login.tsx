@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
-import { BookOpen, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import nookmindLogo from '/logo.svg';
 
 export default function Login() {
   const { user, signIn, signUp, signInWithGoogle } = useAuth();
@@ -40,8 +41,8 @@ export default function Login() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex flex-col items-center gap-3 mb-8">
-          <div className="w-14 h-14 bg-amber-500 rounded-2xl flex items-center justify-center shadow-lg">
-            <BookOpen size={28} className="text-white" />
+          <div className="w-16 h-16 flex items-center justify-center">
+            <img src={nookmindLogo} alt="NookMind" className="w-full h-full" />
           </div>
           <h1 className="font-serif text-3xl font-bold text-gray-900 dark:text-gray-100">NookMind</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm text-center">{t('login.tagline')}</p>

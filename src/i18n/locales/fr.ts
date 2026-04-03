@@ -1,6 +1,6 @@
 const fr = {
   login: {
-    tagline: 'Votre compagnon de lecture personnel',
+    tagline: 'Suivez vos livres, films, et séries',
     logIn: 'Connexion',
     signUp: "Inscription",
     email: 'E-mail',

@@ -1,6 +1,6 @@
 const en = {
   login: {
-    tagline: 'Your personal reading companion',
+    tagline: 'Track your books, movies, and series',
     logIn: 'Log in',
     signUp: 'Sign up',
     email: 'Email',
