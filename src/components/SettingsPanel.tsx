@@ -1,4 +1,4 @@
-import { X, Sun, Moon, Monitor, RefreshCw } from 'lucide-react';
+import { X, Sun, Moon, Monitor, RefreshCw, Bell, BellOff, Tv, Film, Clapperboard } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import type { ThemeMode } from '../types';
@@ -6,6 +6,7 @@ import Avatar from './Avatar';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
+import { useNotificationSubscription } from '../hooks/useNotificationSubscription';
 
 interface Props {
   onClose: () => void;
@@ -13,10 +14,41 @@ interface Props {
 
 const APP_VERSION = '1.0.0';
 
+function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+        checked ? 'bg-teal-500' : 'bg-gray-300 dark:bg-gray-600'
+      }`}
+    >
+      <span
+        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
+          checked ? 'translate-x-4' : 'translate-x-1'
+        }`}
+      />
+    </button>
+  );
+}
+
 export default function SettingsPanel({ onClose }: Props) {
   const { user, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
   const { t } = useTranslation();
+  const {
+    supported: notifSupported,
+    permission,
+    subscribed,
+    loading: notifLoading,
+    preferences,
+    subscribe,
+    unsubscribe,
+    updatePreferences,
+  } = useNotificationSubscription();
+
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -32,6 +64,17 @@ export default function SettingsPanel({ onClose }: Props) {
       setRefreshing(false);
       toast.success(t('settings.cacheCleared'));
     }, 800);
+  };
+
+  const handleToggleNotifications = async () => {
+    if (subscribed) {
+      await unsubscribe();
+      toast.success(t('settings.notifDisabled'));
+    } else {
+      const ok = await subscribe();
+      if (ok) toast.success(t('settings.notifEnabled'));
+      else if (permission === 'denied') toast.error(t('settings.notifDenied'));
+    }
   };
 
   const [displayName, setDisplayName] = useState(
@@ -129,6 +172,82 @@ export default function SettingsPanel({ onClose }: Props) {
                   </button>
                 ))}
               </div>
+            </div>
+          </section>
+
+          {/* Notifications */}
+          <section>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-4">{t('settings.notifications')}</h3>
+            <div className="card p-4 space-y-4">
+              {!notifSupported ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">
+                  {t('settings.notifNotSupported')}
+                </p>
+              ) : permission === 'denied' ? (
+                <div className="flex items-start gap-3">
+                  <BellOff size={16} className="text-red-400 mt-0.5 shrink-0" />
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.notifDenied')}</p>
+                </div>
+              ) : (
+                <>
+                  {/* Enable / Disable toggle */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <Bell size={15} className={subscribed ? 'text-teal-500' : 'text-gray-400'} />
+                      <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                        {subscribed ? t('settings.notifActive') : t('settings.enableNotifications')}
+                      </span>
+                    </div>
+                    <button
+                      onClick={handleToggleNotifications}
+                      disabled={notifLoading}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all disabled:opacity-60 ${
+                        subscribed
+                          ? 'bg-teal-500/10 text-teal-600 dark:text-teal-400 hover:bg-teal-500/20'
+                          : 'bg-teal-500 text-white hover:bg-teal-600 shadow-sm'
+                      }`}
+                    >
+                      {notifLoading ? '…' : subscribed ? t('settings.notifDeactivate') : t('settings.notifActivate')}
+                    </button>
+                  </div>
+
+                  {/* Per-type toggles (only when subscribed) */}
+                  {subscribed && (
+                    <div className="space-y-3 pt-1 border-t border-black/[0.06] dark:border-white/[0.06]">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <Tv size={14} className="text-teal-500" />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.notifEpisodes')}</span>
+                        </div>
+                        <Toggle
+                          checked={preferences.notify_episodes}
+                          onChange={(v) => void updatePreferences({ notify_episodes: v })}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <Clapperboard size={14} className="text-teal-500" />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.notifSeasons')}</span>
+                        </div>
+                        <Toggle
+                          checked={preferences.notify_seasons}
+                          onChange={(v) => void updatePreferences({ notify_seasons: v })}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <Film size={14} className="text-teal-500" />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.notifMovies')}</span>
+                        </div>
+                        <Toggle
+                          checked={preferences.notify_movies}
+                          onChange={(v) => void updatePreferences({ notify_movies: v })}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </section>
 

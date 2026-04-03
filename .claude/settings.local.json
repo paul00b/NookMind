@@ -7,7 +7,12 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(npm install:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(grep -E \"\\\\.\\(json|ts|js\\)$|^d\")",
+      "Bash(ls:*)",
+      "Bash(grep -n \"push\\\\|notification\\\\|service\\\\|worker\" /c/Users/brous/Desktop/Dev/BookMind/src/components/*.tsx /c/Users/brous/Desktop/Dev/BookMind/src/lib/*.ts)",
+      "Bash(grep -r \"notification\\\\|push\\\\|scheduled\\\\|cron\" /c/Users/brous/Desktop/Dev/BookMind/src /c/Users/brous/Desktop/Dev/BookMind/api --include=*.ts --include=*.tsx)",
+      "Bash(npm run:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
