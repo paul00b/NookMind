@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { Series, TmdbEpisode } from '../types';
 import { useSeries } from '../context/SeriesContext';
 import { useSeriesCategories } from '../context/SeriesCategoriesContext';
@@ -176,13 +176,10 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
   const [loadingEpisodesSeason, setLoadingEpisodesSeason] = useState<number | null>(null);
 
   // Section épisodes (tuiles)
-  const [episodesSectionOpen, setEpisodesSectionOpen] = useState(false);
   const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
   const [tmdbEpisodes, setTmdbEpisodes] = useState<Record<number, TmdbEpisode[]>>({});
   const [loadingTmdbSeason, setLoadingTmdbSeason] = useState<number | null>(null);
   const [selectedEpisode, setSelectedEpisode] = useState<SelectedEpisodeInfo | null>(null);
-  const [tmdbSeasonCount, setTmdbSeasonCount] = useState<number | null>(null);
-  const [loadingSeasonCount, setLoadingSeasonCount] = useState(false);
   const loadedSeasonsRef = useRef<Set<number>>(new Set());
 
   const handleRatingChange = async (rating: number) => {
@@ -206,12 +203,6 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
     await updateSeries(series.id, updates);
   };
 
-  const effectiveSeasonCount = localSeries.seasons ?? tmdbSeasonCount;
-  const availableSeasons = useMemo(() => {
-    if (effectiveSeasonCount && effectiveSeasonCount > 0) return Array.from({ length: effectiveSeasonCount }, (_, i) => i + 1);
-    return Object.keys(seasonRatings).map(Number).sort((a, b) => a - b);
-  }, [effectiveSeasonCount, seasonRatings]);
-
   const currentTmdbEps = selectedSeason !== null ? (tmdbEpisodes[selectedSeason] ?? []) : [];
   const currentImdbEps = selectedSeason !== null && Array.isArray(seasonRatings[selectedSeason])
     ? (seasonRatings[selectedSeason] as EpisodeRating[])
@@ -230,36 +221,6 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
       if (details) setTmdbEpisodes(prev => ({ ...prev, [season]: details.episodes }));
     } finally {
       setLoadingTmdbSeason(null);
-    }
-  };
-
-  const handleToggleEpisodesSection = async () => {
-    const newOpen = !episodesSectionOpen;
-    setEpisodesSectionOpen(newOpen);
-    if (newOpen) { setShowSeasonsSection(false); setShowImdbSection(false); }
-    if (!newOpen) return;
-
-    const knownCount = localSeries.seasons ?? tmdbSeasonCount;
-    if (!knownCount && localSeries.tmdb_id && !loadingSeasonCount) {
-      setLoadingSeasonCount(true);
-      try {
-        const details = await fetchSeriesDetails(localSeries.tmdb_id);
-        if (details) {
-          const count = details.number_of_seasons ?? null;
-          setTmdbSeasonCount(count);
-          if (selectedSeason === null && count && count > 0) void handleSelectSeason(1);
-        }
-      } finally {
-        setLoadingSeasonCount(false);
-      }
-      return;
-    }
-
-    if (selectedSeason === null) {
-      const firstSeason = knownCount && knownCount > 0
-        ? 1
-        : (Object.keys(seasonRatings).map(Number).sort((a, b) => a - b)[0] ?? null);
-      if (firstSeason !== null) void handleSelectSeason(firstSeason);
     }
   };
 
