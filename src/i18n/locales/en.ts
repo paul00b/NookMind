@@ -146,6 +146,9 @@ const en = {
     app: 'App',
     tagline: 'Your personal reading companion',
     displayNameSaved: 'Display name saved',
+    clearCache: 'Update application',
+    cacheRefreshing: 'Updating...',
+    cacheCleared: 'Application updated',
   },
   bookCard: {
     read: 'Read',

@@ -146,6 +146,9 @@ const fr = {
     app: 'Application',
     tagline: 'Votre compagnon de lecture personnel',
     displayNameSaved: "Nom d'affichage enregistré",
+    clearCache: 'Mettre à jour l\'application',
+    cacheRefreshing: 'Mise à jour...',
+    cacheCleared: 'Application mise à jour',
   },
   bookCard: {
     read: 'Lu',

@@ -1,4 +1,4 @@
-import { X, Sun, Moon, Monitor } from 'lucide-react';
+import { X, Sun, Moon, Monitor, RefreshCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import type { ThemeMode } from '../types';
@@ -22,6 +22,17 @@ export default function SettingsPanel({ onClose }: Props) {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = previousOverflow; };
   }, []);
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleClearCache = () => {
+    setRefreshing(true);
+    sessionStorage.clear();
+    setTimeout(() => {
+      setRefreshing(false);
+      toast.success(t('settings.cacheCleared'));
+    }, 800);
+  };
 
   const [displayName, setDisplayName] = useState(
     user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Reader'
@@ -136,6 +147,16 @@ export default function SettingsPanel({ onClose }: Props) {
               <p className="text-xs text-gray-400 dark:text-gray-500 pt-1 text-center italic">
                 {t('settings.tagline')}
               </p>
+              <div className="border-t border-black/[0.06] dark:border-white/[0.06] pt-3 mt-1">
+                <button
+                  onClick={handleClearCache}
+                  disabled={refreshing}
+                  className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition-colors disabled:opacity-60"
+                >
+                  <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+                  {refreshing ? t('settings.cacheRefreshing') : t('settings.clearCache')}
+                </button>
+              </div>
             </div>
           </section>
         </div>
