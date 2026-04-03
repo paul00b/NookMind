@@ -3,12 +3,13 @@ import { Search, Plus, X, Tv, CheckCircle2, Eye } from 'lucide-react';
 import { searchSeries as searchTmdbSeries, extractSeriesData, fetchSeriesDetails, getPosterUrl } from '../lib/tmdb';
 import type { TmdbSeries, Series } from '../types';
 import AddSeriesModal from '../components/AddSeriesModal';
-import SeriesRatingsModal from '../components/SeriesRatingsModal';
+import SeriesPreviewSheet from '../components/SeriesPreviewSheet';
 import SeriesDetailModal from '../components/SeriesDetailModal';
 import StarRating from '../components/StarRating';
 import { useSeries } from '../context/SeriesContext';
 import { useTranslation } from 'react-i18next';
 import { formatWaitingLabel } from '../lib/seriesUtils';
+import { useTmdbSeriesRefresh } from '../hooks/useTmdbSeriesRefresh';
 
 function useDebounce<T>(value: T, delay: number): T {
   const [dv, setDv] = useState(value);
@@ -65,6 +66,7 @@ function WatchingSlider({ onSelect }: { onSelect: (s: Series) => void }) {
   const { t, i18n } = useTranslation();
 
   const isWaiting = (s: Series) => {
+    if (s.status === 'watched') return s.next_season_number !== null;
     if (s.next_season_number !== null) {
       return s.watched_seasons.length >= s.next_season_number - 1;
     }
@@ -72,7 +74,7 @@ function WatchingSlider({ onSelect }: { onSelect: (s: Series) => void }) {
   };
 
   const activeWatching = series.filter(s => s.status === 'watching' && !isWaiting(s)).slice(0, 10);
-  const waitingNextSeason = series.filter(s => s.status === 'watching' && isWaiting(s)).slice(0, 10);
+  const waitingNextSeason = series.filter(s => (s.status === 'watching' || s.status === 'watched') && isWaiting(s)).slice(0, 10);
 
   if (activeWatching.length === 0 && waitingNextSeason.length === 0) return null;
 
@@ -181,6 +183,7 @@ const normalize = (s: string) => s.toLowerCase().trim().replace(/\s+/g, ' ');
 export default function SeriesHome() {
   const { t } = useTranslation();
   const { series: allSeries } = useSeries();
+  useTmdbSeriesRefresh();
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebounce(query, 600);
   const [results, setResults] = useState<TmdbSeries[]>([]);
@@ -447,7 +450,7 @@ export default function SeriesHome() {
       )}
 
       {ratingsTarget && (
-        <SeriesRatingsModal
+        <SeriesPreviewSheet
           isOpen={true}
           onClose={() => setRatingsTarget(null)}
           title={ratingsTarget.name}

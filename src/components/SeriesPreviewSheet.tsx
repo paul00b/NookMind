@@ -7,7 +7,7 @@ import type { TmdbEpisode } from '../types';
 import { useTranslation } from 'react-i18next';
 import SheetModal, { SheetCloseButton } from './SheetModal';
 
-interface SeriesRatingsModalProps {
+interface SeriesPreviewSheetProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
@@ -142,7 +142,7 @@ function EpisodeDetailSheet({ info, onClose }: { info: SelectedEpisodeInfo; onCl
   );
 }
 
-export default function SeriesRatingsModal({
+export default function SeriesPreviewSheet({
   isOpen,
   onClose,
   title,
@@ -155,7 +155,7 @@ export default function SeriesRatingsModal({
   showAddButton = false,
   onAdd,
   tmdbId,
-}: SeriesRatingsModalProps) {
+}: SeriesPreviewSheetProps) {
   const { t } = useTranslation();
   const [descExpanded, setDescExpanded] = useState(false);
   const [descTruncated, setDescTruncated] = useState(false);
@@ -169,7 +169,7 @@ export default function SeriesRatingsModal({
   const [fetchKey, setFetchKey] = useState(0);
 
   // Accordion state
-  const [imdbSectionOpen, setImdbSectionOpen] = useState(true);
+  const [imdbSectionOpen, setImdbSectionOpen] = useState(false);
   const [episodesSectionOpen, setEpisodesSectionOpen] = useState(false);
 
   // Episodes state
@@ -199,7 +199,7 @@ export default function SeriesRatingsModal({
     setTmdbSeasonCount(null);
     setLoadingSeasonCount(false);
     setEpisodesSectionOpen(false);
-    setImdbSectionOpen(true);
+    setImdbSectionOpen(false);
     loadedSeasonsRef.current = new Set();
 
     fetchSeriesImdbId(title).then(id => {
@@ -253,6 +253,7 @@ export default function SeriesRatingsModal({
   const handleToggleEpisodesSection = async () => {
     const newOpen = !episodesSectionOpen;
     setEpisodesSectionOpen(newOpen);
+    if (newOpen) setImdbSectionOpen(false);
     if (!newOpen) return;
 
     // Si on ne connaît pas encore le nb de saisons, le récupérer via TMDB
@@ -335,6 +336,15 @@ export default function SeriesRatingsModal({
                 .filter(Boolean)
                 .join(' · ')}
             </p>
+            {showAddButton && onAdd && (
+              <button
+                onClick={() => { onClose(); onAdd(); }}
+                className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/40 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors"
+              >
+                <Plus size={13} strokeWidth={2.5} />
+                {t('seriesDetail.addToCollection')}
+              </button>
+            )}
           </div>
         </div>
 
@@ -358,14 +368,126 @@ export default function SeriesRatingsModal({
           </div>
         )}
 
-        {/* Corps scrollable */}
-        <div className="overflow-y-auto flex-1 pb-4">
+          {/* Section 1 : Épisodes */}
+          {(!!tmdbId || availableSeasons.length > 0) && (
+            <div className="border border-black/[0.06] dark:border-white/[0.06] rounded-xl overflow-hidden mx-4 mb-3 flex-shrink-0">
+              <button
+                className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
+                onClick={handleToggleEpisodesSection}
+              >
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {t('seriesDetail.episodesSection')}
+                </span>
+                <ChevronDown
+                  size={16}
+                  className={`text-gray-400 transition-transform duration-300 ${episodesSectionOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
 
-          {/* Section 1 : Notes IMDB */}
-          <div className="border border-black/[0.06] dark:border-white/[0.06] rounded-xl overflow-hidden mx-4 mb-3">
+              <div className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${episodesSectionOpen ? 'max-h-[45vh]' : 'max-h-0'}`}>
+                <div className="overflow-y-auto max-h-[45vh] border-t border-black/[0.06] dark:border-white/[0.06]">
+
+                  {/* Sélecteur de saison */}
+                  {loadingSeasonCount ? (
+                    <div className="px-4 py-4 text-center text-sm text-gray-400 animate-pulse">
+                      {t('seriesDetail.loadingEpisodes')}
+                    </div>
+                  ) : availableSeasons.length === 0 ? (
+                    <div className="px-4 py-4 text-center text-sm text-gray-400">
+                      {t('seriesDetail.noEpisodeData')}
+                    </div>
+                  ) : null}
+                  {availableSeasons.length > 0 && (
+                    <div
+                      className="flex gap-2 overflow-x-auto px-4 py-3 border-b border-black/[0.06] dark:border-white/[0.06]"
+                      style={{ scrollbarWidth: 'none' }}
+                    >
+                      {availableSeasons.map(s => (
+                        <button
+                          key={s}
+                          onClick={() => handleSelectSeason(s)}
+                          className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                            selectedSeason === s
+                              ? 'bg-amber-500 text-white'
+                              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400'
+                          }`}
+                        >
+                          S{s}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Tuiles d'épisodes */}
+                  {selectedSeason !== null && (
+                    loadingTmdbSeason === selectedSeason ? (
+                      <div className="grid grid-cols-2 gap-2 p-4">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                          <div key={i} className="rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 animate-pulse">
+                            <div className="aspect-video" />
+                            <div className="p-2 space-y-1.5">
+                              <div className="h-2 w-8 bg-gray-200 dark:bg-gray-700 rounded" />
+                              <div className="h-3 w-full bg-gray-200 dark:bg-gray-700 rounded" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : episodesToShow.length > 0 ? (
+                      <div className="grid grid-cols-2 gap-2 p-4">
+                        {episodesToShow.map(({ episodeNum, tmdb, imdb }) => (
+                          <button
+                            key={episodeNum}
+                            onClick={() => setSelectedEpisode({ episodeNum, seasonNum: selectedSeason, tmdb, imdb })}
+                            className="text-left bg-gray-50 dark:bg-gray-800/50 rounded-xl overflow-hidden hover:bg-amber-500/5 dark:hover:bg-amber-500/10 transition-colors"
+                          >
+                            <div className="w-full aspect-video bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                              {tmdb?.still_path ? (
+                                <img
+                                  src={`https://image.tmdb.org/t/p/w185${tmdb.still_path}`}
+                                  alt={tmdb.name}
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <Tv size={18} className="text-gray-400 dark:text-gray-500" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="p-2">
+                              <p className="text-[10px] text-gray-400 mb-0.5">E{episodeNum}</p>
+                              <p className="text-xs font-medium text-gray-800 dark:text-gray-200 line-clamp-1">
+                                {tmdb?.name ?? imdb?.title ?? `Episode ${episodeNum}`}
+                              </p>
+                              {imdb?.imdbRating != null && (
+                                <div
+                                  className="mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold inline-flex"
+                                  style={getRatingStyle(imdb.imdbRating)}
+                                >
+                                  {imdb.imdbRating.toFixed(1)}
+                                </div>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="px-4 py-4 text-sm text-gray-400 text-center">
+                        {t('seriesDetail.noEpisodeData')}
+                      </p>
+                    )
+                  )}
+
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Section 2 : Notes IMDB */}
+          <div className="border border-black/[0.06] dark:border-white/[0.06] rounded-xl overflow-hidden mx-4 mb-3 flex-shrink-0">
             <button
               className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
-              onClick={() => setImdbSectionOpen(s => !s)}
+              onClick={() => { const opening = !imdbSectionOpen; setImdbSectionOpen(opening); if (opening) setEpisodesSectionOpen(false); }}
             >
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 {t('seriesDetail.imdbRatings')}
@@ -376,9 +498,8 @@ export default function SeriesRatingsModal({
               />
             </button>
 
-            <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${imdbSectionOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
-              <div className="overflow-hidden">
-                <div className="border-t border-black/[0.06] dark:border-white/[0.06]">
+            <div className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${imdbSectionOpen ? 'max-h-[45vh]' : 'max-h-0'}`}>
+              <div className="overflow-y-auto max-h-[45vh] border-t border-black/[0.06] dark:border-white/[0.06]">
 
                   {imdbError === 'no_key' && (
                     <p className="px-4 py-4 text-sm text-gray-400 text-center">{t('seriesDetail.imdbNoApiKey')}</p>
@@ -542,139 +663,7 @@ export default function SeriesRatingsModal({
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Section 2 : Épisodes */}
-          {(!!tmdbId || availableSeasons.length > 0) && (
-            <div className="border border-black/[0.06] dark:border-white/[0.06] rounded-xl overflow-hidden mx-4 mb-3">
-              <button
-                className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
-                onClick={handleToggleEpisodesSection}
-              >
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('seriesDetail.episodesSection')}
-                </span>
-                <ChevronDown
-                  size={16}
-                  className={`text-gray-400 transition-transform duration-300 ${episodesSectionOpen ? 'rotate-180' : ''}`}
-                />
-              </button>
-
-              <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${episodesSectionOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
-                <div className="overflow-hidden">
-                  <div className="border-t border-black/[0.06] dark:border-white/[0.06]">
-
-                    {/* Sélecteur de saison */}
-                    {loadingSeasonCount ? (
-                      <div className="px-4 py-4 text-center text-sm text-gray-400 animate-pulse">
-                        {t('seriesDetail.loadingEpisodes')}
-                      </div>
-                    ) : availableSeasons.length === 0 ? (
-                      <div className="px-4 py-4 text-center text-sm text-gray-400">
-                        {t('seriesDetail.noEpisodeData')}
-                      </div>
-                    ) : null}
-                    {availableSeasons.length > 0 && (
-                      <div
-                        className="flex gap-2 overflow-x-auto px-4 py-3 border-b border-black/[0.06] dark:border-white/[0.06]"
-                        style={{ scrollbarWidth: 'none' }}
-                      >
-                        {availableSeasons.map(s => (
-                          <button
-                            key={s}
-                            onClick={() => handleSelectSeason(s)}
-                            className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                              selectedSeason === s
-                                ? 'bg-amber-500 text-white'
-                                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400'
-                            }`}
-                          >
-                            S{s}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Tuiles d'épisodes */}
-                    {selectedSeason !== null && (
-                      loadingTmdbSeason === selectedSeason ? (
-                        <div className="grid grid-cols-2 gap-2 p-4">
-                          {Array.from({ length: 6 }).map((_, i) => (
-                            <div key={i} className="rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 animate-pulse">
-                              <div className="aspect-video" />
-                              <div className="p-2 space-y-1.5">
-                                <div className="h-2 w-8 bg-gray-200 dark:bg-gray-700 rounded" />
-                                <div className="h-3 w-full bg-gray-200 dark:bg-gray-700 rounded" />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : episodesToShow.length > 0 ? (
-                        <div className="grid grid-cols-2 gap-2 p-4">
-                          {episodesToShow.map(({ episodeNum, tmdb, imdb }) => (
-                            <button
-                              key={episodeNum}
-                              onClick={() => setSelectedEpisode({ episodeNum, seasonNum: selectedSeason, tmdb, imdb })}
-                              className="text-left bg-gray-50 dark:bg-gray-800/50 rounded-xl overflow-hidden hover:bg-amber-500/5 dark:hover:bg-amber-500/10 transition-colors"
-                            >
-                              <div className="w-full aspect-video bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                                {tmdb?.still_path ? (
-                                  <img
-                                    src={`https://image.tmdb.org/t/p/w185${tmdb.still_path}`}
-                                    alt={tmdb.name}
-                                    className="w-full h-full object-cover"
-                                    loading="lazy"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center">
-                                    <Tv size={18} className="text-gray-400 dark:text-gray-500" />
-                                  </div>
-                                )}
-                              </div>
-                              <div className="p-2">
-                                <p className="text-[10px] text-gray-400 mb-0.5">E{episodeNum}</p>
-                                <p className="text-xs font-medium text-gray-800 dark:text-gray-200 line-clamp-1">
-                                  {tmdb?.name ?? imdb?.title ?? `Episode ${episodeNum}`}
-                                </p>
-                                {imdb?.imdbRating != null && (
-                                  <div
-                                    className="mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold inline-flex"
-                                    style={getRatingStyle(imdb.imdbRating)}
-                                  >
-                                    {imdb.imdbRating.toFixed(1)}
-                                  </div>
-                                )}
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="px-4 py-4 text-sm text-gray-400 text-center">
-                          {t('seriesDetail.noEpisodeData')}
-                        </p>
-                      )
-                    )}
-
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Bouton ajout */}
-          {showAddButton && onAdd && (
-            <div className="px-4 pt-1 flex justify-center">
-              <button
-                onClick={() => { onClose(); onAdd(); }}
-                className="btn-primary flex items-center gap-2.5 px-6 py-2.5 min-w-52 justify-center"
-              >
-                <Plus size={18} strokeWidth={2.4} />
-                {t('seriesDetail.addToCollection')}
-              </button>
-            </div>
-          )}
-
-        </div>
       </SheetModal>
 
       {selectedEpisode && (

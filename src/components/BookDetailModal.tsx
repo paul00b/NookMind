@@ -73,7 +73,8 @@ export default function BookDetailModal({ book, onClose }: Props) {
   return (
     <SheetModal
       onClose={onClose}
-      panelClassName="md:max-w-2xl card animate-slide-up md:rounded-2xl rounded-t-3xl rounded-b-none md:max-h-[90vh] overflow-y-auto"
+      panelClassName="md:max-w-2xl card animate-slide-up md:rounded-2xl rounded-t-3xl rounded-b-none md:max-h-[90vh]"
+      scrollable
     >
         {/* Close */}
         <SheetCloseButton

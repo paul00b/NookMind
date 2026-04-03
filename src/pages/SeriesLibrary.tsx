@@ -81,16 +81,18 @@ function SeriesListRow({ series, onClick, onRemove }: { series: Series; onClick:
           </div>
         )}
         {(() => {
-          const isWaiting = series.status === 'watching' && (
-            series.next_season_number !== null
-              ? series.watched_seasons.length >= series.next_season_number - 1
-              : series.seasons !== null && series.watched_seasons.length >= series.seasons
-          );
-          const bgClass = series.status === 'watched' ? 'bg-emerald-500' : isWaiting ? 'bg-purple-500' : series.status === 'watching' ? 'bg-blue-500' : 'bg-amber-500';
-          const label = series.status === 'watched'
-            ? t('seriesCard.watched')
-            : isWaiting
+          const isWaiting = series.status === 'watched'
+            ? series.next_season_number !== null
+            : series.status === 'watching' && (
+              series.next_season_number !== null
+                ? series.watched_seasons.length >= series.next_season_number - 1
+                : series.seasons !== null && series.watched_seasons.length >= series.seasons
+            );
+          const bgClass = isWaiting ? 'bg-purple-500' : series.status === 'watched' ? 'bg-emerald-500' : series.status === 'watching' ? 'bg-blue-500' : 'bg-amber-500';
+          const label = isWaiting
             ? formatWaitingLabel(series.next_air_date, t('seriesCard.waitingNextSeason'), t('seriesCard.waitingTomorrow'), (d) => t('seriesCard.waitingDays', { count: d }), i18n.language)
+            : series.status === 'watched'
+            ? t('seriesCard.watched')
             : series.status === 'watching' ? t('seriesCard.watching') : t('seriesCard.wantToWatch');
           return <span className={`flex-shrink-0 text-xs font-medium px-2.5 py-1 rounded-full text-white ${bgClass}`}>{label}</span>;
         })()}
@@ -131,12 +133,11 @@ export default function SeriesLibrary() {
   const isStatusTab = activeTab === 'watched' || activeTab === 'want_to_watch' || activeTab === 'watching';
 
   const isWaitingForNextSeason = (s: Series) => {
+    if (s.status === 'watched') return s.next_season_number !== null;
     if (s.status !== 'watching') return false;
-    // Détection précise : prochain épisode connu, l'utilisateur a tout vu jusqu'à cette saison
     if (s.next_season_number !== null) {
       return s.watched_seasons.length >= s.next_season_number - 1;
     }
-    // Fallback pour les anciennes entrées sans next_season_number
     return s.seasons !== null && s.watched_seasons.length >= s.seasons;
   };
 
@@ -353,6 +354,43 @@ export default function SeriesLibrary() {
                 ) : (
                   <div className="card divide-y divide-black/[0.05] dark:divide-white/[0.05] overflow-hidden">
                     {waiting.map(s => <SeriesListRow key={s.id} series={s} onClick={() => setSelectedSeries(s)} />)}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })() : activeTab === 'watched' ? (() => {
+        const withNewSeason = filtered.filter(s => isWaitingForNextSeason(s));
+        const rest = filtered.filter(s => !isWaitingForNextSeason(s));
+        return (
+          <div className="space-y-8">
+            {rest.length > 0 && (
+              <div>
+                {withNewSeason.length > 0 && (
+                  <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">{t('seriesLibrary.watching')}</h2>
+                )}
+                {viewMode === 'grid' ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {rest.map(s => <SeriesCard key={s.id} series={s} onClick={() => setSelectedSeries(s)} />)}
+                  </div>
+                ) : (
+                  <div className="card divide-y divide-black/[0.05] dark:divide-white/[0.05] overflow-hidden">
+                    {rest.map(s => <SeriesListRow key={s.id} series={s} onClick={() => setSelectedSeries(s)} />)}
+                  </div>
+                )}
+              </div>
+            )}
+            {withNewSeason.length > 0 && (
+              <div>
+                <h2 className="text-xs font-semibold text-purple-500 dark:text-purple-400 uppercase tracking-wider mb-4">{t('seriesLibrary.waitingNextSeason')}</h2>
+                {viewMode === 'grid' ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {withNewSeason.map(s => <SeriesCard key={s.id} series={s} onClick={() => setSelectedSeries(s)} />)}
+                  </div>
+                ) : (
+                  <div className="card divide-y divide-black/[0.05] dark:divide-white/[0.05] overflow-hidden">
+                    {withNewSeason.map(s => <SeriesListRow key={s.id} series={s} onClick={() => setSelectedSeries(s)} />)}
                   </div>
                 )}
               </div>

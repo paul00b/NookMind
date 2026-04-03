@@ -507,7 +507,8 @@ function EpisodeDetailSheet({
   return (
     <SheetModal
       onClose={onClose}
-      panelClassName="md:max-w-xl card rounded-t-3xl rounded-b-none md:rounded-3xl max-h-[88vh] overflow-y-auto animate-slide-up"
+      panelClassName="md:max-w-xl card rounded-t-3xl rounded-b-none md:rounded-3xl max-h-[88vh] animate-slide-up"
+      scrollable
     >
         <SheetCloseButton className="absolute top-4 right-4 btn-ghost p-2 z-10">
           <X size={20} />

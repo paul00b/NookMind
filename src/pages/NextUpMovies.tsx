@@ -277,7 +277,8 @@ function MoviePreviewSheet({
   return (
     <SheetModal
       onClose={onClose}
-      panelClassName="md:max-w-xl card rounded-t-3xl rounded-b-none md:rounded-3xl max-h-[88vh] overflow-y-auto animate-slide-up"
+      panelClassName="md:max-w-xl card rounded-t-3xl rounded-b-none md:rounded-3xl max-h-[88vh] animate-slide-up"
+      scrollable
     >
         <SheetCloseButton
           className="absolute right-4 top-4 h-10 w-10 rounded-full bg-white/85 text-gray-700 shadow-sm backdrop-blur flex items-center justify-center dark:bg-gray-900/85 dark:text-gray-200"

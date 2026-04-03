@@ -7,6 +7,7 @@ interface SheetModalProps {
   overlayClassName?: string;
   rootClassName?: string;
   showHandle?: boolean;
+  scrollable?: boolean;
 }
 
 const MOBILE_MAX_WIDTH = 767;
@@ -52,6 +53,7 @@ export default function SheetModal({
   overlayClassName = 'bg-black/50 backdrop-blur-sm animate-fade-in',
   rootClassName = 'z-50',
   showHandle = true,
+  scrollable = false,
 }: SheetModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const dragStateRef = useRef<{ pointerId: number; startY: number } | null>(null);
@@ -147,14 +149,14 @@ export default function SheetModal({
 
         <div
           ref={panelRef}
-          className={`relative z-10 w-full ${panelClassName}`}
+          className={`relative z-10 w-full ${scrollable && showHandle ? 'flex flex-col' : ''} ${panelClassName}`}
           style={{
             transform: dragOffset > 0 ? `translateY(${dragOffset}px)` : undefined,
             transition: isDragging ? 'none' : `transform ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
           }}
         >
           {showHandle && (
-            <div className="md:hidden sticky top-0 z-10 px-6 pt-3 pb-1 bg-white dark:bg-[#1a1f2e]">
+            <div className={`md:hidden z-10 px-6 pt-1 pb-3 bg-white dark:bg-[#1a1f2e] ${scrollable ? 'flex-shrink-0' : 'sticky top-0'}`}>
               <div
                 className="mx-auto flex h-8 w-40 max-w-full items-center justify-center touch-none"
                 onPointerDown={handlePointerDown}
@@ -162,7 +164,9 @@ export default function SheetModal({
               <div className="pointer-events-none mx-auto -mt-4 h-1.5 w-12 rounded-full bg-gray-300 dark:bg-gray-600" />
             </div>
           )}
-          {children}
+          {scrollable && showHandle ? (
+            <div className="flex-1 min-h-0 overflow-y-auto">{children}</div>
+          ) : children}
         </div>
       </div>
     </SheetCloseContext.Provider>

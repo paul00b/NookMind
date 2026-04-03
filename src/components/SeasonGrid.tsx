@@ -13,6 +13,8 @@ interface SeasonGridProps {
   episodeAirDates?: Record<string, Record<number, string | null>>;
   onSeasonExpand?: (seasonNumber: number) => void;
   loadingEpisodesSeason?: number | null;
+  onSeasonToggle?: (season: number | null) => void;
+  initialExpandedSeason?: number | null;
 }
 
 type PendingFill =
@@ -38,10 +40,11 @@ type PendingFill =
 
 export default function SeasonGrid({
   totalSeasons, watchedSeasons, watchedEpisodes = {}, onChange, readonly, compact,
-  episodeCounts, episodeAirDates, onSeasonExpand, loadingEpisodesSeason,
+  episodeCounts, episodeAirDates, onSeasonExpand, loadingEpisodesSeason, onSeasonToggle,
+  initialExpandedSeason,
 }: SeasonGridProps) {
   const { t, i18n } = useTranslation();
-  const [expandedSeason, setExpandedSeason] = useState<number | null>(null);
+  const [expandedSeason, setExpandedSeason] = useState<number | null>(initialExpandedSeason ?? null);
   const [pendingFill, setPendingFill] = useState<PendingFill>(null);
   const [episodeMessage, setEpisodeMessage] = useState<string | null>(null);
   const [episodeMessageTarget, setEpisodeMessageTarget] = useState<{ season: number; episode: number } | null>(null);
@@ -144,6 +147,7 @@ export default function SeasonGrid({
     if (newExpanded !== null && episodesEnabled && episodeCounts?.[String(season)] == null) {
       onSeasonExpand!(season);
     }
+    onSeasonToggle?.(newExpanded);
   };
 
   const toggleEpisode = (season: number, episode: number) => {
