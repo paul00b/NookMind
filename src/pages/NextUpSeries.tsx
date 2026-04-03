@@ -313,7 +313,7 @@ export default function NextUpSeries() {
   return (
     <>
       <div className="p-4 md:p-8 max-w-2xl mx-auto">
-        <h1 className="font-serif text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+        <h1 className="font-serif text-2xl font-bold text-teal-600 dark:text-teal-400 mb-6">
           {t('discover.title')}
         </h1>
         {activeCards.length > 0 && (

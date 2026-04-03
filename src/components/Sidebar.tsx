@@ -19,6 +19,12 @@ export default function Sidebar({onOpenSettings}: Props) {
         {to: '/library', label: t('nav.library'), icon: <Library size={18}/>, end: false},
         {to: '/discover', label: t('nav.discover'), icon: <Compass size={18}/>, end: false},
     ];
+
+    const navLinkActive = {
+        books:  'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+        movies: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
+        series: 'bg-teal-500/10 text-teal-600 dark:text-teal-400',
+    }[mode];
     const name = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Reader';
 
     return (
@@ -47,7 +53,7 @@ export default function Sidebar({onOpenSettings}: Props) {
                     onClick={() => setMode('movies')}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${
                         mode === 'movies'
-                            ? 'bg-white dark:bg-[#1a1f2e] text-amber-600 dark:text-amber-400 shadow-sm'
+                            ? 'bg-white dark:bg-[#1a1f2e] text-indigo-600 dark:text-indigo-400 shadow-sm'
                             : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                     }`}
                 >
@@ -58,7 +64,7 @@ export default function Sidebar({onOpenSettings}: Props) {
                     onClick={() => setMode('series')}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${
                         mode === 'series'
-                            ? 'bg-white dark:bg-[#1a1f2e] text-amber-600 dark:text-amber-400 shadow-sm'
+                            ? 'bg-white dark:bg-[#1a1f2e] text-teal-600 dark:text-teal-400 shadow-sm'
                             : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                     }`}
                 >
@@ -74,7 +80,7 @@ export default function Sidebar({onOpenSettings}: Props) {
                         key={to}
                         to={to}
                         end={end}
-                        className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`}
+                        className={({isActive}) => `nav-link ${isActive ? navLinkActive : ''}`}
                     >
                         {icon}
                         {label}

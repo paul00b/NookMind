@@ -247,7 +247,7 @@ export default function Home() {
     <div className="flex flex-col items-center justify-center min-h-[80vh] px-4 py-12">
       {/* Heading */}
       <div className="text-center mb-10">
-        <h1 className="font-serif text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-3">
+        <h1 className="font-serif text-4xl md:text-5xl font-bold text-amber-600 dark:text-amber-400 mb-3">
           {t('home.title')}
         </h1>
         <p className="text-gray-500 dark:text-gray-400 text-lg max-w-md mx-auto">

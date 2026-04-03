@@ -147,7 +147,7 @@ export default function NextUpMovies() {
     return (
       <section className="mb-8 last:mb-0">
         <div className="mb-4 px-4 md:px-0">
-          <h2 className="font-serif text-2xl font-bold text-gray-900 dark:text-gray-100">
+          <h2 className="font-serif text-2xl font-bold text-indigo-600 dark:text-indigo-400">
             {sectionTitle}
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">

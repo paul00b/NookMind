@@ -221,7 +221,7 @@ export default function Library() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="font-serif text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1">{t('library.title')}</h1>
+          <h1 className="font-serif text-3xl font-bold text-amber-600 dark:text-amber-400 mb-1">{t('library.title')}</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm">{t('library.booksCount', { count: books.length })}</p>
         </div>
         <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-0.5">

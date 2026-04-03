@@ -208,7 +208,7 @@ export default function SeriesLibrary() {
     <div className="p-4 pb-32 md:p-8 md:pb-8 max-w-6xl mx-auto">
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="font-serif text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1">{t('seriesLibrary.title')}</h1>
+          <h1 className="font-serif text-3xl font-bold text-teal-600 dark:text-teal-400 mb-1">{t('seriesLibrary.title')}</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm">{t('seriesLibrary.seriesCount', { count: series.length })}</p>
         </div>
         <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-0.5">

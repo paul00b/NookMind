@@ -256,7 +256,7 @@ export default function MovieHome() {
     <div ref={searchSectionRef} className="flex flex-col items-center justify-center min-h-[80vh] px-4 py-12 scroll-mt-4">
       {/* Heading */}
       <div className="text-center mb-10">
-        <h1 className="font-serif text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-3">
+        <h1 className="font-serif text-4xl md:text-5xl font-bold text-indigo-600 dark:text-indigo-400 mb-3">
           {t('movieHome.title')}
         </h1>
         <p className="text-gray-500 dark:text-gray-400 text-lg max-w-md mx-auto">
