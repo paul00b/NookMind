@@ -63,8 +63,9 @@ export default function BottomNav() {
             key={to}
             to={to}
             end={end}
+            onPointerDown={(e) => e.preventDefault()}
             className={({ isActive }) =>
-              `flex-1 flex flex-col items-center gap-1 py-3 transition-all duration-200 ${
+              `flex-1 flex flex-col items-center gap-1 py-3 transition-all duration-200 touch-manipulation ${
                 isActive
                   ? 'text-amber-600 dark:text-amber-400'
                   : 'text-gray-500 dark:text-gray-400'

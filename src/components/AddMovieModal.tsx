@@ -32,7 +32,7 @@ interface Props {
   onClose: () => void;
 }
 
-const readonlyInput = 'input bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-500 cursor-default select-text';
+const readonlyInput = 'input bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-500 pointer-events-none';
 
 export default function AddMovieModal({ prefill, onClose }: Props) {
   const { addMovie, movies } = useMovies();
