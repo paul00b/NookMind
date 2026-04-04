@@ -125,7 +125,15 @@ export default function Library() {
   const [authorFilter, setAuthorFilter] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('created_at');
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    const stored = localStorage.getItem('library-view-mode');
+    return stored === 'list' ? 'list' : 'grid';
+  });
+
+  const handleSetViewMode = (mode: ViewMode) => {
+    setViewMode(mode);
+    localStorage.setItem('library-view-mode', mode);
+  };
 
   // Category creation
   const [creatingCategory, setCreatingCategory] = useState(false);
@@ -226,7 +234,7 @@ export default function Library() {
         </div>
         <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-0.5">
           <button
-            onClick={() => setViewMode('grid')}
+            onClick={() => handleSetViewMode('grid')}
             className={`p-2 rounded-lg transition-all ${
               viewMode === 'grid'
                 ? 'bg-white dark:bg-[#1a1f2e] text-amber-600 dark:text-amber-400 shadow-sm'
@@ -236,7 +244,7 @@ export default function Library() {
             <LayoutGrid size={16} />
           </button>
           <button
-            onClick={() => setViewMode('list')}
+            onClick={() => handleSetViewMode('list')}
             className={`p-2 rounded-lg transition-all ${
               viewMode === 'list'
                 ? 'bg-white dark:bg-[#1a1f2e] text-amber-600 dark:text-amber-400 shadow-sm'

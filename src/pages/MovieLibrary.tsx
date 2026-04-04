@@ -137,7 +137,15 @@ export default function MovieLibrary() {
   const [directorFilter, setDirectorFilter] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('created_at');
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    const stored = localStorage.getItem('movie-library-view-mode');
+    return stored === 'list' ? 'list' : 'grid';
+  });
+
+  const handleSetViewMode = (mode: ViewMode) => {
+    setViewMode(mode);
+    localStorage.setItem('movie-library-view-mode', mode);
+  };
 
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -239,7 +247,7 @@ export default function MovieLibrary() {
         </div>
         <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-0.5">
           <button
-            onClick={() => setViewMode('grid')}
+            onClick={() => handleSetViewMode('grid')}
             className={`p-2 rounded-lg transition-all ${
               viewMode === 'grid'
                 ? 'bg-white dark:bg-[#1a1f2e] text-amber-600 dark:text-amber-400 shadow-sm'
@@ -249,7 +257,7 @@ export default function MovieLibrary() {
             <LayoutGrid size={16} />
           </button>
           <button
-            onClick={() => setViewMode('list')}
+            onClick={() => handleSetViewMode('list')}
             className={`p-2 rounded-lg transition-all ${
               viewMode === 'list'
                 ? 'bg-white dark:bg-[#1a1f2e] text-amber-600 dark:text-amber-400 shadow-sm'
