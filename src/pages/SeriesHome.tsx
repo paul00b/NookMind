@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react';
-import { Search, Plus, X, Tv, CheckCircle2, Eye } from 'lucide-react';
+import { Search, Plus, X, Tv, CheckCircle2, Eye, Bookmark, Play, Clock, CheckCheck } from 'lucide-react';
 import { searchSeries as searchTmdbSeries, extractSeriesData, fetchSeriesDetails, getPosterUrl } from '../lib/tmdb';
 import type { TmdbSeries, Series } from '../types';
 import AddSeriesModal from '../components/AddSeriesModal';
@@ -33,7 +33,8 @@ function WantToWatchSlider({ onSelect }: { onSelect: (s: Series) => void }) {
 
   return (
     <div className="w-full max-w-xl mt-10">
-      <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">
+      <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1 flex items-center gap-1.5">
+        <Bookmark size={14} />
         {t('seriesHome.wantToWatch')}
       </h2>
       <div className="-mx-4 md:mx-0">
@@ -107,7 +108,8 @@ function WatchingSlider({ onSelect }: { onSelect: (s: Series) => void }) {
     <>
       {activeWatching.length > 0 && (
         <div className="w-full max-w-xl mt-10">
-          <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">
+          <h2 className="text-sm font-semibold text-blue-500 dark:text-blue-400 uppercase tracking-wider mb-3 px-1 flex items-center gap-1.5">
+            <Play size={14} />
             {t('seriesHome.watching')}
           </h2>
           <div className="-mx-4 md:mx-0">
@@ -119,7 +121,8 @@ function WatchingSlider({ onSelect }: { onSelect: (s: Series) => void }) {
       )}
       {waitingNextSeason.length > 0 && (
         <div className="w-full max-w-xl mt-10">
-          <h2 className="text-sm font-semibold text-purple-500 dark:text-purple-400 uppercase tracking-wider mb-3 px-1">
+          <h2 className="text-sm font-semibold text-purple-500 dark:text-purple-400 uppercase tracking-wider mb-3 px-1 flex items-center gap-1.5">
+            <Clock size={14} />
             {t('seriesHome.waitingNextSeason')}
           </h2>
           <div className="-mx-4 md:mx-0">
@@ -145,7 +148,8 @@ function LastWatchedSlider({ onSelect }: { onSelect: (s: Series) => void }) {
 
   return (
     <div className="w-full max-w-xl mt-10">
-      <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">
+      <h2 className="text-sm font-semibold text-emerald-500 dark:text-emerald-400 uppercase tracking-wider mb-3 px-1 flex items-center gap-1.5">
+        <CheckCheck size={14} />
         {t('seriesHome.lastWatched')}
       </h2>
       <div className="-mx-4 md:mx-0">
