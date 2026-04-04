@@ -30,11 +30,14 @@ interface Props {
   onClose: () => void;
 }
 
+const readonlyInput = 'input bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-500 cursor-default select-text';
+
 export default function AddBookModal({ prefill, onClose }: Props) {
   const { addBook, books } = useBooks();
   const { t } = useTranslation();
   const [form, setForm] = useState<BookFormData>({ ...EMPTY, ...prefill });
   const [saving, setSaving] = useState(false);
+  const isFromSearch = !!prefill;
 
   const isDuplicate = useMemo(() => {
     if (!form.title.trim() || !form.author.trim()) return false;
@@ -93,10 +96,11 @@ export default function AddBookModal({ prefill, onClose }: Props) {
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addBook.authorLabel')}</label>
               <input
-                className="input"
+                className={isFromSearch ? readonlyInput : 'input'}
                 value={form.author}
                 onChange={e => set('author', e.target.value)}
                 placeholder={t('addBook.authorPlaceholder')}
+                readOnly={isFromSearch}
               />
             </div>
           </div>
@@ -109,7 +113,7 @@ export default function AddBookModal({ prefill, onClose }: Props) {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addBook.publishedLabel')}</label>
-              <input className="input" value={form.published_date || ''} onChange={e => set('published_date', e.target.value || null)} placeholder={t('addBook.publishedPlaceholder')} />
+              <input className={isFromSearch ? readonlyInput : 'input'} value={form.published_date || ''} onChange={e => set('published_date', e.target.value || null)} placeholder={t('addBook.publishedPlaceholder')} readOnly={isFromSearch} />
             </div>
           </div>
 
@@ -117,7 +121,7 @@ export default function AddBookModal({ prefill, onClose }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addBook.pagesLabel')}</label>
-              <input className="input" type="number" min="1" value={form.page_count || ''} onChange={e => set('page_count', e.target.value ? parseInt(e.target.value) : null)} placeholder={t('addBook.pagesPlaceholder')} />
+              <input className={isFromSearch ? readonlyInput : 'input'} type="number" min="1" value={form.page_count || ''} onChange={e => set('page_count', e.target.value ? parseInt(e.target.value) : null)} placeholder={t('addBook.pagesPlaceholder')} readOnly={isFromSearch} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addBook.coverUrlLabel')}</label>
@@ -189,9 +193,9 @@ export default function AddBookModal({ prefill, onClose }: Props) {
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addBook.descriptionLabel')}</label>
               <textarea
-                className="input resize-none h-20 text-sm"
+                className={`${readonlyInput} resize-none h-20 text-sm`}
                 value={form.description}
-                onChange={e => set('description', e.target.value || null)}
+                readOnly
               />
             </div>
           )}

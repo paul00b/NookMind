@@ -32,11 +32,14 @@ interface Props {
   onClose: () => void;
 }
 
+const readonlyInput = 'input bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-500 cursor-default select-text';
+
 export default function AddMovieModal({ prefill, onClose }: Props) {
   const { addMovie, movies } = useMovies();
   const { t } = useTranslation();
   const [form, setForm] = useState<MovieFormData>({ ...EMPTY, ...prefill });
   const [saving, setSaving] = useState(false);
+  const isFromSearch = !!prefill;
 
   const isDuplicate = useMemo(() => {
     if (!form.title.trim()) return false;
@@ -92,10 +95,11 @@ export default function AddMovieModal({ prefill, onClose }: Props) {
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addMovie.directorLabel')}</label>
               <input
-                className="input"
+                className={isFromSearch ? readonlyInput : 'input'}
                 value={form.director}
                 onChange={e => set('director', e.target.value)}
                 placeholder={t('addMovie.directorPlaceholder')}
+                readOnly={isFromSearch}
               />
             </div>
           </div>
@@ -108,7 +112,7 @@ export default function AddMovieModal({ prefill, onClose }: Props) {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addMovie.releasedLabel')}</label>
-              <input className="input" value={form.release_date || ''} onChange={e => set('release_date', e.target.value || null)} placeholder={t('addMovie.releasedPlaceholder')} />
+              <input className={isFromSearch ? readonlyInput : 'input'} value={form.release_date || ''} onChange={e => set('release_date', e.target.value || null)} placeholder={t('addMovie.releasedPlaceholder')} readOnly={isFromSearch} />
             </div>
           </div>
 
@@ -116,7 +120,7 @@ export default function AddMovieModal({ prefill, onClose }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addMovie.runtimeLabel')}</label>
-              <input className="input" type="number" min="1" value={form.runtime || ''} onChange={e => set('runtime', e.target.value ? parseInt(e.target.value) : null)} placeholder={t('addMovie.runtimePlaceholder')} />
+              <input className={isFromSearch ? readonlyInput : 'input'} type="number" min="1" value={form.runtime || ''} onChange={e => set('runtime', e.target.value ? parseInt(e.target.value) : null)} placeholder={t('addMovie.runtimePlaceholder')} readOnly={isFromSearch} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addMovie.posterUrlLabel')}</label>
@@ -185,9 +189,9 @@ export default function AddMovieModal({ prefill, onClose }: Props) {
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addMovie.descriptionLabel')}</label>
               <textarea
-                className="input resize-none h-20 text-sm"
+                className={`${readonlyInput} resize-none h-20 text-sm`}
                 value={form.description}
-                onChange={e => set('description', e.target.value || null)}
+                readOnly
               />
             </div>
           )}

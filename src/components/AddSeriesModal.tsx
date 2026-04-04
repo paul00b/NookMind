@@ -35,9 +35,12 @@ interface Props {
   onClose: () => void;
 }
 
+const readonlyInput = 'input bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-500 cursor-default select-text';
+
 export default function AddSeriesModal({ prefill, onClose }: Props) {
   const { addSeries, series: allSeries } = useSeries();
   const { t } = useTranslation();
+  const isFromSearch = !!prefill;
   const [form, setForm] = useState<SeriesFormData>({ ...EMPTY, ...prefill });
   const [saving, setSaving] = useState(false);
   const [episodeCounts, setEpisodeCounts] = useState<Record<string, number>>({});
@@ -122,7 +125,7 @@ export default function AddSeriesModal({ prefill, onClose }: Props) {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addSeries.creatorLabel')}</label>
-              <input className="input" value={form.creator} onChange={e => set('creator', e.target.value)} placeholder={t('addSeries.creatorPlaceholder')} />
+              <input className={isFromSearch ? readonlyInput : 'input'} value={form.creator} onChange={e => set('creator', e.target.value)} placeholder={t('addSeries.creatorPlaceholder')} readOnly={isFromSearch} />
             </div>
           </div>
 
@@ -133,14 +136,14 @@ export default function AddSeriesModal({ prefill, onClose }: Props) {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addSeries.firstAirDateLabel')}</label>
-              <input className="input" value={form.first_air_date || ''} onChange={e => set('first_air_date', e.target.value || null)} placeholder={t('addSeries.firstAirDatePlaceholder')} />
+              <input className={isFromSearch ? readonlyInput : 'input'} value={form.first_air_date || ''} onChange={e => set('first_air_date', e.target.value || null)} placeholder={t('addSeries.firstAirDatePlaceholder')} readOnly={isFromSearch} />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addSeries.seasonsLabel')}</label>
-              <input className="input" type="number" min="1" value={form.seasons || ''} onChange={e => handleTotalSeasonsChange(e.target.value ? parseInt(e.target.value) : null)} placeholder={t('addSeries.seasonsPlaceholder')} />
+              <input className={isFromSearch ? readonlyInput : 'input'} type="number" min="1" value={form.seasons || ''} onChange={e => handleTotalSeasonsChange(e.target.value ? parseInt(e.target.value) : null)} placeholder={t('addSeries.seasonsPlaceholder')} readOnly={isFromSearch} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addSeries.posterUrlLabel')}</label>
@@ -181,7 +184,7 @@ export default function AddSeriesModal({ prefill, onClose }: Props) {
           {form.description && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addSeries.descriptionLabel')}</label>
-              <textarea className="input resize-none h-20 text-sm" value={form.description} onChange={e => set('description', e.target.value || null)} />
+              <textarea className={`${readonlyInput} resize-none h-20 text-sm`} value={form.description} readOnly />
             </div>
           )}
 
