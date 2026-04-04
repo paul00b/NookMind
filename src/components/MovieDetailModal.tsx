@@ -1,10 +1,12 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import type { Movie } from '../types';
 import { useMovies } from '../context/MoviesContext';
 import { useMovieCategories } from '../context/MovieCategoriesContext';
 import StarRating from './StarRating';
 import SheetModal, { SheetCloseButton } from './SheetModal';
-import { X, Pencil, Check, Trash2, Film, ArrowLeftRight, ChevronDown, ChevronUp, FolderPlus, FolderMinus } from 'lucide-react';
+import ExpandableDescription from './ExpandableDescription';
+import EditableNote from './EditableNote';
+import { X, Pencil, Check, Trash2, Film, ArrowLeftRight, FolderPlus, FolderMinus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 
@@ -17,18 +19,10 @@ export default function MovieDetailModal({ movie, onClose }: Props) {
   const { updateMovie, deleteMovie } = useMovies();
   const { movieCategories, addMoviesToCategory, removeMovieFromCategory } = useMovieCategories();
   const { t } = useTranslation();
-  const [editingNote, setEditingNote] = useState(false);
-  const [note, setNote] = useState(movie.personal_note || '');
   const [editingDate, setEditingDate] = useState(false);
   const [watchedDate, setWatchedDate] = useState(movie.watched_date || '');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [localMovie, setLocalMovie] = useState<Movie>(movie);
-  const [descExpanded, setDescExpanded] = useState(false);
-  const [descTruncated, setDescTruncated] = useState(false);
-  const descRef = useRef<HTMLParagraphElement>(null);
-  useEffect(() => {
-    if (descRef.current) setDescTruncated(descRef.current.scrollHeight > descRef.current.clientHeight);
-  }, [localMovie.description]);
 
   const handleRatingChange = async (rating: number) => {
     setLocalMovie(m => ({ ...m, rating }));
@@ -36,10 +30,9 @@ export default function MovieDetailModal({ movie, onClose }: Props) {
     toast.success(t('movieDetail.ratingUpdated'));
   };
 
-  const handleSaveNote = async () => {
-    setLocalMovie(m => ({ ...m, personal_note: note }));
-    await updateMovie(movie.id, { personal_note: note });
-    setEditingNote(false);
+  const handleSaveNote = async (newNote: string) => {
+    setLocalMovie(m => ({ ...m, personal_note: newNote }));
+    await updateMovie(movie.id, { personal_note: newNote });
     toast.success(t('movieDetail.noteSaved'));
   };
 
@@ -172,58 +165,24 @@ export default function MovieDetailModal({ movie, onClose }: Props) {
 
             {/* Description */}
             {localMovie.description && (
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('movieDetail.description')}</p>
-                <button onClick={() => (descTruncated || descExpanded) && setDescExpanded(e => !e)} className="w-full text-left group">
-                  <p ref={descRef} className={`text-sm text-gray-700 dark:text-gray-300 leading-relaxed ${descExpanded ? '' : 'line-clamp-4'}`}>
-                    {localMovie.description}
-                  </p>
-                  {(descTruncated || descExpanded) && (
-                    <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 mt-1 group-hover:underline">
-                      {descExpanded
-                        ? <><ChevronUp size={12} />{t('movieDetail.seeLess')}</>
-                        : <><ChevronDown size={12} />{t('movieDetail.seeMore')}</>
-                      }
-                    </span>
-                  )}
-                </button>
-              </div>
+              <ExpandableDescription
+                description={localMovie.description}
+                label={t('movieDetail.description')}
+                seeMoreText={t('movieDetail.seeMore')}
+                seeLessText={t('movieDetail.seeLess')}
+              />
             )}
 
             {/* Personal note */}
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <p className="text-sm text-gray-500 dark:text-gray-400">{t('movieDetail.personalNote')}</p>
-                {!editingNote && (
-                  <button onClick={() => setEditingNote(true)} className="text-gray-400 hover:text-amber-500 transition-colors">
-                    <Pencil size={13} />
-                  </button>
-                )}
-              </div>
-              {editingNote ? (
-                <div className="space-y-2">
-                  <textarea
-                    value={note}
-                    onChange={e => setNote(e.target.value)}
-                    className="input text-sm h-24 resize-none"
-                    placeholder={t('movieDetail.notePlaceholder')}
-                    autoFocus
-                  />
-                  <div className="flex gap-2">
-                    <button onClick={handleSaveNote} className="btn-primary text-sm py-1.5 flex items-center gap-1">
-                      <Check size={14} /> {t('movieDetail.save')}
-                    </button>
-                    <button onClick={() => { setNote(movie.personal_note || ''); setEditingNote(false); }} className="btn-ghost text-sm py-1.5">
-                      {t('movieDetail.cancel')}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                  {localMovie.personal_note || <span className="text-gray-400 italic">{t('movieDetail.noNotes')}</span>}
-                </p>
-              )}
-            </div>
+            <EditableNote
+              note={localMovie.personal_note}
+              labelText={t('movieDetail.personalNote')}
+              placeholderText={t('movieDetail.notePlaceholder')}
+              saveText={t('movieDetail.save')}
+              cancelText={t('movieDetail.cancel')}
+              noNotesText={t('movieDetail.noNotes')}
+              onSave={handleSaveNote}
+            />
 
             {/* Collections */}
             {movieCategories.length > 0 && (

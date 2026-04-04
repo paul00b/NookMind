@@ -1,12 +1,14 @@
-import { useState, useRef, useEffect } from 'react';
+import {useEffect, useRef, useState} from 'react';
 import type { Series, TmdbEpisode } from '../types';
 import { useSeries } from '../context/SeriesContext';
 import { useSeriesCategories } from '../context/SeriesCategoriesContext';
 import StarRating from './StarRating';
 import SeasonGrid, { deriveSeriesStatus } from './SeasonGrid';
 import SheetModal, { SheetCloseButton } from './SheetModal';
+import ExpandableDescription from './ExpandableDescription';
+import EditableNote from './EditableNote';
 import { fetchSeasonDetails, fetchSeriesDetails, extractSeriesData } from '../lib/tmdb';
-import { X, Pencil, Check, Trash2, Tv, ChevronDown, ChevronUp, FolderPlus, FolderMinus, Star } from 'lucide-react';
+import { X, Trash2, Tv, ChevronDown, FolderPlus, FolderMinus, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { getRatingStyle, type SeasonState } from '../lib/imdbRatingStyle';
@@ -98,8 +100,6 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
   const { updateSeries, deleteSeries } = useSeries();
   const { seriesCategories, addSeriesToCategory, removeSeriesFromCategory } = useSeriesCategories();
   const { t } = useTranslation();
-  const [editingNote, setEditingNote] = useState(false);
-  const [note, setNote] = useState(series.personal_note || '');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showImdbSection, setShowImdbSection] = useState(false);
   const [imdbId, setImdbId] = useState<string | null>(null);
@@ -108,14 +108,7 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
   const [seasonRatings, setSeasonRatings] = useState<Record<number, SeasonState>>({});
   const [fetchKey, setFetchKey] = useState(0);
   const [localSeries, setLocalSeries] = useState<Series>(series);
-  const [descExpanded, setDescExpanded] = useState(false);
-  const [descTruncated, setDescTruncated] = useState(false);
-  const descRef = useRef<HTMLParagraphElement>(null);
   const [showSeasonsSection, setShowSeasonsSection] = useState(true);
-
-  useEffect(() => {
-    if (descRef.current) setDescTruncated(descRef.current.scrollHeight > descRef.current.clientHeight);
-  }, [localSeries.description]);
 
   // Rafraîchissement silencieux des données TMDB à l'ouverture pour les séries en cours
   useEffect(() => {
@@ -188,10 +181,9 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
     toast.success(t('seriesDetail.ratingUpdated'));
   };
 
-  const handleSaveNote = async () => {
-    setLocalSeries(s => ({ ...s, personal_note: note }));
-    await updateSeries(series.id, { personal_note: note });
-    setEditingNote(false);
+  const handleSaveNote = async (newNote: string) => {
+    setLocalSeries(s => ({ ...s, personal_note: newNote }));
+    await updateSeries(series.id, { personal_note: newNote });
     toast.success(t('seriesDetail.noteSaved'));
   };
 
@@ -332,19 +324,12 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
           {/* Description */}
           {localSeries.description && (
             <div className="px-6 pt-1 pb-4">
-              <button onClick={() => (descTruncated || descExpanded) && setDescExpanded(e => !e)} className="w-full text-left group">
-                <p ref={descRef} className={`text-sm text-gray-700 dark:text-gray-300 leading-relaxed ${descExpanded ? '' : 'line-clamp-3'}`}>
-                  {localSeries.description}
-                </p>
-                {(descTruncated || descExpanded) && (
-                  <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 mt-1 group-hover:underline">
-                    {descExpanded
-                      ? <><ChevronUp size={12} />{t('seriesDetail.seeLess')}</>
-                      : <><ChevronDown size={12} />{t('seriesDetail.seeMore')}</>
-                    }
-                  </span>
-                )}
-              </button>
+              <ExpandableDescription
+                description={localSeries.description}
+                seeMoreText={t('seriesDetail.seeMore')}
+                seeLessText={t('seriesDetail.seeLess')}
+                clampClass="line-clamp-3"
+              />
             </div>
           )}
 
@@ -593,33 +578,15 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
               </div>
             )}
 
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <p className="text-sm text-gray-500 dark:text-gray-400">{t('seriesDetail.personalNote')}</p>
-                {!editingNote && (
-                  <button onClick={() => setEditingNote(true)} className="text-gray-400 hover:text-amber-500 transition-colors">
-                    <Pencil size={13} />
-                  </button>
-                )}
-              </div>
-              {editingNote ? (
-                <div className="space-y-2">
-                  <textarea value={note} onChange={e => setNote(e.target.value)} className="input text-sm h-24 resize-none" placeholder={t('seriesDetail.notePlaceholder')} autoFocus />
-                  <div className="flex gap-2">
-                    <button onClick={handleSaveNote} className="btn-primary text-sm py-1.5 flex items-center gap-1">
-                      <Check size={14} /> {t('seriesDetail.save')}
-                    </button>
-                    <button onClick={() => { setNote(series.personal_note || ''); setEditingNote(false); }} className="btn-ghost text-sm py-1.5">
-                      {t('seriesDetail.cancel')}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                  {localSeries.personal_note || <span className="text-gray-400 italic">{t('seriesDetail.noNotes')}</span>}
-                </p>
-              )}
-            </div>
+            <EditableNote
+              note={localSeries.personal_note}
+              labelText={t('seriesDetail.personalNote')}
+              placeholderText={t('seriesDetail.notePlaceholder')}
+              saveText={t('seriesDetail.save')}
+              cancelText={t('seriesDetail.cancel')}
+              noNotesText={t('seriesDetail.noNotes')}
+              onSave={handleSaveNote}
+            />
 
             {seriesCategories.length > 0 && (
               <div>

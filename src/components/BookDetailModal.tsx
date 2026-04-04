@@ -1,10 +1,12 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import type { Book, BookStatus } from '../types';
 import { useBooks } from '../context/BooksContext';
 import { useCategories } from '../context/CategoriesContext';
 import StarRating from './StarRating';
 import SheetModal, { SheetCloseButton } from './SheetModal';
-import { X, Pencil, Check, Trash2, BookOpen, ChevronDown, ChevronUp, FolderPlus, FolderMinus } from 'lucide-react';
+import ExpandableDescription from './ExpandableDescription';
+import EditableNote from './EditableNote';
+import { X, Pencil, Check, Trash2, BookOpen, FolderPlus, FolderMinus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 
@@ -17,18 +19,10 @@ export default function BookDetailModal({ book, onClose }: Props) {
   const { updateBook, deleteBook } = useBooks();
   const { categories, addBooksToCategory, removeBookFromCategory } = useCategories();
   const { t } = useTranslation();
-  const [editingNote, setEditingNote] = useState(false);
-  const [note, setNote] = useState(book.personal_note || '');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [localBook, setLocalBook] = useState<Book>(book);
   const [editingPage, setEditingPage] = useState(false);
   const [pageInput, setPageInput] = useState(String(book.current_page ?? ''));
-  const [descExpanded, setDescExpanded] = useState(false);
-  const [descTruncated, setDescTruncated] = useState(false);
-  const descRef = useRef<HTMLParagraphElement>(null);
-  useEffect(() => {
-    if (descRef.current) setDescTruncated(descRef.current.scrollHeight > descRef.current.clientHeight);
-  }, [localBook.description]);
 
   const handleRatingChange = async (rating: number) => {
     setLocalBook(b => ({ ...b, rating }));
@@ -36,10 +30,9 @@ export default function BookDetailModal({ book, onClose }: Props) {
     toast.success(t('bookDetail.ratingUpdated'));
   };
 
-  const handleSaveNote = async () => {
-    setLocalBook(b => ({ ...b, personal_note: note }));
-    await updateBook(book.id, { personal_note: note });
-    setEditingNote(false);
+  const handleSaveNote = async (newNote: string) => {
+    setLocalBook(b => ({ ...b, personal_note: newNote }));
+    await updateBook(book.id, { personal_note: newNote });
     toast.success(t('bookDetail.noteSaved'));
   };
 
@@ -211,61 +204,24 @@ export default function BookDetailModal({ book, onClose }: Props) {
 
             {/* Description */}
             {localBook.description && (
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('bookDetail.description')}</p>
-                <button
-                  onClick={() => (descTruncated || descExpanded) && setDescExpanded(e => !e)}
-                  className="w-full text-left group"
-                >
-                  <p ref={descRef} className={`text-sm text-gray-700 dark:text-gray-300 leading-relaxed ${descExpanded ? '' : 'line-clamp-4'}`}>
-                    {localBook.description}
-                  </p>
-                  {(descTruncated || descExpanded) && (
-                  <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 mt-1 group-hover:underline">
-                    {descExpanded
-                      ? <><ChevronUp size={12} />{t('bookDetail.seeLess', 'See less')}</>
-                      : <><ChevronDown size={12} />{t('bookDetail.seeMore', 'See more')}</>
-                    }
-                  </span>
-                  )}
-                </button>
-              </div>
+              <ExpandableDescription
+                description={localBook.description}
+                label={t('bookDetail.description')}
+                seeMoreText={t('bookDetail.seeMore', 'See more')}
+                seeLessText={t('bookDetail.seeLess', 'See less')}
+              />
             )}
 
             {/* Personal note */}
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <p className="text-sm text-gray-500 dark:text-gray-400">{t('bookDetail.personalNote')}</p>
-                {!editingNote && (
-                  <button onClick={() => setEditingNote(true)} className="text-gray-400 hover:text-amber-500 transition-colors">
-                    <Pencil size={13} />
-                  </button>
-                )}
-              </div>
-              {editingNote ? (
-                <div className="space-y-2">
-                  <textarea
-                    value={note}
-                    onChange={e => setNote(e.target.value)}
-                    className="input text-sm h-24 resize-none"
-                    placeholder={t('bookDetail.notePlaceholder')}
-                    autoFocus
-                  />
-                  <div className="flex gap-2">
-                    <button onClick={handleSaveNote} className="btn-primary text-sm py-1.5 flex items-center gap-1">
-                      <Check size={14} /> {t('bookDetail.save')}
-                    </button>
-                    <button onClick={() => { setNote(book.personal_note || ''); setEditingNote(false); }} className="btn-ghost text-sm py-1.5">
-                      {t('bookDetail.cancel')}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                  {localBook.personal_note || <span className="text-gray-400 italic">{t('bookDetail.noNotes')}</span>}
-                </p>
-              )}
-            </div>
+            <EditableNote
+              note={localBook.personal_note}
+              labelText={t('bookDetail.personalNote')}
+              placeholderText={t('bookDetail.notePlaceholder')}
+              saveText={t('bookDetail.save')}
+              cancelText={t('bookDetail.cancel')}
+              noNotesText={t('bookDetail.noNotes')}
+              onSave={handleSaveNote}
+            />
 
             {/* Collections */}
             {categories.length > 0 && (
