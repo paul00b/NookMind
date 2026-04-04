@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { X, Tv, Plus, ChevronDown, Star } from 'lucide-react';
+import { X, Tv, Plus, ChevronDown, Star, CheckCircle2 } from 'lucide-react';
 import { fetchSeriesImdbId, fetchSeasonRatings, type EpisodeRating } from '../lib/imdb';
 import { getRatingStyle, type SeasonState } from '../lib/imdbRatingStyle';
 import { fetchSeasonDetails, fetchSeriesDetails } from '../lib/tmdb';
@@ -18,6 +18,7 @@ interface SeriesPreviewSheetProps {
   totalSeasons?: number | null;
   genre?: string | null;
   showAddButton?: boolean;
+  alreadyAdded?: boolean;
   onAdd?: () => void;
   tmdbId?: number | null;
 }
@@ -153,6 +154,7 @@ export default function SeriesPreviewSheet({
   totalSeasons,
   genre,
   showAddButton = false,
+  alreadyAdded = false,
   onAdd,
   tmdbId,
 }: SeriesPreviewSheetProps) {
@@ -336,14 +338,21 @@ export default function SeriesPreviewSheet({
                 .filter(Boolean)
                 .join(' · ')}
             </p>
-            {showAddButton && onAdd && (
-              <button
-                onClick={() => { onClose(); onAdd(); }}
-                className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/40 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors"
-              >
-                <Plus size={13} strokeWidth={2.5} />
-                {t('seriesDetail.addToCollection')}
-              </button>
+            {showAddButton && (
+              alreadyAdded ? (
+                <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/5">
+                  <CheckCircle2 size={13} strokeWidth={2.5} />
+                  {t('seriesHome.inList')}
+                </div>
+              ) : onAdd && (
+                <button
+                  onClick={() => { onClose(); onAdd(); }}
+                  className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/40 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors"
+                >
+                  <Plus size={13} strokeWidth={2.5} />
+                  {t('seriesDetail.addToCollection')}
+                </button>
+              )
             )}
           </div>
         </div>
@@ -663,6 +672,8 @@ export default function SeriesPreviewSheet({
                 </div>
               </div>
             </div>
+
+          <div className="flex-shrink-0 h-6 pb-safe" />
 
       </SheetModal>
 

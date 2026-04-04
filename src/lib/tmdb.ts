@@ -148,20 +148,21 @@ export async function fetchTrendingMovies(maxResults = 12): Promise<TmdbMovie[]>
   }
 }
 
-export async function fetchTrendingSeries(page = 1): Promise<{ results: TmdbSeries[]; hasMore: boolean }> {
+async function fetchTvList(path: string, page: number): Promise<{ results: TmdbSeries[]; hasMore: boolean }> {
   try {
-    const res = await fetch(buildUrl('/trending/tv/week', { language: getTmdbLocale(), page: String(page) }));
+    const res = await fetch(buildUrl(path, { language: getTmdbLocale(), page: String(page) }));
     if (!res.ok) return { results: [], hasMore: false };
     const data = await res.json() as { results: TmdbSeries[]; total_pages: number };
     const totalPages = data.total_pages ?? 1;
-    return {
-      results: data.results ?? [],
-      hasMore: page < totalPages && page < 5,
-    };
+    return { results: data.results ?? [], hasMore: page < totalPages && page < 5 };
   } catch {
     return { results: [], hasMore: false };
   }
 }
+
+export function fetchTrendingSeries(page = 1) { return fetchTvList('/trending/tv/week', page); }
+export function fetchTopRatedSeries(page = 1) { return fetchTvList('/tv/top_rated', page); }
+export function fetchOnAirSeries(page = 1)    { return fetchTvList('/tv/on_the_air', page); }
 
 export async function fetchUpcomingMovies(maxResults = 10): Promise<TmdbMovie[]> {
   try {

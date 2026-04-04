@@ -466,6 +466,7 @@ export default function SeriesHome() {
           totalSeasons={ratingsTarget.number_of_seasons ?? null}
           tmdbId={ratingsTarget.id}
           showAddButton={true}
+          alreadyAdded={allSeries.some(s => s.tmdb_id === ratingsTarget.id || normalize(s.title) === normalize(ratingsTarget.name))}
           onAdd={() => handleSelectSeries(ratingsTarget)}
         />
       )}

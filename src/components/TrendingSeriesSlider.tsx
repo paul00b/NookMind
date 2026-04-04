@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Tv, Flame } from 'lucide-react';
-import { fetchTrendingSeries, getPosterUrl } from '../lib/tmdb';
+import { fetchTrendingSeries, fetchTopRatedSeries, fetchOnAirSeries, getPosterUrl } from '../lib/tmdb';
 import type { TmdbSeries } from '../types';
 import { useTranslation } from 'react-i18next';
+
+type Category = 'top_rated' | 'trending' | 'on_air';
 
 interface TrendingSeriesSliderProps {
   onSelect: (series: TmdbSeries) => void;
@@ -17,21 +19,30 @@ function SkeletonCard() {
   );
 }
 
+const fetchers: Record<Category, (page: number) => Promise<{ results: TmdbSeries[]; hasMore: boolean }>> = {
+  top_rated: fetchTopRatedSeries,
+  trending:  fetchTrendingSeries,
+  on_air:    fetchOnAirSeries,
+};
+
 export default function TrendingSeriesSlider({ onSelect }: TrendingSeriesSliderProps) {
   const { t } = useTranslation();
+  const [category, setCategory] = useState<Category>('top_rated');
   const [series, setSeries] = useState<TmdbSeries[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [initialLoading, setInitialLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const nextPageRef = useRef(1);
   const fetchingRef = useRef(false);
+  const categoryRef = useRef<Category>('top_rated');
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const fetchNext = useCallback(() => {
+  const fetchNext = useCallback((cat: Category) => {
     if (fetchingRef.current) return;
     fetchingRef.current = true;
     const p = nextPageRef.current;
-    fetchTrendingSeries(p).then(({ results, hasMore: more }) => {
+    fetchers[cat](p).then(({ results, hasMore: more }) => {
+      if (categoryRef.current !== cat) { fetchingRef.current = false; return; }
       nextPageRef.current = p + 1;
       fetchingRef.current = false;
       setSeries(prev => {
@@ -48,20 +59,29 @@ export default function TrendingSeriesSlider({ onSelect }: TrendingSeriesSliderP
     });
   }, []);
 
-  // Chargement initial
+  // Reset et chargement à chaque changement de catégorie
   useEffect(() => {
-    fetchNext();
-  }, [fetchNext]);
+    categoryRef.current = category;
+    fetchingRef.current = false;
+    nextPageRef.current = 1;
+    // Déclenche le reset via un microtask pour éviter setState synchrone dans l'effect
+    Promise.resolve().then(() => {
+      setSeries([]);
+      setHasMore(true);
+      setInitialLoading(true);
+      setLoadingMore(false);
+      fetchNext(category);
+    });
+  }, [category, fetchNext]);
 
   // Observer pour le lazy loading
   useEffect(() => {
     if (!sentinelRef.current || !hasMore || loadingMore || initialLoading) return;
-
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) {
           setLoadingMore(true);
-          fetchNext();
+          fetchNext(categoryRef.current);
         }
       },
       { threshold: 0.1 }
@@ -70,14 +90,38 @@ export default function TrendingSeriesSlider({ onSelect }: TrendingSeriesSliderP
     return () => observer.disconnect();
   }, [hasMore, loadingMore, initialLoading, fetchNext]);
 
-  if (!initialLoading && series.length === 0) return null;
+  const tabs: { key: Category; label: string }[] = [
+    { key: 'top_rated', label: t('seriesHome.categoryTopRated') },
+    { key: 'trending',  label: t('seriesHome.categoryTrending') },
+    { key: 'on_air',    label: t('seriesHome.categoryOnAir') },
+  ];
 
   return (
     <div className="w-full max-w-xl mt-10">
+      {/* Header */}
       <h2 className="text-sm font-semibold text-amber-500 dark:text-amber-400 uppercase tracking-wider mb-3 px-1 flex items-center gap-1.5">
         <Flame size={14} />
         {t('seriesHome.trendingTitle')}
       </h2>
+
+      {/* Onglets */}
+      <div className="flex gap-2 mb-3 px-1">
+        {tabs.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setCategory(key)}
+            className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+              category === key
+                ? 'bg-amber-500 text-white'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Slider */}
       <div className="-mx-4 md:mx-0">
         <div
           className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth px-4 md:px-0 scroll-px-4 md:scroll-px-0"
@@ -95,12 +139,7 @@ export default function TrendingSeriesSlider({ onSelect }: TrendingSeriesSliderP
                   >
                     <div className="w-20 md:w-28 aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2 group-hover:scale-[1.03] transition-transform duration-200">
                       {poster ? (
-                        <img
-                          src={poster}
-                          alt={s.name}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
+                        <img src={poster} alt={s.name} className="w-full h-full object-cover" loading="lazy" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <Tv size={22} className="text-gray-300 dark:text-gray-600" />
@@ -117,7 +156,6 @@ export default function TrendingSeriesSlider({ onSelect }: TrendingSeriesSliderP
               })}
 
           {loadingMore && Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={`sk-${i}`} />)}
-
           <div ref={sentinelRef} className="flex-shrink-0 w-1" />
         </div>
       </div>
