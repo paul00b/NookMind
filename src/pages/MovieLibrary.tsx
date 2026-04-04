@@ -10,9 +10,21 @@ import { Film, ChevronDown, LayoutGrid, List, Plus, X, Check, Trash2, FolderOpen
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 
-type SortKey = 'created_at' | 'title' | 'director' | 'rating';
+type SortKey = 'created_at' | 'title' | 'director' | 'rating' | 'watched_date';
 type ViewMode = 'grid' | 'list';
 type ActiveTab = MovieStatus | string;
+
+function YearDivider({ year, count }: { year: string; count: number }) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex items-center gap-2.5 mb-4 mt-1">
+      <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 tracking-wide">{year}</span>
+      <span className="text-xs text-gray-300 dark:text-gray-600">·</span>
+      <span className="text-xs text-gray-400 dark:text-gray-500">{t('movieLibrary.yearCount', { count })}</span>
+      <div className="flex-1 h-px bg-black/[0.06] dark:bg-white/[0.06]" />
+    </div>
+  );
+}
 
 function EmptyState({ isCategoryTab, onAddMovies }: { isCategoryTab?: boolean; onAddMovies?: () => void }) {
   const { t } = useTranslation();
@@ -155,6 +167,12 @@ export default function MovieLibrary() {
       if (sortKey === 'title') return a.title.localeCompare(b.title);
       if (sortKey === 'director') return a.director.localeCompare(b.director);
       if (sortKey === 'rating') return (b.rating ?? 0) - (a.rating ?? 0);
+      if (sortKey === 'watched_date') {
+        if (!a.watched_date && !b.watched_date) return 0;
+        if (!a.watched_date) return 1;
+        if (!b.watched_date) return -1;
+        return b.watched_date.localeCompare(a.watched_date);
+      }
       return 0;
     });
   }, [movies, activeTab, isStatusTab, genreFilter, directorFilter, sortKey]);
@@ -249,7 +267,7 @@ export default function MovieLibrary() {
           {([['want_to_watch', t('movieLibrary.wantToWatch')], ['watched', t('movieLibrary.watched')]] as const).map(([status, label]) => (
             <button
               key={status}
-              onClick={() => { setActiveTab(status); setGenreFilter(''); setDirectorFilter(''); }}
+              onClick={() => { setActiveTab(status); setGenreFilter(''); setDirectorFilter(''); setSortKey(status === 'watched' ? 'watched_date' : 'created_at'); }}
               className={tabClass(activeTab === status)}
             >
               {label}{countBadge(counts[status], activeTab === status)}
@@ -347,6 +365,7 @@ export default function MovieLibrary() {
               value={sortKey}
               onChange={v => setSortKey(v as SortKey)}
               options={[
+                ...(activeTab === 'watched' ? [{ value: 'watched_date', label: t('movieLibrary.watchedDate') }] : []),
                 { value: 'created_at', label: t('movieLibrary.dateAdded') },
                 { value: 'title', label: t('movieLibrary.titleAZ') },
                 { value: 'director', label: t('movieLibrary.directorAZ') },
@@ -402,6 +421,36 @@ export default function MovieLibrary() {
         )
       ) : filtered.length === 0 ? (
         <EmptyState />
+      ) : (activeTab === 'watched' && sortKey === 'watched_date') ? (
+        <div className="space-y-8">
+          {(() => {
+            const groups: { year: string; movies: Movie[] }[] = [];
+            for (const movie of filtered) {
+              const year = movie.watched_date ? movie.watched_date.slice(0, 4) : t('movieLibrary.noDateGroup');
+              const g = groups.find(g => g.year === year);
+              if (g) g.movies.push(movie);
+              else groups.push({ year, movies: [movie] });
+            }
+            return groups.map(({ year, movies: yearMovies }) => (
+              <div key={year}>
+                <YearDivider year={year} count={yearMovies.length} />
+                {viewMode === 'grid' ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {yearMovies.map(movie => (
+                      <MovieCard key={movie.id} movie={movie} onClick={() => setSelectedMovie(movie)} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="card divide-y divide-black/[0.05] dark:divide-white/[0.05] overflow-hidden">
+                    {yearMovies.map(movie => (
+                      <MovieListRow key={movie.id} movie={movie} onClick={() => setSelectedMovie(movie)} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ));
+          })()}
+        </div>
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {filtered.map(movie => (

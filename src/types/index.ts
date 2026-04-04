@@ -53,6 +53,7 @@ export interface Movie {
   runtime: number | null;
   genre: string | null;
   status: MovieStatus;
+  watched_date: string | null;
   rating: number | null;
   personal_note: string | null;
   created_at: string;

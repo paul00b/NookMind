@@ -26,6 +26,9 @@ CREATE TABLE IF NOT EXISTS public.movies (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Add watched_date column if it doesn't exist
+ALTER TABLE public.movies ADD COLUMN IF NOT EXISTS watched_date TEXT;
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS movies_user_id_idx ON public.movies(user_id);
 CREATE INDEX IF NOT EXISTS movies_status_idx ON public.movies(status);

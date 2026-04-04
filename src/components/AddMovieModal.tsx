@@ -10,6 +10,8 @@ const normalize = (s: string) => s.toLowerCase().trim().replace(/\s+/g, ' ');
 
 type MovieFormData = Omit<Movie, 'id' | 'user_id' | 'created_at'>;
 
+const today = () => new Date().toISOString().slice(0, 10);
+
 const EMPTY: MovieFormData = {
   tmdb_id: null,
   title: '',
@@ -20,6 +22,7 @@ const EMPTY: MovieFormData = {
   runtime: null,
   genre: null,
   status: 'want_to_watch',
+  watched_date: null,
   rating: null,
   personal_note: null,
 };
@@ -128,7 +131,11 @@ export default function AddMovieModal({ prefill, onClose }: Props) {
                 <button
                   key={s}
                   type="button"
-                  onClick={() => { set('status', s); if (s === 'want_to_watch') set('rating', null); }}
+                  onClick={() => {
+                    set('status', s);
+                    if (s === 'want_to_watch') { set('rating', null); set('watched_date', null); }
+                    if (s === 'watched' && !form.watched_date) set('watched_date', today());
+                  }}
                   className={`flex-1 py-2.5 rounded-full text-sm font-medium border transition-all ${
                     form.status === s
                       ? 'bg-amber-500 text-white border-amber-500'
@@ -141,12 +148,24 @@ export default function AddMovieModal({ prefill, onClose }: Props) {
             </div>
           </div>
 
-          {/* Rating (only if watched) */}
+          {/* Watched date & Rating (only if watched) */}
           {form.status === 'watched' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('addMovie.ratingLabel')}</label>
-              <StarRating value={form.rating} onChange={v => set('rating', v)} size={24} />
-            </div>
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addMovie.watchedDateLabel')}</label>
+                <input
+                  className="input"
+                  type="date"
+                  value={form.watched_date || ''}
+                  max={today()}
+                  onChange={e => set('watched_date', e.target.value || null)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('addMovie.ratingLabel')}</label>
+                <StarRating value={form.rating} onChange={v => set('rating', v)} size={24} />
+              </div>
+            </>
           )}
 
           {/* Note */}

@@ -19,6 +19,8 @@ export default function MovieDetailModal({ movie, onClose }: Props) {
   const { t } = useTranslation();
   const [editingNote, setEditingNote] = useState(false);
   const [note, setNote] = useState(movie.personal_note || '');
+  const [editingDate, setEditingDate] = useState(false);
+  const [watchedDate, setWatchedDate] = useState(movie.watched_date || '');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [localMovie, setLocalMovie] = useState<Movie>(movie);
   const [descExpanded, setDescExpanded] = useState(false);
@@ -41,10 +43,19 @@ export default function MovieDetailModal({ movie, onClose }: Props) {
     toast.success(t('movieDetail.noteSaved'));
   };
 
+  const handleSaveDate = async () => {
+    const val = watchedDate || null;
+    setLocalMovie(m => ({ ...m, watched_date: val }));
+    await updateMovie(movie.id, { watched_date: val });
+    setEditingDate(false);
+    toast.success(t('movieDetail.dateSaved'));
+  };
+
   const handleToggleStatus = async () => {
     const newStatus = localMovie.status === 'watched' ? 'want_to_watch' : 'watched';
     const updates: Partial<Movie> = { status: newStatus };
-    if (newStatus === 'want_to_watch') updates.rating = null;
+    if (newStatus === 'want_to_watch') { updates.rating = null; updates.watched_date = null; }
+    if (newStatus === 'watched' && !localMovie.watched_date) updates.watched_date = new Date().toISOString().slice(0, 10);
     setLocalMovie(m => ({ ...m, ...updates }));
     await updateMovie(movie.id, updates);
     toast.success(newStatus === 'watched' ? t('movieDetail.movedToWatched') : t('movieDetail.movedToWantToWatch'));
@@ -58,7 +69,7 @@ export default function MovieDetailModal({ movie, onClose }: Props) {
   return (
     <SheetModal
       onClose={onClose}
-      panelClassName="md:max-w-2xl card animate-slide-up md:rounded-2xl rounded-t-3xl rounded-b-none md:max-h-[90vh]"
+      panelClassName="md:max-w-2xl card animate-slide-up md:rounded-2xl rounded-t-3xl rounded-b-none max-h-[92vh]"
       scrollable
     >
         {/* Close */}
@@ -114,12 +125,49 @@ export default function MovieDetailModal({ movie, onClose }: Props) {
               )}
             </div>
 
-            {/* Rating */}
+            {/* Rating + Watched date */}
             {localMovie.status === 'watched' && (
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('movieDetail.yourRating')}</p>
-                <StarRating value={localMovie.rating} onChange={handleRatingChange} size={22} />
-              </div>
+              <>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('movieDetail.yourRating')}</p>
+                  <StarRating value={localMovie.rating} onChange={handleRatingChange} size={22} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('movieDetail.watchedOnLabel')}</p>
+                    {!editingDate && (
+                      <button onClick={() => setEditingDate(true)} className="text-gray-400 hover:text-amber-500 transition-colors">
+                        <Pencil size={13} />
+                      </button>
+                    )}
+                  </div>
+                  {editingDate ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="date"
+                        className="input py-1.5 text-sm"
+                        value={watchedDate}
+                        max={new Date().toISOString().slice(0, 10)}
+                        onChange={e => setWatchedDate(e.target.value)}
+                        autoFocus
+                      />
+                      <button onClick={handleSaveDate} className="btn-primary text-sm py-1.5 px-3 flex items-center gap-1">
+                        <Check size={14} />
+                      </button>
+                      <button onClick={() => { setWatchedDate(localMovie.watched_date || ''); setEditingDate(false); }} className="btn-ghost text-sm py-1.5 px-3">
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                      {localMovie.watched_date
+                        ? new Date(localMovie.watched_date + 'T00:00:00').toLocaleDateString()
+                        : <span className="text-gray-400 italic">{t('movieDetail.noDate')}</span>
+                      }
+                    </p>
+                  )}
+                </div>
+              </>
             )}
 
             {/* Description */}
