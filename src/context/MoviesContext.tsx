@@ -14,12 +14,14 @@ interface MoviesContextValue {
 const { Provider: BaseMoviesProvider, useItems: useMoviesBase } = createLibraryContext<Movie>({
   contextName: 'useMovies',
   table: 'movies',
-  selectMessage: 'Failed to fetch movies:',
-  insertMessage: 'Failed to add movie',
-  updateMessage: 'Failed to update movie',
-  deleteMessage: 'Failed to delete movie',
-  deleteSuccessMessage: 'Movie removed from watchlist',
-  addSuccessMessage: 'Movie added to your watchlist!',
+  toastKeys: {
+    fetchError: 'toast.movies.fetchError',
+    addError: 'toast.movies.addError',
+    updateError: 'toast.movies.updateError',
+    deleteError: 'toast.movies.deleteError',
+    addSuccess: 'toast.movies.added',
+    deleteSuccess: 'toast.movies.deleted',
+  },
 });
 
 export function MoviesProvider({ children }: { children: ReactNode }) {

@@ -14,12 +14,14 @@ interface SeriesContextValue {
 const { Provider: BaseSeriesProvider, useItems: useSeriesBase } = createLibraryContext<Series>({
   contextName: 'useSeries',
   table: 'series',
-  selectMessage: 'Failed to fetch series:',
-  insertMessage: 'Failed to add series',
-  updateMessage: 'Failed to update series',
-  deleteMessage: 'Failed to delete series',
-  deleteSuccessMessage: 'Series removed',
-  addSuccessMessage: 'Series added!',
+  toastKeys: {
+    fetchError: 'toast.series.fetchError',
+    addError: 'toast.series.addError',
+    updateError: 'toast.series.updateError',
+    deleteError: 'toast.series.deleteError',
+    addSuccess: 'toast.series.added',
+    deleteSuccess: 'toast.series.deleted',
+  },
 });
 
 export function SeriesProvider({ children }: { children: ReactNode }) {

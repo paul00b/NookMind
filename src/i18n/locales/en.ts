@@ -1,4 +1,37 @@
 const en = {
+  toast: {
+    movies: {
+      added: 'Movie added to your watchlist!',
+      deleted: 'Movie removed from watchlist',
+      fetchError: 'Failed to fetch movies',
+      addError: 'Failed to add movie',
+      updateError: 'Failed to update movie',
+      deleteError: 'Failed to delete movie',
+    },
+    books: {
+      added: 'Book added to your library!',
+      deleted: 'Book removed from library',
+      fetchError: 'Failed to fetch books',
+      addError: 'Failed to add book',
+      updateError: 'Failed to update book',
+      deleteError: 'Failed to delete book',
+    },
+    series: {
+      added: 'Series added!',
+      deleted: 'Series removed',
+      fetchError: 'Failed to fetch series',
+      addError: 'Failed to add series',
+      updateError: 'Failed to update series',
+      deleteError: 'Failed to delete series',
+    },
+    collections: {
+      fetchError: 'Failed to fetch collections',
+      createError: 'Failed to create collection',
+      deleteError: 'Failed to delete collection',
+      addError: 'Failed to add item to collection',
+      removeError: 'Failed to remove item from collection',
+    },
+  },
   login: {
     tagline: 'Track your books, movies, and series',
     logIn: 'Log in',

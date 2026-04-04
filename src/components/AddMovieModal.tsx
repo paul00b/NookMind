@@ -60,12 +60,13 @@ export default function AddMovieModal({ prefill, onClose }: Props) {
       onClose={onClose}
       panelClassName="md:max-w-lg card animate-slide-up md:rounded-2xl rounded-t-3xl rounded-b-none max-h-[92vh]"
       scrollable
-    >
-        <div className="sticky top-0 z-10 flex items-center justify-between p-6 pb-4 border-b border-black/[0.06] dark:border-white/[0.06] bg-white dark:bg-[#1a1f2e]">
+      header={
+        <div className="flex items-center justify-between p-6 pb-4 border-b border-black/[0.06] dark:border-white/[0.06]">
           <h2 className="font-serif text-xl font-bold text-gray-900 dark:text-gray-100">{t('addMovie.title')}</h2>
           <SheetCloseButton className="btn-ghost p-2"><X size={18} /></SheetCloseButton>
         </div>
-
+      }
+    >
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Poster preview */}
           {form.poster_url && (

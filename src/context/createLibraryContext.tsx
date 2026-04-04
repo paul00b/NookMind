@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 import { prependItem, removeItemById, replaceItemById } from './helpers';
@@ -9,12 +10,14 @@ type EntityWithId = { id: string; user_id: string; created_at: string };
 interface CreateLibraryContextOptions {
   contextName: string;
   table: string;
-  selectMessage: string;
-  insertMessage: string;
-  updateMessage: string;
-  deleteMessage: string;
-  deleteSuccessMessage: string;
-  addSuccessMessage: string;
+  toastKeys: {
+    fetchError: string;
+    addError: string;
+    updateError: string;
+    deleteError: string;
+    addSuccess: string;
+    deleteSuccess: string;
+  };
 }
 
 interface LibraryContextValue<TEntity extends EntityWithId> {
@@ -29,17 +32,13 @@ interface LibraryContextValue<TEntity extends EntityWithId> {
 export function createLibraryContext<TEntity extends EntityWithId>({
   contextName,
   table,
-  selectMessage,
-  insertMessage,
-  updateMessage,
-  deleteMessage,
-  deleteSuccessMessage,
-  addSuccessMessage,
+  toastKeys,
 }: CreateLibraryContextOptions) {
   const Context = createContext<LibraryContextValue<TEntity> | null>(null);
 
   function Provider({ children }: { children: React.ReactNode }) {
     const { user } = useAuth();
+    const { t } = useTranslation();
     const [items, setItems] = useState<TEntity[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -63,8 +62,8 @@ export function createLibraryContext<TEntity extends EntityWithId>({
 
         setItems((data ?? []) as TEntity[]);
       } catch (error) {
-        console.error(selectMessage, error);
-        toast.error(selectMessage.replace(/:$/, ''));
+        console.error(toastKeys.fetchError, error);
+        toast.error(t(toastKeys.fetchError));
       } finally {
         setLoading(false);
       }
@@ -92,10 +91,10 @@ export function createLibraryContext<TEntity extends EntityWithId>({
 
         const nextItem = data as TEntity;
         setItems((current) => prependItem(current, nextItem));
-        toast.success(addSuccessMessage);
+        toast.success(t(toastKeys.addSuccess));
         return nextItem;
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : insertMessage;
+        const message = error instanceof Error ? error.message : t(toastKeys.addError);
         toast.error(message);
         return null;
       }
@@ -116,7 +115,7 @@ export function createLibraryContext<TEntity extends EntityWithId>({
 
         setItems((current) => replaceItemById(current, data as TEntity));
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : updateMessage;
+        const message = error instanceof Error ? error.message : t(toastKeys.updateError);
         toast.error(message);
       }
     };
@@ -130,9 +129,9 @@ export function createLibraryContext<TEntity extends EntityWithId>({
         }
 
         setItems((current) => removeItemById(current, id));
-        toast.success(deleteSuccessMessage);
+        toast.success(t(toastKeys.deleteSuccess));
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : deleteMessage;
+        const message = error instanceof Error ? error.message : t(toastKeys.deleteError);
         toast.error(message);
       }
     };

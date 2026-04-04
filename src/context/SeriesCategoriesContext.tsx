@@ -25,11 +25,13 @@ const { Provider: BaseSeriesCategoriesProvider, useItems: useSeriesCategoriesBas
   joinTable: 'series_category_items',
   relationSelect: '*, series_category_items(series_id)',
   mappedIdKey: 'series_id',
-  selectErrorMessage: 'Failed to fetch series categories:',
-  createErrorMessage: 'Failed to create collection',
-  deleteErrorMessage: 'Failed to delete collection',
-  addErrorMessage: 'Failed to add series to collection',
-  removeErrorMessage: 'Failed to remove series from collection',
+  toastKeys: {
+    fetchError: 'toast.collections.fetchError',
+    createError: 'toast.collections.createError',
+    deleteError: 'toast.collections.deleteError',
+    addError: 'toast.collections.addError',
+    removeError: 'toast.collections.removeError',
+  },
   toCollection: (row) => ({
     id: row.id,
     user_id: row.user_id,

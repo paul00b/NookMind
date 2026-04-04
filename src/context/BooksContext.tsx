@@ -14,12 +14,14 @@ interface BooksContextValue {
 const { Provider: BaseBooksProvider, useItems: useBooksBase } = createLibraryContext<Book>({
   contextName: 'useBooks',
   table: 'books',
-  selectMessage: 'Failed to fetch books:',
-  insertMessage: 'Failed to add book',
-  updateMessage: 'Failed to update book',
-  deleteMessage: 'Failed to delete book',
-  deleteSuccessMessage: 'Book removed from library',
-  addSuccessMessage: 'Book added to your library!',
+  toastKeys: {
+    fetchError: 'toast.books.fetchError',
+    addError: 'toast.books.addError',
+    updateError: 'toast.books.updateError',
+    deleteError: 'toast.books.deleteError',
+    addSuccess: 'toast.books.added',
+    deleteSuccess: 'toast.books.deleted',
+  },
 });
 
 export function BooksProvider({ children }: { children: ReactNode }) {

@@ -76,6 +76,13 @@
   input[type="date"] {
     max-width: 100%;
     min-width: 0;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: 0.5;
+    cursor: pointer;
   }
 
   .dark input[type="date"]::-webkit-calendar-picker-indicator {

@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 import { addMappedIds, removeItemById, removeMappedId } from './helpers';
@@ -24,11 +25,13 @@ interface CreateCollectionContextOptions<
   joinTable: string;
   relationSelect: string;
   mappedIdKey: string;
-  selectErrorMessage: string;
-  createErrorMessage: string;
-  deleteErrorMessage: string;
-  addErrorMessage: string;
-  removeErrorMessage: string;
+  toastKeys: {
+    fetchError: string;
+    createError: string;
+    deleteError: string;
+    addError: string;
+    removeError: string;
+  };
   toCollection: (row: TRow) => TCollection;
   emptyCollection: (row: TRow) => TCollection;
   getMappedIds: (item: TCollection) => string[];
@@ -44,11 +47,7 @@ export function createCollectionContext<
   joinTable,
   relationSelect,
   mappedIdKey,
-  selectErrorMessage,
-  createErrorMessage,
-  deleteErrorMessage,
-  addErrorMessage,
-  removeErrorMessage,
+  toastKeys,
   toCollection,
   emptyCollection,
   getMappedIds,
@@ -58,6 +57,7 @@ export function createCollectionContext<
 
   function Provider({ children }: { children: React.ReactNode }) {
     const { user } = useAuth();
+    const { t } = useTranslation();
     const [items, setItems] = useState<TCollection[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -81,7 +81,8 @@ export function createCollectionContext<
 
         setItems(((data ?? []) as unknown as TRow[]).map(toCollection));
       } catch (error) {
-        console.error(selectErrorMessage, error);
+        console.error(toastKeys.fetchError, error);
+        toast.error(t(toastKeys.fetchError));
       } finally {
         setLoading(false);
       }
@@ -111,7 +112,7 @@ export function createCollectionContext<
         setItems((current) => [...current, nextItem]);
         return nextItem;
       } catch {
-        toast.error(createErrorMessage);
+        toast.error(t(toastKeys.createError));
         return null;
       }
     };
@@ -126,7 +127,7 @@ export function createCollectionContext<
 
         setItems((current) => removeItemById(current, id));
       } catch {
-        toast.error(deleteErrorMessage);
+        toast.error(t(toastKeys.deleteError));
       }
     };
 
@@ -156,7 +157,7 @@ export function createCollectionContext<
           ),
         );
       } catch {
-        toast.error(addErrorMessage);
+        toast.error(t(toastKeys.addError));
       }
     };
 
@@ -183,7 +184,7 @@ export function createCollectionContext<
           ),
         );
       } catch {
-        toast.error(removeErrorMessage);
+        toast.error(t(toastKeys.removeError));
       }
     };
 

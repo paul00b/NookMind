@@ -25,11 +25,13 @@ const { Provider: BaseMovieCategoriesProvider, useItems: useMovieCategoriesBase 
   joinTable: 'movie_category_items',
   relationSelect: '*, movie_category_items(movie_id)',
   mappedIdKey: 'movie_id',
-  selectErrorMessage: 'Failed to fetch movie categories:',
-  createErrorMessage: 'Failed to create collection',
-  deleteErrorMessage: 'Failed to delete collection',
-  addErrorMessage: 'Failed to add movies to collection',
-  removeErrorMessage: 'Failed to remove movie from collection',
+  toastKeys: {
+    fetchError: 'toast.collections.fetchError',
+    createError: 'toast.collections.createError',
+    deleteError: 'toast.collections.deleteError',
+    addError: 'toast.collections.addError',
+    removeError: 'toast.collections.removeError',
+  },
   toCollection: (row) => ({
     id: row.id,
     user_id: row.user_id,

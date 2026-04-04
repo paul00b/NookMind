@@ -25,11 +25,13 @@ const { Provider: BaseCategoriesProvider, useItems: useCategoriesBase } = create
   joinTable: 'book_category_items',
   relationSelect: '*, book_category_items(book_id)',
   mappedIdKey: 'book_id',
-  selectErrorMessage: 'Failed to fetch categories:',
-  createErrorMessage: 'Failed to create category',
-  deleteErrorMessage: 'Failed to delete category',
-  addErrorMessage: 'Failed to add books to category',
-  removeErrorMessage: 'Failed to remove book from category',
+  toastKeys: {
+    fetchError: 'toast.collections.fetchError',
+    createError: 'toast.collections.createError',
+    deleteError: 'toast.collections.deleteError',
+    addError: 'toast.collections.addError',
+    removeError: 'toast.collections.removeError',
+  },
   toCollection: (row) => ({
     id: row.id,
     user_id: row.user_id,

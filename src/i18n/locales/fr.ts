@@ -1,4 +1,37 @@
 const fr = {
+  toast: {
+    movies: {
+      added: 'Film ajouté à votre watchlist !',
+      deleted: 'Film supprimé de la watchlist',
+      fetchError: 'Impossible de charger les films',
+      addError: "Impossible d'ajouter le film",
+      updateError: 'Impossible de mettre à jour le film',
+      deleteError: 'Impossible de supprimer le film',
+    },
+    books: {
+      added: 'Livre ajouté à votre bibliothèque !',
+      deleted: 'Livre supprimé de la bibliothèque',
+      fetchError: 'Impossible de charger les livres',
+      addError: "Impossible d'ajouter le livre",
+      updateError: 'Impossible de mettre à jour le livre',
+      deleteError: 'Impossible de supprimer le livre',
+    },
+    series: {
+      added: 'Série ajoutée !',
+      deleted: 'Série supprimée',
+      fetchError: 'Impossible de charger les séries',
+      addError: "Impossible d'ajouter la série",
+      updateError: 'Impossible de mettre à jour la série',
+      deleteError: 'Impossible de supprimer la série',
+    },
+    collections: {
+      fetchError: 'Impossible de charger les collections',
+      createError: 'Impossible de créer la collection',
+      deleteError: 'Impossible de supprimer la collection',
+      addError: "Impossible d'ajouter à la collection",
+      removeError: 'Impossible de retirer de la collection',
+    },
+  },
   login: {
     tagline: 'Suivez vos livres, films, et séries',
     logIn: 'Connexion',

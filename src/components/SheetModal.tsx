@@ -8,6 +8,7 @@ interface SheetModalProps {
   rootClassName?: string;
   showHandle?: boolean;
   scrollable?: boolean;
+  header?: ReactNode;
 }
 
 const MOBILE_MAX_WIDTH = 767;
@@ -55,6 +56,7 @@ export default function SheetModal({
   rootClassName = 'z-50',
   showHandle = true,
   scrollable = false,
+  header,
 }: SheetModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const dragStateRef = useRef<{ pointerId: number; startY: number } | null>(null);
@@ -165,6 +167,7 @@ export default function SheetModal({
               <div className="pointer-events-none mx-auto -mt-4 h-1.5 w-12 rounded-full bg-gray-300 dark:bg-gray-600" />
             </div>
           )}
+          {header && <div className="flex-shrink-0">{header}</div>}
           {scrollable && showHandle ? (
             <div className="flex-1 min-h-0 overflow-y-auto">{children}</div>
           ) : children}
