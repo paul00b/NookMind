@@ -177,7 +177,9 @@ export default function SeasonGrid({
       ? [...currentEps, episode].sort((a, b) => a - b)
       : currentEps.filter(e => e !== episode);
     const newWatchedEpisodes = { ...watchedEpisodes, [key]: newEps };
-    const allWatched = count > 0 && newEps.length >= count;
+    const availableCount = getAvailableEpisodes(season).length;
+    const effectiveCount = availableCount > 0 ? availableCount : count;
+    const allWatched = effectiveCount > 0 && newEps.length >= effectiveCount;
     const newWatchedSeasons = allWatched
       ? [...new Set([...watchedSeasons, season])].sort((a, b) => a - b)
       : watchedSeasons.filter(s => s !== season);
@@ -244,7 +246,8 @@ export default function SeasonGrid({
     const allAvailableWatched = availableEpisodes.length > 0 && availableEpisodes.every(ep => currentEps.includes(ep));
     const newEps = allAvailableWatched ? [] : availableEpisodes;
     const newWatchedEpisodes = { ...watchedEpisodes, [key]: newEps };
-    const seasonFullyWatched = newEps.length >= count;
+    const availableCount = availableEpisodes.length > 0 ? availableEpisodes.length : count;
+    const seasonFullyWatched = newEps.length >= availableCount;
     const newWatchedSeasons = allAvailableWatched
       ? watchedSeasons.filter(s => s !== season)
       : seasonFullyWatched

@@ -347,7 +347,7 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('seriesDetail.episodesSection')}</span>
                 <ChevronDown size={16} className={`text-gray-400 transition-transform duration-300 ${showSeasonsSection ? 'rotate-180' : ''}`} />
               </button>
-              <div className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${showSeasonsSection ? 'max-h-[2000px]' : 'max-h-0'}`}>
+              <div className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${showSeasonsSection ? 'max-h-[9999px]' : 'max-h-0'}`}>
                 <div className="border-t border-black/[0.06] dark:border-white/[0.06]">
                   {/* SeasonGrid */}
                   <div className="px-4 py-4">
