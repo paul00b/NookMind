@@ -20,8 +20,11 @@ function computeLocalStats(series: Series[]): Omit<SeriesStats, 'totalMinutes' |
   let watchedSeasonsCount = 0;
   for (const s of series) {
     watchedSeasonsCount += s.watched_seasons.length;
-    for (const eps of Object.values(s.watched_episodes)) {
-      watchedEpisodesCount += eps.length;
+    const watchedSeasonsSet = new Set(s.watched_seasons);
+    for (const [seasonKey, eps] of Object.entries(s.watched_episodes)) {
+      if (!watchedSeasonsSet.has(Number(seasonKey))) {
+        watchedEpisodesCount += eps.length;
+      }
     }
   }
 
@@ -53,45 +56,44 @@ function computeLocalStats(series: Series[]): Omit<SeriesStats, 'totalMinutes' |
 }
 
 async function computeTotalMinutes(series: Series[]): Promise<number> {
-  let total = 0;
-
-  await Promise.all(
+  const perSeriesMinutes = await Promise.all(
     series.map(async s => {
-      if (!s.tmdb_id) return;
+      if (!s.tmdb_id) return 0;
 
+      let sub = 0;
       const watchedSeasonsSet = new Set(s.watched_seasons);
       const partialSeasons = Object.keys(s.watched_episodes)
         .map(Number)
         .filter(n => !watchedSeasonsSet.has(n));
 
       // Saisons complètes : sommer tous les épisodes
-      await Promise.all(
+      const completeResults = await Promise.all(
         s.watched_seasons.map(async seasonNum => {
           const details = await fetchSeasonDetails(s.tmdb_id!, seasonNum);
-          if (!details) return;
-          for (const ep of details.episodes) {
-            total += ep.runtime ?? 0;
-          }
+          if (!details) return 0;
+          return details.episodes.reduce((acc, ep) => acc + (ep.runtime ?? 0), 0);
         })
       );
+      sub += completeResults.reduce((a, b) => a + b, 0);
 
       // Saisons partielles : sommer uniquement les épisodes regardés
-      await Promise.all(
+      const partialResults = await Promise.all(
         partialSeasons.map(async seasonNum => {
           const details = await fetchSeasonDetails(s.tmdb_id!, seasonNum);
-          if (!details) return;
+          if (!details) return 0;
           const watchedEps = new Set(s.watched_episodes[String(seasonNum)] ?? []);
-          for (const ep of details.episodes) {
-            if (watchedEps.has(ep.episode_number)) {
-              total += ep.runtime ?? 0;
-            }
-          }
+          return details.episodes
+            .filter(ep => watchedEps.has(ep.episode_number))
+            .reduce((acc, ep) => acc + (ep.runtime ?? 0), 0);
         })
       );
+      sub += partialResults.reduce((a, b) => a + b, 0);
+
+      return sub;
     })
   );
 
-  return total;
+  return perSeriesMinutes.reduce((a, b) => a + b, 0);
 }
 
 export function useSeriesStats(series: Series[]): SeriesStats {
@@ -114,12 +116,19 @@ export function useSeriesStats(series: Series[]): SeriesStats {
     setTotalMinutes(null);
 
     let cancelled = false;
-    computeTotalMinutes(relevantSeries).then(minutes => {
-      if (!cancelled) {
-        setTotalMinutes(minutes);
-        setLoadingMinutes(false);
-      }
-    });
+    computeTotalMinutes(relevantSeries)
+      .then(minutes => {
+        if (!cancelled) {
+          setTotalMinutes(minutes);
+          setLoadingMinutes(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setTotalMinutes(null);
+          setLoadingMinutes(false);
+        }
+      });
 
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
