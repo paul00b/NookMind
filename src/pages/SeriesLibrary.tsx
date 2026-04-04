@@ -6,8 +6,9 @@ import SeriesCard from '../components/SeriesCard';
 import SeriesDetailModal from '../components/SeriesDetailModal';
 import CategorySeriesPickerModal from '../components/CategorySeriesPickerModal';
 import StarRating from '../components/StarRating';
-import { Tv, ChevronDown, LayoutGrid, List, Plus, X, Check, Trash2, FolderOpen } from 'lucide-react';
+import { Tv, ChevronDown, LayoutGrid, List, Plus, X, Check, Trash2, FolderOpen, BarChart2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import SeriesStatsSheet from '../components/SeriesStatsSheet';
 import { formatWaitingLabel } from '../lib/seriesUtils';
 import toast from 'react-hot-toast';
 
@@ -126,6 +127,7 @@ export default function SeriesLibrary() {
   const nameInputRef = useRef<HTMLInputElement>(null);
   const [pickerCategory, setPickerCategory] = useState<SeriesCategory | null>(null);
   const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
+  const [showStats, setShowStats] = useState(false);
 
   useEffect(() => { if (creatingCategory) nameInputRef.current?.focus(); }, [creatingCategory]);
 
@@ -211,13 +213,22 @@ export default function SeriesLibrary() {
           <h1 className="font-serif text-3xl font-bold text-teal-600 dark:text-teal-400 mb-1">{t('seriesLibrary.title')}</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm">{t('seriesLibrary.seriesCount', { count: series.length })}</p>
         </div>
-        <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-0.5">
-          <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-[#1a1f2e] text-amber-600 dark:text-amber-400 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}>
-            <LayoutGrid size={16} />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowStats(true)}
+            className="p-2 rounded-xl text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-teal-500/10 transition-all"
+            title="Stats"
+          >
+            <BarChart2 size={18} />
           </button>
-          <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white dark:bg-[#1a1f2e] text-amber-600 dark:text-amber-400 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}>
-            <List size={16} />
-          </button>
+          <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-0.5">
+            <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-[#1a1f2e] text-amber-600 dark:text-amber-400 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}>
+              <LayoutGrid size={16} />
+            </button>
+            <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white dark:bg-[#1a1f2e] text-amber-600 dark:text-amber-400 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}>
+              <List size={16} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -413,6 +424,11 @@ export default function SeriesLibrary() {
 
       {selectedSeries && <SeriesDetailModal series={selectedSeries} onClose={() => setSelectedSeries(null)} />}
       {pickerCategory && <CategorySeriesPickerModal category={pickerCategory} series={series} onConfirm={handlePickerConfirm} onClose={() => setPickerCategory(null)} />}
+      <SeriesStatsSheet
+        isOpen={showStats}
+        onClose={() => setShowStats(false)}
+        series={series}
+      />
     </div>
   );
 }
