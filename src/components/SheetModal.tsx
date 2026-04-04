@@ -16,6 +16,7 @@ const CLOSE_ANIMATION_MS = 220;
 
 const SheetCloseContext = createContext<(() => void) | null>(null);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useSheetClose() {
   const requestClose = useContext(SheetCloseContext);
   if (!requestClose) {

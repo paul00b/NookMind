@@ -26,6 +26,7 @@ export function MoviesProvider({ children }: { children: ReactNode }) {
   return <BaseMoviesProvider>{children}</BaseMoviesProvider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useMovies(): MoviesContextValue {
   const { items, loading, addItem, updateItem, deleteItem, refetch } = useMoviesBase();
 

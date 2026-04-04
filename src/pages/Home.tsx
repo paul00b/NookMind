@@ -172,13 +172,13 @@ export default function Home() {
       const res = await searchBooks(q);
       setResults(res);
       setDropdownOpen(true);
-    } catch (err) {
+    } catch {
       setSearchError(t('home.searchTimeout'));
       setDropdownOpen(false);
     } finally {
       setSearching(false);
     }
-  }, []);
+  }, [t]);
 
   const handleCloseSearch = useCallback(() => {
     setQuery('');

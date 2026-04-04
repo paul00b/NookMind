@@ -52,6 +52,7 @@ export function MovieCategoriesProvider({ children }: { children: ReactNode }) {
   return <BaseMovieCategoriesProvider>{children}</BaseMovieCategoriesProvider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useMovieCategories(): MovieCategoriesContextValue {
   const { items, loading, createItem, deleteItem, addMappedItems, removeMappedItem } = useMovieCategoriesBase();
 

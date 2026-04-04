@@ -141,6 +141,7 @@ export default function NextUpSeries() {
       if (active) { setTmdbData(results); setLoading(false); }
     })();
     return () => { active = false; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watching.map(s => s.id).join(',')]);
 
   useEffect(() => {

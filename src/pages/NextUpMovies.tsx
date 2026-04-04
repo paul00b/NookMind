@@ -88,6 +88,7 @@ export default function NextUpMovies() {
       setRecent(nextRecent);
       setLoading(false);
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const watchlistIds = new Set(movies.filter(m => m.tmdb_id != null).map(m => m.tmdb_id!));

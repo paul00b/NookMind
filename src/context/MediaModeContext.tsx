@@ -26,6 +26,7 @@ export function MediaModeProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useMediaMode() {
   const ctx = useContext(MediaModeContext);
   if (!ctx) throw new Error('useMediaMode must be used within MediaModeProvider');

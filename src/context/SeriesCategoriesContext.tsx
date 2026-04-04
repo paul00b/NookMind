@@ -52,6 +52,7 @@ export function SeriesCategoriesProvider({ children }: { children: ReactNode }) 
   return <BaseSeriesCategoriesProvider>{children}</BaseSeriesCategoriesProvider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useSeriesCategories(): SeriesCategoriesContextValue {
   const { items, loading, createItem, deleteItem, addMappedItems, removeMappedItem } = useSeriesCategoriesBase();
 

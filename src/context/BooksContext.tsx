@@ -26,6 +26,7 @@ export function BooksProvider({ children }: { children: ReactNode }) {
   return <BaseBooksProvider>{children}</BaseBooksProvider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useBooks(): BooksContextValue {
   const { items, loading, addItem, updateItem, deleteItem, refetch } = useBooksBase();
 

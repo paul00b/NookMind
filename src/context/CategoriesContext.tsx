@@ -52,6 +52,7 @@ export function CategoriesProvider({ children }: { children: ReactNode }) {
   return <BaseCategoriesProvider>{children}</BaseCategoriesProvider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useCategories(): CategoriesContextValue {
   const { items, loading, createItem, deleteItem, addMappedItems, removeMappedItem } = useCategoriesBase();
 

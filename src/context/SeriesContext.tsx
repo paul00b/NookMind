@@ -26,6 +26,7 @@ export function SeriesProvider({ children }: { children: ReactNode }) {
   return <BaseSeriesProvider>{children}</BaseSeriesProvider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useSeries(): SeriesContextValue {
   const { items, loading, addItem, updateItem, deleteItem, refetch } = useSeriesBase();
 
