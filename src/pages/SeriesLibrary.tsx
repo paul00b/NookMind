@@ -344,7 +344,14 @@ export default function SeriesLibrary() {
         <EmptyState />
       ) : activeTab === 'watching' ? (() => {
         const active = filtered.filter(s => !isWaitingForNextSeason(s));
-        const waiting = filtered.filter(s => isWaitingForNextSeason(s));
+        const waiting = filtered
+          .filter(s => isWaitingForNextSeason(s))
+          .sort((a, b) => {
+            if (!a.next_air_date && !b.next_air_date) return 0;
+            if (!a.next_air_date) return 1;
+            if (!b.next_air_date) return -1;
+            return new Date(a.next_air_date).getTime() - new Date(b.next_air_date).getTime();
+          });
         return (
           <div className="space-y-8">
             {active.length > 0 && (

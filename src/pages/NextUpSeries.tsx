@@ -207,6 +207,24 @@ export default function NextUpSeries() {
 
   const upToDateCards = seriesCards.filter(({ state }) => state.type === 'up_to_date');
 
+  activeCards.sort((a, b) => {
+    const rank = (state: EpisodeState) => {
+      if (state.type === 'available') return 0;
+      if (state.type === 'coming_soon') return 1;
+      return 2;
+    };
+    const ra = rank(a.state);
+    const rb = rank(b.state);
+    if (ra !== rb) return ra - rb;
+    if (a.state.type === 'coming_soon' && b.state.type === 'coming_soon') {
+      if (!a.state.ep.air_date && !b.state.ep.air_date) return 0;
+      if (!a.state.ep.air_date) return 1;
+      if (!b.state.ep.air_date) return -1;
+      return new Date(a.state.ep.air_date).getTime() - new Date(b.state.ep.air_date).getTime();
+    }
+    return 0;
+  });
+
   useEffect(() => {
     const readySeriesIds = Object.entries(pendingDismisses).flatMap(([seriesId, pending]) => {
       const nextCard = seriesCardsById[seriesId];
