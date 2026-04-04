@@ -10,30 +10,50 @@ interface Props {
   series: Series[];
 }
 
-function formatHours(minutes: number): string {
-  const h = Math.floor(minutes / 60);
+function formatHours(minutes: number, isFr: boolean): string {
+  const totalHours = Math.floor(minutes / 60);
   const m = minutes % 60;
-  if (h === 0) return `${m}min`;
-  if (m === 0) return `${h}h`;
-  return `${h}h ${m}min`;
+  if (isFr) {
+    if (totalHours < 24) {
+      if (totalHours === 0) return `${m} minute${m > 1 ? 's' : ''}`;
+      if (m === 0) return `${totalHours} heure${totalHours > 1 ? 's' : ''}`;
+      return `${totalHours} heure${totalHours > 1 ? 's' : ''} ${m} min`;
+    }
+    const d = Math.floor(totalHours / 24);
+    const h = totalHours % 24;
+    if (h === 0) return `${d} jour${d > 1 ? 's' : ''}`;
+    return `${d} jour${d > 1 ? 's' : ''} ${h} heure${h > 1 ? 's' : ''}`;
+  } else {
+    if (totalHours < 24) {
+      if (totalHours === 0) return `${m} minute${m > 1 ? 's' : ''}`;
+      if (m === 0) return `${totalHours} hour${totalHours > 1 ? 's' : ''}`;
+      return `${totalHours} hour${totalHours > 1 ? 's' : ''} ${m} min`;
+    }
+    const d = Math.floor(totalHours / 24);
+    const h = totalHours % 24;
+    if (h === 0) return `${d} day${d > 1 ? 's' : ''}`;
+    return `${d} day${d > 1 ? 's' : ''} ${h} hour${h > 1 ? 's' : ''}`;
+  }
 }
 
 function StatCard({
   icon,
   label,
   value,
+  small = false,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string | number | null;
+  small?: boolean;
 }) {
   return (
     <div className="bg-amber-500/5 dark:bg-amber-500/10 rounded-2xl p-4 flex flex-col gap-2">
       <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
         {icon}
-        <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{label}</span>
+        <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{label}</span>
       </div>
-      <span className="font-serif text-lg font-bold text-gray-900 dark:text-gray-100 truncate">
+      <span className={`font-serif font-bold text-gray-900 dark:text-gray-100 truncate ${small ? 'text-xl' : 'text-3xl'}`}>
         {value ?? '—'}
       </span>
     </div>
@@ -73,15 +93,15 @@ function SeriesStatsSheetContent({ onClose, series }: Omit<Props, 'isOpen'>) {
       {/* Hero stat: heures totales */}
       <div className="bg-teal-500/10 dark:bg-teal-500/15 rounded-2xl p-5 mb-4 flex items-center gap-4">
         <Clock size={28} className="text-teal-500 shrink-0" />
-        <div>
+        <div className="min-w-0">
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
             {isFr ? 'Temps total regardé' : 'Total watch time'}
           </p>
           {stats.loadingMinutes ? (
             <div className="h-8 w-24 bg-teal-500/20 rounded-lg animate-pulse" />
           ) : (
-            <p className="font-serif text-3xl font-bold text-teal-600 dark:text-teal-400">
-              {stats.totalMinutes !== null ? formatHours(stats.totalMinutes) : '—'}
+            <p className="font-serif text-3xl font-bold text-teal-600 dark:text-teal-400 leading-tight break-words">
+              {stats.totalMinutes !== null ? formatHours(stats.totalMinutes, isFr) : '—'}
             </p>
           )}
         </div>
@@ -97,7 +117,7 @@ function SeriesStatsSheetContent({ onClose, series }: Omit<Props, 'isOpen'>) {
         <StatCard
           icon={<Film size={14} />}
           label={isFr ? 'Épisodes' : 'Episodes'}
-          value={stats.watchedEpisodesCount > 0 ? stats.watchedEpisodesCount : null}
+          value={stats.watchedEpisodesCount != null && stats.watchedEpisodesCount > 0 ? stats.watchedEpisodesCount : null}
         />
         <StatCard
           icon={<BarChart2 size={14} />}
@@ -113,11 +133,13 @@ function SeriesStatsSheetContent({ onClose, series }: Omit<Props, 'isOpen'>) {
           icon={<Tag size={14} />}
           label={isFr ? 'Genre favori' : 'Top genre'}
           value={stats.favoriteGenre}
+          small
         />
         <StatCard
           icon={<User size={14} />}
           label={isFr ? 'Créateur favori' : 'Top creator'}
           value={stats.favoriteCreator}
+          small
         />
       </div>
     </SheetModal>
