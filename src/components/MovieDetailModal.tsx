@@ -123,7 +123,7 @@ export default function MovieDetailModal({ movie, onClose }: Props) {
               <>
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('movieDetail.yourRating')}</p>
-                  <StarRating value={localMovie.rating} onChange={handleRatingChange} size={22} />
+                  <StarRating value={localMovie.rating} onChange={handleRatingChange} size={26} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2 mb-1">

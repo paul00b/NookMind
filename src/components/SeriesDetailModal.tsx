@@ -574,7 +574,7 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
             {localSeries.status === 'watched' && (
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('seriesDetail.yourRating')}</p>
-                <StarRating value={localSeries.rating} onChange={handleRatingChange} size={22} />
+                <StarRating value={localSeries.rating} onChange={handleRatingChange} size={26} />
               </div>
             )}
 

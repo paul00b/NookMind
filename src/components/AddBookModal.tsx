@@ -168,7 +168,7 @@ export default function AddBookModal({ prefill, onClose }: Props) {
           {form.status === 'read' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('addBook.ratingLabel')}</label>
-              <StarRating value={form.rating} onChange={v => set('rating', v)} size={24} />
+              <StarRating value={form.rating} onChange={v => set('rating', v)} size={28} />
             </div>
           )}
 

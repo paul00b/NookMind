@@ -198,7 +198,7 @@ export default function BookDetailModal({ book, onClose }: Props) {
             {localBook.status === 'read' && (
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('bookDetail.yourRating')}</p>
-                <StarRating value={localBook.rating} onChange={handleRatingChange} size={22} />
+                <StarRating value={localBook.rating} onChange={handleRatingChange} size={26} />
               </div>
             )}
 

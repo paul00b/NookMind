@@ -168,7 +168,7 @@ export default function AddSeriesModal({ prefill, onClose }: Props) {
           {showRating && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('addSeries.ratingLabel')}</label>
-              <StarRating value={form.rating} onChange={v => set('rating', v)} size={24} />
+              <StarRating value={form.rating} onChange={v => set('rating', v)} size={28} />
             </div>
           )}
 
