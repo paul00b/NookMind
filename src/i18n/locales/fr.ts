@@ -318,6 +318,7 @@ const fr = {
     watching: 'En cours',
     waitingNextSeason: 'En attente',
     inList: 'Déjà ajoutée',
+    trendingTitle: 'Tendances cette semaine',
   },
   seriesLibrary: {
     title: 'Mes séries',

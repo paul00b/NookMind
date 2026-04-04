@@ -188,7 +188,15 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
   };
 
   const handleSeasonsChange = async (watchedSeasons: number[], watchedEpisodes: Record<string, number[]>) => {
-    const newStatus = deriveSeriesStatus(watchedSeasons, localSeries.seasons);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const hasUnreleasedEpisodes = Object.values(episodeAirDates).some(seasonDates =>
+      Object.values(seasonDates).some(dateStr => {
+        if (!dateStr) return true;
+        return new Date(dateStr).setHours(0, 0, 0, 0) > today.getTime();
+      })
+    );
+    const newStatus = deriveSeriesStatus(watchedSeasons, localSeries.seasons, hasUnreleasedEpisodes);
     const updates: Partial<Series> = { watched_seasons: watchedSeasons, watched_episodes: watchedEpisodes, status: newStatus };
     if (newStatus === 'want_to_watch') updates.rating = null;
     setLocalSeries(s => ({ ...s, ...updates }));

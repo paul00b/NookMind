@@ -148,14 +148,18 @@ export async function fetchTrendingMovies(maxResults = 12): Promise<TmdbMovie[]>
   }
 }
 
-export async function fetchTrendingSeries(maxResults = 12): Promise<TmdbSeries[]> {
+export async function fetchTrendingSeries(page = 1): Promise<{ results: TmdbSeries[]; hasMore: boolean }> {
   try {
-    const res = await fetch(buildUrl('/trending/tv/week', { language: getTmdbLocale() }));
-    if (!res.ok) return [];
-    const data = await res.json();
-    return ((data.results as TmdbSeries[]) ?? []).slice(0, maxResults);
+    const res = await fetch(buildUrl('/trending/tv/week', { language: getTmdbLocale(), page: String(page) }));
+    if (!res.ok) return { results: [], hasMore: false };
+    const data = await res.json() as { results: TmdbSeries[]; total_pages: number };
+    const totalPages = data.total_pages ?? 1;
+    return {
+      results: data.results ?? [],
+      hasMore: page < totalPages && page < 5,
+    };
   } catch {
-    return [];
+    return { results: [], hasMore: false };
   }
 }
 

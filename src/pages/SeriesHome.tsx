@@ -10,6 +10,7 @@ import { useSeries } from '../context/SeriesContext';
 import { useTranslation } from 'react-i18next';
 import { formatWaitingLabel } from '../lib/seriesUtils';
 import { useTmdbSeriesRefresh } from '../hooks/useTmdbSeriesRefresh';
+import TrendingSeriesSlider from '../components/TrendingSeriesSlider';
 
 function useDebounce<T>(value: T, delay: number): T {
   const [dv, setDv] = useState(value);
@@ -431,6 +432,7 @@ export default function SeriesHome() {
         <Plus size={16} /> {t('seriesHome.addManually')}
       </button>
 
+      <TrendingSeriesSlider onSelect={setRatingsTarget} />
       <WatchingSlider onSelect={setSelectedSeries} />
       <WantToWatchSlider onSelect={setSelectedSeries} />
       <LastWatchedSlider onSelect={setSelectedSeries} />

@@ -318,6 +318,7 @@ const en = {
     watching: 'Currently watching',
     waitingNextSeason: 'Waiting for next season',
     inList: 'In list',
+    trendingTitle: 'Trending This Week',
   },
   seriesLibrary: {
     title: 'My Series',
