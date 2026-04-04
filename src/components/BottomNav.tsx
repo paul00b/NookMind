@@ -1,10 +1,11 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Search, Library, Compass, BookOpen, Film, Tv } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useMediaMode } from '../context/MediaModeContext';
 
 export default function BottomNav() {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const { mode, setMode } = useMediaMode();
   if (pathname === '/login') return null;
@@ -58,28 +59,24 @@ export default function BottomNav() {
 
       {/* Main nav tabs */}
       <div className="flex items-center bg-white/85 dark:bg-[#1a1f2e]/85 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.08] rounded-full shadow-lg overflow-hidden">
-        {TABS.map(({ to, label, icon: Icon, end }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={end}
-            onPointerDown={(e) => e.preventDefault()}
-            className={({ isActive }) =>
-              `flex-1 flex flex-col items-center gap-1 py-3 transition-all duration-200 touch-manipulation ${
+        {TABS.map(({ to, label, icon: Icon, end }) => {
+          const isActive = end ? pathname === to : pathname.startsWith(to);
+          return (
+            <div
+              key={to}
+              role="link"
+              onPointerDown={(e) => { e.preventDefault(); navigate(to); }}
+              className={`flex-1 flex flex-col items-center gap-1 py-3 transition-all duration-200 touch-manipulation cursor-pointer ${
                 isActive
                   ? 'text-amber-600 dark:text-amber-400'
                   : 'text-gray-500 dark:text-gray-400'
-              }`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <Icon size={22} className={isActive ? 'scale-110 transition-transform' : 'transition-transform'} />
-                <span className="text-[10px] font-medium">{label}</span>
-              </>
-            )}
-          </NavLink>
-        ))}
+              }`}
+            >
+              <Icon size={22} className={isActive ? 'scale-110 transition-transform' : 'transition-transform'} />
+              <span className="text-[10px] font-medium">{label}</span>
+            </div>
+          );
+        })}
       </div>
     </nav>
   );
