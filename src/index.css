@@ -43,6 +43,11 @@
     box-sizing: border-box;
   }
 
+  /* Fix mobile double-tap: fires click immediately without waiting for zoom detection */
+  a, button, [role="button"], [role="switch"], [role="tab"], [role="checkbox"] {
+    touch-action: manipulation;
+  }
+
   /* Scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
