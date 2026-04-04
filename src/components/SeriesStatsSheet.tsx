@@ -1,5 +1,5 @@
-// src/components/SeriesStatsSheet.tsx
 import { BarChart2, X, Clock, Tv, Film, Star, Tag, User } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import SheetModal, { SheetCloseButton } from './SheetModal';
 import { useSeriesStats } from '../hooks/useSeriesStats';
 import type { Series } from '../types';
@@ -40,11 +40,10 @@ function StatCard({
   );
 }
 
-export default function SeriesStatsSheet({ isOpen, onClose, series }: Props) {
-  const isFr = typeof navigator !== 'undefined' && navigator.language.startsWith('fr');
+function SeriesStatsSheetContent({ onClose, series }: Omit<Props, 'isOpen'>) {
+  const { i18n } = useTranslation();
+  const isFr = i18n.language.startsWith('fr');
   const stats = useSeriesStats(series);
-
-  if (!isOpen) return null;
 
   return (
     <SheetModal
@@ -123,4 +122,9 @@ export default function SeriesStatsSheet({ isOpen, onClose, series }: Props) {
       </div>
     </SheetModal>
   );
+}
+
+export default function SeriesStatsSheet({ isOpen, onClose, series }: Props) {
+  if (!isOpen) return null;
+  return <SeriesStatsSheetContent onClose={onClose} series={series} />;
 }
