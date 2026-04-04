@@ -118,7 +118,7 @@ export default function NextUpMovies() {
   }, [selectedMovie]);
 
   const handleAdd = async (movie: TmdbMovie) => {
-    await addMovie({ ...extractMovieData(movie), status: 'want_to_watch', rating: null, personal_note: null });
+    await addMovie({ ...extractMovieData(movie), status: 'want_to_watch', rating: null, personal_note: null, watched_date: null });
   };
 
   if (loading) {
