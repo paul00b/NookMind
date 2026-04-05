@@ -72,11 +72,19 @@ function WatchingSlider({ onSelect }: { onSelect: (s: Series) => void }) {
     if (s.next_season_number !== null) {
       return s.watched_seasons.length >= s.next_season_number - 1;
     }
-    return s.seasons !== null && s.watched_seasons.length >= s.seasons;
+    return s.seasons !== null && s.watched_seasons.length >= s.seasons - 1;
   };
 
   const activeWatching = series.filter(s => s.status === 'watching' && !isWaiting(s)).slice(0, 10);
-  const waitingNextSeason = series.filter(s => (s.status === 'watching' || s.status === 'watched') && isWaiting(s)).slice(0, 10);
+  const waitingNextSeason = series
+    .filter(s => (s.status === 'watching' || s.status === 'watched') && isWaiting(s))
+    .sort((a, b) => {
+      if (!a.next_air_date && !b.next_air_date) return 0;
+      if (!a.next_air_date) return 1;
+      if (!b.next_air_date) return -1;
+      return new Date(a.next_air_date).getTime() - new Date(b.next_air_date).getTime();
+    })
+    .slice(0, 10);
 
   if (activeWatching.length === 0 && waitingNextSeason.length === 0) return null;
 
