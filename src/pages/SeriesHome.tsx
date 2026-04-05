@@ -264,7 +264,7 @@ export default function SeriesHome() {
     setQuery('');
     setResults([]);
     setDropdownOpen(false);
-    inputRef.current?.focus();
+    inputRef.current?.focus({ preventScroll: true });
   }, []);
 
   useEffect(() => { doSearch(debouncedQuery); }, [debouncedQuery, doSearch]);
@@ -302,13 +302,13 @@ export default function SeriesHome() {
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if ((dropdownOpen || query) && dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         handleCloseSearch();
       }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, [handleCloseSearch]);
+  }, [handleCloseSearch, dropdownOpen, query]);
 
   const handleSelectSeries = async (tmdbSeries: TmdbSeries) => {
     const details = await fetchSeriesDetails(tmdbSeries.id);

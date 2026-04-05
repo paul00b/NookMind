@@ -232,13 +232,13 @@ export default function MovieHome() {
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if ((dropdownOpen || query) && dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         handleCloseSearch();
       }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, [handleCloseSearch]);
+  }, [handleCloseSearch, dropdownOpen, query]);
 
   const handleSelectMovie = async (tmdbMovie: TmdbMovie) => {
     // Fetch full details (includes credits/director)

@@ -197,7 +197,7 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
         return new Date(dateStr).setHours(0, 0, 0, 0) > today.getTime();
       })
     );
-    const newStatus = deriveSeriesStatus(watchedSeasons, localSeries.seasons, hasUnreleasedEpisodes);
+    const newStatus = deriveSeriesStatus(watchedSeasons, localSeries.seasons, hasUnreleasedEpisodes, watchedEpisodes);
     const updates: Partial<Series> = { watched_seasons: watchedSeasons, watched_episodes: watchedEpisodes, status: newStatus };
     if (newStatus === 'want_to_watch') updates.rating = null;
     setLocalSeries(s => ({ ...s, ...updates }));
