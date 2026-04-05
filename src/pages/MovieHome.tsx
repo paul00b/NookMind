@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react';
-import { Search, Plus, X, Film, CheckCircle2 } from 'lucide-react';
+import { Search, Plus, X, Film, CheckCircle2, Bookmark, CheckCheck } from 'lucide-react';
 import { searchMovies, extractMovieData, fetchMovieDetails, getPosterUrl } from '../lib/tmdb';
 import type { TmdbMovie, Movie } from '../types';
 import AddMovieModal from '../components/AddMovieModal';
@@ -29,7 +29,8 @@ function WantToWatchSlider({ onSelect }: { onSelect: (movie: Movie) => void }) {
 
   return (
     <div className="w-full max-w-xl mt-10">
-      <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">
+      <h2 className="text-sm font-semibold text-amber-500 dark:text-amber-400 uppercase tracking-wider mb-3 px-1 flex items-center gap-1.5">
+        <Bookmark size={14} />
         {t('movieHome.wantToWatch')}
       </h2>
       <div className="-mx-4 md:mx-0">
@@ -77,7 +78,8 @@ function LastWatchedSlider({ onSelect }: { onSelect: (movie: Movie) => void }) {
 
   return (
     <div className="w-full max-w-xl mt-10">
-      <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">
+      <h2 className="text-sm font-semibold text-emerald-500 dark:text-emerald-400 uppercase tracking-wider mb-3 px-1 flex items-center gap-1.5">
+        <CheckCheck size={14} />
         {t('movieHome.lastWatched')}
       </h2>
       <div className="-mx-4 md:mx-0">

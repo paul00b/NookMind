@@ -2,7 +2,7 @@ import type { Series } from '../types';
 import StarRating from './StarRating';
 import { Tv } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { formatWaitingLabel } from '../lib/seriesUtils';
+import { formatWaitingLabel, isSeriesWaiting } from '../lib/seriesUtils';
 
 interface SeriesCardProps {
   series: Series;
@@ -32,11 +32,7 @@ export default function SeriesCard({ series, onClick }: SeriesCardProps) {
         )}
         {/* Status badge */}
         {(() => {
-          const isWaiting = series.status === 'watching' && (
-            series.next_season_number !== null
-              ? series.watched_seasons.length >= series.next_season_number - 1
-              : series.seasons !== null && series.watched_seasons.length >= series.seasons
-          );
+          const isWaiting = isSeriesWaiting(series);
           const bgClass = series.status === 'watched'
             ? 'bg-emerald-500/90'
             : isWaiting

@@ -13,6 +13,7 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { getRatingStyle, type SeasonState } from '../lib/imdbRatingStyle';
 import { fetchSeriesImdbId, fetchSeasonRatings, type EpisodeRating } from '../lib/imdb';
+import { isSeriesWaiting } from '../lib/seriesUtils';
 
 interface SelectedEpisodeInfo {
   episodeNum: number;
@@ -247,12 +248,7 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
     onClose();
   };
 
-  const isWaitingForNextSeason =
-    localSeries.status === 'watching' && (
-      localSeries.next_season_number !== null
-        ? localSeries.watched_seasons.length >= localSeries.next_season_number - 1
-        : localSeries.seasons !== null && localSeries.watched_seasons.length >= localSeries.seasons
-    );
+  const isWaitingForNextSeason = isSeriesWaiting(localSeries);
 
   const imdbSeasons = Object.keys(seasonRatings).map(Number).sort((a, b) => a - b);
   const allImdbRatings: number[] = [];

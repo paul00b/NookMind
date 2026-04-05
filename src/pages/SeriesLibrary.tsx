@@ -6,7 +6,7 @@ import SeriesCard from '../components/SeriesCard';
 import SeriesDetailModal from '../components/SeriesDetailModal';
 import CategorySeriesPickerModal from '../components/CategorySeriesPickerModal';
 import StarRating from '../components/StarRating';
-import { Tv, ChevronDown, LayoutGrid, List, Plus, X, Check, Trash2, FolderOpen, BarChart2 } from 'lucide-react';
+import { Tv, ChevronDown, LayoutGrid, List, Plus, X, Check, Trash2, FolderOpen, BarChart2, Play, Bookmark, CheckCheck, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import SeriesStatsSheet from '../components/SeriesStatsSheet';
 import { formatWaitingLabel } from '../lib/seriesUtils';
@@ -203,16 +203,29 @@ export default function SeriesLibrary() {
     setPickerCategory(null);
   };
 
-  const tabClass = (isActive: boolean) =>
-    `pb-3 px-1 text-sm font-medium border-b-2 transition-all -mb-px flex-shrink-0 ${
-      isActive ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+  const tabClass = (isActive: boolean, color = 'amber') => {
+    const colors: Record<string, string> = {
+      blue:   'border-blue-500 text-blue-600 dark:text-blue-400',
+      amber:  'border-amber-500 text-amber-600 dark:text-amber-400',
+      emerald:'border-emerald-500 text-emerald-600 dark:text-emerald-400',
+    };
+    return `pb-3 px-1 text-sm font-medium border-b-2 transition-all -mb-px flex-shrink-0 flex items-center gap-1.5 ${
+      isActive ? (colors[color] ?? colors.amber) : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
     }`;
+  };
 
-  const countBadge = (count: number, isActive: boolean) => (
-    <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${isActive ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}>
-      {count}
-    </span>
-  );
+  const countBadge = (count: number, isActive: boolean, color = 'amber') => {
+    const colors: Record<string, string> = {
+      blue:   'bg-blue-500/15 text-blue-600 dark:text-blue-400',
+      amber:  'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+      emerald:'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+    };
+    return (
+      <span className={`ml-1 text-xs px-1.5 py-0.5 rounded-full ${isActive ? (colors[color] ?? colors.amber) : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}>
+        {count}
+      </span>
+    );
+  };
 
   return (
     <div className="p-4 pb-32 md:p-8 md:pb-8 max-w-6xl mx-auto">
@@ -242,9 +255,13 @@ export default function SeriesLibrary() {
 
       <div className="-mx-4 mb-6 overflow-x-auto overflow-y-hidden border-b border-black/[0.06] px-4 pb-0 [touch-action:pan-x] dark:border-white/[0.06] md:mx-0 md:px-0" style={{ scrollbarWidth: 'none' }}>
         <div className="flex min-w-max gap-2">
-          {([['watching', t('seriesLibrary.watching')], ['want_to_watch', t('seriesLibrary.wantToWatch')], ['watched', t('seriesLibrary.watched')]] as const).map(([status, label]) => (
-            <button key={status} onClick={() => { setActiveTab(status); setGenreFilter(''); setCreatorFilter(''); }} className={tabClass(activeTab === status)}>
-              {label}{countBadge(counts[status], activeTab === status)}
+          {([
+            ['watching',     t('seriesLibrary.watching'),    'blue',    <Play size={13} />],
+            ['want_to_watch',t('seriesLibrary.wantToWatch'), 'amber',   <Bookmark size={13} />],
+            ['watched',      t('seriesLibrary.watched'),     'emerald', <CheckCheck size={13} />],
+          ] as const).map(([status, label, color, icon]) => (
+            <button key={status} onClick={() => { setActiveTab(status); setGenreFilter(''); setCreatorFilter(''); }} className={tabClass(activeTab === status, color)}>
+              {icon}{label}{countBadge(counts[status], activeTab === status, color)}
             </button>
           ))}
           {seriesCategories.map(cat => (
@@ -357,7 +374,7 @@ export default function SeriesLibrary() {
             {active.length > 0 && (
               <div>
                 {waiting.length > 0 && (
-                  <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">{t('seriesLibrary.watching')}</h2>
+                  <h2 className="text-xs font-semibold text-blue-500 dark:text-blue-400 uppercase tracking-wider mb-4 flex items-center gap-1.5"><Play size={13} />{t('seriesLibrary.watching')}</h2>
                 )}
                 {viewMode === 'grid' ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -372,7 +389,7 @@ export default function SeriesLibrary() {
             )}
             {waiting.length > 0 && (
               <div>
-                <h2 className="text-xs font-semibold text-purple-500 dark:text-purple-400 uppercase tracking-wider mb-4">{t('seriesLibrary.waitingNextSeason')}</h2>
+                <h2 className="text-xs font-semibold text-purple-500 dark:text-purple-400 uppercase tracking-wider mb-4 flex items-center gap-1.5"><Clock size={13} />{t('seriesLibrary.waitingNextSeason')}</h2>
                 {viewMode === 'grid' ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                     {waiting.map(s => <SeriesCard key={s.id} series={s} onClick={() => setSelectedSeries(s)} />)}
@@ -409,7 +426,7 @@ export default function SeriesLibrary() {
             )}
             {withNewSeason.length > 0 && (
               <div>
-                <h2 className="text-xs font-semibold text-purple-500 dark:text-purple-400 uppercase tracking-wider mb-4">{t('seriesLibrary.waitingNextSeason')}</h2>
+                <h2 className="text-xs font-semibold text-purple-500 dark:text-purple-400 uppercase tracking-wider mb-4 flex items-center gap-1.5"><Clock size={13} />{t('seriesLibrary.waitingNextSeason')}</h2>
                 {viewMode === 'grid' ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                     {withNewSeason.map(s => <SeriesCard key={s.id} series={s} onClick={() => setSelectedSeries(s)} />)}

@@ -1,3 +1,19 @@
+import type { Series } from '../types';
+
+/**
+ * Détermine si une série est en attente de nouveaux épisodes/saisons.
+ * Une série est "en attente" si l'utilisateur a regardé toutes les saisons
+ * disponibles et qu'une nouvelle saison/un nouvel épisode est attendu.
+ */
+export function isSeriesWaiting(s: Series): boolean {
+  if (s.status === 'watched') return s.next_season_number !== null;
+  if (s.status !== 'watching') return false;
+  if (s.next_season_number !== null) {
+    return s.watched_seasons.length >= s.next_season_number - 1;
+  }
+  return s.seasons !== null && s.watched_seasons.length >= s.seasons - 1;
+}
+
 /**
  * Formate le label du badge "En attente" avec la date si disponible.
  * - Pas de date : "En attente"

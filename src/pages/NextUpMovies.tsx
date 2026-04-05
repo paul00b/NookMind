@@ -207,7 +207,7 @@ export default function NextUpMovies() {
                   </button>
                 )}
                 {inList && (
-                  <p className="mt-auto inline-flex min-h-8 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 px-3 text-xs font-medium text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-500/10 dark:text-emerald-300">✓ In list</p>
+                  <p className="mt-auto inline-flex min-h-8 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 px-3 text-xs font-medium text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-500/10 dark:text-emerald-300">✓ {t('movieHome.inWatchlist')}</p>
                 )}
               </div>
             );
