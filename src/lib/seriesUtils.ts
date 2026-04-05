@@ -11,7 +11,7 @@ export function isSeriesWaiting(s: Series): boolean {
   if (s.next_season_number !== null) {
     return s.watched_seasons.length >= s.next_season_number - 1;
   }
-  return s.seasons !== null && s.watched_seasons.length >= s.seasons - 1;
+  return s.seasons !== null && s.watched_seasons.length > 0 && s.watched_seasons.length >= s.seasons - 1;
 }
 
 /**
