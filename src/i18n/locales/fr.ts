@@ -402,7 +402,8 @@ const fr = {
     seasons_one: '{{count}} saison',
     seasons_other: '{{count}} saisons',
     season: 'Saison',
-    seasonsProgress: '{{watched}}/{{total}} saisons vues',
+    seasonsProgress_one: '{{watched}}/{{total}} saison vue',
+    seasonsProgress_other: '{{watched}}/{{total}} saisons vues',
     episodes: 'épisodes',
     episode: 'Épisode',
     markAll: 'Tout marquer',
@@ -443,7 +444,7 @@ const fr = {
     imdbNoApiKey: 'Configurez VITE_OMDB_API_KEY pour afficher les notes',
     addToCollection: 'Ajouter à ma collection',
     viewImdbRatings: 'Voir les notes IMDB',
-    episodesSection: 'Épisodes',
+    episodesSection: 'Saisons & Épisodes',
     viewOnImdb: 'Voir sur IMDb',
   },
   nextUp: {

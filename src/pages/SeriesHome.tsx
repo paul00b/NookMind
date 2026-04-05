@@ -23,7 +23,7 @@ function useDebounce<T>(value: T, delay: number): T {
 
 function WantToWatchSlider({ onSelect }: { onSelect: (s: Series) => void }) {
   const { series } = useSeries();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const wantToWatch = series
     .filter(s => s.status === 'want_to_watch')
@@ -38,26 +38,23 @@ function WantToWatchSlider({ onSelect }: { onSelect: (s: Series) => void }) {
         {t('seriesHome.wantToWatch')}
       </h2>
       <div className="-mx-4 md:mx-0">
-      <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth px-4 md:px-0 scroll-px-4 md:scroll-px-0" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-        {wantToWatch.map(s => (
-          <div key={s.id} onClick={() => onSelect(s)} className="flex-shrink-0 snap-start group cursor-pointer">
-            <div className="w-20 md:w-28 aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2 group-hover:scale-[1.03] transition-transform duration-200">
-              {s.poster_url ? (
-                <img src={s.poster_url} alt={s.title} className="w-full h-full object-cover" loading="lazy" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Tv size={22} className="text-gray-300 dark:text-gray-600" />
-                </div>
-              )}
-            </div>
-            <div className="w-20 md:w-28 text-left">
-              <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                {s.title}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
+        <div className={SLIDER_CLASS} style={SLIDER_STYLE}>
+          {wantToWatch.map(s => {
+            const futureLabel = formatWaitingLabel(
+              s.first_air_date,
+              '',
+              t('seriesCard.waitingTomorrow'),
+              (d) => t('seriesCard.waitingDays', { count: d }),
+              i18n.language
+            );
+            const badge = futureLabel ? (
+              <span className="absolute bottom-1.5 right-1.5 text-[10px] font-bold text-white px-1.5 py-0.5 rounded-md bg-sky-500">
+                {futureLabel}
+              </span>
+            ) : null;
+            return <SeriesSlideCard key={s.id} s={s} onSelect={onSelect} badge={badge} />;
+          })}
+        </div>
       </div>
     </div>
   );

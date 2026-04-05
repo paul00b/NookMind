@@ -337,7 +337,7 @@ export default function SeasonGrid({
     <div>
       {!compact && (
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-          {t('seriesDetail.seasonsProgress', { watched: watchedCount, total: totalSeasons })}
+          {t('seriesDetail.seasonsProgress', { watched: watchedCount, total: totalSeasons, count: totalSeasons })}
         </p>
       )}
       <div className="flex flex-wrap gap-1.5">

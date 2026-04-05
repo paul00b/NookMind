@@ -33,12 +33,23 @@ export default function SeriesCard({ series, onClick }: SeriesCardProps) {
         {/* Status badge */}
         {(() => {
           const isWaiting = isSeriesWaiting(series);
+          const futureFirstEpLabel = series.status === 'want_to_watch'
+            ? formatWaitingLabel(
+                series.first_air_date,
+                '',
+                t('seriesCard.waitingTomorrow'),
+                (d) => t('seriesCard.waitingDays', { count: d }),
+                i18n.language
+              )
+            : '';
           const bgClass = series.status === 'watched'
             ? 'bg-emerald-500/90'
             : isWaiting
             ? 'bg-purple-500/90'
             : series.status === 'watching'
             ? 'bg-blue-500/90'
+            : futureFirstEpLabel
+            ? 'bg-sky-500/90'
             : 'bg-amber-500/90';
           const label = series.status === 'watched'
             ? t('seriesCard.watched')
@@ -52,7 +63,7 @@ export default function SeriesCard({ series, onClick }: SeriesCardProps) {
               )
             : series.status === 'watching'
             ? `S${series.watched_seasons.length}/${series.seasons ?? '?'}`
-            : t('seriesCard.wantToWatch');
+            : futureFirstEpLabel || t('seriesCard.wantToWatch');
           return (
             <div className={`absolute top-2 right-2 text-xs font-medium px-2 py-0.5 rounded-full text-white ${bgClass}`}>
               {label}
