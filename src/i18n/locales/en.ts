@@ -210,6 +210,10 @@ const en = {
     lastWatched: 'Last watched',
     wantToWatch: 'Want to watch',
     inWatchlist: 'In watchlist',
+    trendingTitle: 'Discover',
+    categoryTopRated: 'Top movies',
+    categoryTrending: 'Trending',
+    categoryNowPlaying: 'Now playing',
   },
   movieLibrary: {
     title: 'My Watchlist',

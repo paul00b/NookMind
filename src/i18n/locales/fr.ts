@@ -210,6 +210,10 @@ const fr = {
     lastWatched: 'Derniers vus',
     wantToWatch: 'À voir',
     inWatchlist: 'Déjà ajouté',
+    trendingTitle: 'Découverte',
+    categoryTopRated: 'Top films',
+    categoryTrending: 'Tendances',
+    categoryNowPlaying: 'En ce moment',
   },
   movieLibrary: {
     title: 'Ma liste de films',

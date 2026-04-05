@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react';
 import { Search, Plus, X, Film, CheckCircle2, Bookmark, CheckCheck } from 'lucide-react';
 import { searchMovies, extractMovieData, fetchMovieDetails, getPosterUrl } from '../lib/tmdb';
+import TrendingMoviesSlider from '../components/TrendingMoviesSlider';
 import type { TmdbMovie, Movie } from '../types';
 import AddMovieModal from '../components/AddMovieModal';
 import MovieDetailModal from '../components/MovieDetailModal';
@@ -193,7 +194,7 @@ export default function MovieHome() {
     setQuery('');
     setResults([]);
     setDropdownOpen(false);
-    inputRef.current?.focus();
+    inputRef.current?.focus({ preventScroll: true });
   }, []);
 
   useEffect(() => { doSearch(debouncedQuery); }, [debouncedQuery, doSearch]);
@@ -385,6 +386,9 @@ export default function MovieHome() {
       <button onClick={handleAddManually} className="mt-4 btn-ghost flex items-center gap-2 text-sm">
         <Plus size={16} /> {t('movieHome.addManually')}
       </button>
+
+      {/* Trending movies slider */}
+      <TrendingMoviesSlider onSelect={movie => void handleSelectMovie(movie)} />
 
       {/* Want to watch slider */}
       <WantToWatchSlider onSelect={setSelectedMovie} />

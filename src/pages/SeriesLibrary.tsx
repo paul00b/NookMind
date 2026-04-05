@@ -9,7 +9,7 @@ import StarRating from '../components/StarRating';
 import { Tv, ChevronDown, LayoutGrid, List, Plus, X, Check, Trash2, FolderOpen, BarChart2, Play, Bookmark, CheckCheck, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import SeriesStatsSheet from '../components/SeriesStatsSheet';
-import { formatWaitingLabel } from '../lib/seriesUtils';
+import { formatWaitingLabel, isSeriesWaiting } from '../lib/seriesUtils';
 import toast from 'react-hot-toast';
 
 type SortKey = 'created_at' | 'title' | 'creator' | 'rating';
@@ -82,13 +82,7 @@ function SeriesListRow({ series, onClick, onRemove }: { series: Series; onClick:
           </div>
         )}
         {(() => {
-          const isWaiting = series.status === 'watched'
-            ? series.next_season_number !== null
-            : series.status === 'watching' && (
-              series.next_season_number !== null
-                ? series.watched_seasons.length >= series.next_season_number - 1
-                : series.seasons !== null && series.watched_seasons.length >= series.seasons
-            );
+          const isWaiting = isSeriesWaiting(series);
           const bgClass = isWaiting ? 'bg-purple-500' : series.status === 'watched' ? 'bg-emerald-500' : series.status === 'watching' ? 'bg-blue-500' : 'bg-amber-500';
           const label = isWaiting
             ? formatWaitingLabel(series.next_air_date, t('seriesCard.waitingNextSeason'), t('seriesCard.waitingTomorrow'), (d) => t('seriesCard.waitingDays', { count: d }), i18n.language)
@@ -142,14 +136,7 @@ export default function SeriesLibrary() {
   const activeCategory = useMemo(() => seriesCategories.find(c => c.id === activeTab) ?? null, [seriesCategories, activeTab]);
   const isStatusTab = activeTab === 'watched' || activeTab === 'want_to_watch' || activeTab === 'watching';
 
-  const isWaitingForNextSeason = (s: Series) => {
-    if (s.status === 'watched') return s.next_season_number !== null;
-    if (s.status !== 'watching') return false;
-    if (s.next_season_number !== null) {
-      return s.watched_seasons.length >= s.next_season_number - 1;
-    }
-    return s.seasons !== null && s.watched_seasons.length >= s.seasons;
-  };
+  const isWaitingForNextSeason = isSeriesWaiting;
 
   const filtered = useMemo(() => {
     if (!isStatusTab) return [];

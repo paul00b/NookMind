@@ -184,7 +184,7 @@ export default function AddSeriesModal({ prefill, onClose }: Props) {
           {form.description && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('addSeries.descriptionLabel')}</label>
-              <textarea className={`${readonlyInput} resize-none h-20 text-sm`} value={form.description} readOnly />
+              <p className={`${readonlyInput} text-sm whitespace-pre-wrap`}>{form.description}</p>
             </div>
           )}
 

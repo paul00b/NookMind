@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Tv, Flame } from 'lucide-react';
-import { fetchTrendingSeries, fetchTopRatedSeries, fetchOnAirSeries, getPosterUrl } from '../lib/tmdb';
-import type { TmdbSeries } from '../types';
+import { Film, Flame } from 'lucide-react';
+import { fetchTopRatedMoviesPaged, fetchTrendingMoviesPaged, fetchNowPlayingMoviesPaged, getPosterUrl } from '../lib/tmdb';
+import type { TmdbMovie } from '../types';
 import { useTranslation } from 'react-i18next';
 
-type Category = 'top_rated' | 'trending' | 'on_air';
+type Category = 'top_rated' | 'trending' | 'now_playing';
 
-interface TrendingSeriesSliderProps {
-  onSelect: (series: TmdbSeries) => void;
+interface TrendingMoviesSliderProps {
+  onSelect: (movie: TmdbMovie) => void;
 }
 
 function SkeletonCard() {
@@ -19,16 +19,16 @@ function SkeletonCard() {
   );
 }
 
-const fetchers: Record<Category, (page: number) => Promise<{ results: TmdbSeries[]; hasMore: boolean }>> = {
-  top_rated: fetchTopRatedSeries,
-  trending:  fetchTrendingSeries,
-  on_air:    fetchOnAirSeries,
+const fetchers: Record<Category, (page: number) => Promise<{ results: TmdbMovie[]; hasMore: boolean }>> = {
+  top_rated:   fetchTopRatedMoviesPaged,
+  trending:    fetchTrendingMoviesPaged,
+  now_playing: fetchNowPlayingMoviesPaged,
 };
 
-export default function TrendingSeriesSlider({ onSelect }: TrendingSeriesSliderProps) {
+export default function TrendingMoviesSlider({ onSelect }: TrendingMoviesSliderProps) {
   const { t } = useTranslation();
   const [category, setCategory] = useState<Category>('top_rated');
-  const [series, setSeries] = useState<TmdbSeries[]>([]);
+  const [movies, setMovies] = useState<TmdbMovie[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [initialLoading, setInitialLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -46,9 +46,9 @@ export default function TrendingSeriesSlider({ onSelect }: TrendingSeriesSliderP
       if (categoryRef.current !== cat) { fetchingRef.current = false; return; }
       nextPageRef.current = p + 1;
       fetchingRef.current = false;
-      setSeries(prev => {
-        const ids = new Set(prev.map(s => s.id));
-        return [...prev, ...results.filter(s => !ids.has(s.id))];
+      setMovies(prev => {
+        const ids = new Set(prev.map(m => m.id));
+        return [...prev, ...results.filter(m => !ids.has(m.id))];
       });
       setHasMore(more);
       if (p === 1) setInitialLoading(false);
@@ -60,15 +60,13 @@ export default function TrendingSeriesSlider({ onSelect }: TrendingSeriesSliderP
     });
   }, []);
 
-  // Reset et chargement à chaque changement de catégorie
   useEffect(() => {
     categoryRef.current = category;
     fetchingRef.current = false;
     nextPageRef.current = 1;
-    // Déclenche le reset via un microtask pour éviter setState synchrone dans l'effect
     if (scrollRef.current) scrollRef.current.scrollTo({ left: 0, behavior: 'instant' });
     Promise.resolve().then(() => {
-      setSeries([]);
+      setMovies([]);
       setHasMore(true);
       setInitialLoading(true);
       setLoadingMore(false);
@@ -76,7 +74,6 @@ export default function TrendingSeriesSlider({ onSelect }: TrendingSeriesSliderP
     });
   }, [category, fetchNext]);
 
-  // Observer pour le lazy loading
   useEffect(() => {
     if (!sentinelRef.current || !hasMore || loadingMore || initialLoading) return;
     const observer = new IntersectionObserver(
@@ -93,20 +90,18 @@ export default function TrendingSeriesSlider({ onSelect }: TrendingSeriesSliderP
   }, [hasMore, loadingMore, initialLoading, fetchNext]);
 
   const tabs: { key: Category; label: string }[] = [
-    { key: 'top_rated', label: t('seriesHome.categoryTopRated') },
-    { key: 'trending',  label: t('seriesHome.categoryTrending') },
-    { key: 'on_air',    label: t('seriesHome.categoryOnAir') },
+    { key: 'top_rated',   label: t('movieHome.categoryTopRated') },
+    { key: 'trending',    label: t('movieHome.categoryTrending') },
+    { key: 'now_playing', label: t('movieHome.categoryNowPlaying') },
   ];
 
   return (
     <div className="w-full max-w-xl mt-10">
-      {/* Header */}
       <h2 className="text-sm font-semibold text-amber-500 dark:text-amber-400 uppercase tracking-wider mb-3 px-1 flex items-center gap-1.5">
         <Flame size={14} />
-        {t('seriesHome.trendingTitle')}
+        {t('movieHome.trendingTitle')}
       </h2>
 
-      {/* Onglets */}
       <div className="flex gap-2 mb-3 px-1">
         {tabs.map(({ key, label }) => (
           <button
@@ -123,7 +118,6 @@ export default function TrendingSeriesSlider({ onSelect }: TrendingSeriesSliderP
         ))}
       </div>
 
-      {/* Slider */}
       <div className="-mx-4 md:mx-0">
         <div
           ref={scrollRef}
@@ -132,26 +126,26 @@ export default function TrendingSeriesSlider({ onSelect }: TrendingSeriesSliderP
         >
           {initialLoading
             ? Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
-            : series.map(s => {
-                const poster = getPosterUrl(s.poster_path) ?? undefined;
+            : movies.map(movie => {
+                const poster = getPosterUrl(movie.poster_path) ?? undefined;
                 return (
                   <div
-                    key={s.id}
-                    onClick={() => onSelect(s)}
+                    key={movie.id}
+                    onClick={() => onSelect(movie)}
                     className="flex-shrink-0 snap-start group cursor-pointer"
                   >
                     <div className="w-20 md:w-28 aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2 group-hover:scale-[1.03] transition-transform duration-200">
                       {poster ? (
-                        <img src={poster} alt={s.name} className="w-full h-full object-cover" loading="lazy" />
+                        <img src={poster} alt={movie.title} className="w-full h-full object-cover" loading="lazy" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <Tv size={22} className="text-gray-300 dark:text-gray-600" />
+                          <Film size={22} className="text-gray-300 dark:text-gray-600" />
                         </div>
                       )}
                     </div>
                     <div className="w-20 md:w-28 text-left">
                       <p className="text-xs font-medium text-gray-800 dark:text-gray-200 line-clamp-2 leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                        {s.name}
+                        {movie.title}
                       </p>
                     </div>
                   </div>

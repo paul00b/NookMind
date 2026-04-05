@@ -164,6 +164,22 @@ export function fetchTrendingSeries(page = 1) { return fetchTvList('/trending/tv
 export function fetchTopRatedSeries(page = 1) { return fetchTvList('/tv/top_rated', page); }
 export function fetchOnAirSeries(page = 1)    { return fetchTvList('/tv/on_the_air', page); }
 
+async function fetchMovieList(path: string, page: number): Promise<{ results: TmdbMovie[]; hasMore: boolean }> {
+  try {
+    const res = await fetch(buildUrl(path, { language: getTmdbLocale(), page: String(page) }));
+    if (!res.ok) return { results: [], hasMore: false };
+    const data = await res.json() as { results: TmdbMovie[]; total_pages: number };
+    const totalPages = data.total_pages ?? 1;
+    return { results: data.results ?? [], hasMore: page < totalPages && page < 5 };
+  } catch {
+    return { results: [], hasMore: false };
+  }
+}
+
+export function fetchTopRatedMoviesPaged(page = 1)  { return fetchMovieList('/movie/top_rated', page); }
+export function fetchTrendingMoviesPaged(page = 1)  { return fetchMovieList('/trending/movie/week', page); }
+export function fetchNowPlayingMoviesPaged(page = 1){ return fetchMovieList('/movie/now_playing', page); }
+
 export async function fetchUpcomingMovies(maxResults = 10): Promise<TmdbMovie[]> {
   try {
     const today = new Date();
