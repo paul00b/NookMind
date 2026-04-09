@@ -1,4 +1,4 @@
-import { X, Sun, Moon, Monitor, RefreshCw, Bell, BellOff, Tv, Film, Clapperboard } from 'lucide-react';
+import { X, Sun, Moon, Monitor, RefreshCw, Bell, BellOff, Tv, Film, Clapperboard, Send } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import type { ThemeMode } from '../types';
@@ -47,6 +47,7 @@ export default function SettingsPanel({ onClose }: Props) {
     subscribe,
     unsubscribe,
     updatePreferences,
+    sendTestNotification,
   } = useNotificationSubscription();
 
   useEffect(() => {
@@ -214,6 +215,15 @@ export default function SettingsPanel({ onClose }: Props) {
                   {/* Per-type toggles (only when subscribed) */}
                   {subscribed && (
                     <div className="space-y-3 pt-1 border-t border-black/[0.06] dark:border-white/[0.06]">
+                      <button
+                        onClick={() => { void sendTestNotification(); }}
+                        disabled={notifLoading}
+                        className="w-full flex items-center justify-center gap-2 rounded-xl border border-black/[0.08] dark:border-white/[0.08] px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors hover:border-teal-500/40 hover:text-teal-600 dark:hover:text-teal-400 disabled:opacity-60"
+                      >
+                        <Send size={14} />
+                        Tester les notifications
+                      </button>
+
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
                           <Tv size={14} className="text-teal-500" />

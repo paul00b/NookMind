@@ -37,11 +37,29 @@ interface MovieRow {
   release_date: string | null;
 }
 
-async function sendPush(subscription: PushSubscriptionJSON, payload: object) {
+interface PushSendResult {
+  ok: boolean;
+  statusCode: number | null;
+  endpoint: string;
+  error?: string;
+}
+
+async function sendPush(subscription: PushSubscriptionJSON, payload: object): Promise<PushSendResult> {
+  const endpoint = (subscription as { endpoint?: string }).endpoint ?? 'unknown-endpoint';
+
   try {
     await webpush.sendNotification(subscription as Parameters<typeof webpush.sendNotification>[0], JSON.stringify(payload));
+    return { ok: true, statusCode: 201, endpoint };
   } catch (err: unknown) {
     const status = (err as { statusCode?: number }).statusCode;
+    const message = err instanceof Error ? err.message : String(err);
+
+    console.error('[push] send failed', {
+      endpoint,
+      statusCode: status ?? null,
+      error: message,
+    });
+
     // 404/410 = subscription expired → clean up
     if (status === 404 || status === 410) {
       await supabase
@@ -49,6 +67,13 @@ async function sendPush(subscription: PushSubscriptionJSON, payload: object) {
         .delete()
         .eq('endpoint', (subscription as { endpoint: string }).endpoint);
     }
+
+    return {
+      ok: false,
+      statusCode: status ?? null,
+      endpoint,
+      error: message,
+    };
   }
 }
 
@@ -98,8 +123,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .eq('release_date', today)
     .eq('status', 'want_to_watch');
 
-  let sent = 0;
   const sends: Promise<void>[] = [];
+  const results: PushSendResult[] = [];
 
   for (const series of (seriesRows ?? []) as SeriesRow[]) {
     const userSubs = subsByUser.get(series.user_id) ?? [];
@@ -115,13 +140,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ? 'Une nouvelle saison est disponible !'
         : 'Un nouvel épisode est disponible maintenant.';
 
-      sends.push(sendPush(sub.subscription, {
-        title,
-        body,
-        url: '/',
-        tag: `series-${series.id}`,
-      }));
-      sent++;
+      sends.push(
+        sendPush(sub.subscription, {
+          title,
+          body,
+          url: '/',
+          tag: `series-${series.id}`,
+        }).then((result) => {
+          results.push(result);
+        })
+      );
     }
   }
 
@@ -129,17 +157,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const userSubs = subsByUser.get(movie.user_id) ?? [];
     for (const sub of userSubs) {
       if (!sub.notify_movies) continue;
-      sends.push(sendPush(sub.subscription, {
-        title: `🎬 ${movie.title}`,
-        body: 'Le film sort en salles aujourd\'hui !',
-        url: '/',
-        tag: `movie-${movie.id}`,
-      }));
-      sent++;
+      sends.push(
+        sendPush(sub.subscription, {
+          title: `🎬 ${movie.title}`,
+          body: 'Le film sort en salles aujourd\'hui !',
+          url: '/',
+          tag: `movie-${movie.id}`,
+        }).then((result) => {
+          results.push(result);
+        })
+      );
     }
   }
 
   await Promise.all(sends);
 
-  return res.status(200).json({ ok: true, sent, date: today });
+  const sent = results.filter((result) => result.ok).length;
+  const failed = results.length - sent;
+
+  console.info('[push] daily summary', {
+    date: today,
+    attempted: results.length,
+    sent,
+    failed,
+  });
+
+  return res.status(200).json({ ok: true, date: today, attempted: results.length, sent, failed });
 }

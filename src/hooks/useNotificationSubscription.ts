@@ -51,6 +51,33 @@ async function callApi(
   return res.ok;
 }
 
+async function callApiJson<T>(
+  path: string,
+  method: string,
+  body: object
+): Promise<{ ok: boolean; data: T | null; status: number }> {
+  const token = await getAuthToken();
+  if (!token) return { ok: false, data: null, status: 401 };
+
+  const res = await fetch(path, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  let data: T | null = null;
+  try {
+    data = (await res.json()) as T;
+  } catch {
+    data = null;
+  }
+
+  return { ok: res.ok, data, status: res.status };
+}
+
 export function useNotificationSubscription() {
   const supported =
     typeof window !== 'undefined' &&
@@ -162,6 +189,30 @@ export function useNotificationSubscription() {
     });
   }, [preferences, subscribed]);
 
+  const sendTestNotification = useCallback(async (): Promise<boolean> => {
+    if (!supported) return false;
+
+    const result = await callApiJson<{ sent?: number; failed?: number; error?: string }>(
+      '/api/push/test',
+      'POST',
+      {}
+    );
+
+    if (!result.ok) {
+      const message = result.data?.error ?? 'Impossible d\'envoyer la notification de test.';
+      toast.error(message);
+      return false;
+    }
+
+    if ((result.data?.sent ?? 0) > 0) {
+      toast.success('Notification de test envoyee.');
+      return true;
+    }
+
+    toast.error('Aucun appareil abonne n\'a accepte la notification.');
+    return false;
+  }, [supported]);
+
   return {
     supported,
     permission,
@@ -171,5 +222,6 @@ export function useNotificationSubscription() {
     subscribe,
     unsubscribe,
     updatePreferences,
+    sendTestNotification,
   };
 }
