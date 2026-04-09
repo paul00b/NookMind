@@ -204,6 +204,7 @@ export function useNotificationSubscription() {
       failed?: number;
       error?: string;
       results?: Array<{ statusCode: number | null; error?: string; endpoint: string }>;
+      diagnostics?: { serverPublicKey?: string | null; vapidContact?: string | null; endpointHosts?: string[] };
     }>(
       '/api/push/test',
       'POST',
@@ -221,11 +222,21 @@ export function useNotificationSubscription() {
       return { ok: true, message: 'Notification de test envoyee.' };
     }
 
+    const serverPublicKey = result.data?.diagnostics?.serverPublicKey ?? null;
+    if (serverPublicKey && VAPID_PUBLIC_KEY && serverPublicKey !== VAPID_PUBLIC_KEY) {
+      const message = 'Mismatch VAPID: le backend et le front n utilisent pas la meme cle publique.';
+      toast.error(message);
+      return { ok: false, message };
+    }
+
     const firstFailure = result.data?.results?.find((entry) => entry.error);
     if (firstFailure) {
       const details = [
         firstFailure.statusCode ? `HTTP ${firstFailure.statusCode}` : null,
         firstFailure.error,
+        result.data?.diagnostics?.endpointHosts?.length
+          ? `endpoint ${result.data.diagnostics.endpointHosts[0]}`
+          : null,
       ].filter(Boolean).join(' - ');
 
       toast.error(details || 'La notification de test a ete rejetee.');

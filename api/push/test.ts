@@ -69,6 +69,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     tag: `test-${Date.now()}`,
   };
 
+  const serverPublicKey = process.env.VITE_VAPID_PUBLIC_KEY ?? null;
+  const vapidContact = process.env.VAPID_CONTACT ?? null;
+
   const results = await Promise.all(
     (subscriptions as PushSubscriptionRow[]).map(async ({ subscription }) => {
       const endpoint = (subscription as { endpoint?: string }).endpoint ?? 'unknown-endpoint';
@@ -112,6 +115,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     sent,
     failed,
     payload,
+    diagnostics: {
+      serverPublicKey,
+      vapidContact,
+      endpointHosts: results.map(({ endpoint }) => {
+        try {
+          return new URL(endpoint).host;
+        } catch {
+          return 'invalid-endpoint';
+        }
+      }),
+    },
     results,
   });
 }
