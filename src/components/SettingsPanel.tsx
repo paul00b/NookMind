@@ -57,6 +57,8 @@ export default function SettingsPanel({ onClose }: Props) {
   }, []);
 
   const [refreshing, setRefreshing] = useState(false);
+  const [testNotifState, setTestNotifState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [testNotifMessage, setTestNotifMessage] = useState('');
 
   const handleClearCache = () => {
     setRefreshing(true);
@@ -76,6 +78,15 @@ export default function SettingsPanel({ onClose }: Props) {
       if (ok) toast.success(t('settings.notifEnabled'));
       else if (permission === 'denied') toast.error(t('settings.notifDenied'));
     }
+  };
+
+  const handleTestNotifications = async () => {
+    setTestNotifState('loading');
+    setTestNotifMessage('Envoi du test en cours...');
+
+    const result = await sendTestNotification();
+    setTestNotifState(result.ok ? 'success' : 'error');
+    setTestNotifMessage(result.message);
   };
 
   const [displayName, setDisplayName] = useState(
@@ -215,15 +226,6 @@ export default function SettingsPanel({ onClose }: Props) {
                   {/* Per-type toggles (only when subscribed) */}
                   {subscribed && (
                     <div className="space-y-3 pt-1 border-t border-black/[0.06] dark:border-white/[0.06]">
-                      <button
-                        onClick={() => { void sendTestNotification(); }}
-                        disabled={notifLoading}
-                        className="w-full flex items-center justify-center gap-2 rounded-xl border border-black/[0.08] dark:border-white/[0.08] px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors hover:border-teal-500/40 hover:text-teal-600 dark:hover:text-teal-400 disabled:opacity-60"
-                      >
-                        <Send size={14} />
-                        Tester les notifications
-                      </button>
-
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
                           <Tv size={14} className="text-teal-500" />
@@ -259,6 +261,45 @@ export default function SettingsPanel({ onClose }: Props) {
                 </>
               )}
             </div>
+
+            {subscribed && (
+              <div className="mt-3 space-y-2">
+                <button
+                  onClick={() => { void handleTestNotifications(); }}
+                  disabled={notifLoading || testNotifState === 'loading'}
+                  className={`w-full flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-semibold transition-all disabled:opacity-60 ${
+                    testNotifState === 'success'
+                      ? 'bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/30'
+                      : testNotifState === 'error'
+                        ? 'bg-red-500/10 text-red-700 dark:text-red-300 border border-red-500/30'
+                        : 'bg-white dark:bg-[#0f1117] text-gray-800 dark:text-gray-200 border border-black/[0.08] dark:border-white/[0.08] hover:border-teal-500/40 hover:text-teal-600 dark:hover:text-teal-400'
+                  }`}
+                >
+                  <Send size={14} />
+                  {testNotifState === 'loading'
+                    ? 'Test en cours...'
+                    : testNotifState === 'success'
+                      ? 'Test envoye'
+                      : testNotifState === 'error'
+                        ? 'Retester les notifications'
+                        : 'Tester les notifications'}
+                </button>
+
+                {testNotifState !== 'idle' && (
+                  <p
+                    className={`text-xs ${
+                      testNotifState === 'success'
+                        ? 'text-teal-700 dark:text-teal-300'
+                        : testNotifState === 'error'
+                          ? 'text-red-700 dark:text-red-300'
+                          : 'text-gray-500 dark:text-gray-400'
+                    }`}
+                  >
+                    {testNotifMessage}
+                  </p>
+                )}
+              </div>
+            )}
           </section>
 
           {/* About */}

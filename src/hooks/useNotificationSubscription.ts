@@ -8,6 +8,11 @@ export interface NotificationPreferences {
   notify_movies: boolean;
 }
 
+export interface PushTestResult {
+  ok: boolean;
+  message: string;
+}
+
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
@@ -189,10 +194,17 @@ export function useNotificationSubscription() {
     });
   }, [preferences, subscribed]);
 
-  const sendTestNotification = useCallback(async (): Promise<boolean> => {
-    if (!supported) return false;
+  const sendTestNotification = useCallback(async (): Promise<PushTestResult> => {
+    if (!supported) {
+      return { ok: false, message: 'Notifications non supportees sur cet appareil.' };
+    }
 
-    const result = await callApiJson<{ sent?: number; failed?: number; error?: string }>(
+    const result = await callApiJson<{
+      sent?: number;
+      failed?: number;
+      error?: string;
+      results?: Array<{ statusCode: number | null; error?: string; endpoint: string }>;
+    }>(
       '/api/push/test',
       'POST',
       {}
@@ -201,16 +213,29 @@ export function useNotificationSubscription() {
     if (!result.ok) {
       const message = result.data?.error ?? 'Impossible d\'envoyer la notification de test.';
       toast.error(message);
-      return false;
+      return { ok: false, message };
     }
 
     if ((result.data?.sent ?? 0) > 0) {
       toast.success('Notification de test envoyee.');
-      return true;
+      return { ok: true, message: 'Notification de test envoyee.' };
     }
 
-    toast.error('Aucun appareil abonne n\'a accepte la notification.');
-    return false;
+    const firstFailure = result.data?.results?.find((entry) => entry.error);
+    if (firstFailure) {
+      const details = [
+        firstFailure.statusCode ? `HTTP ${firstFailure.statusCode}` : null,
+        firstFailure.error,
+      ].filter(Boolean).join(' - ');
+
+      toast.error(details || 'La notification de test a ete rejetee.');
+      console.error('[push] test rejection details', firstFailure);
+      return { ok: false, message: details || 'La notification de test a ete rejetee.' };
+    }
+
+    const message = 'Aucun appareil abonne n\'a accepte la notification.';
+    toast.error(message);
+    return { ok: false, message };
   }, [supported]);
 
   return {
