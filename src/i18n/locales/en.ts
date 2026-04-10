@@ -270,6 +270,8 @@ const en = {
     noteLabel: 'Personal note',
     notePlaceholder: 'Your thoughts...',
     descriptionLabel: 'Description',
+    descriptionPlaceholder: 'Movie description...',
+    edit: 'Edit',
     cancel: 'Cancel',
     saving: 'Saving...',
     addToWatchlist: 'Add to Watchlist',

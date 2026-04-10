@@ -28,6 +28,7 @@ export default function ExpandableDescription({
     <div>
       {label && <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{label}</p>}
       <button
+        type="button"
         onClick={() => (truncated || expanded) && setExpanded(e => !e)}
         className="w-full text-left group"
       >

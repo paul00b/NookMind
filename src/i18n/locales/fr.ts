@@ -270,6 +270,8 @@ const fr = {
     noteLabel: 'Note personnelle',
     notePlaceholder: 'Vos impressions...',
     descriptionLabel: 'Description',
+    descriptionPlaceholder: 'Description du film...',
+    edit: 'Modifier',
     cancel: 'Annuler',
     saving: 'Enregistrement...',
     addToWatchlist: 'Ajouter',
