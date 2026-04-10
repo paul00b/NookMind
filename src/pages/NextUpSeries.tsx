@@ -314,7 +314,12 @@ export default function NextUpSeries() {
       void updateSeries(seriesItem.id, {
         watched_episodes: nextWatchedEpisodes,
         watched_seasons: [...nextWatchedSeasons].sort((a, b) => a - b),
-        status: deriveSeriesStatus([...nextWatchedSeasons].sort((a, b) => a - b), seriesItem.seasons),
+        status: deriveSeriesStatus(
+          [...nextWatchedSeasons].sort((a, b) => a - b),
+          seriesItem.seasons,
+          false,
+          nextWatchedEpisodes
+        ),
       });
     }, NEXT_UP_DISMISS_DURATION_MS);
   };

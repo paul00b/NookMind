@@ -9,7 +9,9 @@ export function isSeriesWaiting(s: Series): boolean {
   if (s.status === 'watched') return s.next_season_number !== null;
   if (s.status !== 'watching') return false;
   if (s.next_season_number !== null) {
-    return s.watched_seasons.length >= s.next_season_number - 1;
+    const nextSeasonKey = String(s.next_season_number);
+    const hasStartedNextSeason = (s.watched_episodes?.[nextSeasonKey]?.length ?? 0) > 0;
+    return !hasStartedNextSeason && s.watched_seasons.length >= s.next_season_number - 1;
   }
   return s.seasons !== null && s.watched_seasons.length > 0 && s.watched_seasons.length >= s.seasons - 1;
 }
