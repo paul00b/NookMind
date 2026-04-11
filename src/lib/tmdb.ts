@@ -288,7 +288,7 @@ export async function fetchSeriesDetails(tmdbId: number): Promise<TmdbSeries | n
     seriesDetailsCache.set(tmdbId, (async () => {
       try {
         const res = await fetch(
-          buildUrl(`/tv/${tmdbId}`, { language: getTmdbLocale() })
+          buildUrl(`/tv/${tmdbId}`, { language: getTmdbLocale(), append_to_response: 'credits' })
         );
         if (!res.ok) return null;
         const data = await res.json();

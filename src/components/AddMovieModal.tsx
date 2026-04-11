@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react';
-import { X, Film, AlertTriangle, Pencil } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { X, Film, AlertTriangle, Pencil, ChevronDown } from 'lucide-react';
 import { useMovies } from '../context/MoviesContext';
-import type { Movie, MovieStatus } from '../types';
+import type { Movie, MovieStatus, TmdbMovie } from '../types';
 import StarRating from './StarRating';
 import SheetModal, { SheetCloseButton } from './SheetModal';
 import ExpandableDescription from './ExpandableDescription';
+import { fetchMovieDetails, getPosterUrl } from '../lib/tmdb';
 import { useTranslation } from 'react-i18next';
 
 const normalize = (s: string) => s.toLowerCase().trim().replace(/\s+/g, ' ');
@@ -39,7 +40,20 @@ export default function AddMovieModal({ prefill, onClose }: Props) {
   const [form, setForm] = useState<MovieFormData>({ ...EMPTY, ...prefill });
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [tmdbMovie, setTmdbMovie] = useState<TmdbMovie | null>(null);
+  const [castOpen, setCastOpen] = useState(false);
   const isFromSearch = !!prefill;
+
+  useEffect(() => {
+    if (!isFromSearch || !form.tmdb_id) return;
+    let active = true;
+    fetchMovieDetails(form.tmdb_id).then(details => {
+      if (active) setTmdbMovie(details);
+    });
+    return () => { active = false; };
+  }, [isFromSearch, form.tmdb_id]);
+
+  const cast = (tmdbMovie?.credits?.cast ?? []).slice(0, 12);
 
   const isDuplicate = useMemo(() => {
     if (!form.title.trim()) return false;
@@ -149,90 +163,126 @@ export default function AddMovieModal({ prefill, onClose }: Props) {
           <X size={20} />
         </SheetCloseButton>
 
-        <div className="flex flex-col md:flex-row gap-6 p-6">
-          {/* Poster */}
-          <div className="flex-shrink-0 mx-auto md:mx-0">
-            <div className="w-32 md:w-40 aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800">
-              {form.poster_url ? (
-                <img src={form.poster_url} alt={form.title} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Film size={40} className="text-gray-400" />
-                </div>
+        <div className="p-6 space-y-6">
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex-shrink-0 mx-auto md:mx-0">
+              <div className="w-32 md:w-40 aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800">
+                {form.poster_url ? (
+                  <img src={form.poster_url} alt={form.title} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Film size={40} className="text-gray-400" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex-1 min-w-0 space-y-4">
+              <div>
+                <h2 className="font-serif text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight mb-1">
+                  {form.title}
+                </h2>
+                {form.director && (
+                  <p className="text-gray-600 dark:text-gray-400 font-medium">{form.director}</p>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-2 text-sm">
+                {form.genre && (
+                  <span className="bg-amber-500/10 text-amber-700 dark:text-amber-400 px-3 py-1 rounded-full font-medium">
+                    {form.genre}
+                  </span>
+                )}
+                <span className={`px-3 py-1 rounded-full font-medium text-white ${
+                  form.status === 'watched' ? 'bg-emerald-500' : 'bg-amber-500'
+                }`}>
+                  {form.status === 'watched' ? t('movieDetail.watched') : t('movieDetail.wantToWatch')}
+                </span>
+                {form.release_date && (
+                  <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-3 py-1 rounded-full">
+                    {form.release_date.slice(0, 4)}
+                  </span>
+                )}
+                {form.runtime && (
+                  <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-3 py-1 rounded-full">
+                    {t('movieDetail.runtime', { count: form.runtime })}
+                  </span>
+                )}
+              </div>
+
+              {form.description && (
+                <ExpandableDescription
+                  description={form.description}
+                  label={t('movieDetail.description')}
+                  seeMoreText={t('movieDetail.seeMore')}
+                  seeLessText={t('movieDetail.seeLess')}
+                />
               )}
             </div>
           </div>
 
-          {/* Details */}
-          <div className="flex-1 min-w-0 space-y-4">
-            {/* Title & director */}
-            <div>
-              <h2 className="font-serif text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight mb-1">
-                {form.title}
-              </h2>
-              {form.director && (
-                <p className="text-gray-600 dark:text-gray-400 font-medium">{form.director}</p>
-              )}
-            </div>
+          {cast.length > 0 && (
+              <div className="border border-black/[0.06] dark:border-white/[0.06] rounded-xl overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setCastOpen(open => !open)}
+                  className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
+                >
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {t('movieDetail.cast')} ({cast.length})
+                  </span>
+                  <ChevronDown
+                    size={16}
+                    className={`text-gray-400 transition-transform duration-300 ${castOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
+                <div className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${castOpen ? 'max-h-64' : 'max-h-0'}`}>
+                  <div className="border-t border-black/[0.06] dark:border-white/[0.06] py-4">
+                    <div className="flex gap-3 overflow-x-auto px-4 pb-1" style={{ scrollbarWidth: 'none' }}>
+                      {cast.map(person => {
+                        const photoUrl = getPosterUrl(person.profile_path ?? null);
+                        return (
+                          <div key={person.id} className="w-24 flex-shrink-0">
+                            <div className="aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800">
+                              {photoUrl ? (
+                                <img src={photoUrl} alt={person.name} className="w-full h-full object-cover" loading="lazy" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-lg font-semibold text-gray-400 dark:text-gray-500">
+                                  {person.name.charAt(0)}
+                                </div>
+                              )}
+                            </div>
+                            <p className="mt-2 text-xs font-semibold text-gray-800 dark:text-gray-200 leading-tight line-clamp-2">{person.name}</p>
+                            {person.character && (
+                              <p className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400 leading-tight line-clamp-2">{person.character}</p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+          )}
 
-            {/* Meta badges */}
-            <div className="flex flex-wrap gap-2 text-sm">
-              {form.genre && (
-                <span className="bg-amber-500/10 text-amber-700 dark:text-amber-400 px-3 py-1 rounded-full font-medium">
-                  {form.genre}
-                </span>
-              )}
-              <span className={`px-3 py-1 rounded-full font-medium text-white ${
-                form.status === 'watched' ? 'bg-emerald-500' : 'bg-amber-500'
-              }`}>
-                {form.status === 'watched' ? t('movieDetail.watched') : t('movieDetail.wantToWatch')}
-              </span>
-              {form.release_date && (
-                <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-3 py-1 rounded-full">
-                  {form.release_date.slice(0, 4)}
-                </span>
-              )}
-              {form.runtime && (
-                <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-3 py-1 rounded-full">
-                  {t('movieDetail.runtime', { count: form.runtime })}
-                </span>
-              )}
-            </div>
+          {statusSelector}
 
-            {/* Description */}
-            {form.description && (
-              <ExpandableDescription
-                description={form.description}
-                label={t('movieDetail.description')}
-                seeMoreText={t('movieDetail.seeMore')}
-                seeLessText={t('movieDetail.seeLess')}
-              />
-            )}
+          {watchedFields}
 
-            {/* Status */}
-            {statusSelector}
+          {noteField}
 
-            {/* Rating + Watched date */}
-            {watchedFields}
+          {duplicateWarning}
 
-            {/* Note */}
-            {noteField}
-
-            {/* Duplicate warning */}
-            {duplicateWarning}
-
-            {/* Actions */}
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setEditing(true)}
-                className="btn-ghost flex-1 flex items-center justify-center gap-1.5"
-              >
-                <Pencil size={14} />
-                {t('addMovie.edit')}
-              </button>
-              {addButton}
-            </div>
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="btn-ghost flex-1 flex items-center justify-center gap-1.5"
+            >
+              <Pencil size={14} />
+              {t('addMovie.edit')}
+            </button>
+            {addButton}
           </div>
         </div>
       </SheetModal>

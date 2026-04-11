@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { X, Tv, Plus, ChevronDown, Star, CheckCircle2 } from 'lucide-react';
 import { fetchSeriesImdbId, fetchSeasonRatings, type EpisodeRating } from '../lib/imdb';
 import { getRatingStyle, type SeasonState } from '../lib/imdbRatingStyle';
-import { fetchSeasonDetails, fetchSeriesDetails } from '../lib/tmdb';
-import type { TmdbEpisode } from '../types';
+import { fetchSeasonDetails, fetchSeriesDetails, getPosterUrl } from '../lib/tmdb';
+import type { TmdbEpisode, TmdbSeries } from '../types';
 import { useTranslation } from 'react-i18next';
 import SheetModal, { SheetCloseButton } from './SheetModal';
 
@@ -182,6 +182,8 @@ export default function SeriesPreviewSheet({
   const [tmdbSeasonCount, setTmdbSeasonCount] = useState<number | null>(null);
   const [loadingSeasonCount, setLoadingSeasonCount] = useState(false);
   const loadedSeasonsRef = useRef<Set<number>>(new Set());
+  const [tmdbSeries, setTmdbSeries] = useState<TmdbSeries | null>(null);
+  const [castSectionOpen, setCastSectionOpen] = useState(false);
 
   useEffect(() => {
     if (!descRef.current) return;
@@ -199,9 +201,11 @@ export default function SeriesPreviewSheet({
     setTmdbEpisodes({});
     setSelectedEpisode(null);
     setTmdbSeasonCount(null);
+    setTmdbSeries(null);
     setLoadingSeasonCount(false);
     setEpisodesSectionOpen(false);
     setImdbSectionOpen(false);
+    setCastSectionOpen(false);
     loadedSeasonsRef.current = new Set();
 
     fetchSeriesImdbId(title).then(id => {
@@ -234,6 +238,7 @@ export default function SeriesPreviewSheet({
   }, [imdbId, totalSeasons]);
 
   const effectiveSeasonCount = totalSeasons ?? tmdbSeasonCount;
+  const cast = (tmdbSeries?.credits?.cast ?? []).slice(0, 12);
   const availableSeasons = useMemo(() => {
     if (effectiveSeasonCount && effectiveSeasonCount > 0) return Array.from({ length: effectiveSeasonCount }, (_, i) => i + 1);
     return Object.keys(seasonRatings).map(Number).sort((a, b) => a - b);
@@ -265,6 +270,7 @@ export default function SeriesPreviewSheet({
       try {
         const details = await fetchSeriesDetails(tmdbId);
         if (details) {
+          setTmdbSeries(details);
           const count = details.number_of_seasons ?? null;
           setTmdbSeasonCount(count);
           if (selectedSeason === null && count && count > 0) {
@@ -284,6 +290,17 @@ export default function SeriesPreviewSheet({
       if (firstSeason !== null) void handleSelectSeason(firstSeason);
     }
   };
+
+  useEffect(() => {
+    if (!isOpen || !tmdbId) return;
+    let active = true;
+    fetchSeriesDetails(tmdbId).then(details => {
+      if (!active || !details) return;
+      setTmdbSeries(details);
+      if (!tmdbSeasonCount) setTmdbSeasonCount(details.number_of_seasons ?? null);
+    });
+    return () => { active = false; };
+  }, [isOpen, tmdbId, tmdbSeasonCount]);
 
   if (!isOpen) return null;
 
@@ -376,6 +393,49 @@ export default function SeriesPreviewSheet({
             )}
           </div>
         )}
+
+          {cast.length > 0 && (
+            <div className="border border-black/[0.06] dark:border-white/[0.06] rounded-xl overflow-hidden mx-4 mb-3 flex-shrink-0">
+              <button
+                className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
+                onClick={() => setCastSectionOpen(open => !open)}
+              >
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {t('seriesDetail.cast')} ({cast.length})
+                </span>
+                <ChevronDown
+                  size={16}
+                  className={`text-gray-400 transition-transform duration-300 ${castSectionOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+              <div className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${castSectionOpen ? 'max-h-64' : 'max-h-0'}`}>
+                <div className="border-t border-black/[0.06] dark:border-white/[0.06] py-4">
+                  <div className="flex gap-3 overflow-x-auto px-4 pb-1" style={{ scrollbarWidth: 'none' }}>
+                    {cast.map(person => {
+                      const photoUrl = getPosterUrl(person.profile_path ?? null);
+                      return (
+                        <div key={person.id} className="w-24 flex-shrink-0">
+                          <div className="aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800">
+                            {photoUrl ? (
+                              <img src={photoUrl} alt={person.name} className="w-full h-full object-cover" loading="lazy" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-lg font-semibold text-gray-400 dark:text-gray-500">
+                                {person.name.charAt(0)}
+                              </div>
+                            )}
+                          </div>
+                          <p className="mt-2 text-xs font-semibold text-gray-800 dark:text-gray-200 leading-tight line-clamp-2">{person.name}</p>
+                          {person.character && (
+                            <p className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400 leading-tight line-clamp-2">{person.character}</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Section 1 : Épisodes */}
           {(!!tmdbId || availableSeasons.length > 0) && (

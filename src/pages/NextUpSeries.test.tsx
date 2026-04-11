@@ -51,7 +51,9 @@ vi.mock('../lib/tmdb', () => ({
 
 function Harness({ initialSeries }: { initialSeries: Series[] }) {
   const [series, setSeries] = useState(initialSeries);
+  // eslint-disable-next-line react-hooks/globals
   seriesState = series;
+  // eslint-disable-next-line react-hooks/globals
   updateSeriesImpl = async (id, updates) => {
     setSeries(current =>
       current.map(item => (item.id === id ? { ...item, ...updates } : item))

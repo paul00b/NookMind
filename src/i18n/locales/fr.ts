@@ -306,6 +306,7 @@ const fr = {
     seeMore: 'Voir plus',
     seeLess: 'Voir moins',
     collections: 'Collections',
+    cast: 'Distribution',
   },
   movieCard: {
     watched: 'Vu',
@@ -448,6 +449,7 @@ const fr = {
     viewImdbRatings: 'Voir les notes IMDB',
     episodesSection: 'Saisons & Épisodes',
     viewOnImdb: 'Voir sur IMDb',
+    cast: 'Distribution',
   },
   nextUp: {
     // Séries

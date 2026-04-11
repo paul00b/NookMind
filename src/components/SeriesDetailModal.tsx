@@ -1,5 +1,5 @@
 import {useEffect, useRef, useState} from 'react';
-import type { Series, TmdbEpisode } from '../types';
+import type { Series, TmdbEpisode, TmdbSeries } from '../types';
 import { useSeries } from '../context/SeriesContext';
 import { useSeriesCategories } from '../context/SeriesCategoriesContext';
 import StarRating from './StarRating';
@@ -7,7 +7,7 @@ import SeasonGrid, { deriveSeriesStatus } from './SeasonGrid';
 import SheetModal, { SheetCloseButton } from './SheetModal';
 import ExpandableDescription from './ExpandableDescription';
 import EditableNote from './EditableNote';
-import { fetchSeasonDetails, fetchSeriesDetails, extractSeriesData } from '../lib/tmdb';
+import { fetchSeasonDetails, fetchSeriesDetails, extractSeriesData, getPosterUrl } from '../lib/tmdb';
 import { X, Trash2, Tv, ChevronDown, FolderPlus, FolderMinus, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
@@ -109,13 +109,17 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
   const [seasonRatings, setSeasonRatings] = useState<Record<number, SeasonState>>({});
   const [fetchKey, setFetchKey] = useState(0);
   const [localSeries, setLocalSeries] = useState<Series>(series);
+  const [tmdbSeries, setTmdbSeries] = useState<TmdbSeries | null>(null);
   const [showSeasonsSection, setShowSeasonsSection] = useState(true);
+  const [showCastSection, setShowCastSection] = useState(false);
 
   // Rafraîchissement silencieux des données TMDB à l'ouverture pour les séries en cours
   useEffect(() => {
-    if (series.status !== 'watching' || !series.tmdb_id) return;
+    if (!series.tmdb_id) return;
     fetchSeriesDetails(series.tmdb_id).then(tmdbData => {
       if (!tmdbData) return;
+      setTmdbSeries(tmdbData);
+      if (series.status !== 'watching') return;
       const extracted = extractSeriesData(tmdbData);
       const nextAirDate = extracted.next_air_date ?? null;
       const nextSeasonNumber = extracted.next_season_number ?? null;
@@ -132,6 +136,8 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const cast = (tmdbSeries?.credits?.cast ?? []).slice(0, 12);
 
   // Charge l'imdbID quand la section IMDB s'ouvre pour la première fois
   useEffect(() => {
@@ -334,6 +340,46 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
                 seeLessText={t('seriesDetail.seeLess')}
                 clampClass="line-clamp-3"
               />
+            </div>
+          )}
+
+          {cast.length > 0 && (
+            <div className="border border-black/[0.06] dark:border-white/[0.06] rounded-xl overflow-hidden mx-4 mb-3">
+              <button
+                className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
+                onClick={() => setShowCastSection(open => !open)}
+              >
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {t('seriesDetail.cast')} ({cast.length})
+                </span>
+                <ChevronDown size={16} className={`text-gray-400 transition-transform duration-300 ${showCastSection ? 'rotate-180' : ''}`} />
+              </button>
+              <div className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${showCastSection ? 'max-h-64' : 'max-h-0'}`}>
+                <div className="border-t border-black/[0.06] dark:border-white/[0.06] py-4">
+                  <div className="flex gap-3 overflow-x-auto px-4 pb-1" style={{ scrollbarWidth: 'none' }}>
+                    {cast.map(person => {
+                      const photoUrl = getPosterUrl(person.profile_path ?? null);
+                      return (
+                        <div key={person.id} className="w-24 flex-shrink-0">
+                          <div className="aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800">
+                            {photoUrl ? (
+                              <img src={photoUrl} alt={person.name} className="w-full h-full object-cover" loading="lazy" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-lg font-semibold text-gray-400 dark:text-gray-500">
+                                {person.name.charAt(0)}
+                              </div>
+                            )}
+                          </div>
+                          <p className="mt-2 text-xs font-semibold text-gray-800 dark:text-gray-200 leading-tight line-clamp-2">{person.name}</p>
+                          {person.character && (
+                            <p className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400 leading-tight line-clamp-2">{person.character}</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 

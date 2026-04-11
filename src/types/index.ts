@@ -68,6 +68,7 @@ export interface TmdbMovie {
   runtime?: number;
   genres?: { id: number; name: string }[];
   credits?: {
+    cast?: { id: number; name: string; character?: string; profile_path?: string | null }[];
     crew: { job: string; name: string }[];
   };
 }
@@ -138,6 +139,9 @@ export interface TmdbSeries {
   next_episode_to_air?: TmdbEpisode | null;
   last_episode_to_air?: TmdbEpisode | null;
   seasons?: { season_number: number; episode_count: number; air_date: string | null }[];
+  credits?: {
+    cast?: { id: number; name: string; character?: string; profile_path?: string | null }[];
+  };
 }
 
 export interface SeriesCategory {

@@ -306,6 +306,7 @@ const en = {
     seeMore: 'See more',
     seeLess: 'See less',
     collections: 'Collections',
+    cast: 'Cast',
   },
   movieCard: {
     watched: 'Watched',
@@ -447,6 +448,7 @@ const en = {
     viewImdbRatings: 'View IMDB ratings',
     episodesSection: 'Seasons & Episodes',
     viewOnImdb: 'View on IMDb',
+    cast: 'Cast',
   },
   nextUp: {
     // Series
