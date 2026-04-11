@@ -199,7 +199,7 @@ export default function MovieDetailModal({ movie, onClose }: Props) {
                     className={`text-gray-400 transition-transform duration-300 ${castOpen ? 'rotate-180' : ''}`}
                   />
                 </button>
-                <div className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${castOpen ? 'max-h-64' : 'max-h-0'}`}>
+                <div className={`overflow-clip transition-[max-height] duration-300 ease-in-out ${castOpen ? 'max-h-64' : 'max-h-0'}`}>
                   <div className="border-t border-black/[0.06] dark:border-white/[0.06] py-4">
                     <div className="flex gap-3 overflow-x-auto px-4 pb-1" style={{ scrollbarWidth: 'none' }}>
                       {cast.map(person => {

@@ -260,7 +260,6 @@ export default function SeriesPreviewSheet({
   const handleToggleEpisodesSection = async () => {
     const newOpen = !episodesSectionOpen;
     setEpisodesSectionOpen(newOpen);
-    if (newOpen) setImdbSectionOpen(false);
     if (!newOpen) return;
 
     // Si on ne connaît pas encore le nb de saisons, le récupérer via TMDB
@@ -374,8 +373,10 @@ export default function SeriesPreviewSheet({
           </div>
         </div>
 
+        <div className="overflow-y-auto flex-1 min-h-0">
+
         {description && (
-          <div className="px-6 pb-4 flex-shrink-0">
+          <div className="px-6 pb-4">
             <p
               ref={descRef}
               className={`text-xs text-gray-500 dark:text-gray-400 leading-relaxed ${descExpanded ? '' : 'line-clamp-3'}`}
@@ -395,7 +396,7 @@ export default function SeriesPreviewSheet({
         )}
 
           {cast.length > 0 && (
-            <div className="border border-black/[0.06] dark:border-white/[0.06] rounded-xl overflow-hidden mx-4 mb-3 flex-shrink-0">
+            <div className="border border-black/[0.06] dark:border-white/[0.06] rounded-xl overflow-hidden mx-4 mb-3">
               <button
                 className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
                 onClick={() => setCastSectionOpen(open => !open)}
@@ -408,7 +409,7 @@ export default function SeriesPreviewSheet({
                   className={`text-gray-400 transition-transform duration-300 ${castSectionOpen ? 'rotate-180' : ''}`}
                 />
               </button>
-              <div className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${castSectionOpen ? 'max-h-64' : 'max-h-0'}`}>
+              <div className={`overflow-clip transition-[max-height] duration-300 ease-in-out ${castSectionOpen ? 'max-h-64' : 'max-h-0'}`}>
                 <div className="border-t border-black/[0.06] dark:border-white/[0.06] py-4">
                   <div className="flex gap-3 overflow-x-auto px-4 pb-1" style={{ scrollbarWidth: 'none' }}>
                     {cast.map(person => {
@@ -439,7 +440,7 @@ export default function SeriesPreviewSheet({
 
           {/* Section 1 : Épisodes */}
           {(!!tmdbId || availableSeasons.length > 0) && (
-            <div className="border border-black/[0.06] dark:border-white/[0.06] rounded-xl overflow-hidden mx-4 mb-3 flex-shrink-0">
+            <div className="border border-black/[0.06] dark:border-white/[0.06] rounded-xl overflow-hidden mx-4 mb-3">
               <button
                 className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
                 onClick={handleToggleEpisodesSection}
@@ -453,7 +454,7 @@ export default function SeriesPreviewSheet({
                 />
               </button>
 
-              <div className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${episodesSectionOpen ? 'max-h-[45vh]' : 'max-h-0'}`}>
+              <div className={`overflow-clip transition-[max-height] duration-300 ease-in-out ${episodesSectionOpen ? 'max-h-[45vh]' : 'max-h-0'}`}>
                 <div className="overflow-y-auto max-h-[45vh] border-t border-black/[0.06] dark:border-white/[0.06]">
 
                   {/* Sélecteur de saison */}
@@ -553,10 +554,10 @@ export default function SeriesPreviewSheet({
           )}
 
           {/* Section 2 : Notes IMDB */}
-          <div className="border border-black/[0.06] dark:border-white/[0.06] rounded-xl overflow-hidden mx-4 mb-3 flex-shrink-0">
+          <div className="border border-black/[0.06] dark:border-white/[0.06] rounded-xl overflow-hidden mx-4 mb-3">
             <button
               className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
-              onClick={() => { const opening = !imdbSectionOpen; setImdbSectionOpen(opening); if (opening) setEpisodesSectionOpen(false); }}
+              onClick={() => setImdbSectionOpen(open => !open)}
             >
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 {t('seriesDetail.imdbRatings')}
@@ -567,7 +568,7 @@ export default function SeriesPreviewSheet({
               />
             </button>
 
-            <div className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${imdbSectionOpen ? 'max-h-[45vh]' : 'max-h-0'}`}>
+            <div className={`overflow-clip transition-[max-height] duration-300 ease-in-out ${imdbSectionOpen ? 'max-h-[45vh]' : 'max-h-0'}`}>
               <div className="overflow-y-auto max-h-[45vh] border-t border-black/[0.06] dark:border-white/[0.06]">
 
                   {imdbError === 'no_key' && (
@@ -733,7 +734,9 @@ export default function SeriesPreviewSheet({
               </div>
             </div>
 
-          <div className="flex-shrink-0 h-6 pb-safe" />
+          <div className="h-6 pb-safe" />
+
+        </div>{/* end outer scroll wrapper */}
 
       </SheetModal>
 

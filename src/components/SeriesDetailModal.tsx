@@ -354,7 +354,7 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
                 </span>
                 <ChevronDown size={16} className={`text-gray-400 transition-transform duration-300 ${showCastSection ? 'rotate-180' : ''}`} />
               </button>
-              <div className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${showCastSection ? 'max-h-64' : 'max-h-0'}`}>
+              <div className={`overflow-clip transition-[max-height] duration-300 ease-in-out ${showCastSection ? 'max-h-64' : 'max-h-0'}`}>
                 <div className="border-t border-black/[0.06] dark:border-white/[0.06] py-4">
                   <div className="flex gap-3 overflow-x-auto px-4 pb-1" style={{ scrollbarWidth: 'none' }}>
                     {cast.map(person => {
@@ -388,16 +388,12 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
             <div className="border border-black/[0.06] dark:border-white/[0.06] rounded-xl overflow-hidden mx-4 mb-3">
               <button
                 className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
-                onClick={() => {
-                  const opening = !showSeasonsSection;
-                  setShowSeasonsSection(opening);
-                  if (opening) setShowImdbSection(false);
-                }}
+                onClick={() => setShowSeasonsSection(open => !open)}
               >
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('seriesDetail.episodesSection')}</span>
                 <ChevronDown size={16} className={`text-gray-400 transition-transform duration-300 ${showSeasonsSection ? 'rotate-180' : ''}`} />
               </button>
-              <div className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${showSeasonsSection ? 'max-h-[9999px]' : 'max-h-0'}`}>
+              <div className={`overflow-clip transition-[max-height] duration-300 ease-in-out ${showSeasonsSection ? 'max-h-[9999px]' : 'max-h-0'}`}>
                 <div className="border-t border-black/[0.06] dark:border-white/[0.06]">
                   {/* SeasonGrid */}
                   <div className="px-4 py-4">
@@ -474,12 +470,12 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
           <div className="border border-black/[0.06] dark:border-white/[0.06] rounded-xl overflow-hidden mx-4 mb-3">
             <button
               className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
-              onClick={() => { const opening = !showImdbSection; setShowImdbSection(opening); if (opening) setShowSeasonsSection(false); }}
+              onClick={() => setShowImdbSection(open => !open)}
             >
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('seriesDetail.imdbRatings')}</span>
               <ChevronDown size={16} className={`text-gray-400 transition-transform duration-300 ${showImdbSection ? 'rotate-180' : ''}`} />
             </button>
-            <div className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${showImdbSection ? 'max-h-[2000px]' : 'max-h-0'}`}>
+            <div className={`overflow-clip transition-[max-height] duration-300 ease-in-out ${showImdbSection ? 'max-h-[2000px]' : 'max-h-0'}`}>
               <div className="border-t border-black/[0.06] dark:border-white/[0.06]">
                 {imdbError === 'no_key' && (
                   <p className="px-4 py-4 text-sm text-gray-400 text-center">{t('seriesDetail.imdbNoApiKey')}</p>
