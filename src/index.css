@@ -43,9 +43,11 @@
     box-sizing: border-box;
   }
 
-  /* Fix mobile double-tap: fires click immediately without waiting for zoom detection */
+  /* Fix mobile tap: cursor:pointer tells iOS to fire click on first tap (not hover-then-click).
+     touch-action:manipulation removes the 300ms tap delay. */
   a, button, [role="button"], [role="switch"], [role="tab"], [role="checkbox"] {
     touch-action: manipulation;
+    cursor: pointer;
   }
 
   /* Scrollbar */
