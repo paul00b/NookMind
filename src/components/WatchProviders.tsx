@@ -67,7 +67,6 @@ export default function WatchProviders({ providers, title, loading }: Props) {
             <a
               key={provider.provider_id}
               href={href}
-              target="_blank"
               rel="noopener noreferrer"
               title={provider.provider_name}
               className="block w-9 h-9 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 hover:scale-110 transition-transform"
