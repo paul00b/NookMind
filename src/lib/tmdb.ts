@@ -374,3 +374,20 @@ export async function fetchSeriesWatchProviders(tmdbId: number): Promise<WatchPr
     return { flatrate: [], link: null };
   }
 }
+
+export async function fetchWatchProviderDeepLinks(tmdbWatchUrl: string): Promise<Record<string, string>> {
+  const cacheKey = `nookmind_wp_deep_${tmdbWatchUrl}`;
+  const cached = getSessionCache<Record<string, string>>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const res = await fetch(`/api/watch-providers?url=${encodeURIComponent(tmdbWatchUrl)}`);
+    if (!res.ok) return {};
+    const data = await res.json();
+    const providers = data.providers ?? {};
+    setSessionCache(cacheKey, providers);
+    return providers;
+  } catch {
+    return {};
+  }
+}

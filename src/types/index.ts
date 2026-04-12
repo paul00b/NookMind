@@ -161,4 +161,5 @@ export interface WatchProvider {
 export interface WatchProvidersResult {
   flatrate: WatchProvider[];
   link: string | null;
+  deepLinks?: Record<string, string>;
 }
