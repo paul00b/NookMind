@@ -502,6 +502,9 @@ const fr = {
     waitingDays: 'dans {{count}}j',
     wantToWatch: 'À voir',
   },
+  watchProviders: {
+    availableOn: 'Disponible sur',
+  },
 };
 
 export default fr;

@@ -501,6 +501,9 @@ const en = {
     waitingDays: 'in {{count}}d',
     wantToWatch: 'Want to watch',
   },
+  watchProviders: {
+    availableOn: 'Available on',
+  },
 };
 
 export default en;

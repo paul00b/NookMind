@@ -6,7 +6,9 @@ import StarRating from './StarRating';
 import SheetModal, { SheetCloseButton } from './SheetModal';
 import ExpandableDescription from './ExpandableDescription';
 import EditableNote from './EditableNote';
-import { fetchMovieDetails, getPosterUrl } from '../lib/tmdb';
+import { fetchMovieDetails, fetchMovieWatchProviders, getPosterUrl } from '../lib/tmdb';
+import type { WatchProvidersResult } from '../types';
+import WatchProviders from './WatchProviders';
 import { X, Pencil, Check, Trash2, Film, ArrowLeftRight, FolderPlus, FolderMinus, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
@@ -25,6 +27,8 @@ export default function MovieDetailModal({ movie, onClose }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [localMovie, setLocalMovie] = useState<Movie>(movie);
   const [tmdbMovie, setTmdbMovie] = useState<TmdbMovie | null>(null);
+  const [watchProviders, setWatchProviders] = useState<WatchProvidersResult | null>(null);
+  const [loadingProviders, setLoadingProviders] = useState(false);
   const [castOpen, setCastOpen] = useState(false);
 
   useEffect(() => {
@@ -32,6 +36,13 @@ export default function MovieDetailModal({ movie, onClose }: Props) {
     let active = true;
     fetchMovieDetails(movie.tmdb_id).then(details => {
       if (active) setTmdbMovie(details);
+    });
+    setLoadingProviders(true);
+    fetchMovieWatchProviders(movie.tmdb_id).then(result => {
+      if (active) {
+        setWatchProviders(result);
+        setLoadingProviders(false);
+      }
     });
     return () => { active = false; };
   }, [movie.tmdb_id]);
@@ -139,6 +150,8 @@ export default function MovieDetailModal({ movie, onClose }: Props) {
               )}
             </div>
           </div>
+
+          <WatchProviders providers={watchProviders} loading={loadingProviders} />
 
           {localMovie.status === 'watched' && (
             <div className="space-y-4">

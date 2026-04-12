@@ -1,4 +1,4 @@
-import type { TmdbMovie, TmdbSeries, TmdbSeasonDetails } from '../types';
+import type { TmdbMovie, TmdbSeries, TmdbSeasonDetails, WatchProvidersResult } from '../types';
 
 const BASE_URL = 'https://api.themoviedb.org/3';
 const IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
@@ -8,6 +8,12 @@ function getTmdbLocale(): string {
   const lang = typeof navigator !== 'undefined' ? navigator.language : 'en-US';
   if (lang.startsWith('fr')) return 'fr-FR';
   return 'en-US';
+}
+
+function getWatchRegion(): string {
+  const lang = typeof navigator !== 'undefined' ? navigator.language : 'en-US';
+  if (lang.startsWith('fr')) return 'FR';
+  return 'US';
 }
 const TMDB_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const seriesDetailsCache = new Map<number, Promise<TmdbSeries | null>>();
@@ -323,4 +329,48 @@ export function extractSeriesData(series: TmdbSeries) {
     next_air_date: next?.air_date ?? null,
     next_season_number: next?.season_number ?? null,
   };
+}
+
+export async function fetchMovieWatchProviders(tmdbId: number): Promise<WatchProvidersResult> {
+  const cacheKey = `nookmind_tmdb_movie_wp_${tmdbId}`;
+  const cached = getSessionCache<WatchProvidersResult>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const res = await fetch(buildUrl(`/movie/${tmdbId}/watch/providers`));
+    if (!res.ok) return { flatrate: [], link: null };
+    const data = await res.json();
+    const region = getWatchRegion();
+    const countryData = data.results?.[region];
+    const result: WatchProvidersResult = {
+      flatrate: countryData?.flatrate ?? [],
+      link: countryData?.link ?? null,
+    };
+    setSessionCache(cacheKey, result);
+    return result;
+  } catch {
+    return { flatrate: [], link: null };
+  }
+}
+
+export async function fetchSeriesWatchProviders(tmdbId: number): Promise<WatchProvidersResult> {
+  const cacheKey = `nookmind_tmdb_series_wp_${tmdbId}`;
+  const cached = getSessionCache<WatchProvidersResult>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const res = await fetch(buildUrl(`/tv/${tmdbId}/watch/providers`));
+    if (!res.ok) return { flatrate: [], link: null };
+    const data = await res.json();
+    const region = getWatchRegion();
+    const countryData = data.results?.[region];
+    const result: WatchProvidersResult = {
+      flatrate: countryData?.flatrate ?? [],
+      link: countryData?.link ?? null,
+    };
+    setSessionCache(cacheKey, result);
+    return result;
+  } catch {
+    return { flatrate: [], link: null };
+  }
 }

@@ -7,7 +7,9 @@ import SeasonGrid, { deriveSeriesStatus } from './SeasonGrid';
 import SheetModal, { SheetCloseButton } from './SheetModal';
 import ExpandableDescription from './ExpandableDescription';
 import EditableNote from './EditableNote';
-import { fetchSeasonDetails, fetchSeriesDetails, extractSeriesData, getPosterUrl } from '../lib/tmdb';
+import { fetchSeasonDetails, fetchSeriesDetails, fetchSeriesWatchProviders, extractSeriesData, getPosterUrl } from '../lib/tmdb';
+import type { WatchProvidersResult } from '../types';
+import WatchProviders from './WatchProviders';
 import { X, Trash2, Tv, ChevronDown, FolderPlus, FolderMinus, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
@@ -112,6 +114,8 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
   const [tmdbSeries, setTmdbSeries] = useState<TmdbSeries | null>(null);
   const [showSeasonsSection, setShowSeasonsSection] = useState(true);
   const [showCastSection, setShowCastSection] = useState(false);
+  const [watchProviders, setWatchProviders] = useState<WatchProvidersResult | null>(null);
+  const [loadingProviders, setLoadingProviders] = useState(false);
 
   // Rafraîchissement silencieux des données TMDB à l'ouverture pour les séries en cours
   useEffect(() => {
@@ -136,6 +140,19 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!series.tmdb_id) return;
+    let active = true;
+    setLoadingProviders(true);
+    fetchSeriesWatchProviders(series.tmdb_id).then(result => {
+      if (active) {
+        setWatchProviders(result);
+        setLoadingProviders(false);
+      }
+    });
+    return () => { active = false; };
+  }, [series.tmdb_id]);
 
   const cast = (tmdbSeries?.credits?.cast ?? []).slice(0, 12);
 
@@ -330,6 +347,11 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
 
         {/* Tout le contenu scrollable */}
         <div className="overflow-y-auto flex-1 min-h-0">
+
+          {/* Watch Providers */}
+          <div className="px-6 pb-3">
+            <WatchProviders providers={watchProviders} loading={loadingProviders} />
+          </div>
 
           {/* Description */}
           {localSeries.description && (

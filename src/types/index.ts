@@ -151,3 +151,14 @@ export interface SeriesCategory {
   created_at: string;
   series_ids: string[];
 }
+
+export interface WatchProvider {
+  provider_id: number;
+  provider_name: string;
+  logo_path: string;
+}
+
+export interface WatchProvidersResult {
+  flatrate: WatchProvider[];
+  link: string | null;
+}
