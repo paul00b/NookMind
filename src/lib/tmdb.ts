@@ -1,4 +1,4 @@
-import type { TmdbMovie, TmdbSeries, TmdbSeasonDetails, WatchProvidersResult } from '../types';
+import type { TmdbMovie, TmdbSeries, TmdbSeasonDetails, WatchProvider, WatchProvidersResult } from '../types';
 
 const BASE_URL = 'https://api.themoviedb.org/3';
 const IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
@@ -331,6 +331,14 @@ export function extractSeriesData(series: TmdbSeries) {
   };
 }
 
+function filterProviders(providers: WatchProvider[]): WatchProvider[] {
+  const AD_PATTERN = /\bwith ads\b/i;
+  const CHANNEL_PATTERN = /\bamazon channel\b/i;
+  return providers.filter(p =>
+    !AD_PATTERN.test(p.provider_name) && !CHANNEL_PATTERN.test(p.provider_name)
+  );
+}
+
 export async function fetchMovieWatchProviders(tmdbId: number): Promise<WatchProvidersResult> {
   const cacheKey = `nookmind_tmdb_movie_wp_${tmdbId}`;
   const cached = getSessionCache<WatchProvidersResult>(cacheKey);
@@ -343,7 +351,7 @@ export async function fetchMovieWatchProviders(tmdbId: number): Promise<WatchPro
     const region = getWatchRegion();
     const countryData = data.results?.[region];
     const result: WatchProvidersResult = {
-      flatrate: countryData?.flatrate ?? [],
+      flatrate: filterProviders(countryData?.flatrate ?? []),
       link: countryData?.link ?? null,
     };
     setSessionCache(cacheKey, result);
@@ -365,7 +373,7 @@ export async function fetchSeriesWatchProviders(tmdbId: number): Promise<WatchPr
     const region = getWatchRegion();
     const countryData = data.results?.[region];
     const result: WatchProvidersResult = {
-      flatrate: countryData?.flatrate ?? [],
+      flatrate: filterProviders(countryData?.flatrate ?? []),
       link: countryData?.link ?? null,
     };
     setSessionCache(cacheKey, result);
