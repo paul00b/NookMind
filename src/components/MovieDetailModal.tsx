@@ -151,7 +151,7 @@ export default function MovieDetailModal({ movie, onClose }: Props) {
             </div>
           </div>
 
-          <WatchProviders providers={watchProviders} title={localMovie.title} loading={loadingProviders} />
+          <WatchProviders providers={watchProviders} loading={loadingProviders} />
 
           {localMovie.status === 'watched' && (
             <div className="space-y-4">
