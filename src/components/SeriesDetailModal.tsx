@@ -350,7 +350,7 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
 
           {/* Watch Providers */}
           <div className="px-6 pb-3">
-            <WatchProviders providers={watchProviders} loading={loadingProviders} />
+            <WatchProviders providers={watchProviders} title={localSeries.title} loading={loadingProviders} />
           </div>
 
           {/* Description */}
