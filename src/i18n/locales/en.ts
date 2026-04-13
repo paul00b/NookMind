@@ -194,6 +194,17 @@ const en = {
     notifDisabled: 'Notifications disabled',
     notifDenied: 'Notifications are blocked in your browser settings.',
     notifNotSupported: 'Push notifications are not supported on this device.',
+    replayOnboarding: 'Replay onboarding',
+  },
+  onboarding: {
+    slide1Title: 'Track movies, series & books',
+    slide1Body: 'Your watchlist, your reading list, all in one place. Free and ads-free, forever.',
+    slide2Title: 'Never miss a thing',
+    slide2Body: 'IMDB ratings per episode, new episode alerts, cast info, and streaming providers at a glance.',
+    slide3Title: 'Discover & collect',
+    slide3Body: 'Trending now, upcoming releases. Build collections and track your watching stats.',
+    skip: 'Skip',
+    getStarted: 'Get Started',
   },
   bookCard: {
     read: 'Read',

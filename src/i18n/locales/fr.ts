@@ -194,6 +194,17 @@ const fr = {
     notifDisabled: 'Notifications désactivées',
     notifDenied: 'Les notifications sont bloquées dans les paramètres du navigateur.',
     notifNotSupported: 'Les notifications push ne sont pas supportées sur cet appareil.',
+    replayOnboarding: 'Revoir la présentation',
+  },
+  onboarding: {
+    slide1Title: 'Suivez vos films, séries et livres',
+    slide1Body: 'Votre liste de visionnage, votre liste de lecture, tout au même endroit. Gratuit et sans pub, pour toujours.',
+    slide2Title: 'Ne manquez plus rien',
+    slide2Body: 'Notes IMDB par épisode, alertes de nouveaux épisodes, casting et plateformes de streaming en un coup d\'œil.',
+    slide3Title: 'Découvrez et collectionnez',
+    slide3Body: 'Tendances du moment, prochaines sorties. Créez des collections et suivez vos statistiques.',
+    skip: 'Passer',
+    getStarted: 'Commencer',
   },
   bookCard: {
     read: 'Lu',
