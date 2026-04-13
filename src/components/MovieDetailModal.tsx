@@ -9,10 +9,9 @@ import EditableNote from './EditableNote';
 import { fetchMovieDetails, fetchMovieWatchProviders, getPosterUrl } from '../lib/tmdb';
 import type { WatchProvidersResult } from '../types';
 import WatchProviders from './WatchProviders';
-import { X, Pencil, Check, Trash2, Film, ArrowLeftRight, FolderPlus, FolderMinus, ChevronDown, Popcorn } from 'lucide-react';
+import { X, Pencil, Check, Trash2, Film, ArrowLeftRight, FolderPlus, FolderMinus, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
-import { buildMoviePopcornQuery, launchPopcornTime } from '../lib/popcorn';
 
 interface Props {
   movie: Movie;
@@ -83,32 +82,6 @@ export default function MovieDetailModal({ movie, onClose }: Props) {
   const handleDelete = async () => {
     await deleteMovie(movie.id);
     onClose();
-  };
-
-  const handleOpenInPopcorn = async () => {
-    const query = buildMoviePopcornQuery(localMovie.title, localMovie.release_date);
-    const result = await launchPopcornTime(query, {
-      kind: 'movie',
-      title: localMovie.title,
-      year: localMovie.release_date?.slice(0, 4) ?? null,
-    });
-
-    if (result.mode === 'launched') {
-      toast.success(t('movieDetail.popcornLaunching'));
-      return;
-    }
-
-    if (result.mode === 'shared') {
-      toast.success(t('movieDetail.popcornShared'));
-      return;
-    }
-
-    if (result.mode === 'copied') {
-      toast.success(`${t('movieDetail.popcornCopied')}: ${query}`);
-      return;
-    }
-
-    toast.error(t('movieDetail.popcornUnsupported'));
   };
 
   return (
@@ -307,10 +280,6 @@ export default function MovieDetailModal({ movie, onClose }: Props) {
           )}
 
           <div className="flex flex-wrap gap-2 pt-2">
-            <button onClick={handleOpenInPopcorn} className="btn-ghost text-sm flex items-center gap-1.5">
-              <Popcorn size={14} />
-              {t('movieDetail.openInPopcorn')}
-            </button>
             <button onClick={handleToggleStatus} className="btn-ghost text-sm flex items-center gap-1.5">
               <ArrowLeftRight size={14} />
               {localMovie.status === 'watched' ? t('movieDetail.moveToWantToWatch') : t('movieDetail.moveToWatched')}

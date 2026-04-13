@@ -1,4 +1,4 @@
-import { X, Sun, Moon, Monitor, RefreshCw, RotateCcw, Bell, BellOff, Tv, Film, Clapperboard, Send, Popcorn } from 'lucide-react';
+import { X, Sun, Moon, Monitor, RefreshCw, RotateCcw, Bell, BellOff, Tv, Film, Clapperboard, Send } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import type { ThemeMode } from '../types';
@@ -8,7 +8,6 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useNotificationSubscription } from '../hooks/useNotificationSubscription';
-import { getPopcornLauncherTemplate, setPopcornLauncherTemplate } from '../lib/popcorn';
 
 interface Props {
   onClose: () => void;
@@ -62,7 +61,6 @@ export default function SettingsPanel({ onClose }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const [testNotifState, setTestNotifState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [testNotifMessage, setTestNotifMessage] = useState('');
-  const [popcornTemplate, setPopcornTemplateState] = useState(() => getPopcornLauncherTemplate());
 
   const handleClearCache = () => {
     setRefreshing(true);
@@ -110,17 +108,6 @@ export default function SettingsPanel({ onClose }: Props) {
   const handleSaveName = () => {
     setEditingName(false);
     toast.success(t('settings.displayNameSaved'));
-  };
-
-  const handleSavePopcornTemplate = () => {
-    setPopcornLauncherTemplate(popcornTemplate);
-    toast.success(t('settings.popcornSaved'));
-  };
-
-  const handleClearPopcornTemplate = () => {
-    setPopcornTemplateState('');
-    setPopcornLauncherTemplate('');
-    toast.success(t('settings.popcornCleared'));
   };
 
   const themes: { value: ThemeMode; label: string; icon: React.ReactNode }[] = [
@@ -321,39 +308,6 @@ export default function SettingsPanel({ onClose }: Props) {
                 )}
               </div>
             )}
-          </section>
-
-          <section>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-4">{t('settings.integrations')}</h3>
-            <div className="card p-4 space-y-3">
-              <div className="flex items-start gap-2.5">
-                <Popcorn size={16} className="text-amber-500 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{t('settings.popcornTitle')}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('settings.popcornHelp')}</p>
-                </div>
-              </div>
-
-              <input
-                className="input text-sm"
-                value={popcornTemplate}
-                onChange={e => setPopcornTemplateState(e.target.value)}
-                placeholder={t('settings.popcornPlaceholder')}
-              />
-
-              <p className="text-[11px] text-gray-400 dark:text-gray-500">
-                {t('settings.popcornTokens')}
-              </p>
-
-              <div className="flex gap-2">
-                <button onClick={handleSavePopcornTemplate} className="btn-primary text-sm py-2 flex-1">
-                  {t('settings.save')}
-                </button>
-                <button onClick={handleClearPopcornTemplate} className="btn-ghost text-sm py-2 flex-1">
-                  {t('settings.popcornReset')}
-                </button>
-              </div>
-            </div>
           </section>
 
           {/* About */}

@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CalendarDays, Check, Clock3, Star, Tv, X, Popcorn } from 'lucide-react';
+import { CalendarDays, Check, Clock3, Star, Tv, X } from 'lucide-react';
 import { useSeries } from '../context/SeriesContext';
 import SheetModal, { SheetCloseButton } from '../components/SheetModal';
 import { fetchSeasonDetails, fetchSeriesDetails, getPosterUrl } from '../lib/tmdb';
 import type { Series, TmdbSeries, TmdbEpisode } from '../types';
 import { deriveSeriesStatus } from '../components/SeasonGrid';
-import { buildEpisodePopcornQuery, launchPopcornTime } from '../lib/popcorn';
-import toast from 'react-hot-toast';
 
 const NEXT_UP_DISMISS_DURATION_MS = 380;
 const NEXT_UP_ENTER_DURATION_MS = 420;
@@ -524,34 +522,6 @@ function EpisodeDetailSheet({
   const stillUrl = episode?.still_path ? getPosterUrl(episode.still_path) : null;
   const statusLabel = state.type === 'available' ? t('nextUp.available') : t('nextUp.detailComingSoon');
 
-  const handleOpenInPopcorn = async () => {
-    const query = buildEpisodePopcornQuery(series.title, seasonNumber, episodeNumber, airDate);
-    const result = await launchPopcornTime(query, {
-      kind: 'episode',
-      title: series.title,
-      year: airDate?.slice(0, 4) ?? null,
-      season: seasonNumber,
-      episode: episodeNumber,
-    });
-
-    if (result.mode === 'launched') {
-      toast.success(t('nextUp.popcornLaunching'));
-      return;
-    }
-
-    if (result.mode === 'shared') {
-      toast.success(t('nextUp.popcornShared'));
-      return;
-    }
-
-    if (result.mode === 'copied') {
-      toast.success(`${t('nextUp.popcornCopied')}: ${query}`);
-      return;
-    }
-
-    toast.error(t('nextUp.popcornUnsupported'));
-  };
-
   return (
     <SheetModal
       onClose={onClose}
@@ -631,15 +601,7 @@ function EpisodeDetailSheet({
           </div>
 
           {state.type === 'available' && onMarkEpisodeWatched && (
-            <div className="mt-6 pb-4 md:pb-2 flex flex-wrap justify-center gap-2">
-              <button
-                type="button"
-                onClick={handleOpenInPopcorn}
-                className="btn-ghost inline-flex items-center justify-center gap-2 min-w-36"
-              >
-                <Popcorn size={18} />
-                {t('nextUp.openInPopcorn')}
-              </button>
+            <div className="mt-6 pb-4 md:pb-2 flex justify-center">
               <button
                 type="button"
                 onClick={() => {
@@ -650,18 +612,6 @@ function EpisodeDetailSheet({
               >
                 <Check size={18} />
                 {t('nextUp.markEpisodeWatched')}
-              </button>
-            </div>
-          )}
-          {state.type !== 'available' && (
-            <div className="mt-6 pb-4 md:pb-2 flex justify-center">
-              <button
-                type="button"
-                onClick={handleOpenInPopcorn}
-                className="btn-ghost inline-flex items-center justify-center gap-2 min-w-36"
-              >
-                <Popcorn size={18} />
-                {t('nextUp.openInPopcorn')}
               </button>
             </div>
           )}

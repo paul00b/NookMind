@@ -10,16 +10,14 @@ import EditableNote from './EditableNote';
 import { fetchSeasonDetails, fetchSeriesDetails, fetchSeriesWatchProviders, extractSeriesData, getPosterUrl } from '../lib/tmdb';
 import type { WatchProvidersResult } from '../types';
 import WatchProviders from './WatchProviders';
-import { X, Trash2, Tv, ChevronDown, FolderPlus, FolderMinus, Star, Popcorn } from 'lucide-react';
+import { X, Trash2, Tv, ChevronDown, FolderPlus, FolderMinus, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { getRatingStyle, type SeasonState } from '../lib/imdbRatingStyle';
 import { fetchSeriesImdbId, fetchSeasonRatings, type EpisodeRating } from '../lib/imdb';
 import { isSeriesWaiting } from '../lib/seriesUtils';
-import { buildEpisodePopcornQuery, buildSeriesPopcornQuery, launchPopcornTime } from '../lib/popcorn';
 
 interface SelectedEpisodeInfo {
-  seriesTitle: string;
   episodeNum: number;
   seasonNum: number;
   tmdb?: TmdbEpisode;
@@ -30,37 +28,6 @@ function EpisodeDetailSheet({ info, onClose }: { info: SelectedEpisodeInfo; onCl
   const { t, i18n } = useTranslation();
   const stillUrl = info.tmdb?.still_path ? `https://image.tmdb.org/t/p/w400${info.tmdb.still_path}` : null;
   const name = info.tmdb?.name ?? info.imdb?.title ?? `Episode ${info.episodeNum}`;
-
-  const handleOpenInPopcorn = async () => {
-    const query = buildEpisodePopcornQuery(
-      info.seriesTitle,
-      info.seasonNum,
-      info.episodeNum
-    );
-    const result = await launchPopcornTime(query, {
-      kind: 'episode',
-      title: info.seriesTitle,
-      season: info.seasonNum,
-      episode: info.episodeNum,
-    });
-
-    if (result.mode === 'launched') {
-      toast.success(t('seriesDetail.popcornLaunching'));
-      return;
-    }
-
-    if (result.mode === 'shared') {
-      toast.success(t('seriesDetail.popcornShared'));
-      return;
-    }
-
-    if (result.mode === 'copied') {
-      toast.success(`${t('seriesDetail.popcornCopied')}: ${query}`);
-      return;
-    }
-
-    toast.error(t('seriesDetail.popcornUnsupported'));
-  };
 
   return (
     <SheetModal
@@ -121,16 +88,6 @@ function EpisodeDetailSheet({ info, onClose }: { info: SelectedEpisodeInfo; onCl
               {t('seriesDetail.viewOnImdb')}
             </a>
           )}
-          <div className="mt-4">
-            <button
-              type="button"
-              onClick={handleOpenInPopcorn}
-              className="btn-ghost text-sm inline-flex items-center gap-1.5"
-            >
-              <Popcorn size={14} />
-              {t('seriesDetail.openInPopcorn')}
-            </button>
-          </div>
         </div>
       </div>
     </SheetModal>
@@ -314,32 +271,6 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
     onClose();
   };
 
-  const handleOpenSeriesInPopcorn = async () => {
-    const query = buildSeriesPopcornQuery(localSeries.title);
-    const result = await launchPopcornTime(query, {
-      kind: 'series',
-      title: localSeries.title,
-      year: localSeries.first_air_date?.slice(0, 4) ?? null,
-    });
-
-    if (result.mode === 'launched') {
-      toast.success(t('seriesDetail.popcornLaunching'));
-      return;
-    }
-
-    if (result.mode === 'shared') {
-      toast.success(t('seriesDetail.popcornShared'));
-      return;
-    }
-
-    if (result.mode === 'copied') {
-      toast.success(`${t('seriesDetail.popcornCopied')}: ${query}`);
-      return;
-    }
-
-    toast.error(t('seriesDetail.popcornUnsupported'));
-  };
-
   const isWaitingForNextSeason = isSeriesWaiting(localSeries);
 
   const imdbSeasons = Object.keys(seasonRatings).map(Number).sort((a, b) => a - b);
@@ -521,7 +452,7 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
                           {episodesToShow.map(({ episodeNum, tmdb, imdb }) => (
                             <button
                               key={episodeNum}
-                              onClick={() => setSelectedEpisode({ seriesTitle: localSeries.title, episodeNum, seasonNum: selectedSeason, tmdb, imdb })}
+                              onClick={() => setSelectedEpisode({ episodeNum, seasonNum: selectedSeason, tmdb, imdb })}
                               className="text-left bg-gray-50 dark:bg-gray-800/50 rounded-xl overflow-hidden hover:bg-amber-500/5 dark:hover:bg-amber-500/10 transition-colors"
                             >
                               <div className="w-full aspect-video bg-gray-200 dark:bg-gray-700 overflow-hidden">
@@ -754,10 +685,6 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
             )}
 
             <div className="flex flex-wrap gap-2 pt-2 justify-center">
-              <button onClick={handleOpenSeriesInPopcorn} className="btn-ghost text-sm flex items-center gap-1.5">
-                <Popcorn size={14} />
-                {t('seriesDetail.openInPopcorn')}
-              </button>
               {!confirmDelete ? (
                 <button onClick={() => setConfirmDelete(true)} className="btn-ghost text-sm text-red-500 hover:bg-red-500/10 flex items-center gap-1.5">
                   <Trash2 size={14} /> {t('seriesDetail.delete')}
