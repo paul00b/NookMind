@@ -75,10 +75,10 @@ export default function SearchSectionStack({ items }: Props) {
             else nodeRefs.current.delete(item.id);
           }}
           style={{ height: item.visible ? (contentHeights[item.id] ?? 0) : 0, willChange: 'height, transform, opacity' }}
-          className={`origin-top overflow-hidden transform-gpu transition-[height,opacity,transform,margin] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          className={`origin-top transform-gpu transition-[height,opacity,transform,margin] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
             item.visible
-              ? 'opacity-100 translate-y-0 scale-100 mt-10'
-              : 'opacity-0 -translate-y-1 scale-[0.99] mt-0 pointer-events-none'
+              ? 'overflow-visible opacity-100 translate-y-0 scale-100 mt-10'
+              : 'overflow-hidden opacity-0 -translate-y-1 scale-[0.99] mt-0 pointer-events-none'
           }`}
           aria-hidden={!item.visible}
         >
