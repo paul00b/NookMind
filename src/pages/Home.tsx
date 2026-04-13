@@ -5,8 +5,10 @@ import type { GoogleBookVolume, Book } from '../types';
 import AddBookModal from '../components/AddBookModal';
 import BookDetailModal from '../components/BookDetailModal';
 import StarRating from '../components/StarRating';
+import SearchSectionStack from '../components/SearchSectionStack';
 import { useBooks } from '../context/BooksContext';
 import { useTranslation } from 'react-i18next';
+import { orderSearchSections, useSearchSectionOrder } from '../lib/searchSectionOrder';
 
 function useDebounce<T>(value: T, delay: number): T {
   const [dv, setDv] = useState(value);
@@ -127,6 +129,7 @@ const normalize = (s: string) => s.toLowerCase().trim().replace(/\s+/g, ' ');
 export default function Home() {
   const { t } = useTranslation();
   const { books } = useBooks();
+  const { sections: sectionPrefs } = useSearchSectionOrder('books');
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebounce(query, 600);
   const [results, setResults] = useState<GoogleBookVolume[]>([]);
@@ -242,6 +245,12 @@ export default function Home() {
     setPrefill(null);
     setModalOpen(true);
   };
+
+  const orderedSections = orderSearchSections([
+    { id: 'want_to_read', node: <WantToReadSlider key="want_to_read" onSelect={setSelectedBook} /> },
+    { id: 'last_read', node: <LastReadSlider key="last_read" onSelect={setSelectedBook} /> },
+  ], sectionPrefs);
+  const visibilityMap = new Map(sectionPrefs.map(section => [section.id, section.visible]));
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[80vh] px-4 py-12">
@@ -372,11 +381,12 @@ export default function Home() {
         <Plus size={16} /> {t('home.addManually')}
       </button>
 
-      {/* Want to read slider */}
-      <WantToReadSlider onSelect={setSelectedBook} />
-
-      {/* Last read slider */}
-      <LastReadSlider onSelect={setSelectedBook} />
+      <SearchSectionStack
+        items={orderedSections.map(section => ({
+          ...section,
+          visible: visibilityMap.get(section.id) !== false,
+        }))}
+      />
 
       {/* Add book modal */}
       {modalOpen && (

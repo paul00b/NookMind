@@ -1,19 +1,24 @@
-import { X, Sun, Moon, Monitor, RefreshCw, RotateCcw, Bell, BellOff, Tv, Film, Clapperboard, Send } from 'lucide-react';
+import { X, Sun, Moon, Monitor, RefreshCw, RotateCcw, Bell, BellOff, Tv, Film, Clapperboard, Send, GripVertical, BookOpen, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import type { ThemeMode } from '../types';
+import { useMediaMode } from '../context/MediaModeContext';
+import type { MediaMode, ThemeMode } from '../types';
 import Avatar from './Avatar';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useNotificationSubscription } from '../hooks/useNotificationSubscription';
+import {
+  useSearchSectionOrder,
+} from '../lib/searchSectionOrder';
 
 interface Props {
   onClose: () => void;
 }
 
 const APP_VERSION = '1.0.0';
+const DRAG_PREVIEW_OFFSET_Y = 14;
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -35,9 +40,62 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   );
 }
 
+function SectionOrderEditorItem({
+  sectionId,
+  label,
+  visible,
+  dragging,
+  nodeRef,
+  onPointerStart,
+  onToggleVisible,
+}: {
+  sectionId: string;
+  label: string;
+  visible: boolean;
+  dragging: boolean;
+  nodeRef: (node: HTMLDivElement | null) => void;
+  onPointerStart: (event: React.PointerEvent<HTMLButtonElement>) => void;
+  onToggleVisible: () => void;
+}) {
+  return (
+    <div
+      ref={nodeRef}
+      data-section-id={sectionId}
+      className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 will-change-transform transition-[transform,opacity,background-color,border-color,box-shadow] duration-200 ease-out ${
+        dragging
+          ? 'border-amber-400 bg-amber-500/10 shadow-[0_12px_30px_rgba(245,158,11,0.18)] scale-[1.015] z-10'
+          : 'border-black/[0.06] dark:border-white/[0.06]'
+      }`}
+    >
+      <button
+        type="button"
+        onPointerDown={onPointerStart}
+        className="btn-ghost p-2 -ml-2 cursor-grab active:cursor-grabbing touch-none"
+        aria-label={`${label} drag handle`}
+      >
+        <GripVertical size={14} className="text-gray-400 shrink-0" />
+      </button>
+      <span className={`flex-1 text-sm ${visible ? 'text-gray-800 dark:text-gray-200' : 'text-gray-400 dark:text-gray-500 line-through'}`}>
+        {label}
+      </span>
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={onToggleVisible}
+          className="btn-ghost p-2"
+          aria-label={visible ? `${label} visible` : `${label} hidden`}
+        >
+          {visible ? <Eye size={16} /> : <EyeOff size={16} className="text-gray-400" />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function SettingsPanel({ onClose }: Props) {
   const { user, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { mode } = useMediaMode();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const {
@@ -55,12 +113,28 @@ export default function SettingsPanel({ onClose }: Props) {
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = previousOverflow; };
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      if (dragFrameRef.current != null) cancelAnimationFrame(dragFrameRef.current);
+    };
   }, []);
 
   const [refreshing, setRefreshing] = useState(false);
   const [testNotifState, setTestNotifState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [testNotifMessage, setTestNotifMessage] = useState('');
+  const [sectionMode, setSectionMode] = useState<MediaMode>(mode);
+  const [draggingSectionId, setDraggingSectionId] = useState<string | null>(null);
+  const [dragPreview, setDragPreview] = useState<{ label: string; visible: boolean; x: number; y: number } | null>(null);
+  const draggingSectionIdRef = useRef<string | null>(null);
+  const dragPreviewRef = useRef<{ label: string; visible: boolean; x: number; y: number } | null>(null);
+  const previousSectionPositionsRef = useRef<Map<string, number>>(new Map());
+  const sectionNodeRefs = useRef(new Map<string, HTMLDivElement>());
+  const dragFrameRef = useRef<number | null>(null);
+  const dragOverSectionRef = useRef<string | null>(null);
+
+  const booksOrder = useSearchSectionOrder('books');
+  const moviesOrder = useSearchSectionOrder('movies');
+  const seriesOrder = useSearchSectionOrder('series');
 
   const handleClearCache = () => {
     setRefreshing(true);
@@ -115,6 +189,177 @@ export default function SettingsPanel({ onClose }: Props) {
     { value: 'dark', label: t('settings.dark'), icon: <Moon size={14} /> },
     { value: 'system', label: t('settings.system'), icon: <Monitor size={14} /> },
   ];
+
+  const booksLabels: Record<string, string> = {
+    want_to_read: t('settings.sections.books.wantToRead'),
+    last_read: t('settings.sections.books.lastRead'),
+    trending: '',
+    want_to_watch: '',
+    last_watched: '',
+    watching: '',
+    waiting: '',
+  };
+
+  const moviesLabels: Record<string, string> = {
+    trending: t('settings.sections.movies.trending'),
+    want_to_watch: t('settings.sections.movies.wantToWatch'),
+    last_watched: t('settings.sections.movies.lastWatched'),
+    want_to_read: '',
+    last_read: '',
+    watching: '',
+    waiting: '',
+  };
+
+  const seriesLabels: Record<string, string> = {
+    trending: t('settings.sections.series.trending'),
+    watching: t('settings.sections.series.watching'),
+    waiting: t('settings.sections.series.waiting'),
+    want_to_watch: t('settings.sections.series.wantToWatch'),
+    last_watched: t('settings.sections.series.lastWatched'),
+    want_to_read: '',
+    last_read: '',
+  };
+
+  const sectionEditors = {
+    books: {
+      icon: <BookOpen size={14} />,
+      label: t('nav.books'),
+      sections: booksOrder.sections,
+      moveSection: booksOrder.moveSection,
+      toggleSectionVisibility: booksOrder.toggleSectionVisibility,
+      resetSections: booksOrder.resetSections,
+      labels: booksLabels,
+    },
+    movies: {
+      icon: <Film size={14} />,
+      label: t('nav.movies'),
+      sections: moviesOrder.sections,
+      moveSection: moviesOrder.moveSection,
+      toggleSectionVisibility: moviesOrder.toggleSectionVisibility,
+      resetSections: moviesOrder.resetSections,
+      labels: moviesLabels,
+    },
+    series: {
+      icon: <Tv size={14} />,
+      label: t('nav.series'),
+      sections: seriesOrder.sections,
+      moveSection: seriesOrder.moveSection,
+      toggleSectionVisibility: seriesOrder.toggleSectionVisibility,
+      resetSections: seriesOrder.resetSections,
+      labels: seriesLabels,
+    },
+  } as const;
+
+  const activeSectionEditor = sectionEditors[sectionMode];
+
+  useEffect(() => {
+    draggingSectionIdRef.current = draggingSectionId;
+  }, [draggingSectionId]);
+
+  useEffect(() => {
+    dragPreviewRef.current = dragPreview;
+  }, [dragPreview]);
+
+  const handleSectionReorderAtPoint = (clientX: number, clientY: number) => {
+    const draggingId = draggingSectionIdRef.current;
+    if (!draggingId) return;
+
+    const target = document.elementFromPoint(clientX, clientY) as HTMLElement | null;
+    const sectionId = target?.closest<HTMLElement>('[data-section-id]')?.dataset.sectionId;
+    if (!sectionId || sectionId === draggingId || dragOverSectionRef.current === sectionId) return;
+
+    const targetIndex = activeSectionEditor.sections.findIndex(section => section.id === sectionId);
+    if (targetIndex === -1) return;
+
+    dragOverSectionRef.current = sectionId;
+    activeSectionEditor.moveSection(draggingId, targetIndex);
+  };
+
+  const handleSectionPointerStart = (sectionId: string) => (event: React.PointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    setDraggingSectionId(sectionId);
+    dragOverSectionRef.current = null;
+
+    const draggedSection = activeSectionEditor.sections.find(section => section.id === sectionId);
+    const label = activeSectionEditor.labels[sectionId];
+    if (draggedSection && label) {
+      const initialPreview = {
+        label,
+        visible: draggedSection.visible,
+        x: event.clientX,
+        y: event.clientY,
+      };
+      dragPreviewRef.current = initialPreview;
+      setDragPreview(initialPreview);
+    }
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      if (dragFrameRef.current != null) cancelAnimationFrame(dragFrameRef.current);
+      dragFrameRef.current = requestAnimationFrame(() => {
+        const currentPreview = dragPreviewRef.current;
+        if (currentPreview) {
+          const nextPreview = {
+            ...currentPreview,
+            x: moveEvent.clientX,
+            y: moveEvent.clientY,
+          };
+          dragPreviewRef.current = nextPreview;
+          setDragPreview(nextPreview);
+        }
+        handleSectionReorderAtPoint(moveEvent.clientX, moveEvent.clientY);
+      });
+    };
+
+    const stopDragging = () => {
+      if (dragFrameRef.current != null) {
+        cancelAnimationFrame(dragFrameRef.current);
+        dragFrameRef.current = null;
+      }
+      dragOverSectionRef.current = null;
+      setDraggingSectionId(null);
+      dragPreviewRef.current = null;
+      setDragPreview(null);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', stopDragging);
+      window.removeEventListener('pointercancel', stopDragging);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove, { passive: true });
+    window.addEventListener('pointerup', stopDragging, { passive: true });
+    window.addEventListener('pointercancel', stopDragging, { passive: true });
+  };
+
+  useLayoutEffect(() => {
+    const nextPositions = new Map<string, number>();
+
+    activeSectionEditor.sections.forEach(section => {
+      const node = sectionNodeRefs.current.get(section.id);
+      if (!node) return;
+
+      const nextTop = node.getBoundingClientRect().top;
+      nextPositions.set(section.id, nextTop);
+
+      const previousTop = previousSectionPositionsRef.current.get(section.id);
+      if (previousTop == null) return;
+
+      const deltaY = previousTop - nextTop;
+      if (Math.abs(deltaY) < 1) return;
+
+      node.animate(
+        [
+          { transform: `translateY(${deltaY}px)` },
+          { transform: 'translateY(0px)' },
+        ],
+        {
+          duration: draggingSectionIdRef.current ? 180 : 240,
+          easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+        }
+      );
+    });
+
+    previousSectionPositionsRef.current = nextPositions;
+  }, [activeSectionEditor.sections, sectionMode]);
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -192,6 +437,62 @@ export default function SettingsPanel({ onClose }: Props) {
                   </button>
                 ))}
               </div>
+            </div>
+          </section>
+
+          <section>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-4">{t('settings.searchSections')}</h3>
+            <div className="card p-4 space-y-4">
+              <div>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('settings.searchSectionsTitle')}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('settings.searchSectionsHelp')}</p>
+              </div>
+
+              <div className="flex gap-2">
+                {(Object.keys(sectionEditors) as MediaMode[]).map(value => {
+                  const item = sectionEditors[value];
+                  return (
+                    <button
+                      key={value}
+                      onClick={() => setSectionMode(value)}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-medium border transition-all ${
+                        sectionMode === value
+                          ? 'bg-amber-500/10 border-amber-500 text-amber-600 dark:text-amber-400'
+                          : 'bg-transparent border-black/[0.08] dark:border-white/[0.08] text-gray-600 dark:text-gray-400 hover:border-amber-500/40'
+                      }`}
+                    >
+                      {item.icon}
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="space-y-2">
+                {activeSectionEditor.sections.map(section => (
+                  <SectionOrderEditorItem
+                    key={section.id}
+                    sectionId={section.id}
+                    label={activeSectionEditor.labels[section.id]}
+                    visible={section.visible}
+                    dragging={draggingSectionId === section.id}
+                    nodeRef={node => {
+                      if (node) sectionNodeRefs.current.set(section.id, node);
+                      else sectionNodeRefs.current.delete(section.id);
+                    }}
+                    onPointerStart={handleSectionPointerStart(section.id)}
+                    onToggleVisible={() => activeSectionEditor.toggleSectionVisibility(section.id)}
+                  />
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={activeSectionEditor.resetSections}
+                className="w-full btn-ghost text-sm"
+              >
+                {t('settings.searchSectionsReset')}
+              </button>
             </div>
           </section>
 
@@ -348,6 +649,25 @@ export default function SettingsPanel({ onClose }: Props) {
           </section>
         </div>
       </div>
+
+      {dragPreview && (
+        <div
+          className="fixed z-[80] pointer-events-none"
+          style={{
+            left: dragPreview.x,
+            top: dragPreview.y - DRAG_PREVIEW_OFFSET_Y,
+            transform: 'translate(-18px, -50%) rotate(-1.5deg)',
+          }}
+        >
+          <div className="flex items-center gap-3 rounded-xl border border-amber-400 bg-[#fff7e8] dark:bg-[#2b2417] px-3 py-2.5 shadow-[0_18px_40px_rgba(15,23,42,0.28)]">
+            <GripVertical size={14} className="text-amber-500 shrink-0" />
+            <span className={`text-sm ${dragPreview.visible ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500 line-through'}`}>
+              {dragPreview.label}
+            </span>
+            {dragPreview.visible ? <Eye size={16} className="text-amber-600 dark:text-amber-400" /> : <EyeOff size={16} className="text-gray-400" />}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -195,6 +195,28 @@ const en = {
     notifDenied: 'Notifications are blocked in your browser settings.',
     notifNotSupported: 'Push notifications are not supported on this device.',
     replayOnboarding: 'Replay onboarding',
+    searchSections: 'Search sections',
+    searchSectionsTitle: 'Reorder sections on the Search page',
+    searchSectionsHelp: 'Choose which sections appear first for each mode. Changes are applied instantly on this device.',
+    searchSectionsReset: 'Reset order',
+    sections: {
+      books: {
+        wantToRead: 'Want to read',
+        lastRead: 'Last read',
+      },
+      movies: {
+        trending: 'Discover',
+        wantToWatch: 'Want to watch',
+        lastWatched: 'Last watched',
+      },
+      series: {
+        trending: 'Discover',
+        watching: 'Currently watching',
+        waiting: 'Waiting for next season',
+        wantToWatch: 'Want to watch',
+        lastWatched: 'Recently finished',
+      },
+    },
   },
   onboarding: {
     slide1Title: 'Track movies, series & books',

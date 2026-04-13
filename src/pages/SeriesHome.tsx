@@ -11,6 +11,8 @@ import { useTranslation } from 'react-i18next';
 import { formatWaitingLabel, isSeriesWaiting } from '../lib/seriesUtils';
 import { useTmdbSeriesRefresh } from '../hooks/useTmdbSeriesRefresh';
 import TrendingSeriesSlider from '../components/TrendingSeriesSlider';
+import SearchSectionStack from '../components/SearchSectionStack';
+import { orderSearchSections, useSearchSectionOrder } from '../lib/searchSectionOrder';
 
 function useDebounce<T>(value: T, delay: number): T {
   const [dv, setDv] = useState(value);
@@ -202,6 +204,7 @@ const normalize = (s: string) => s.toLowerCase().trim().replace(/\s+/g, ' ');
 export default function SeriesHome() {
   const { t } = useTranslation();
   const { series: allSeries } = useSeries();
+  const { sections: sectionPrefs } = useSearchSectionOrder('series');
   useTmdbSeriesRefresh();
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebounce(query, 600);
@@ -320,6 +323,15 @@ export default function SeriesHome() {
     setPrefill(null);
     setModalOpen(true);
   };
+
+  const orderedSections = orderSearchSections([
+    { id: 'trending', node: <TrendingSeriesSlider key="trending" onSelect={setRatingsTarget} /> },
+    { id: 'watching', node: <WatchingSlider key="watching" onSelect={setSelectedSeries} /> },
+    { id: 'waiting', node: <WaitingSlider key="waiting" onSelect={setSelectedSeries} /> },
+    { id: 'want_to_watch', node: <WantToWatchSlider key="want_to_watch" onSelect={setSelectedSeries} /> },
+    { id: 'last_watched', node: <LastWatchedSlider key="last_watched" onSelect={setSelectedSeries} /> },
+  ], sectionPrefs);
+  const visibilityMap = new Map(sectionPrefs.map(section => [section.id, section.visible]));
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[80vh] px-4 py-12">
@@ -450,11 +462,12 @@ export default function SeriesHome() {
         <Plus size={16} /> {t('seriesHome.addManually')}
       </button>
 
-      <TrendingSeriesSlider onSelect={setRatingsTarget} />
-      <WatchingSlider onSelect={setSelectedSeries} />
-      <WaitingSlider onSelect={setSelectedSeries} />
-      <WantToWatchSlider onSelect={setSelectedSeries} />
-      <LastWatchedSlider onSelect={setSelectedSeries} />
+      <SearchSectionStack
+        items={orderedSections.map(section => ({
+          ...section,
+          visible: visibilityMap.get(section.id) !== false,
+        }))}
+      />
 
       {modalOpen && (
         <AddSeriesModal

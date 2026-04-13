@@ -6,8 +6,10 @@ import type { TmdbMovie, Movie } from '../types';
 import AddMovieModal from '../components/AddMovieModal';
 import MovieDetailModal from '../components/MovieDetailModal';
 import StarRating from '../components/StarRating';
+import SearchSectionStack from '../components/SearchSectionStack';
 import { useMovies } from '../context/MoviesContext';
 import { useTranslation } from 'react-i18next';
+import { orderSearchSections, useSearchSectionOrder } from '../lib/searchSectionOrder';
 
 function useDebounce<T>(value: T, delay: number): T {
   const [dv, setDv] = useState(value);
@@ -126,6 +128,7 @@ const normalize = (s: string) => s.toLowerCase().trim().replace(/\s+/g, ' ');
 export default function MovieHome() {
   const { t } = useTranslation();
   const { movies } = useMovies();
+  const { sections: sectionPrefs } = useSearchSectionOrder('movies');
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebounce(query, 600);
   const [results, setResults] = useState<TmdbMovie[]>([]);
@@ -254,6 +257,13 @@ export default function MovieHome() {
     setPrefill(null);
     setModalOpen(true);
   };
+
+  const orderedSections = orderSearchSections([
+    { id: 'trending', node: <TrendingMoviesSlider key="trending" onSelect={movie => void handleSelectMovie(movie)} /> },
+    { id: 'want_to_watch', node: <WantToWatchSlider key="want_to_watch" onSelect={setSelectedMovie} /> },
+    { id: 'last_watched', node: <LastWatchedSlider key="last_watched" onSelect={setSelectedMovie} /> },
+  ], sectionPrefs);
+  const visibilityMap = new Map(sectionPrefs.map(section => [section.id, section.visible]));
 
   return (
     <div ref={searchSectionRef} className="flex flex-col items-center justify-center min-h-[80vh] px-4 py-12 scroll-mt-4">
@@ -387,14 +397,12 @@ export default function MovieHome() {
         <Plus size={16} /> {t('movieHome.addManually')}
       </button>
 
-      {/* Trending movies slider */}
-      <TrendingMoviesSlider onSelect={movie => void handleSelectMovie(movie)} />
-
-      {/* Want to watch slider */}
-      <WantToWatchSlider onSelect={setSelectedMovie} />
-
-      {/* Last watched slider */}
-      <LastWatchedSlider onSelect={setSelectedMovie} />
+      <SearchSectionStack
+        items={orderedSections.map(section => ({
+          ...section,
+          visible: visibilityMap.get(section.id) !== false,
+        }))}
+      />
 
       {/* Add movie modal */}
       {modalOpen && (

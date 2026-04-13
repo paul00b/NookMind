@@ -195,6 +195,28 @@ const fr = {
     notifDenied: 'Les notifications sont bloquées dans les paramètres du navigateur.',
     notifNotSupported: 'Les notifications push ne sont pas supportées sur cet appareil.',
     replayOnboarding: 'Revoir la présentation',
+    searchSections: 'Sections de recherche',
+    searchSectionsTitle: 'Réorganiser les sections de la page Recherche',
+    searchSectionsHelp: 'Choisissez quelles sections apparaissent en premier pour chaque mode. Les changements sont appliqués immédiatement sur cet appareil.',
+    searchSectionsReset: 'Réinitialiser l’ordre',
+    sections: {
+      books: {
+        wantToRead: 'À lire',
+        lastRead: 'Derniers lus',
+      },
+      movies: {
+        trending: 'Découverte',
+        wantToWatch: 'À voir',
+        lastWatched: 'Derniers vus',
+      },
+      series: {
+        trending: 'Découverte',
+        watching: 'En cours',
+        waiting: 'En attente',
+        wantToWatch: 'À voir',
+        lastWatched: 'Terminées récemment',
+      },
+    },
   },
   onboarding: {
     slide1Title: 'Suivez vos films, séries et livres',
