@@ -1,4 +1,4 @@
-import { X, Sun, Moon, Monitor, RefreshCw, Bell, BellOff, Tv, Film, Clapperboard, Send } from 'lucide-react';
+import { X, Sun, Moon, Monitor, RefreshCw, RotateCcw, Bell, BellOff, Tv, Film, Clapperboard, Send } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import type { ThemeMode } from '../types';
@@ -6,6 +6,7 @@ import Avatar from './Avatar';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useNotificationSubscription } from '../hooks/useNotificationSubscription';
 
 interface Props {
@@ -38,6 +39,7 @@ export default function SettingsPanel({ onClose }: Props) {
   const { user, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const {
     supported: notifSupported,
     permission,
@@ -67,6 +69,12 @@ export default function SettingsPanel({ onClose }: Props) {
       setRefreshing(false);
       toast.success(t('settings.cacheCleared'));
     }, 800);
+  };
+
+  const handleReplayOnboarding = () => {
+    localStorage.removeItem('nookmind_onboarding_completed');
+    onClose();
+    navigate('/onboarding');
   };
 
   const handleToggleNotifications = async () => {
@@ -325,6 +333,15 @@ export default function SettingsPanel({ onClose }: Props) {
                 >
                   <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
                   {refreshing ? t('settings.cacheRefreshing') : t('settings.clearCache')}
+                </button>
+              </div>
+              <div className="border-t border-black/[0.06] dark:border-white/[0.06] pt-3 mt-1">
+                <button
+                  onClick={handleReplayOnboarding}
+                  className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition-colors"
+                >
+                  <RotateCcw size={14} />
+                  {t('settings.replayOnboarding')}
                 </button>
               </div>
             </div>
