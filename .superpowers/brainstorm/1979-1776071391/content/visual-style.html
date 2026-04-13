@@ -1,0 +1,43 @@
+<h2>What visual style for the onboarding illustrations?</h2>
+<p class="subtitle">NookMind uses dark (#0f1117) with amber accents and mode-specific gradients (amber/indigo/teal). Here are 3 directions for the slide visuals.</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Emoji / Icon Compositions</h3>
+      <p>Large, friendly emoji clusters or Lucide icons (already in the project) arranged into visual scenes. E.g. Slide 1 shows a grid of 🎬📚📺, Slide 2 shows ⭐🔔📊 etc.</p>
+      <p style="color: #9ca3af; font-size: 0.85rem;">Lightweight, loads instantly, consistent across devices. Playful and modern. No external assets needed.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Zero asset weight</li><li>Works perfectly in dark & light mode</li><li>Easy to maintain</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Can feel generic</li><li>Less "premium" feel</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>CSS-Illustrated Mockups</h3>
+      <p>Mini-mockups of the actual app screens built in CSS — a tiny phone frame showing the library view, the discover page, a notification card. Users see what they'll actually get.</p>
+      <p style="color: #9ca3af; font-size: 0.85rem;">Shows the real product. Uses the app's own design tokens (amber, dark bg, rounded cards).</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Sets accurate expectations</li><li>Feels polished & branded</li><li>Reuses existing design system</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>More complex to build</li><li>Needs updating if UI changes</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Abstract Gradient Art + Icons</h3>
+      <p>Full-bleed gradient backgrounds (matching the mode colors: amber, indigo, teal) with floating Lucide icons and bold typography. Each slide has its own color identity.</p>
+      <p style="color: #9ca3af; font-size: 0.85rem;">Vibrant, immersive feel. Each slide has a distinct color that maps to NookMind's media modes (books=amber, movies=indigo, series=teal).</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Visually striking</li><li>Introduces the color language early</li><li>No external assets, pure CSS</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>More abstract — less concrete about features</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>

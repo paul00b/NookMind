@@ -12,7 +12,18 @@
       "Bash(ls:*)",
       "Bash(grep -n \"push\\\\|notification\\\\|service\\\\|worker\" /c/Users/brous/Desktop/Dev/BookMind/src/components/*.tsx /c/Users/brous/Desktop/Dev/BookMind/src/lib/*.ts)",
       "Bash(grep -r \"notification\\\\|push\\\\|scheduled\\\\|cron\" /c/Users/brous/Desktop/Dev/BookMind/src /c/Users/brous/Desktop/Dev/BookMind/api --include=*.ts --include=*.tsx)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(git push:*)",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl --version)",
+      "WebFetch(domain:api.themoviedb.org)",
+      "Bash(curl -sk 'https://api.themoviedb.org/3/movie/27205/watch/providers?api_key=f0dd425082eead560100b9bcab60a1bc')",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\).get\\('results',{}\\).get\\('FR',{}\\); print\\('flatrate:', [p['provider_name'] for p in d.get\\('flatrate',[]\\)]\\); print\\('rent:', [p['provider_name'] for p in d.get\\('rent',[]\\)]\\); print\\('buy:', [p['provider_name'] for p in d.get\\('buy',[]\\)]\\)\")",
+      "Bash(bash:*)",
+      "Bash(cat C:\\\\\\\\Users\\\\\\\\brous\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\C--Users-brous-Desktop-Dev-BookMind\\\\\\\\ba859f68-4308-43da-9577-7b06da43d7b0\\\\\\\\tasks\\\\\\\\bqmui5nty.output)",
+      "Bash(npx vite:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/onboarding)",
+      "Bash(npx tailwindcss:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
