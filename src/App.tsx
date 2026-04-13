@@ -8,6 +8,7 @@ import BottomNav from './components/BottomNav';
 import AppProviders from './app/AppProviders';
 import { renderByMediaMode } from './app/mediaMode';
 import Login from './pages/Login';
+import Onboarding from './pages/Onboarding';
 import AuthCallback from './pages/AuthCallback';
 import Home from './pages/Home';
 import Library from './pages/Library';
@@ -48,12 +49,19 @@ function NextUpSwitch() {
   });
 }
 
+function OnboardingGate() {
+  const onboardingDone = localStorage.getItem('nookmind_onboarding_completed') === 'true';
+  if (!onboardingDone) return <Navigate to="/onboarding" replace />;
+  return <Login />;
+}
+
 export default function App() {
   return (
     <AppProviders>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<Login />} />
+          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/login" element={<OnboardingGate />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
