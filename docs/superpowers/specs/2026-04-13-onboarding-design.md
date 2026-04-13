@@ -17,7 +17,7 @@ A 3-slide onboarding carousel shown before the login screen for first-time visit
 
 - **Title:** "Track movies, series & books"
 - **Body:** "Your watchlist, your reading list, all in one place. Free and ads-free, forever."
-- **Visual:** NookMind logo (amber gradient rounded square with "N") centered, with floating semi-transparent background icons (film, TV, book)
+- **Visual:** NookMind logo (use the actual nookmind logo in oublic/logo.svg) centered, with floating semi-transparent background icons (film, TV, book)
 - **Gradient:** Amber (#f59e0b) — matches the Books media mode
 
 ### Slide 2 — Smart Features (Indigo)
@@ -25,6 +25,7 @@ A 3-slide onboarding carousel shown before the login screen for first-time visit
 - **Title:** "Never miss a thing"
 - **Body:** "IMDB ratings per episode, new episode alerts, cast info, and streaming providers at a glance."
 - **Visual:** 4 feature icons in rounded square tiles (star/ratings, bell/alerts, masks/cast, satellite/providers)
+- **Animation:** The 4 icons are "floating", slightly moving up, down, left and right - very subtle movement, smooth animation, premium feel
 - **Gradient:** Indigo (#6366f1) — matches the Movies media mode
 
 ### Slide 3 — Discover & Collect (Teal)

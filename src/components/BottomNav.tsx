@@ -8,7 +8,7 @@ export default function BottomNav() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { mode, setMode } = useMediaMode();
-  if (pathname === '/login') return null;
+  if (pathname === '/login' || pathname === '/onboarding') return null;
 
   const TABS = [
     { to: '/', label: t('nav.home'), icon: Search, end: true },

@@ -101,11 +101,11 @@ export default function Onboarding() {
   const bodyKeys = ['onboarding.slide1Body', 'onboarding.slide2Body', 'onboarding.slide3Body'] as const;
 
   return (
-    <div className="relative w-screen h-[100svh] overflow-hidden bg-[#0f1117]">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-[#0f1117]">
       {/* Skip button */}
       <button
         onClick={finish}
-        className="absolute top-4 right-4 z-20 text-sm text-gray-500 hover:text-gray-300 transition-colors px-3 py-1.5"
+        className="absolute top-4 right-4 z-20 text-sm text-white/70 hover:text-white transition-colors px-3 py-1.5"
         style={{ paddingTop: 'calc(0.375rem + env(safe-area-inset-top))' }}
       >
         {t('onboarding.skip')}
