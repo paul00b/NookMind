@@ -12,6 +12,21 @@ const NEXT_UP_ENTER_DURATION_MS = 420;
 
 // ─── helpers ───────────────────────────────────────────────────────────────
 
+function parseDateOnly(dateStr: string): Date {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, (month ?? 1) - 1, day ?? 1);
+}
+
+function startOfToday(): Date {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+}
+
+function isTodayOrPast(dateStr: string): boolean {
+  return parseDateOnly(dateStr).getTime() <= startOfToday().getTime();
+}
+
 function getUserLastWatched(
   watchedEpisodes: Record<string, number[]>
 ): { season: number; episode: number } | null {
@@ -89,19 +104,29 @@ function getEpisodeState(series: Series, tmdb: TmdbSeries | null | undefined): E
     return { type: 'available', season: nextSeason, episode: nextEp };
   }
 
-  if (nextAiring) return { type: 'coming_soon', ep: nextAiring };
+  if (nextAiring) {
+    const nextAiringIsAvailableToday = nextAiring.air_date && isTodayOrPast(nextAiring.air_date);
+    if (nextAiringIsAvailableToday) {
+      return {
+        type: 'available',
+        season: nextAiring.season_number,
+        episode: nextAiring.episode_number,
+      };
+    }
+    return { type: 'coming_soon', ep: nextAiring };
+  }
 
   return { type: 'up_to_date' };
 }
 
 function daysUntil(dateStr: string): number {
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const target = new Date(dateStr); target.setHours(0, 0, 0, 0);
+  const today = startOfToday();
+  const target = parseDateOnly(dateStr);
   return Math.round((target.getTime() - today.getTime()) / 86400000);
 }
 
 function formatDate(dateStr: string, lang: string): string {
-  return new Date(dateStr).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB', {
+  return parseDateOnly(dateStr).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB', {
     day: 'numeric', month: 'short', year: 'numeric',
   });
 }
@@ -220,7 +245,7 @@ export default function NextUpSeries() {
       if (!a.state.ep.air_date && !b.state.ep.air_date) return 0;
       if (!a.state.ep.air_date) return 1;
       if (!b.state.ep.air_date) return -1;
-      return new Date(a.state.ep.air_date).getTime() - new Date(b.state.ep.air_date).getTime();
+      return parseDateOnly(a.state.ep.air_date).getTime() - parseDateOnly(b.state.ep.air_date).getTime();
     }
     return 0;
   });

@@ -131,4 +131,63 @@ describe('NextUpSeries', () => {
 
     expect(screen.getByText('S1E3')).toBeTruthy();
   });
+
+  it('treats an episode airing today as available so it can be marked watched', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-04-15T10:00:00+02:00'));
+
+    fetchSeriesDetailsMock.mockResolvedValueOnce({
+      id: 101,
+      name: 'Test Show',
+      overview: 'Overview',
+      poster_path: null,
+      first_air_date: '2024-01-01',
+      seasons: [
+        { season_number: 1, episode_count: 3, air_date: '2024-01-01' },
+      ],
+      last_episode_to_air: {
+        season_number: 1,
+        episode_number: 2,
+        air_date: '2026-04-08',
+        name: 'Episode 2',
+      },
+      next_episode_to_air: {
+        season_number: 1,
+        episode_number: 3,
+        air_date: '2026-04-15',
+        name: 'Episode 3',
+      },
+    });
+
+    const initialSeries: Series[] = [{
+      id: 'series-1',
+      user_id: 'user-1',
+      tmdb_id: 101,
+      title: 'Test Show',
+      creator: 'Creator',
+      description: null,
+      poster_url: null,
+      first_air_date: '2024-01-01',
+      seasons: 1,
+      watched_seasons: [],
+      watched_episodes: { '1': [1, 2] },
+      genre: null,
+      status: 'watching',
+      rating: null,
+      personal_note: null,
+      next_air_date: '2026-04-15',
+      next_season_number: 1,
+      created_at: '2026-04-01T00:00:00.000Z',
+    }];
+
+    render(<Harness initialSeries={initialSeries} />);
+
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    expect(await screen.findByText('S1E3')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Marquer comme vu' })).toBeTruthy();
+    expect(screen.queryByText(/Disponible aujourd'hui/)).toBeNull();
+  });
 });
