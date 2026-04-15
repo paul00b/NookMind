@@ -39,7 +39,17 @@ describe('isSeriesWaiting', () => {
     expect(isSeriesWaiting(makeSeries({
       watched_seasons: [1],
       watched_episodes: { '2': [1, 2] },
+      next_air_date: '2026-04-15',
       next_season_number: 2,
     }))).toBe(false);
+  });
+
+  it('returns true when the user is caught up and waiting for the next episode in the current season', () => {
+    expect(isSeriesWaiting(makeSeries({
+      watched_seasons: [],
+      watched_episodes: { '1': [1, 2, 3] },
+      next_air_date: '2026-04-22',
+      next_season_number: 1,
+    }))).toBe(true);
   });
 });
