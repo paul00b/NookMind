@@ -388,8 +388,6 @@ export default function NextUpSeries() {
         await updateSeries(seriesItem.id, {
         watched_episodes: nextWatchedEpisodes,
         watched_seasons: [...nextWatchedSeasons].sort((a, b) => a - b),
-        next_air_date: nextUpcomingEpisode?.air_date ?? null,
-        next_season_number: nextUpcomingEpisode?.season_number ?? null,
         status: deriveSeriesStatus(
           [...nextWatchedSeasons].sort((a, b) => a - b),
           seriesItem.seasons,
