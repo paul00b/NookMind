@@ -137,6 +137,40 @@ function getCardKey(series: Series, state: EpisodeState): string {
   return `${series.id}-${state.type}`;
 }
 
+async function findNextUpcomingEpisode(
+  tmdbId: number,
+  tmdb: TmdbSeries | null | undefined,
+  watchedEpisodes: Record<string, number[]>
+): Promise<TmdbEpisode | null> {
+  const seasons = (tmdb?.seasons ?? [])
+    .filter(season => season.season_number > 0 && (season.episode_count ?? 0) > 0)
+    .sort((a, b) => a.season_number - b.season_number);
+
+  if (seasons.length === 0) return null;
+
+  const watchedScores = new Set(
+    Object.entries(watchedEpisodes).flatMap(([season, episodes]) =>
+      episodes.map(episode => episodeScore(Number(season), episode))
+    )
+  );
+  const today = startOfToday().getTime();
+
+  for (const season of seasons) {
+    const details = await fetchSeasonDetails(tmdbId, season.season_number);
+    const nextEpisode = details?.episodes
+      .filter(ep => {
+        if (!ep.air_date) return false;
+        if (parseDateOnly(ep.air_date).getTime() <= today) return false;
+        return !watchedScores.has(episodeScore(ep.season_number, ep.episode_number));
+      })
+      .sort((a, b) => episodeScore(a.season_number, a.episode_number) - episodeScore(b.season_number, b.episode_number))[0];
+
+    if (nextEpisode) return nextEpisode;
+  }
+
+  return null;
+}
+
 // ─── component ─────────────────────────────────────────────────────────────
 
 export default function NextUpSeries() {
@@ -336,16 +370,34 @@ export default function NextUpSeries() {
       [seriesItem.id]: { dismissKey },
     }));
     window.setTimeout(() => {
-      void updateSeries(seriesItem.id, {
+      void (async () => {
+        const nextUpcomingEpisode = seriesItem.tmdb_id
+          ? await findNextUpcomingEpisode(seriesItem.tmdb_id, tmdb, nextWatchedEpisodes)
+          : null;
+
+        if (tmdb) {
+          setTmdbData(prev => ({
+            ...prev,
+            [seriesItem.id]: {
+              ...tmdb,
+              next_episode_to_air: nextUpcomingEpisode,
+            },
+          }));
+        }
+
+        await updateSeries(seriesItem.id, {
         watched_episodes: nextWatchedEpisodes,
         watched_seasons: [...nextWatchedSeasons].sort((a, b) => a - b),
+        next_air_date: nextUpcomingEpisode?.air_date ?? null,
+        next_season_number: nextUpcomingEpisode?.season_number ?? null,
         status: deriveSeriesStatus(
           [...nextWatchedSeasons].sort((a, b) => a - b),
           seriesItem.seasons,
-          false,
+          nextUpcomingEpisode !== null,
           nextWatchedEpisodes
         ),
-      });
+        });
+      })();
     }, NEXT_UP_DISMISS_DURATION_MS);
   };
 

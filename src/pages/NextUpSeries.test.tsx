@@ -1,8 +1,8 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useState, type ReactNode } from 'react';
 import NextUpSeries from './NextUpSeries';
-import type { Series, TmdbSeries } from '../types';
+import type { Series, TmdbSeasonDetails, TmdbSeries } from '../types';
 
 let seriesState: Series[] = [];
 let updateSeriesImpl: (id: string, updates: Partial<Series>) => Promise<void> = async () => {};
@@ -42,10 +42,11 @@ vi.mock('react-i18next', () => ({
 }));
 
 const fetchSeriesDetailsMock = vi.fn<(tmdbId: number) => Promise<TmdbSeries | null>>();
+const fetchSeasonDetailsMock = vi.fn<(tmdbId: number, seasonNumber: number) => Promise<TmdbSeasonDetails | null>>();
 
 vi.mock('../lib/tmdb', () => ({
   fetchSeriesDetails: (tmdbId: number) => fetchSeriesDetailsMock(tmdbId),
-  fetchSeasonDetails: vi.fn(async () => null),
+  fetchSeasonDetails: (tmdbId: number, seasonNumber: number) => fetchSeasonDetailsMock(tmdbId, seasonNumber),
   getPosterUrl: vi.fn(() => null),
 }));
 
@@ -87,16 +88,18 @@ describe('NextUpSeries', () => {
         name: 'Episode 3',
       },
     });
+    fetchSeasonDetailsMock.mockResolvedValue(null);
   });
 
   afterEach(() => {
+    cleanup();
     vi.useRealTimers();
     vi.clearAllMocks();
     seriesState = [];
     updateSeriesImpl = async () => {};
   });
 
-  it('shows the next available episode after marking the current one as watched', async () => {
+  it('shows the following upcoming episode after marking the current one as watched', async () => {
     const initialSeries: Series[] = [{
       id: 'series-1',
       user_id: 'user-1',
@@ -123,13 +126,21 @@ describe('NextUpSeries', () => {
     expect(await screen.findByText('S1E2')).toBeTruthy();
 
     vi.useFakeTimers();
+    fetchSeasonDetailsMock.mockResolvedValueOnce({
+      episodes: [
+        { season_number: 1, episode_number: 1, air_date: '2024-01-01', name: 'Episode 1' },
+        { season_number: 1, episode_number: 2, air_date: '2024-01-08', name: 'Episode 2' },
+        { season_number: 1, episode_number: 3, air_date: '2026-04-20', name: 'Episode 3' },
+      ],
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Marquer comme vu' }));
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1000);
     });
 
-    expect(screen.getByText('S1E3')).toBeTruthy();
+    expect(screen.getByText('Dans 5 jours')).toBeTruthy();
+    expect(screen.getByText(/Episode 3/)).toBeTruthy();
   });
 
   it('treats an episode airing today as available so it can be marked watched', async () => {
@@ -186,8 +197,81 @@ describe('NextUpSeries', () => {
       await vi.runAllTimersAsync();
     });
 
-    expect(await screen.findByText('S1E3')).toBeTruthy();
+    expect(screen.getByText('Disponible')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Marquer comme vu' })).toBeTruthy();
     expect(screen.queryByText(/Disponible aujourd'hui/)).toBeNull();
+  });
+
+  it('shows the following upcoming episode after marking today episode as watched', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-04-15T10:00:00+02:00'));
+
+    fetchSeriesDetailsMock.mockResolvedValueOnce({
+      id: 101,
+      name: 'Test Show',
+      overview: 'Overview',
+      poster_path: null,
+      first_air_date: '2024-01-01',
+      seasons: [
+        { season_number: 1, episode_count: 4, air_date: '2024-01-01' },
+      ],
+      last_episode_to_air: {
+        season_number: 1,
+        episode_number: 2,
+        air_date: '2026-04-08',
+        name: 'Episode 2',
+      },
+      next_episode_to_air: {
+        season_number: 1,
+        episode_number: 3,
+        air_date: '2026-04-15',
+        name: 'Episode 3',
+      },
+    });
+
+    fetchSeasonDetailsMock.mockResolvedValueOnce({
+      episodes: [
+        { season_number: 1, episode_number: 1, air_date: '2026-04-01', name: 'Episode 1' },
+        { season_number: 1, episode_number: 2, air_date: '2026-04-08', name: 'Episode 2' },
+        { season_number: 1, episode_number: 3, air_date: '2026-04-15', name: 'Episode 3' },
+        { season_number: 1, episode_number: 4, air_date: '2026-04-22', name: 'Episode 4' },
+      ],
+    });
+
+    const initialSeries: Series[] = [{
+      id: 'series-1',
+      user_id: 'user-1',
+      tmdb_id: 101,
+      title: 'Test Show',
+      creator: 'Creator',
+      description: null,
+      poster_url: null,
+      first_air_date: '2024-01-01',
+      seasons: 1,
+      watched_seasons: [],
+      watched_episodes: { '1': [1, 2] },
+      genre: null,
+      status: 'watching',
+      rating: null,
+      personal_note: null,
+      next_air_date: '2026-04-15',
+      next_season_number: 1,
+      created_at: '2026-04-01T00:00:00.000Z',
+    }];
+
+    render(<Harness initialSeries={initialSeries} />);
+
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Marquer comme vu' })[0]);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+
+    expect(screen.getByText('Dans 7 jours')).toBeTruthy();
+    expect(screen.getByText(/Episode 4/)).toBeTruthy();
   });
 });
