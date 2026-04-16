@@ -205,13 +205,7 @@ export function useNotificationSubscription() {
       failed?: number;
       error?: string;
       results?: Array<{ statusCode: number | null; error?: string; details?: string; endpoint: string }>;
-      diagnostics?: {
-        serverPublicKey?: string | null;
-        derivedServerPublicKey?: string | null;
-        serverKeyPairMatches?: boolean;
-        vapidContact?: string | null;
-        endpointHosts?: string[];
-      };
+      diagnostics?: { endpointHosts?: string[] };
     }>(
       '/api/push/test',
       'POST',
@@ -230,20 +224,6 @@ export function useNotificationSubscription() {
     if ((result.data?.sent ?? 0) > 0) {
       toast.success('Notification de test envoyee.');
       return { ok: true, message: 'Notification de test envoyee.' };
-    }
-
-    const serverPublicKey = result.data?.diagnostics?.serverPublicKey ?? null;
-    const serverKeyPairMatches = result.data?.diagnostics?.serverKeyPairMatches;
-    if (serverKeyPairMatches === false) {
-      const message = 'Mismatch VAPID sur le backend: la cle publique ne correspond pas a la cle privee lue par Vercel.';
-      toast.error(message);
-      return { ok: false, message };
-    }
-
-    if (serverPublicKey && VAPID_PUBLIC_KEY && serverPublicKey !== VAPID_PUBLIC_KEY) {
-      const message = 'Mismatch VAPID: le backend et le front n utilisent pas la meme cle publique.';
-      toast.error(message);
-      return { ok: false, message };
     }
 
     const firstFailure = result.data?.results?.find((entry) => entry.error);
