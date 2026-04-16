@@ -3,8 +3,6 @@ import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
 import { configureWebPush } from './_vapid';
 
-configureWebPush();
-
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -80,6 +78,14 @@ async function sendPush(subscription: PushSubscriptionJSON, payload: object): Pr
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  try {
+    configureWebPush();
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('[push] invalid VAPID config', { error: message });
+    return res.status(500).json({ error: message });
+  }
+
   if (req.method !== 'POST' && req.method !== 'GET') return res.status(405).end();
 
   // Vercel cron sends Authorization header with CRON_SECRET
