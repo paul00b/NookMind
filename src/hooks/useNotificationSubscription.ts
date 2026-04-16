@@ -203,7 +203,7 @@ export function useNotificationSubscription() {
       sent?: number;
       failed?: number;
       error?: string;
-      results?: Array<{ statusCode: number | null; error?: string; endpoint: string }>;
+      results?: Array<{ statusCode: number | null; error?: string; details?: string; endpoint: string }>;
       diagnostics?: { serverPublicKey?: string | null; vapidContact?: string | null; endpointHosts?: string[] };
     }>(
       '/api/push/test',
@@ -234,6 +234,7 @@ export function useNotificationSubscription() {
       const details = [
         firstFailure.statusCode ? `HTTP ${firstFailure.statusCode}` : null,
         firstFailure.error,
+        firstFailure.details,
         result.data?.diagnostics?.endpointHosts?.length
           ? `endpoint ${result.data.diagnostics.endpointHosts[0]}`
           : null,

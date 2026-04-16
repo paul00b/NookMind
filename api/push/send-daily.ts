@@ -42,6 +42,7 @@ interface PushSendResult {
   statusCode: number | null;
   endpoint: string;
   error?: string;
+  details?: string;
 }
 
 async function sendPush(subscription: PushSubscriptionJSON, payload: object): Promise<PushSendResult> {
@@ -51,13 +52,16 @@ async function sendPush(subscription: PushSubscriptionJSON, payload: object): Pr
     await webpush.sendNotification(subscription as Parameters<typeof webpush.sendNotification>[0], JSON.stringify(payload));
     return { ok: true, statusCode: 201, endpoint };
   } catch (err: unknown) {
-    const status = (err as { statusCode?: number }).statusCode;
+    const errorWithMeta = err as { statusCode?: number; body?: string };
+    const status = errorWithMeta.statusCode;
     const message = err instanceof Error ? err.message : String(err);
+    const details = errorWithMeta.body;
 
     console.error('[push] send failed', {
       endpoint,
       statusCode: status ?? null,
       error: message,
+      details: details ?? null,
     });
 
     // 404/410 = subscription expired → clean up
@@ -73,6 +77,7 @@ async function sendPush(subscription: PushSubscriptionJSON, payload: object): Pr
       statusCode: status ?? null,
       endpoint,
       error: message,
+      details,
     };
   }
 }

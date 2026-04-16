@@ -23,6 +23,7 @@ interface PushAttemptResult {
   statusCode: number | null;
   endpoint: string;
   error?: string;
+  details?: string;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -84,14 +85,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         return { ok: true, statusCode: 201, endpoint } satisfies PushAttemptResult;
       } catch (err: unknown) {
-        const statusCode = (err as { statusCode?: number }).statusCode ?? null;
+        const errorWithMeta = err as { statusCode?: number; body?: string };
+        const statusCode = errorWithMeta.statusCode ?? null;
         const error = err instanceof Error ? err.message : String(err);
+        const details = errorWithMeta.body;
 
         console.error('[push] test send failed', {
           userId: user.id,
           endpoint,
           statusCode,
           error,
+          details: details ?? null,
         });
 
         if (statusCode === 404 || statusCode === 410) {
@@ -101,7 +105,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .eq('endpoint', endpoint);
         }
 
-        return { ok: false, statusCode, endpoint, error } satisfies PushAttemptResult;
+        return { ok: false, statusCode, endpoint, error, details } satisfies PushAttemptResult;
       }
     })
   );
