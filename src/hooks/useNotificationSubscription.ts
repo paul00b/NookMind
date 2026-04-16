@@ -60,9 +60,9 @@ async function callApiJson<T>(
   path: string,
   method: string,
   body: object
-): Promise<{ ok: boolean; data: T | null; status: number }> {
+): Promise<{ ok: boolean; data: T | null; status: number; rawText?: string }> {
   const token = await getAuthToken();
-  if (!token) return { ok: false, data: null, status: 401 };
+  if (!token) return { ok: false, data: null, status: 401, rawText: 'Missing auth token' };
 
   const res = await fetch(path, {
     method,
@@ -73,14 +73,15 @@ async function callApiJson<T>(
     body: JSON.stringify(body),
   });
 
+  const rawText = await res.text();
   let data: T | null = null;
   try {
-    data = (await res.json()) as T;
+    data = rawText ? (JSON.parse(rawText) as T) : null;
   } catch {
     data = null;
   }
 
-  return { ok: res.ok, data, status: res.status };
+  return { ok: res.ok, data, status: res.status, rawText };
 }
 
 export function useNotificationSubscription() {
@@ -218,7 +219,10 @@ export function useNotificationSubscription() {
     );
 
     if (!result.ok) {
-      const message = result.data?.error ?? 'Impossible d\'envoyer la notification de test.';
+      const message =
+        result.data?.error ??
+        (result.rawText ? `HTTP ${result.status} - ${result.rawText.slice(0, 220)}` : null) ??
+        'Impossible d\'envoyer la notification de test.';
       toast.error(message);
       return { ok: false, message };
     }
