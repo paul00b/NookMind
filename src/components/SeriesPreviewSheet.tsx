@@ -454,8 +454,8 @@ export default function SeriesPreviewSheet({
                 />
               </button>
 
-              <div className={`overflow-clip transition-[max-height] duration-300 ease-in-out ${episodesSectionOpen ? 'max-h-[45vh]' : 'max-h-0'}`}>
-                <div className="overflow-y-auto max-h-[45vh] border-t border-black/[0.06] dark:border-white/[0.06]">
+              <div className={`overflow-clip transition-[max-height] duration-300 ease-in-out ${episodesSectionOpen ? 'max-h-[200vh]' : 'max-h-0'}`}>
+                <div className="border-t border-black/[0.06] dark:border-white/[0.06]">
 
                   {/* Sélecteur de saison */}
                   {loadingSeasonCount ? (
@@ -568,8 +568,8 @@ export default function SeriesPreviewSheet({
               />
             </button>
 
-            <div className={`overflow-clip transition-[max-height] duration-300 ease-in-out ${imdbSectionOpen ? 'max-h-[45vh]' : 'max-h-0'}`}>
-              <div className="overflow-y-auto max-h-[45vh] border-t border-black/[0.06] dark:border-white/[0.06]">
+              <div className={`overflow-clip transition-[max-height] duration-300 ease-in-out ${imdbSectionOpen ? 'max-h-[200vh]' : 'max-h-0'}`}>
+              <div className="border-t border-black/[0.06] dark:border-white/[0.06]">
 
                   {imdbError === 'no_key' && (
                     <p className="px-4 py-4 text-sm text-gray-400 text-center">{t('seriesDetail.imdbNoApiKey')}</p>
