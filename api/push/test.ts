@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'node:crypto';
 import webpush from 'web-push';
 
 webpush.setVapidDetails(
@@ -24,6 +25,27 @@ interface PushAttemptResult {
   endpoint: string;
   error?: string;
   details?: string;
+}
+
+function base64UrlToBuffer(value: string): Buffer {
+  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
+  return Buffer.from(padded, 'base64');
+}
+
+function derivePublicKey(privateKey: string): string | null {
+  try {
+    const ecdh = crypto.createECDH('prime256v1');
+    ecdh.setPrivateKey(base64UrlToBuffer(privateKey.trim()));
+    return ecdh
+      .getPublicKey()
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+  } catch {
+    return null;
+  }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -71,7 +93,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   };
 
   const serverPublicKey = process.env.VITE_VAPID_PUBLIC_KEY ?? null;
+  const serverPrivateKey = process.env.VAPID_PRIVATE_KEY ?? null;
   const vapidContact = process.env.VAPID_CONTACT ?? null;
+  const derivedServerPublicKey = serverPrivateKey ? derivePublicKey(serverPrivateKey) : null;
 
   const results = await Promise.all(
     (subscriptions as PushSubscriptionRow[]).map(async ({ subscription }) => {
@@ -121,6 +145,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     payload,
     diagnostics: {
       serverPublicKey,
+      derivedServerPublicKey,
+      serverKeyPairMatches: !!serverPublicKey && !!derivedServerPublicKey && serverPublicKey === derivedServerPublicKey,
       vapidContact,
       endpointHosts: results.map(({ endpoint }) => {
         try {
