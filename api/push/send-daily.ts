@@ -1,7 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
-import { configureWebPush } from './_vapid';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -38,6 +37,23 @@ interface PushSendResult {
   endpoint: string;
   error?: string;
   details?: string;
+}
+
+function cleanEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing environment variable: ${name}`);
+  }
+
+  return value.trim();
+}
+
+function configureWebPush() {
+  webpush.setVapidDetails(
+    cleanEnv('VAPID_CONTACT'),
+    cleanEnv('VITE_VAPID_PUBLIC_KEY'),
+    cleanEnv('VAPID_PRIVATE_KEY')
+  );
 }
 
 async function sendPush(subscription: PushSubscriptionJSON, payload: object): Promise<PushSendResult> {

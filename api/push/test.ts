@@ -2,7 +2,6 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'node:crypto';
 import webpush from 'web-push';
-import { configureWebPush, getVapidConfig } from './_vapid';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -43,9 +42,27 @@ function derivePublicKey(privateKey: string): string | null {
   }
 }
 
+function cleanEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing environment variable: ${name}`);
+  }
+
+  return value.trim();
+}
+
+function getVapidConfig() {
+  return {
+    subject: cleanEnv('VAPID_CONTACT'),
+    publicKey: cleanEnv('VITE_VAPID_PUBLIC_KEY'),
+    privateKey: cleanEnv('VAPID_PRIVATE_KEY'),
+  };
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    configureWebPush();
+    const vapid = getVapidConfig();
+    webpush.setVapidDetails(vapid.subject, vapid.publicKey, vapid.privateKey);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     console.error('[push] invalid VAPID config', { error: message });
