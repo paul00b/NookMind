@@ -1,12 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
+import { configureWebPush } from './_vapid';
 
-webpush.setVapidDetails(
-  process.env.VAPID_CONTACT!,
-  process.env.VITE_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+configureWebPush();
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,

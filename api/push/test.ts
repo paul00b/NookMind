@@ -2,12 +2,9 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'node:crypto';
 import webpush from 'web-push';
+import { configureWebPush, getVapidConfig } from './_vapid';
 
-webpush.setVapidDetails(
-  process.env.VAPID_CONTACT!,
-  process.env.VITE_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+configureWebPush();
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -92,9 +89,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     tag: `test-${Date.now()}`,
   };
 
-  const serverPublicKey = process.env.VITE_VAPID_PUBLIC_KEY ?? null;
-  const serverPrivateKey = process.env.VAPID_PRIVATE_KEY ?? null;
-  const vapidContact = process.env.VAPID_CONTACT ?? null;
+  const vapid = getVapidConfig();
+  const serverPublicKey = vapid.publicKey;
+  const serverPrivateKey = vapid.privateKey;
+  const vapidContact = vapid.subject;
   const derivedServerPublicKey = serverPrivateKey ? derivePublicKey(serverPrivateKey) : null;
 
   const results = await Promise.all(
