@@ -27,13 +27,15 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-        checked ? 'bg-teal-500' : 'bg-gray-300 dark:bg-gray-600'
+      className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f8f6f1] dark:focus-visible:ring-offset-[#1a1f2e] ${
+        checked
+          ? 'border-teal-500 bg-teal-500 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08),0_6px_16px_rgba(20,184,166,0.24)]'
+          : 'border-black/[0.08] bg-gray-200 dark:border-white/[0.08] dark:bg-white/10'
       }`}
     >
       <span
-        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
-          checked ? 'translate-x-4' : 'translate-x-1'
+        className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-[0_2px_8px_rgba(15,23,42,0.22)] transition-transform duration-200 ease-out ${
+          checked ? 'translate-x-6' : 'translate-x-1'
         }`}
       />
     </button>
@@ -367,14 +369,17 @@ export default function SettingsPanel({ onClose }: Props) {
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={onClose} />
 
       {/* Panel */}
-      <div className="relative z-10 w-full max-w-sm h-full bg-[#f8f6f1] dark:bg-[#1a1f2e] border-l border-black/[0.08] dark:border-white/[0.08] overflow-y-auto animate-slide-in-right flex flex-col">
+      <div className="relative z-10 w-full max-w-sm h-full bg-[#f8f6f1] dark:bg-[#1a1f2e] border-l border-black/[0.08] dark:border-white/[0.08] overflow-hidden animate-slide-in-right flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 pb-4 border-b border-black/[0.06] dark:border-white/[0.06]" style={{ paddingTop: 'calc(1.5rem + env(safe-area-inset-top))' }}>
+        <div
+          className="sticky top-0 z-10 flex items-center justify-between px-6 pb-4 border-b border-black/[0.06] dark:border-white/[0.06] bg-[#f8f6f1] dark:bg-[#1a1f2e]"
+          style={{ paddingTop: 'calc(1.5rem + env(safe-area-inset-top))' }}
+        >
           <h2 className="font-serif text-xl font-bold text-gray-900 dark:text-gray-100">{t('settings.title')}</h2>
           <button onClick={onClose} className="btn-ghost p-2"><X size={18} /></button>
         </div>
 
-        <div className="flex-1 p-6 space-y-8">
+        <div className="flex-1 overflow-y-auto p-6 space-y-8">
           {/* Profile */}
           <section>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-4">{t('settings.profile')}</h3>
