@@ -12,30 +12,48 @@ function isFutureAirDate(dateStr: string | null): boolean {
   return parseDateOnly(dateStr).getTime() > today.getTime();
 }
 
+export function deriveSeriesStatus(
+  watchedSeasons: number[],
+  totalSeasons: number | null,
+  hasUnreleasedEpisodes = false,
+  watchedEpisodes: Record<string, number[]> = {}
+): 'watched' | 'watching' | 'want_to_watch' {
+  const hasAnyEpisodeWatched =
+    watchedSeasons.length > 0 || Object.values(watchedEpisodes).some(eps => eps.length > 0);
+  if (!hasAnyEpisodeWatched) return 'want_to_watch';
+  if (!hasUnreleasedEpisodes && totalSeasons && watchedSeasons.length >= totalSeasons) return 'watched';
+  return 'watching';
+}
+
+export function getEffectiveSeriesStatus(series: Series): 'watched' | 'watching' | 'want_to_watch' {
+  return deriveSeriesStatus(
+    series.watched_seasons ?? [],
+    series.seasons,
+    false,
+    series.watched_episodes ?? {}
+  );
+}
+
 /**
  * Détermine si une série est en attente de nouveaux épisodes/saisons.
  * Une série est "en attente" si l'utilisateur a regardé toutes les saisons
  * disponibles et qu'une nouvelle saison/un nouvel épisode est attendu.
  */
 export function isSeriesWaiting(s: Series): boolean {
-  if (s.status === 'watched') return s.next_season_number !== null;
-  if (s.status !== 'watching') return false;
-  if (s.next_season_number !== null) {
-    const nextSeasonKey = String(s.next_season_number);
-    const nextSeasonEpisodes = s.watched_episodes?.[nextSeasonKey] ?? [];
-    const hasStartedNextSeason = nextSeasonEpisodes.length > 0;
-    const hasCompletedPreviousSeasons = s.watched_seasons.length >= s.next_season_number - 1;
-    if (!hasCompletedPreviousSeasons) return false;
+  const effectiveStatus = getEffectiveSeriesStatus(s);
+  if (effectiveStatus === 'want_to_watch') return false;
+  if (effectiveStatus === 'watched') return s.next_season_number !== null;
+  if (!isFutureAirDate(s.next_air_date) || s.next_season_number === null) return false;
+  const nextSeasonKey = String(s.next_season_number);
+  const hasStartedNextSeason =
+    (s.watched_episodes?.[nextSeasonKey]?.length ?? 0) > 0 ||
+    s.watched_seasons.includes(s.next_season_number);
+  if (hasStartedNextSeason) return false;
 
-    if (!hasStartedNextSeason) return true;
-
-    // Season already started: if the next known air date is in the future,
-    // the user is caught up and waiting for the next episode.
-    if (isFutureAirDate(s.next_air_date)) return true;
-
-    return false;
-  }
-  return s.seasons !== null && s.watched_seasons.length > 0 && s.watched_seasons.length >= s.seasons - 1;
+  // For in-progress shows, only treat the series as "waiting" when a future
+  // season is announced after the last fully completed season. A future
+  // episode in the current season should stay "watching".
+  return s.next_season_number > s.watched_seasons.length;
 }
 
 /**

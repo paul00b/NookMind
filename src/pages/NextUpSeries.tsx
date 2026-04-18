@@ -5,7 +5,7 @@ import { useSeries } from '../context/SeriesContext';
 import SheetModal, { SheetCloseButton } from '../components/SheetModal';
 import { fetchSeasonDetails, fetchSeriesDetails, getPosterUrl } from '../lib/tmdb';
 import type { Series, TmdbSeries, TmdbEpisode } from '../types';
-import { deriveSeriesStatus } from '../components/SeasonGrid';
+import { deriveSeriesStatus, getEffectiveSeriesStatus } from '../lib/seriesUtils';
 
 const NEXT_UP_DISMISS_DURATION_MS = 380;
 const NEXT_UP_ENTER_DURATION_MS = 420;
@@ -176,7 +176,7 @@ async function findNextUpcomingEpisode(
 export default function NextUpSeries() {
   const { series, updateSeries } = useSeries();
   const { t, i18n } = useTranslation();
-  const watching = series.filter(s => s.status === 'watching');
+  const watching = series.filter(s => getEffectiveSeriesStatus(s) === 'watching');
 
   const [tmdbData, setTmdbData] = useState<Record<string, TmdbSeries>>({});
   const [loading, setLoading] = useState(watching.length > 0);

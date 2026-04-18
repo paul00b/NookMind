@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useSeries } from '../context/SeriesContext';
 import { fetchSeriesDetails, extractSeriesData } from '../lib/tmdb';
+import { getEffectiveSeriesStatus } from '../lib/seriesUtils';
 import type { Series } from '../types';
 
 const REFRESH_KEY = 'nookmind_series_tmdb_refresh';
@@ -23,7 +24,7 @@ export function useTmdbSeriesRefresh() {
 
     const toRefresh = series.filter(
       (s): s is Series & { tmdb_id: number } =>
-        s.tmdb_id !== null && (s.status === 'watching' || s.status === 'watched')
+        s.tmdb_id !== null && ['watching', 'watched'].includes(getEffectiveSeriesStatus(s))
     );
 
     toRefresh.forEach((s, i) => {

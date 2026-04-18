@@ -100,6 +100,9 @@ describe('NextUpSeries', () => {
   });
 
   it('shows the following upcoming episode after marking the current one as watched', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-04-15T10:00:00+02:00'));
+
     const initialSeries: Series[] = [{
       id: 'series-1',
       user_id: 'user-1',
@@ -123,9 +126,12 @@ describe('NextUpSeries', () => {
 
     render(<Harness initialSeries={initialSeries} />);
 
-    expect(await screen.findByText('S1E2')).toBeTruthy();
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
 
-    vi.useFakeTimers();
+    expect(screen.getByText('S1E2')).toBeTruthy();
+
     fetchSeasonDetailsMock.mockResolvedValueOnce({
       episodes: [
         { season_number: 1, episode_number: 1, air_date: '2024-01-01', name: 'Episode 1' },
