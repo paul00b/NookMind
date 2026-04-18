@@ -43,6 +43,7 @@ export function isSeriesWaiting(s: Series): boolean {
   const effectiveStatus = getEffectiveSeriesStatus(s);
   if (effectiveStatus === 'want_to_watch') return false;
   if (effectiveStatus === 'watched') return s.next_season_number !== null;
+  if (s.seasons !== null && s.watched_seasons.length < s.seasons) return false;
   if (!isFutureAirDate(s.next_air_date) || s.next_season_number === null) return false;
   const nextSeasonKey = String(s.next_season_number);
   const hasStartedNextSeason =

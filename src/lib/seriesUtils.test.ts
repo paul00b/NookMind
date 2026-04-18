@@ -38,6 +38,7 @@ describe('isSeriesWaiting', () => {
 
   it('returns true when the next season has not started yet', () => {
     expect(isSeriesWaiting(makeSeries({
+      seasons: 1,
       watched_seasons: [1],
       watched_episodes: {},
       next_air_date: '2026-04-22',
@@ -48,6 +49,17 @@ describe('isSeriesWaiting', () => {
   it('returns false when the next season has already started', () => {
     expect(isSeriesWaiting(makeSeries({
       watched_seasons: [1],
+      seasons: 2,
+      watched_episodes: {},
+      next_air_date: '2026-04-22',
+      next_season_number: 2,
+    }))).toBe(false);
+  });
+
+  it('returns false when a new season is already airing even if no episode has been marked yet', () => {
+    expect(isSeriesWaiting(makeSeries({
+      watched_seasons: [1],
+      seasons: 2,
       watched_episodes: { '2': [1, 2] },
       next_air_date: '2026-04-22',
       next_season_number: 2,
