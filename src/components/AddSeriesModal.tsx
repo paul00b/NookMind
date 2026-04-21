@@ -28,6 +28,7 @@ const EMPTY: SeriesFormData = {
   personal_note: null,
   next_air_date: null,
   next_season_number: null,
+  next_episode_number: null,
 };
 
 interface Props {

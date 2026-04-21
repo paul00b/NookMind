@@ -109,6 +109,7 @@ export interface Series {
   personal_note: string | null;
   next_air_date: string | null;
   next_season_number: number | null;
+  next_episode_number: number | null;
   created_at: string;
 }
 

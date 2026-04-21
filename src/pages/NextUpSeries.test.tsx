@@ -121,6 +121,7 @@ describe('NextUpSeries', () => {
       personal_note: null,
       next_air_date: '2026-04-20',
       next_season_number: 1,
+      next_episode_number: 2,
       created_at: '2026-04-01T00:00:00.000Z',
     }];
 
@@ -194,6 +195,7 @@ describe('NextUpSeries', () => {
       personal_note: null,
       next_air_date: '2026-04-15',
       next_season_number: 1,
+      next_episode_number: 3,
       created_at: '2026-04-01T00:00:00.000Z',
     }];
 
@@ -262,6 +264,7 @@ describe('NextUpSeries', () => {
       personal_note: null,
       next_air_date: '2026-04-15',
       next_season_number: 1,
+      next_episode_number: 3,
       created_at: '2026-04-01T00:00:00.000Z',
     }];
 

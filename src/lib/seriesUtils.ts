@@ -12,6 +12,19 @@ function isFutureAirDate(dateStr: string | null): boolean {
   return parseDateOnly(dateStr).getTime() > today.getTime();
 }
 
+function getReleasedSeasonCount(series: Series): number | null {
+  if (series.seasons === null) return null;
+
+  const hasFutureSeasonAnnounced =
+    series.next_season_number !== null &&
+    isFutureAirDate(series.next_air_date) &&
+    series.next_season_number <= series.seasons;
+
+  if (!hasFutureSeasonAnnounced) return series.seasons;
+
+  return Math.max(0, (series.next_season_number ?? 1) - 1);
+}
+
 export function deriveSeriesStatus(
   watchedSeasons: number[],
   totalSeasons: number | null,
@@ -43,13 +56,16 @@ export function isSeriesWaiting(s: Series): boolean {
   const effectiveStatus = getEffectiveSeriesStatus(s);
   if (effectiveStatus === 'want_to_watch') return false;
   if (effectiveStatus === 'watched') return s.next_season_number !== null;
-  if (s.seasons !== null && s.watched_seasons.length < s.seasons) return false;
   if (!isFutureAirDate(s.next_air_date) || s.next_season_number === null) return false;
+  if (s.next_episode_number !== null && s.next_episode_number > 1) return false;
   const nextSeasonKey = String(s.next_season_number);
   const hasStartedNextSeason =
     (s.watched_episodes?.[nextSeasonKey]?.length ?? 0) > 0 ||
     s.watched_seasons.includes(s.next_season_number);
   if (hasStartedNextSeason) return false;
+
+  const releasedSeasonCount = getReleasedSeasonCount(s);
+  if (releasedSeasonCount !== null && s.watched_seasons.length < releasedSeasonCount) return false;
 
   // For in-progress shows, only treat the series as "waiting" when a future
   // season is announced after the last fully completed season. A future

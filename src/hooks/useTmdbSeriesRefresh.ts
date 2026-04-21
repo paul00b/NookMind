@@ -34,13 +34,20 @@ export function useTmdbSeriesRefresh() {
         const extracted = extractSeriesData(tmdbData);
         const nextAirDate = extracted.next_air_date ?? null;
         const nextSeasonNumber = extracted.next_season_number ?? null;
+        const nextEpisodeNumber = extracted.next_episode_number ?? null;
         const seasons = extracted.seasons;
         if (
           nextAirDate === s.next_air_date &&
           nextSeasonNumber === s.next_season_number &&
+          nextEpisodeNumber === s.next_episode_number &&
           seasons === s.seasons
         ) return;
-        updateSeries(s.id, { seasons, next_air_date: nextAirDate, next_season_number: nextSeasonNumber });
+        updateSeries(s.id, {
+          seasons,
+          next_air_date: nextAirDate,
+          next_season_number: nextSeasonNumber,
+          next_episode_number: nextEpisodeNumber,
+        });
       }, i * REQUEST_DELAY_MS);
     });
   }, [series, updateSeries]);

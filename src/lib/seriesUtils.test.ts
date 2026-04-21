@@ -21,6 +21,7 @@ function makeSeries(overrides: Partial<Series>): Series {
     personal_note: null,
     next_air_date: '2026-04-15',
     next_season_number: 2,
+    next_episode_number: 1,
     created_at: '2026-04-01T00:00:00.000Z',
     ...overrides,
   };
@@ -46,6 +47,16 @@ describe('isSeriesWaiting', () => {
     }))).toBe(true);
   });
 
+  it('returns true when TMDB already counts a future season in the total', () => {
+    expect(isSeriesWaiting(makeSeries({
+      seasons: 3,
+      watched_seasons: [1, 2],
+      watched_episodes: {},
+      next_air_date: '2026-07-02',
+      next_season_number: 3,
+    }))).toBe(true);
+  });
+
   it('returns false when the next season has already started', () => {
     expect(isSeriesWaiting(makeSeries({
       watched_seasons: [1],
@@ -53,6 +64,7 @@ describe('isSeriesWaiting', () => {
       watched_episodes: {},
       next_air_date: '2026-04-22',
       next_season_number: 2,
+      next_episode_number: 4,
     }))).toBe(false);
   });
 

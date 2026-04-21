@@ -15,7 +15,7 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { getRatingStyle, type SeasonState } from '../lib/imdbRatingStyle';
 import { fetchSeriesImdbId, fetchSeasonRatings, type EpisodeRating } from '../lib/imdb';
-import { isSeriesWaiting } from '../lib/seriesUtils';
+import { getEffectiveSeriesStatus, isSeriesWaiting } from '../lib/seriesUtils';
 
 interface SelectedEpisodeInfo {
   episodeNum: number;
@@ -127,14 +127,21 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
       const extracted = extractSeriesData(tmdbData);
       const nextAirDate = extracted.next_air_date ?? null;
       const nextSeasonNumber = extracted.next_season_number ?? null;
+      const nextEpisodeNumber = extracted.next_episode_number ?? null;
       const seasons = extracted.seasons;
       // Ne mettre à jour que si les données ont changé
       if (
         nextAirDate === series.next_air_date &&
         nextSeasonNumber === series.next_season_number &&
+        nextEpisodeNumber === series.next_episode_number &&
         seasons === series.seasons
       ) return;
-      const updates: Partial<Series> = { seasons, next_air_date: nextAirDate, next_season_number: nextSeasonNumber };
+      const updates: Partial<Series> = {
+        seasons,
+        next_air_date: nextAirDate,
+        next_season_number: nextSeasonNumber,
+        next_episode_number: nextEpisodeNumber,
+      };
       setLocalSeries(s => ({ ...s, ...updates }));
       updateSeries(series.id, updates);
     });
@@ -272,6 +279,7 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
   };
 
   const isWaitingForNextSeason = isSeriesWaiting(localSeries);
+  const effectiveStatus = getEffectiveSeriesStatus(localSeries);
 
   const imdbSeasons = Object.keys(seasonRatings).map(Number).sort((a, b) => a - b);
   const allImdbRatings: number[] = [];
@@ -321,13 +329,13 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
                 </span>
               )}
               <span className={`px-2.5 py-0.5 rounded-full font-medium text-white text-xs ${
-                localSeries.status === 'watched' ? 'bg-emerald-500' : isWaitingForNextSeason ? 'bg-purple-500' : localSeries.status === 'watching' ? 'bg-blue-500' : 'bg-amber-500'
+                effectiveStatus === 'watched' ? 'bg-emerald-500' : isWaitingForNextSeason ? 'bg-purple-500' : effectiveStatus === 'watching' ? 'bg-blue-500' : 'bg-amber-500'
               }`}>
-                {localSeries.status === 'watched'
+                {effectiveStatus === 'watched'
                   ? t('seriesDetail.watched')
                   : isWaitingForNextSeason
                   ? t('seriesDetail.waitingNextSeason')
-                  : localSeries.status === 'watching'
+                  : effectiveStatus === 'watching'
                   ? t('seriesDetail.watching')
                   : t('seriesDetail.wantToWatch')}
               </span>
