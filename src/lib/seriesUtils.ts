@@ -25,6 +25,18 @@ function getReleasedSeasonCount(series: Series): number | null {
   return Math.max(0, (series.next_season_number ?? 1) - 1);
 }
 
+function hasWatchedAllPreviousEpisodesInNextSeason(series: Series): boolean {
+  if (series.next_season_number === null || series.next_episode_number === null) return false;
+  if (series.next_episode_number <= 1) return true;
+
+  const watchedEpisodes = new Set(series.watched_episodes?.[String(series.next_season_number)] ?? []);
+  for (let episode = 1; episode < series.next_episode_number; episode += 1) {
+    if (!watchedEpisodes.has(episode)) return false;
+  }
+
+  return true;
+}
+
 export function deriveSeriesStatus(
   watchedSeasons: number[],
   totalSeasons: number | null,
@@ -55,9 +67,13 @@ export function getEffectiveSeriesStatus(series: Series): 'watched' | 'watching'
 export function isSeriesWaiting(s: Series): boolean {
   const effectiveStatus = getEffectiveSeriesStatus(s);
   if (effectiveStatus === 'want_to_watch') return false;
-  if (effectiveStatus === 'watched') return s.next_season_number !== null;
   if (!isFutureAirDate(s.next_air_date) || s.next_season_number === null) return false;
-  if (s.next_episode_number !== null && s.next_episode_number > 1) return false;
+  if (effectiveStatus === 'watched') return true;
+
+  if (s.next_episode_number !== null && s.next_episode_number > 1) {
+    return hasWatchedAllPreviousEpisodesInNextSeason(s);
+  }
+
   const nextSeasonKey = String(s.next_season_number);
   const hasStartedNextSeason =
     (s.watched_episodes?.[nextSeasonKey]?.length ?? 0) > 0 ||
@@ -67,9 +83,6 @@ export function isSeriesWaiting(s: Series): boolean {
   const releasedSeasonCount = getReleasedSeasonCount(s);
   if (releasedSeasonCount !== null && s.watched_seasons.length < releasedSeasonCount) return false;
 
-  // For in-progress shows, only treat the series as "waiting" when a future
-  // season is announced after the last fully completed season. A future
-  // episode in the current season should stay "watching".
   return s.next_season_number > s.watched_seasons.length;
 }
 
