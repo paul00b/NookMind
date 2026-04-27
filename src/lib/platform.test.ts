@@ -45,4 +45,11 @@ describe('platform detection', () => {
     expect(isIOS()).toBe(false);
     expect(isAndroid()).toBe(false);
   });
+
+  it('isWeb is false when isNativePlatform reports native', () => {
+    vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+    vi.mocked(Capacitor.getPlatform).mockReturnValue('ios');
+    expect(isNative()).toBe(true);
+    expect(isWeb()).toBe(false);
+  });
 });
