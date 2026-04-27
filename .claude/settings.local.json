@@ -23,7 +23,10 @@
       "Bash(cat C:\\\\\\\\Users\\\\\\\\brous\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\C--Users-brous-Desktop-Dev-BookMind\\\\\\\\ba859f68-4308-43da-9577-7b06da43d7b0\\\\\\\\tasks\\\\\\\\bqmui5nty.output)",
       "Bash(npx vite:*)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/onboarding)",
-      "Bash(npx tailwindcss:*)"
+      "Bash(npx tailwindcss:*)",
+      "Bash(VITE_NATIVE_BUILD=1 npm run build)",
+      "Bash(git -C /c/Users/brous/Desktop/Dev/BookMind status)",
+      "Bash(git *)"
     ]
   },
   "enableAllProjectMcpServers": true,

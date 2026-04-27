@@ -7,6 +7,7 @@ import InstallPromptSheet from './InstallPromptSheet';
 import NotificationPromptSheet from './NotificationPromptSheet';
 import { useMediaMode } from '../context/MediaModeContext';
 import { useNotificationSubscription } from '../hooks/useNotificationSubscription';
+import { isNative } from '../lib/platform';
 import type { MediaMode } from '../types';
 
 function modeGlowClass(mode: MediaMode): string {
@@ -34,6 +35,7 @@ export default function AppLayout() {
 
   // Install prompt — mobile only, once
   useEffect(() => {
+    if (isNative()) return;                                    // never on native
     if (isStandalone || !isMobile || localStorage.getItem(INSTALL_STORAGE_KEY)) return;
     const timer = setTimeout(() => setInstallSheetOpen(true), 2000);
     return () => clearTimeout(timer);
