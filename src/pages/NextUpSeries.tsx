@@ -5,12 +5,27 @@ import { useSeries } from '../context/SeriesContext';
 import SheetModal, { SheetCloseButton } from '../components/SheetModal';
 import { fetchSeasonDetails, fetchSeriesDetails, getPosterUrl } from '../lib/tmdb';
 import type { Series, TmdbSeries, TmdbEpisode } from '../types';
-import { deriveSeriesStatus } from '../components/SeasonGrid';
+import { deriveSeriesStatus, getEffectiveSeriesStatus } from '../lib/seriesUtils';
 
 const NEXT_UP_DISMISS_DURATION_MS = 380;
 const NEXT_UP_ENTER_DURATION_MS = 420;
 
 // ─── helpers ───────────────────────────────────────────────────────────────
+
+function parseDateOnly(dateStr: string): Date {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, (month ?? 1) - 1, day ?? 1);
+}
+
+function startOfToday(): Date {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+}
+
+function isTodayOrPast(dateStr: string): boolean {
+  return parseDateOnly(dateStr).getTime() <= startOfToday().getTime();
+}
 
 function getUserLastWatched(
   watchedEpisodes: Record<string, number[]>
@@ -89,19 +104,29 @@ function getEpisodeState(series: Series, tmdb: TmdbSeries | null | undefined): E
     return { type: 'available', season: nextSeason, episode: nextEp };
   }
 
-  if (nextAiring) return { type: 'coming_soon', ep: nextAiring };
+  if (nextAiring) {
+    const nextAiringIsAvailableToday = nextAiring.air_date && isTodayOrPast(nextAiring.air_date);
+    if (nextAiringIsAvailableToday) {
+      return {
+        type: 'available',
+        season: nextAiring.season_number,
+        episode: nextAiring.episode_number,
+      };
+    }
+    return { type: 'coming_soon', ep: nextAiring };
+  }
 
   return { type: 'up_to_date' };
 }
 
 function daysUntil(dateStr: string): number {
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const target = new Date(dateStr); target.setHours(0, 0, 0, 0);
+  const today = startOfToday();
+  const target = parseDateOnly(dateStr);
   return Math.round((target.getTime() - today.getTime()) / 86400000);
 }
 
 function formatDate(dateStr: string, lang: string): string {
-  return new Date(dateStr).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB', {
+  return parseDateOnly(dateStr).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB', {
     day: 'numeric', month: 'short', year: 'numeric',
   });
 }
@@ -112,12 +137,46 @@ function getCardKey(series: Series, state: EpisodeState): string {
   return `${series.id}-${state.type}`;
 }
 
+async function findNextUpcomingEpisode(
+  tmdbId: number,
+  tmdb: TmdbSeries | null | undefined,
+  watchedEpisodes: Record<string, number[]>
+): Promise<TmdbEpisode | null> {
+  const seasons = (tmdb?.seasons ?? [])
+    .filter(season => season.season_number > 0 && (season.episode_count ?? 0) > 0)
+    .sort((a, b) => a.season_number - b.season_number);
+
+  if (seasons.length === 0) return null;
+
+  const watchedScores = new Set(
+    Object.entries(watchedEpisodes).flatMap(([season, episodes]) =>
+      episodes.map(episode => episodeScore(Number(season), episode))
+    )
+  );
+  const today = startOfToday().getTime();
+
+  for (const season of seasons) {
+    const details = await fetchSeasonDetails(tmdbId, season.season_number);
+    const nextEpisode = details?.episodes
+      .filter(ep => {
+        if (!ep.air_date) return false;
+        if (parseDateOnly(ep.air_date).getTime() <= today) return false;
+        return !watchedScores.has(episodeScore(ep.season_number, ep.episode_number));
+      })
+      .sort((a, b) => episodeScore(a.season_number, a.episode_number) - episodeScore(b.season_number, b.episode_number))[0];
+
+    if (nextEpisode) return nextEpisode;
+  }
+
+  return null;
+}
+
 // ─── component ─────────────────────────────────────────────────────────────
 
 export default function NextUpSeries() {
   const { series, updateSeries } = useSeries();
   const { t, i18n } = useTranslation();
-  const watching = series.filter(s => s.status === 'watching');
+  const watching = series.filter(s => getEffectiveSeriesStatus(s) === 'watching');
 
   const [tmdbData, setTmdbData] = useState<Record<string, TmdbSeries>>({});
   const [loading, setLoading] = useState(watching.length > 0);
@@ -220,7 +279,7 @@ export default function NextUpSeries() {
       if (!a.state.ep.air_date && !b.state.ep.air_date) return 0;
       if (!a.state.ep.air_date) return 1;
       if (!b.state.ep.air_date) return -1;
-      return new Date(a.state.ep.air_date).getTime() - new Date(b.state.ep.air_date).getTime();
+      return parseDateOnly(a.state.ep.air_date).getTime() - parseDateOnly(b.state.ep.air_date).getTime();
     }
     return 0;
   });
@@ -311,16 +370,35 @@ export default function NextUpSeries() {
       [seriesItem.id]: { dismissKey },
     }));
     window.setTimeout(() => {
-      void updateSeries(seriesItem.id, {
+      void (async () => {
+        const nextUpcomingEpisode = seriesItem.tmdb_id
+          ? await findNextUpcomingEpisode(seriesItem.tmdb_id, tmdb, nextWatchedEpisodes)
+          : null;
+
+        if (tmdb) {
+          setTmdbData(prev => ({
+            ...prev,
+            [seriesItem.id]: {
+              ...tmdb,
+              next_episode_to_air: nextUpcomingEpisode,
+            },
+          }));
+        }
+
+        await updateSeries(seriesItem.id, {
         watched_episodes: nextWatchedEpisodes,
         watched_seasons: [...nextWatchedSeasons].sort((a, b) => a - b),
+        next_air_date: nextUpcomingEpisode?.air_date ?? null,
+        next_season_number: nextUpcomingEpisode?.season_number ?? null,
+        next_episode_number: nextUpcomingEpisode?.episode_number ?? null,
         status: deriveSeriesStatus(
           [...nextWatchedSeasons].sort((a, b) => a - b),
           seriesItem.seasons,
-          false,
+          nextUpcomingEpisode !== null,
           nextWatchedEpisodes
         ),
-      });
+        });
+      })();
     }, NEXT_UP_DISMISS_DURATION_MS);
   };
 

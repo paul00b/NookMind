@@ -1,12 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'node:crypto';
 import webpush from 'web-push';
-
-webpush.setVapidDetails(
-  process.env.VAPID_CONTACT!,
-  process.env.VITE_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -23,9 +18,57 @@ interface PushAttemptResult {
   statusCode: number | null;
   endpoint: string;
   error?: string;
+  details?: string;
+}
+
+function base64UrlToBuffer(value: string): Buffer {
+  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
+  return Buffer.from(padded, 'base64');
+}
+
+function derivePublicKey(privateKey: string): string | null {
+  try {
+    const ecdh = crypto.createECDH('prime256v1');
+    ecdh.setPrivateKey(base64UrlToBuffer(privateKey.trim()));
+    return ecdh
+      .getPublicKey()
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+  } catch {
+    return null;
+  }
+}
+
+function cleanEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing environment variable: ${name}`);
+  }
+
+  return value.trim();
+}
+
+function getVapidConfig() {
+  return {
+    subject: cleanEnv('VAPID_CONTACT'),
+    publicKey: cleanEnv('VITE_VAPID_PUBLIC_KEY'),
+    privateKey: cleanEnv('VAPID_PRIVATE_KEY'),
+  };
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  try {
+    const vapid = getVapidConfig();
+    webpush.setVapidDetails(vapid.subject, vapid.publicKey, vapid.privateKey);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('[push] invalid VAPID config', { error: message });
+    return res.status(500).json({ error: message });
+  }
+
   if (req.method !== 'POST') return res.status(405).end();
 
   const authHeader = req.headers.authorization;
@@ -69,8 +112,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     tag: `test-${Date.now()}`,
   };
 
-  const serverPublicKey = process.env.VITE_VAPID_PUBLIC_KEY ?? null;
-  const vapidContact = process.env.VAPID_CONTACT ?? null;
+  const vapid = getVapidConfig();
+  const serverPublicKey = vapid.publicKey;
+  const serverPrivateKey = vapid.privateKey;
+  const vapidContact = vapid.subject;
+  const derivedServerPublicKey = serverPrivateKey ? derivePublicKey(serverPrivateKey) : null;
 
   const results = await Promise.all(
     (subscriptions as PushSubscriptionRow[]).map(async ({ subscription }) => {
@@ -84,14 +130,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         return { ok: true, statusCode: 201, endpoint } satisfies PushAttemptResult;
       } catch (err: unknown) {
-        const statusCode = (err as { statusCode?: number }).statusCode ?? null;
+        const errorWithMeta = err as { statusCode?: number; body?: string };
+        const statusCode = errorWithMeta.statusCode ?? null;
         const error = err instanceof Error ? err.message : String(err);
+        const details = errorWithMeta.body;
 
         console.error('[push] test send failed', {
           userId: user.id,
           endpoint,
           statusCode,
           error,
+          details: details ?? null,
         });
 
         if (statusCode === 404 || statusCode === 410) {
@@ -101,7 +150,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .eq('endpoint', endpoint);
         }
 
-        return { ok: false, statusCode, endpoint, error } satisfies PushAttemptResult;
+        return { ok: false, statusCode, endpoint, error, details } satisfies PushAttemptResult;
       }
     })
   );
@@ -117,6 +166,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     payload,
     diagnostics: {
       serverPublicKey,
+      derivedServerPublicKey,
+      serverKeyPairMatches: !!serverPublicKey && !!derivedServerPublicKey && serverPublicKey === derivedServerPublicKey,
       vapidContact,
       endpointHosts: results.map(({ endpoint }) => {
         try {

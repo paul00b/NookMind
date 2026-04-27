@@ -9,7 +9,7 @@ import StarRating from '../components/StarRating';
 import { Tv, ChevronDown, LayoutGrid, List, Plus, X, Check, Trash2, FolderOpen, BarChart2, Play, Bookmark, CheckCheck, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import SeriesStatsSheet from '../components/SeriesStatsSheet';
-import { formatWaitingLabel, isSeriesWaiting } from '../lib/seriesUtils';
+import { formatWaitingLabel, getEffectiveSeriesStatus, isSeriesWaiting } from '../lib/seriesUtils';
 import toast from 'react-hot-toast';
 
 type SortKey = 'created_at' | 'title' | 'creator' | 'rating';
@@ -57,6 +57,7 @@ function SelectDropdown({ value, onChange, options }: { value: string; onChange:
 
 function SeriesListRow({ series, onClick, onRemove }: { series: Series; onClick: () => void; onRemove?: () => void }) {
   const { t, i18n } = useTranslation();
+  const effectiveStatus = getEffectiveSeriesStatus(series);
   return (
     <div className="relative group">
       <button onClick={onClick} className="w-full flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-amber-500/5 dark:hover:bg-amber-500/10 transition-colors text-left">
@@ -76,19 +77,19 @@ function SeriesListRow({ series, onClick, onRemove }: { series: Series; onClick:
         {series.genre && (
           <span className="hidden sm:inline-flex flex-shrink-0 text-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2.5 py-1 rounded-full font-medium">{series.genre}</span>
         )}
-        {series.status === 'watched' && series.rating && (
+        {effectiveStatus === 'watched' && series.rating && (
           <div className="hidden sm:flex flex-shrink-0">
             <StarRating value={series.rating} readonly size={12} />
           </div>
         )}
         {(() => {
           const isWaiting = isSeriesWaiting(series);
-          const bgClass = isWaiting ? 'bg-purple-500' : series.status === 'watched' ? 'bg-emerald-500' : series.status === 'watching' ? 'bg-blue-500' : 'bg-amber-500';
+          const bgClass = isWaiting ? 'bg-purple-500' : effectiveStatus === 'watched' ? 'bg-emerald-500' : effectiveStatus === 'watching' ? 'bg-blue-500' : 'bg-amber-500';
           const label = isWaiting
             ? formatWaitingLabel(series.next_air_date, t('seriesCard.waitingNextSeason'), t('seriesCard.waitingTomorrow'), (d) => t('seriesCard.waitingDays', { count: d }), i18n.language)
-            : series.status === 'watched'
+            : effectiveStatus === 'watched'
             ? t('seriesCard.watched')
-            : series.status === 'watching' ? t('seriesCard.watching') : t('seriesCard.wantToWatch');
+            : effectiveStatus === 'watching' ? t('seriesCard.watching') : t('seriesCard.wantToWatch');
           return <span className={`flex-shrink-0 text-xs font-medium px-2.5 py-1 rounded-full text-white ${bgClass}`}>{label}</span>;
         })()}
       </button>
@@ -140,7 +141,7 @@ export default function SeriesLibrary() {
 
   const filtered = useMemo(() => {
     if (!isStatusTab) return [];
-    let list = series.filter(s => s.status === (activeTab as SeriesStatus));
+    let list = series.filter(s => getEffectiveSeriesStatus(s) === (activeTab as SeriesStatus));
     if (genreFilter) list = list.filter(s => s.genre === genreFilter);
     if (creatorFilter) list = list.filter(s => s.creator === creatorFilter);
     return [...list].sort((a, b) => {
@@ -157,14 +158,14 @@ export default function SeriesLibrary() {
     return series.filter(s => activeCategory.series_ids.includes(s.id));
   }, [series, activeCategory]);
 
-  const tabSeries = series.filter(s => isStatusTab && s.status === (activeTab as SeriesStatus));
+  const tabSeries = series.filter(s => isStatusTab && getEffectiveSeriesStatus(s) === (activeTab as SeriesStatus));
   const genres = [...new Set(tabSeries.map(s => s.genre).filter(Boolean))] as string[];
   const creators = [...new Set(tabSeries.map(s => s.creator).filter(Boolean))] as string[];
 
   const counts = {
-    watched: series.filter(s => s.status === 'watched').length,
-    watching: series.filter(s => s.status === 'watching').length,
-    want_to_watch: series.filter(s => s.status === 'want_to_watch').length,
+    watched: series.filter(s => getEffectiveSeriesStatus(s) === 'watched').length,
+    watching: series.filter(s => getEffectiveSeriesStatus(s) === 'watching').length,
+    want_to_watch: series.filter(s => getEffectiveSeriesStatus(s) === 'want_to_watch').length,
   };
 
   const handleCreateCategory = async (e: React.FormEvent) => {

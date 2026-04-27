@@ -328,6 +328,7 @@ export function extractSeriesData(series: TmdbSeries) {
     genre: series.genres?.[0]?.name || null,
     next_air_date: next?.air_date ?? null,
     next_season_number: next?.season_number ?? null,
+    next_episode_number: next?.episode_number ?? null,
   };
 }
 

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useSeries } from '../context/SeriesContext';
 import { fetchSeriesDetails, extractSeriesData } from '../lib/tmdb';
+import { getEffectiveSeriesStatus } from '../lib/seriesUtils';
 import type { Series } from '../types';
 
 const REFRESH_KEY = 'nookmind_series_tmdb_refresh';
@@ -23,7 +24,7 @@ export function useTmdbSeriesRefresh() {
 
     const toRefresh = series.filter(
       (s): s is Series & { tmdb_id: number } =>
-        s.tmdb_id !== null && (s.status === 'watching' || s.status === 'watched')
+        s.tmdb_id !== null && ['watching', 'watched'].includes(getEffectiveSeriesStatus(s))
     );
 
     toRefresh.forEach((s, i) => {
@@ -33,13 +34,20 @@ export function useTmdbSeriesRefresh() {
         const extracted = extractSeriesData(tmdbData);
         const nextAirDate = extracted.next_air_date ?? null;
         const nextSeasonNumber = extracted.next_season_number ?? null;
+        const nextEpisodeNumber = extracted.next_episode_number ?? null;
         const seasons = extracted.seasons;
         if (
           nextAirDate === s.next_air_date &&
           nextSeasonNumber === s.next_season_number &&
+          nextEpisodeNumber === s.next_episode_number &&
           seasons === s.seasons
         ) return;
-        updateSeries(s.id, { seasons, next_air_date: nextAirDate, next_season_number: nextSeasonNumber });
+        updateSeries(s.id, {
+          seasons,
+          next_air_date: nextAirDate,
+          next_season_number: nextSeasonNumber,
+          next_episode_number: nextEpisodeNumber,
+        });
       }, i * REQUEST_DELAY_MS);
     });
   }, [series, updateSeries]);

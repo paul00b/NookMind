@@ -4,3 +4,4 @@
 
 ALTER TABLE public.series ADD COLUMN IF NOT EXISTS next_air_date TEXT;
 ALTER TABLE public.series ADD COLUMN IF NOT EXISTS next_season_number INTEGER;
+ALTER TABLE public.series ADD COLUMN IF NOT EXISTS next_episode_number INTEGER;

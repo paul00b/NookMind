@@ -2,12 +2,6 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
 
-webpush.setVapidDetails(
-  process.env.VAPID_CONTACT!,
-  process.env.VITE_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
-
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -42,6 +36,24 @@ interface PushSendResult {
   statusCode: number | null;
   endpoint: string;
   error?: string;
+  details?: string;
+}
+
+function cleanEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing environment variable: ${name}`);
+  }
+
+  return value.trim();
+}
+
+function configureWebPush() {
+  webpush.setVapidDetails(
+    cleanEnv('VAPID_CONTACT'),
+    cleanEnv('VITE_VAPID_PUBLIC_KEY'),
+    cleanEnv('VAPID_PRIVATE_KEY')
+  );
 }
 
 async function sendPush(subscription: PushSubscriptionJSON, payload: object): Promise<PushSendResult> {
@@ -51,13 +63,16 @@ async function sendPush(subscription: PushSubscriptionJSON, payload: object): Pr
     await webpush.sendNotification(subscription as Parameters<typeof webpush.sendNotification>[0], JSON.stringify(payload));
     return { ok: true, statusCode: 201, endpoint };
   } catch (err: unknown) {
-    const status = (err as { statusCode?: number }).statusCode;
+    const errorWithMeta = err as { statusCode?: number; body?: string };
+    const status = errorWithMeta.statusCode;
     const message = err instanceof Error ? err.message : String(err);
+    const details = errorWithMeta.body;
 
     console.error('[push] send failed', {
       endpoint,
       statusCode: status ?? null,
       error: message,
+      details: details ?? null,
     });
 
     // 404/410 = subscription expired → clean up
@@ -73,11 +88,20 @@ async function sendPush(subscription: PushSubscriptionJSON, payload: object): Pr
       statusCode: status ?? null,
       endpoint,
       error: message,
+      details,
     };
   }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  try {
+    configureWebPush();
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('[push] invalid VAPID config', { error: message });
+    return res.status(500).json({ error: message });
+  }
+
   if (req.method !== 'POST' && req.method !== 'GET') return res.status(405).end();
 
   // Vercel cron sends Authorization header with CRON_SECRET

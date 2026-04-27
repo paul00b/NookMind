@@ -2,7 +2,7 @@ import type { Series } from '../types';
 import StarRating from './StarRating';
 import { Tv } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { formatWaitingLabel, isSeriesWaiting } from '../lib/seriesUtils';
+import { formatWaitingLabel, getEffectiveSeriesStatus, isSeriesWaiting } from '../lib/seriesUtils';
 
 interface SeriesCardProps {
   series: Series;
@@ -11,6 +11,7 @@ interface SeriesCardProps {
 
 export default function SeriesCard({ series, onClick }: SeriesCardProps) {
   const { t, i18n } = useTranslation();
+  const effectiveStatus = getEffectiveSeriesStatus(series);
   return (
     <button
       onClick={onClick}
@@ -33,7 +34,7 @@ export default function SeriesCard({ series, onClick }: SeriesCardProps) {
         {/* Status badge */}
         {(() => {
           const isWaiting = isSeriesWaiting(series);
-          const futureFirstEpLabel = series.status === 'want_to_watch'
+          const futureFirstEpLabel = effectiveStatus === 'want_to_watch'
             ? formatWaitingLabel(
                 series.first_air_date,
                 '',
@@ -42,16 +43,16 @@ export default function SeriesCard({ series, onClick }: SeriesCardProps) {
                 i18n.language
               )
             : '';
-          const bgClass = series.status === 'watched'
+          const bgClass = effectiveStatus === 'watched'
             ? 'bg-emerald-500/90'
             : isWaiting
             ? 'bg-purple-500/90'
-            : series.status === 'watching'
+            : effectiveStatus === 'watching'
             ? 'bg-blue-500/90'
             : futureFirstEpLabel
             ? 'bg-sky-500/90'
             : 'bg-amber-500/90';
-          const label = series.status === 'watched'
+          const label = effectiveStatus === 'watched'
             ? t('seriesCard.watched')
             : isWaiting
             ? formatWaitingLabel(
@@ -61,7 +62,7 @@ export default function SeriesCard({ series, onClick }: SeriesCardProps) {
                 (d) => t('seriesCard.waitingDays', { count: d }),
                 i18n.language
               )
-            : series.status === 'watching'
+            : effectiveStatus === 'watching'
             ? `S${series.watched_seasons.length}/${series.seasons ?? '?'}`
             : futureFirstEpLabel || t('seriesCard.wantToWatch');
           return (
@@ -78,7 +79,7 @@ export default function SeriesCard({ series, onClick }: SeriesCardProps) {
           {series.title}
         </h3>
         <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{series.creator}</p>
-        {series.status === 'watched' && series.rating && (
+        {effectiveStatus === 'watched' && series.rating && (
           <StarRating value={series.rating} readonly size={13} />
         )}
       </div>

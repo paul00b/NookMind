@@ -8,7 +8,7 @@ import SeriesDetailModal from '../components/SeriesDetailModal';
 import StarRating from '../components/StarRating';
 import { useSeries } from '../context/SeriesContext';
 import { useTranslation } from 'react-i18next';
-import { formatWaitingLabel, isSeriesWaiting } from '../lib/seriesUtils';
+import { formatWaitingLabel, getEffectiveSeriesStatus, isSeriesWaiting } from '../lib/seriesUtils';
 import { useTmdbSeriesRefresh } from '../hooks/useTmdbSeriesRefresh';
 import TrendingSeriesSlider from '../components/TrendingSeriesSlider';
 import SearchSectionStack from '../components/SearchSectionStack';
@@ -28,7 +28,7 @@ function WantToWatchSlider({ onSelect }: { onSelect: (s: Series) => void }) {
   const { t, i18n } = useTranslation();
 
   const wantToWatch = series
-    .filter(s => s.status === 'want_to_watch')
+    .filter(s => getEffectiveSeriesStatus(s) === 'want_to_watch')
     .slice(0, 10);
 
   if (wantToWatch.length === 0) return null;
@@ -91,7 +91,9 @@ function WatchingSlider({ onSelect }: { onSelect: (s: Series) => void }) {
   const { series } = useSeries();
   const { t } = useTranslation();
 
-  const activeWatching = series.filter(s => s.status === 'watching' && !isSeriesWaiting(s)).slice(0, 10);
+  const activeWatching = series
+    .filter(s => getEffectiveSeriesStatus(s) === 'watching' && !isSeriesWaiting(s))
+    .slice(0, 10);
   if (activeWatching.length === 0) return null;
 
   return (
@@ -120,7 +122,10 @@ function WaitingSlider({ onSelect }: { onSelect: (s: Series) => void }) {
   const { t, i18n } = useTranslation();
 
   const waitingNextSeason = series
-    .filter(s => (s.status === 'watching' || s.status === 'watched') && isSeriesWaiting(s))
+    .filter(s => {
+      const status = getEffectiveSeriesStatus(s);
+      return (status === 'watching' || status === 'watched') && isSeriesWaiting(s);
+    })
     .sort((a, b) => {
       if (!a.next_air_date && !b.next_air_date) return 0;
       if (!a.next_air_date) return 1;
@@ -157,7 +162,7 @@ function LastWatchedSlider({ onSelect }: { onSelect: (s: Series) => void }) {
   const { t } = useTranslation();
 
   const lastWatched = series
-    .filter(s => s.status === 'watched')
+    .filter(s => getEffectiveSeriesStatus(s) === 'watched')
     .slice(0, 10);
 
   if (lastWatched.length === 0) return null;

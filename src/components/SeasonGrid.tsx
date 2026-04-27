@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2 } from 'lucide-react';
+import { deriveSeriesStatus } from '../lib/seriesUtils';
 
 interface SeasonGridProps {
   totalSeasons: number;
@@ -470,10 +471,4 @@ export default function SeasonGrid({
   );
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
-export function deriveSeriesStatus(watchedSeasons: number[], totalSeasons: number | null, hasUnreleasedEpisodes = false, watchedEpisodes: Record<string, number[]> = {}): 'watched' | 'watching' | 'want_to_watch' {
-  const hasAnyEpisodeWatched = watchedSeasons.length > 0 || Object.values(watchedEpisodes).some(eps => eps.length > 0);
-  if (!hasAnyEpisodeWatched) return 'want_to_watch';
-  if (!hasUnreleasedEpisodes && totalSeasons && watchedSeasons.length >= totalSeasons) return 'watched';
-  return 'watching';
-}
+export { deriveSeriesStatus };
