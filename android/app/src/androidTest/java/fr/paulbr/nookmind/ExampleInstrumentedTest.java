@@ -1,4 +1,4 @@
-package com.getcapacitor.myapp;
+package fr.paulbr.nookmind;
 
 import static org.junit.Assert.*;
 
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
 
-        assertEquals("com.getcapacitor.app", appContext.getPackageName());
+        assertEquals("fr.paulbr.nookmind", appContext.getPackageName());
     }
 }

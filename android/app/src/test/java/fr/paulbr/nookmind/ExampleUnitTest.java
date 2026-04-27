@@ -1,4 +1,4 @@
-package com.getcapacitor.myapp;
+package fr.paulbr.nookmind;
 
 import static org.junit.Assert.*;
 
