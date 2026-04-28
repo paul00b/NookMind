@@ -12,6 +12,7 @@ import { useNotificationSubscription } from '../hooks/useNotificationSubscriptio
 import {
   useSearchSectionOrder,
 } from '../lib/searchSectionOrder';
+import { DeleteAccountDialog } from './DeleteAccountDialog';
 
 interface Props {
   onClose: () => void;
@@ -120,6 +121,7 @@ export default function SettingsPanel({ onClose }: Props) {
   }, []);
 
   const [refreshing, setRefreshing] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [testNotifState, setTestNotifState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [testNotifMessage, setTestNotifMessage] = useState('');
   const [sectionMode, setSectionMode] = useState<MediaMode>(mode);
@@ -413,6 +415,13 @@ export default function SettingsPanel({ onClose }: Props) {
               >
                 {t('settings.signOut')}
               </button>
+              <button
+                type="button"
+                onClick={() => setDeleteOpen(true)}
+                className="w-full btn-ghost text-sm text-red-600 dark:text-red-400 border border-red-500/30 hover:bg-red-500/10"
+              >
+                {t('settings.deleteAccount')}
+              </button>
             </div>
           </section>
 
@@ -668,6 +677,8 @@ export default function SettingsPanel({ onClose }: Props) {
           </div>
         </div>
       )}
+
+      <DeleteAccountDialog open={deleteOpen} onClose={() => setDeleteOpen(false)} />
     </div>
   );
 }
