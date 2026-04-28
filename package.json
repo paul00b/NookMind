@@ -24,6 +24,7 @@
     "@capacitor/preferences": "^8.0.1",
     "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
+    "@capgo/capacitor-social-login": "^8.3.20",
     "@supabase/supabase-js": "^2.99.1",
     "@vercel/analytics": "^2.0.1",
     "i18next": "^25.8.18",
