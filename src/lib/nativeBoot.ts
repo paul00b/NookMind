@@ -3,6 +3,7 @@ import { SplashScreen } from '@capacitor/splash-screen';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
 import { isNative, isIOS, isAndroid } from './platform';
+import { initNativeAuth } from './nativeAuth';
 
 /**
  * Wires native plugin behaviors. Safe to call on web — no-ops there.
@@ -15,6 +16,12 @@ export async function nativeBoot(): Promise<void> {
   booted = true;
 
   if (!isNative()) return;
+
+  try {
+    await initNativeAuth();
+  } catch (e) {
+    console.error('Failed to init native auth', e);
+  }
 
   // Status bar — match dark background of theme
   try {
