@@ -26,7 +26,22 @@
       "Bash(npx tailwindcss:*)",
       "Bash(VITE_NATIVE_BUILD=1 npm run build)",
       "Bash(git -C /c/Users/brous/Desktop/Dev/BookMind status)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(asdf list *)",
+      "Bash(asdf list-all *)",
+      "Bash(asdf install *)",
+      "Bash(npm -v)",
+      "Bash(grep -v \"^$\")",
+      "Bash(npx cap:*)",                                                                                                                                                                                
+      "Bash(npm view:*)",                                                                                                                                                                               
+      "Bash(npm test:*)",
+      "Bash(npm rebuild:*)",                                                                                                                                                                            
+      "Bash(npm audit:*)",                                                                                                                                                                            
+      "Bash(VITE_NATIVE_BUILD=1 npm run cap:sync)",                                                                                                                                                     
+      "Bash(pod install)",                                                                                                                                                                            
+      "Bash(pod install:*)",  
+      "Bash(keytool:*)",                                                                                                                                                                                
+      "Bash(curl:*)"   
     ]
   },
   "enableAllProjectMcpServers": true,
