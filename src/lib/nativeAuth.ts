@@ -19,9 +19,14 @@ export function initNativeAuth(): Promise<void> {
         iOSServerClientId: webClientId,
         mode: 'online',
       },
-      apple: {
-        clientId: APP_BUNDLE_ID,
-      },
+      // Apple on Android requires a redirectUrl (OAuth flow) which we don't
+      // support — Apple sign-in is iOS-only. Skip on Android to avoid a
+      // fatal initialize() rejection that also prevents Google from working.
+      ...(isIOS() && {
+        apple: {
+          clientId: APP_BUNDLE_ID,
+        },
+      }),
     });
   })();
   return initPromise;

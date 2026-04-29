@@ -35,10 +35,22 @@ describe('initNativeAuth', () => {
     expect(SocialLogin.initialize).not.toHaveBeenCalled();
   });
 
-  it('initializes SocialLogin once on native', async () => {
+  it('initializes SocialLogin once on native Android (no apple block)', async () => {
     vi.mocked(isNative).mockReturnValue(true);
+    vi.mocked(isIOS).mockReturnValue(false);
     const { initNativeAuth } = await loadModule();
     await initNativeAuth();
+    await initNativeAuth();
+    expect(SocialLogin.initialize).toHaveBeenCalledTimes(1);
+    const arg = vi.mocked(SocialLogin.initialize).mock.calls[0][0];
+    expect(arg).toHaveProperty('google');
+    expect(arg).not.toHaveProperty('apple');
+  });
+
+  it('initializes SocialLogin with apple block on iOS', async () => {
+    vi.mocked(isNative).mockReturnValue(true);
+    vi.mocked(isIOS).mockReturnValue(true);
+    const { initNativeAuth } = await loadModule();
     await initNativeAuth();
     expect(SocialLogin.initialize).toHaveBeenCalledTimes(1);
     const arg = vi.mocked(SocialLogin.initialize).mock.calls[0][0];
