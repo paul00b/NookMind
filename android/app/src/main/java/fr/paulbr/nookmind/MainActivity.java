@@ -9,4 +9,7 @@ public class MainActivity extends BridgeActivity implements ModifiedMainActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
     }
+
+    @Override
+    public void IHaveModifiedTheMainActivityForTheUseWithSocialLoginPlugin() {}
 }
