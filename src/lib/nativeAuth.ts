@@ -4,30 +4,31 @@ import { generateNonce } from './nonce';
 
 const APP_BUNDLE_ID = 'fr.paulbr.nookmind';
 
-let initialized = false;
+let initPromise: Promise<void> | null = null;
 
-export async function initNativeAuth(): Promise<void> {
-  if (initialized) return;
-  initialized = true;
-  if (!isNative()) return;
-
-  const webClientId = import.meta.env.VITE_GOOGLE_AUTH_WEB_CLIENT_ID;
-  const iOSClientId = import.meta.env.VITE_GOOGLE_AUTH_IOS_CLIENT_ID;
-
-  await SocialLogin.initialize({
-    google: {
-      webClientId,
-      iOSClientId,
-      iOSServerClientId: webClientId,
-      mode: 'online',
-    },
-    apple: {
-      clientId: APP_BUNDLE_ID,
-    },
-  });
+export function initNativeAuth(): Promise<void> {
+  if (initPromise) return initPromise;
+  initPromise = (async () => {
+    if (!isNative()) return;
+    const webClientId = import.meta.env.VITE_GOOGLE_AUTH_WEB_CLIENT_ID;
+    const iOSClientId = import.meta.env.VITE_GOOGLE_AUTH_IOS_CLIENT_ID;
+    await SocialLogin.initialize({
+      google: {
+        webClientId,
+        iOSClientId,
+        iOSServerClientId: webClientId,
+        mode: 'online',
+      },
+      apple: {
+        clientId: APP_BUNDLE_ID,
+      },
+    });
+  })();
+  return initPromise;
 }
 
 export async function nativeGoogleSignIn(): Promise<string> {
+  await initNativeAuth();
   const res = await SocialLogin.login({
     provider: 'google',
     options: { scopes: ['email', 'profile'] },
@@ -60,6 +61,7 @@ export interface AppleSignInResult {
 }
 
 export async function nativeAppleSignIn(): Promise<AppleSignInResult> {
+  await initNativeAuth();
   if (!isIOS()) {
     throw new Error('Apple sign-in is only available on iOS');
   }
