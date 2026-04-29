@@ -52,10 +52,7 @@
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<!-- TODO: Replace with reversed iOS OAuth client ID from Google Cloud Console.
-				     Format: com.googleusercontent.apps.<digits>-<hash>
-				     Get it when you create the iOS OAuth client (Type: iOS, Bundle ID: fr.paulbr.nookmind). -->
-				<string>com.googleusercontent.apps.PLACEHOLDER-REPLACE-ME</string>
+				<string>com.googleusercontent.apps.281878781279-gdrp9tv0e9r5jtbrh0mbfr9rtp8n3gqd</string>
 			</array>
 		</dict>
 	</array>
