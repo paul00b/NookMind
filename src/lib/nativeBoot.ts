@@ -2,6 +2,7 @@ import { App } from '@capacitor/app';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
+import { PushNotifications } from '@capacitor/push-notifications';
 import { isNative, isIOS, isAndroid } from './platform';
 import { initNativeAuth } from './nativeAuth';
 
@@ -41,6 +42,11 @@ export async function nativeBoot(): Promise<void> {
       // ignore
     }
   }
+
+  // Push — handle foreground notifications silently (permission + registration happens via UI)
+  PushNotifications.addListener('pushNotificationReceived', (notification) => {
+    console.log('[push] foreground notification:', notification.title);
+  });
 
   // Hardware back button (Android) — go back in router history, exit if at root
   if (isAndroid()) {

@@ -47,6 +47,8 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>NookMind uses notifications to alert you when your favourite series and movies release.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

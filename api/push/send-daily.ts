@@ -1,6 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
+import * as admin from 'firebase-admin';
+
+function getFirebaseApp(): admin.app.App {
+  if (admin.apps.length > 0) return admin.apps[0]!;
+  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON ?? '{}') as admin.ServiceAccount;
+  return admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+}
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -9,7 +16,9 @@ const supabase = createClient(
 
 interface PushSubscriptionRow {
   user_id: string;
-  subscription: PushSubscriptionJSON;
+  transport: 'webpush' | 'fcm';
+  subscription: PushSubscriptionJSON | null;
+  fcm_token: string | null;
   notify_episodes: boolean;
   notify_seasons: boolean;
   notify_movies: boolean;
@@ -54,6 +63,21 @@ function configureWebPush() {
     cleanEnv('VITE_VAPID_PUBLIC_KEY'),
     cleanEnv('VAPID_PRIVATE_KEY')
   );
+}
+
+async function sendFcm(fcmToken: string, payload: { title: string; body: string }): Promise<PushSendResult> {
+  try {
+    const app = getFirebaseApp();
+    await admin.messaging(app).send({
+      token: fcmToken,
+      notification: { title: payload.title, body: payload.body },
+      apns: { payload: { aps: { sound: 'default' } } },
+      android: { priority: 'high' },
+    });
+    return { ok: true, statusCode: 200, endpoint: fcmToken.slice(0, 20) + '…' };
+  } catch (err) {
+    return { ok: false, statusCode: null, endpoint: fcmToken.slice(0, 20) + '…', error: err instanceof Error ? err.message : String(err) };
+  }
 }
 
 async function sendPush(subscription: PushSubscriptionJSON, payload: object): Promise<PushSendResult> {
@@ -116,7 +140,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Fetch all push subscriptions
   const { data: subscriptions, error: subError } = await supabase
     .from('push_subscriptions')
-    .select('user_id, subscription, notify_episodes, notify_seasons, notify_movies');
+    .select('user_id, transport, subscription, fcm_token, notify_episodes, notify_seasons, notify_movies');
 
   if (subError || !subscriptions?.length) {
     return res.status(200).json({ sent: 0 });
@@ -164,15 +188,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ? 'Une nouvelle saison est disponible !'
         : 'Un nouvel épisode est disponible maintenant.';
 
+      const seriesPayload = { title, body, url: '/', tag: `series-${series.id}` };
       sends.push(
-        sendPush(sub.subscription, {
-          title,
-          body,
-          url: '/',
-          tag: `series-${series.id}`,
-        }).then((result) => {
-          results.push(result);
-        })
+        (sub.transport === 'fcm' && sub.fcm_token
+          ? sendFcm(sub.fcm_token, { title, body })
+          : sendPush(sub.subscription!, seriesPayload)
+        ).then((result) => { results.push(result); })
       );
     }
   }
@@ -181,15 +202,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const userSubs = subsByUser.get(movie.user_id) ?? [];
     for (const sub of userSubs) {
       if (!sub.notify_movies) continue;
+      const movieTitle = `🎬 ${movie.title}`;
+      const movieBody = "Le film sort en salles aujourd'hui !";
       sends.push(
-        sendPush(sub.subscription, {
-          title: `🎬 ${movie.title}`,
-          body: 'Le film sort en salles aujourd\'hui !',
-          url: '/',
-          tag: `movie-${movie.id}`,
-        }).then((result) => {
-          results.push(result);
-        })
+        (sub.transport === 'fcm' && sub.fcm_token
+          ? sendFcm(sub.fcm_token, { title: movieTitle, body: movieBody })
+          : sendPush(sub.subscription!, { title: movieTitle, body: movieBody, url: '/', tag: `movie-${movie.id}` })
+        ).then((result) => { results.push(result); })
       );
     }
   }

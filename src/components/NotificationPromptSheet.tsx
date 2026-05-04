@@ -1,7 +1,11 @@
+import { useState } from 'react';
 import { Bell, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import SheetModal, { SheetCloseButton } from './SheetModal';
 import { useNotificationSubscription } from '../hooks/useNotificationSubscription';
+import { isNative } from '../lib/platform';
+import { requestNativePushPermission, getNativeFcmToken } from '../lib/nativePush';
+import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 
 interface Props {
@@ -11,9 +15,49 @@ interface Props {
 export default function NotificationPromptSheet({ onDismiss }: Props) {
   const { i18n } = useTranslation();
   const isFr = i18n.language.startsWith('fr');
-  const { subscribe, loading, permission } = useNotificationSubscription();
+  const { subscribe, loading: webLoading, permission } = useNotificationSubscription();
+  const [nativeLoading, setNativeLoading] = useState(false);
+  const loading = isNative() ? nativeLoading : webLoading;
 
   const handleEnable = async () => {
+    if (isNative()) {
+      setNativeLoading(true);
+      try {
+        const granted = await requestNativePushPermission();
+        if (!granted) { onDismiss(); return; }
+
+        const fcmToken = await getNativeFcmToken();
+        if (!fcmToken) {
+          toast.error(isFr ? "Impossible d'obtenir le token FCM." : 'Could not get push token.');
+          return;
+        }
+
+        const { data } = await supabase.auth.getSession();
+        const accessToken = data.session?.access_token;
+        if (!accessToken) return;
+
+        const res = await fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ transport: 'fcm', fcm_token: fcmToken }),
+        });
+
+        if (res.ok) {
+          toast.success(isFr ? 'Notifications activées !' : 'Notifications enabled!');
+          onDismiss();
+        } else {
+          toast.error(isFr ? "Erreur lors de l'activation." : 'Failed to enable notifications.');
+        }
+      } finally {
+        setNativeLoading(false);
+      }
+      return;
+    }
+
+    // Web push path — unchanged
     const ok = await subscribe();
     if (ok) {
       toast.success(isFr ? 'Notifications activées !' : 'Notifications enabled!');
@@ -32,7 +76,6 @@ export default function NotificationPromptSheet({ onDismiss }: Props) {
         <X size={18} />
       </SheetCloseButton>
 
-      {/* Icon */}
       <div className="flex items-center gap-4 mb-4">
         <div className="w-14 h-14 rounded-2xl bg-teal-500/10 flex items-center justify-center shrink-0">
           <Bell size={26} className="text-teal-500" />
@@ -49,7 +92,7 @@ export default function NotificationPromptSheet({ onDismiss }: Props) {
 
       <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-6">
         {isFr
-          ? 'Activez les notifications pour être prévenu le jour de la sortie de vos épisodes et films préférés — sans avoir à ouvrir l\'app.'
+          ? "Activez les notifications pour être prévenu le jour de la sortie de vos épisodes et films préférés — sans avoir à ouvrir l'app."
           : 'Enable notifications to be notified on the release day of your favourite episodes and movies — without opening the app.'}
       </p>
 
