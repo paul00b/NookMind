@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { isNative } from '../lib/platform';
-import { nativeGoogleSignIn, nativeGoogleSignOut, nativeAppleSignIn } from '../lib/nativeAuth';
+import { nativeGoogleSignIn, nativeGoogleSignOut } from '../lib/nativeAuth';
 
 interface AuthContextValue {
   user: User | null;
@@ -12,7 +12,6 @@ interface AuthContextValue {
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
-  signInWithApple: () => Promise<{ error: Error | null }>;
   deleteAccount: () => Promise<{ error: Error | null }>;
 }
 
@@ -76,20 +75,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: error as Error | null };
   };
 
-  const signInWithApple = async () => {
-    try {
-      const { identityToken, nonce } = await nativeAppleSignIn();
-      const { error } = await supabase.auth.signInWithIdToken({
-        provider: 'apple',
-        token: identityToken,
-        nonce,
-      });
-      return { error: error as Error | null };
-    } catch (e) {
-      return { error: e as Error };
-    }
-  };
-
   const deleteAccount = async () => {
     try {
       if (!session) {
@@ -120,7 +105,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signUp,
         signOut,
         signInWithGoogle,
-        signInWithApple,
         deleteAccount,
       }}
     >

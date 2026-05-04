@@ -1,8 +1,5 @@
 import { SocialLogin } from '@capgo/capacitor-social-login';
-import { isNative, isIOS } from './platform';
-import { generateNonce } from './nonce';
-
-const APP_BUNDLE_ID = 'fr.paulbr.nookmind';
+import { isNative } from './platform';
 
 let initPromise: Promise<void> | null = null;
 
@@ -19,14 +16,6 @@ export function initNativeAuth(): Promise<void> {
         iOSServerClientId: webClientId,
         mode: 'online',
       },
-      // Apple on Android requires a redirectUrl (OAuth flow) which we don't
-      // support — Apple sign-in is iOS-only. Skip on Android to avoid a
-      // fatal initialize() rejection that also prevents Google from working.
-      ...(isIOS() && {
-        apple: {
-          clientId: APP_BUNDLE_ID,
-        },
-      }),
     });
   })();
   return initPromise;
@@ -60,27 +49,3 @@ export async function nativeGoogleSignOut(): Promise<void> {
   }
 }
 
-export interface AppleSignInResult {
-  identityToken: string;
-  nonce: string;
-}
-
-export async function nativeAppleSignIn(): Promise<AppleSignInResult> {
-  await initNativeAuth();
-  if (!isIOS()) {
-    throw new Error('Apple sign-in is only available on iOS');
-  }
-  const rawNonce = generateNonce();
-  const res = await SocialLogin.login({
-    provider: 'apple',
-    options: { scopes: ['name', 'email'], nonce: rawNonce },
-  });
-  if (res.provider !== 'apple') {
-    throw new Error('Unexpected provider response');
-  }
-  const identityToken = res.result.idToken;
-  if (!identityToken) {
-    throw new Error('Apple sign-in returned no identityToken');
-  }
-  return { identityToken, nonce: rawNonce };
-}
