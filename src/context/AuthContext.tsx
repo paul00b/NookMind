@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { isNative } from '../lib/platform';
+import { nativeGoogleSignIn, nativeGoogleSignOut } from '../lib/nativeAuth';
 
 interface AuthContextValue {
   user: User | null;
@@ -10,6 +12,7 @@ interface AuthContextValue {
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
+  deleteAccount: () => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -45,11 +48,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    if (isNative()) {
+      await nativeGoogleSignOut();
+    }
     await supabase.auth.signOut();
     localStorage.removeItem('nookmind_onboarding_completed');
   };
 
   const signInWithGoogle = async () => {
+    if (isNative()) {
+      try {
+        const idToken = await nativeGoogleSignIn();
+        const { error } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: idToken,
+        });
+        return { error: error as Error | null };
+      } catch (e) {
+        return { error: e as Error };
+      }
+    }
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/auth/callback` },
@@ -57,8 +75,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: error as Error | null };
   };
 
+  const deleteAccount = async () => {
+    try {
+      if (!session) {
+        return { error: new Error('Not signed in') };
+      }
+      const res = await fetch('/api/account/delete', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (!res.ok) {
+        const body = await res.text();
+        return { error: new Error(body || `HTTP ${res.status}`) };
+      }
+      await signOut();
+      return { error: null };
+    } catch (e) {
+      return { error: e as Error };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut, signInWithGoogle }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        loading,
+        signIn,
+        signUp,
+        signOut,
+        signInWithGoogle,
+        deleteAccount,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

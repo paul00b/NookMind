@@ -150,6 +150,7 @@ export default function Login() {
             )}
             {t('login.continueWithGoogle')}
           </button>
+
         </div>
       </div>
     </div>
