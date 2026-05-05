@@ -202,8 +202,6 @@ const fr = {
     notifMovies: 'Films en salles (à voir)',
     notifEnabled: 'Notifications activées',
     notifDisabled: 'Notifications désactivées',
-    trailer: 'Voir la bande annonce',
-    trailerNotFound: 'Aucune bande annonce disponible',
     notifDenied: 'Les notifications sont bloquées dans les paramètres du navigateur.',
     notifPermissionDenied: 'Permission refusée. Active les notifications dans les paramètres de l\'appareil.',
     notifTokenError: 'Impossible d\'obtenir le token push. Vérifie la configuration Firebase.',
@@ -551,6 +549,10 @@ const fr = {
   },
   watchProviders: {
     availableOn: 'Disponible sur',
+  },
+  common: {
+    trailer: 'Voir la bande annonce',
+    trailerNotFound: 'Aucune bande annonce disponible',
   },
 };
 

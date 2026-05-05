@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CalendarDays, Clock3, Film, Plus, X } from 'lucide-react';
+import { CalendarDays, Clock3, Film, Plus, Play, X } from 'lucide-react';
 import SheetModal, { SheetCloseButton } from '../components/SheetModal';
+import TrailerModal from '../components/TrailerModal';
 import { useMovies } from '../context/MoviesContext';
-import { extractDirector, extractMovieData, fetchMovieDetails, fetchRecentMovies, fetchUpcomingMovies, getPosterUrl } from '../lib/tmdb';
+import { extractDirector, extractMovieData, fetchMovieDetails, fetchRecentMovies, fetchTrailerKey, fetchUpcomingMovies, getPosterUrl } from '../lib/tmdb';
+import toast from 'react-hot-toast';
 import type { Movie, TmdbMovie } from '../types';
 
 function daysUntil(dateStr: string): number {
@@ -266,6 +268,8 @@ function MoviePreviewSheet({
   onClose: () => void;
 }) {
   const mergedMovie = details ?? movie;
+  const [trailerLoading, setTrailerLoading] = useState(false);
+  const [trailerKey, setTrailerKey] = useState<string | null>(null);
   const posterUrl = getPosterUrl(mergedMovie.poster_path) ?? existingMovie?.poster_url ?? null;
   const director = existingMovie?.director || extractDirector(mergedMovie);
   const rawRuntime = mergedMovie.runtime ?? existingMovie?.runtime ?? null;
@@ -337,7 +341,25 @@ function MoviePreviewSheet({
             </p>
           </div>
 
-          <div className="mt-6 flex justify-center">
+          <div className="mt-4">
+            <button
+              onClick={async () => {
+                setTrailerLoading(true);
+                const key = await fetchTrailerKey('movie', movie.id);
+                setTrailerLoading(false);
+                if (key) setTrailerKey(key);
+                else toast.error(t('common.trailerNotFound'));
+              }}
+              disabled={trailerLoading}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+            >
+              {trailerLoading ? <span className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" /> : <Play size={15} />}
+              {t('common.trailer')}
+            </button>
+          </div>
+          {trailerKey && <TrailerModal videoKey={trailerKey} onClose={() => setTrailerKey(null)} />}
+
+          <div className="mt-4 flex justify-center">
             {inList ? (
               <div className="inline-flex min-h-10 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 px-4 text-sm font-medium text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-500/10 dark:text-emerald-300">
                 {t('movieHome.inWatchlist')}
