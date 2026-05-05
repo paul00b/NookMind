@@ -202,6 +202,8 @@ const en = {
     notifMovies: 'Movies in theaters (want to watch)',
     notifEnabled: 'Notifications enabled',
     notifDisabled: 'Notifications disabled',
+    trailer: 'Trailer',
+    trailerNotFound: 'No trailer available',
     notifDenied: 'Notifications are blocked in your browser settings.',
     notifPermissionDenied: 'Permission denied. Enable notifications in your device settings.',
     notifTokenError: 'Could not get push token. Check your Firebase setup.',

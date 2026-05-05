@@ -6,10 +6,10 @@ import StarRating from './StarRating';
 import SheetModal, { SheetCloseButton } from './SheetModal';
 import ExpandableDescription from './ExpandableDescription';
 import EditableNote from './EditableNote';
-import { fetchMovieDetails, fetchMovieWatchProviders, getPosterUrl } from '../lib/tmdb';
+import { fetchMovieDetails, fetchMovieWatchProviders, fetchTrailerKey, getPosterUrl } from '../lib/tmdb';
 import type { WatchProvidersResult } from '../types';
 import WatchProviders from './WatchProviders';
-import { X, Pencil, Check, Trash2, Film, ArrowLeftRight, FolderPlus, FolderMinus, ChevronDown } from 'lucide-react';
+import { X, Pencil, Check, Trash2, Film, ArrowLeftRight, FolderPlus, FolderMinus, ChevronDown, Play } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 
@@ -30,6 +30,7 @@ export default function MovieDetailModal({ movie, onClose }: Props) {
   const [watchProviders, setWatchProviders] = useState<WatchProvidersResult | null>(null);
   const [loadingProviders, setLoadingProviders] = useState(false);
   const [castOpen, setCastOpen] = useState(false);
+  const [trailerLoading, setTrailerLoading] = useState(false);
 
   useEffect(() => {
     if (!movie.tmdb_id) return;
@@ -152,6 +153,23 @@ export default function MovieDetailModal({ movie, onClose }: Props) {
           </div>
 
           <WatchProviders providers={watchProviders} title={localMovie.title} loading={loadingProviders} />
+
+          {movie.tmdb_id && (
+            <button
+              onClick={async () => {
+                setTrailerLoading(true);
+                const key = await fetchTrailerKey('movie', movie.tmdb_id!);
+                setTrailerLoading(false);
+                if (key) window.open(`https://www.youtube.com/watch?v=${key}`, '_blank');
+                else toast.error(t('common.trailerNotFound'));
+              }}
+              disabled={trailerLoading}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+            >
+              {trailerLoading ? <span className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" /> : <Play size={15} />}
+              {t('common.trailer')}
+            </button>
+          )}
 
           {localMovie.status === 'watched' && (
             <div className="space-y-4">

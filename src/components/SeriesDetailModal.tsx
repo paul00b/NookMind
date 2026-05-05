@@ -7,10 +7,10 @@ import SeasonGrid, { deriveSeriesStatus } from './SeasonGrid';
 import SheetModal, { SheetCloseButton } from './SheetModal';
 import ExpandableDescription from './ExpandableDescription';
 import EditableNote from './EditableNote';
-import { fetchSeasonDetails, fetchSeriesDetails, fetchSeriesWatchProviders, extractSeriesData, getPosterUrl } from '../lib/tmdb';
+import { fetchSeasonDetails, fetchSeriesDetails, fetchSeriesWatchProviders, fetchTrailerKey, extractSeriesData, getPosterUrl } from '../lib/tmdb';
 import type { WatchProvidersResult } from '../types';
 import WatchProviders from './WatchProviders';
-import { X, Trash2, Tv, ChevronDown, FolderPlus, FolderMinus, Star } from 'lucide-react';
+import { X, Trash2, Tv, ChevronDown, FolderPlus, FolderMinus, Star, Play } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { getRatingStyle, type SeasonState } from '../lib/imdbRatingStyle';
@@ -116,6 +116,7 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
   const [showCastSection, setShowCastSection] = useState(false);
   const [watchProviders, setWatchProviders] = useState<WatchProvidersResult | null>(null);
   const [loadingProviders, setLoadingProviders] = useState(false);
+  const [trailerLoading, setTrailerLoading] = useState(false);
 
   // Rafraîchissement silencieux des données TMDB à l'ouverture pour les séries en cours
   useEffect(() => {
@@ -360,6 +361,26 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
           <div className="px-6 pb-3">
             <WatchProviders providers={watchProviders} title={localSeries.title} loading={loadingProviders} />
           </div>
+
+          {/* Trailer */}
+          {series.tmdb_id && (
+            <div className="px-6 pb-3">
+              <button
+                onClick={async () => {
+                  setTrailerLoading(true);
+                  const key = await fetchTrailerKey('tv', series.tmdb_id!);
+                  setTrailerLoading(false);
+                  if (key) window.open(`https://www.youtube.com/watch?v=${key}`, '_blank');
+                  else toast.error(t('common.trailerNotFound'));
+                }}
+                disabled={trailerLoading}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+              >
+                {trailerLoading ? <span className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" /> : <Play size={15} />}
+                {t('common.trailer')}
+              </button>
+            </div>
+          )}
 
           {/* Description */}
           {localSeries.description && (

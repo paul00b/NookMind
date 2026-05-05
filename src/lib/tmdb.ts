@@ -400,3 +400,43 @@ export async function fetchWatchProviderDeepLinks(tmdbWatchUrl: string): Promise
     return {};
   }
 }
+
+interface TmdbVideo {
+  key: string;
+  site: string;
+  type: string;
+  official: boolean;
+  iso_639_1: string;
+}
+
+function pickBestTrailer(videos: TmdbVideo[]): TmdbVideo | null {
+  const youtube = videos.filter(v => v.site === 'YouTube');
+  return (
+    youtube.find(v => v.type === 'Trailer' && v.official) ??
+    youtube.find(v => v.type === 'Trailer') ??
+    youtube.find(v => v.type === 'Teaser') ??
+    youtube[0] ??
+    null
+  );
+}
+
+export async function fetchTrailerKey(type: 'movie' | 'tv', tmdbId: number): Promise<string | null> {
+  const locale = getTmdbLocale();
+  try {
+    const res = await fetch(buildUrl(`/${type}/${tmdbId}/videos`, { language: locale }));
+    if (!res.ok) throw new Error('fetch failed');
+    const data = await res.json() as { results: TmdbVideo[] };
+    const best = pickBestTrailer(data.results ?? []);
+    if (best) return best.key;
+    // Fallback to English if nothing in user's language
+    if (locale !== 'en-US') {
+      const fallback = await fetch(buildUrl(`/${type}/${tmdbId}/videos`, { language: 'en-US' }));
+      if (!fallback.ok) return null;
+      const fallbackData = await fallback.json() as { results: TmdbVideo[] };
+      return pickBestTrailer(fallbackData.results ?? [])?.key ?? null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
