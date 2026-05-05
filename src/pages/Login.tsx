@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { isIOS } from '../lib/platform';
 import nookmindLogo from '/logo.svg';
 
 export default function Login() {
@@ -127,8 +128,8 @@ export default function Login() {
             <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
           </div>
 
-          {/* Google */}
-          <button
+          {/* Google — hidden on iOS (App Store guideline 4.8 requires Apple Sign-In alongside any social login) */}
+          {!isIOS() && <button
             onClick={async () => {
               setGoogleLoading(true);
               const { error } = await signInWithGoogle();
@@ -149,7 +150,7 @@ export default function Login() {
               </svg>
             )}
             {t('login.continueWithGoogle')}
-          </button>
+          </button>}
 
         </div>
       </div>

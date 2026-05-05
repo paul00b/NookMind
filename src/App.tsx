@@ -21,6 +21,7 @@ import SeriesHome from './pages/SeriesHome';
 import SeriesLibrary from './pages/SeriesLibrary';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
+import NativeNavigationHandler from './components/NativeNavigationHandler';
 
 function HomeSwitch() {
   const { mode } = useMediaMode();
@@ -80,6 +81,7 @@ export default function App() {
           </Route>
         </Routes>
 
+        <NativeNavigationHandler />
         <BottomNav />
 
         <Toaster

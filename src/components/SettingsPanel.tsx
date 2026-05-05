@@ -714,6 +714,19 @@ export default function SettingsPanel({ onClose }: Props) {
               </div>
             </div>
           </section>
+
+          {/* Legal */}
+          <section>
+            <div className="card p-4 flex gap-4 justify-center text-xs text-gray-400 dark:text-gray-500">
+              <button onClick={() => { navigate('/privacy'); onClose(); }} className="hover:underline">
+                {t('settings.privacyPolicy')}
+              </button>
+              <span>·</span>
+              <button onClick={() => { navigate('/terms'); onClose(); }} className="hover:underline">
+                {t('settings.terms')}
+              </button>
+            </div>
+          </section>
         </div>
       </div>
 

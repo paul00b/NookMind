@@ -43,9 +43,15 @@ export async function nativeBoot(): Promise<void> {
     }
   }
 
-  // Push — handle foreground notifications silently (permission + registration happens via UI)
+  // Push — handle foreground notifications silently
   PushNotifications.addListener('pushNotificationReceived', (notification) => {
     console.log('[push] foreground notification:', notification.title);
+  });
+
+  // Push — handle tap on notification (background/killed state)
+  PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+    const route: string = (action.notification.data as Record<string, string>)?.route ?? '/library';
+    window.dispatchEvent(new CustomEvent('nookmind:navigate', { detail: { route } }));
   });
 
   // Hardware back button (Android) — go back in router history, exit if at root

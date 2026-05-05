@@ -6,6 +6,7 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: {
     androidScheme: 'https',
+    allowNavigation: ['*.youtube.com', '*.youtube-nocookie.com', '*.googlevideo.com'],
   },
   plugins: {
     SplashScreen: {
