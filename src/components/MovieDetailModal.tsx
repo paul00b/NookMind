@@ -9,6 +9,7 @@ import EditableNote from './EditableNote';
 import { fetchMovieDetails, fetchMovieWatchProviders, fetchTrailerKey, getPosterUrl } from '../lib/tmdb';
 import type { WatchProvidersResult } from '../types';
 import WatchProviders from './WatchProviders';
+import TrailerModal from './TrailerModal';
 import { X, Pencil, Check, Trash2, Film, ArrowLeftRight, FolderPlus, FolderMinus, ChevronDown, Play } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
@@ -31,6 +32,7 @@ export default function MovieDetailModal({ movie, onClose }: Props) {
   const [loadingProviders, setLoadingProviders] = useState(false);
   const [castOpen, setCastOpen] = useState(false);
   const [trailerLoading, setTrailerLoading] = useState(false);
+  const [trailerKey, setTrailerKey] = useState<string | null>(null);
 
   useEffect(() => {
     if (!movie.tmdb_id) return;
@@ -160,7 +162,7 @@ export default function MovieDetailModal({ movie, onClose }: Props) {
                 setTrailerLoading(true);
                 const key = await fetchTrailerKey('movie', movie.tmdb_id!);
                 setTrailerLoading(false);
-                if (key) window.open(`https://www.youtube.com/watch?v=${key}`, '_blank');
+                if (key) setTrailerKey(key);
                 else toast.error(t('common.trailerNotFound'));
               }}
               disabled={trailerLoading}
@@ -170,6 +172,8 @@ export default function MovieDetailModal({ movie, onClose }: Props) {
               {t('common.trailer')}
             </button>
           )}
+
+          {trailerKey && <TrailerModal videoKey={trailerKey} onClose={() => setTrailerKey(null)} />}
 
           {localMovie.status === 'watched' && (
             <div className="space-y-4">

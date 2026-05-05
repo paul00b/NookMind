@@ -10,6 +10,7 @@ import EditableNote from './EditableNote';
 import { fetchSeasonDetails, fetchSeriesDetails, fetchSeriesWatchProviders, fetchTrailerKey, extractSeriesData, getPosterUrl } from '../lib/tmdb';
 import type { WatchProvidersResult } from '../types';
 import WatchProviders from './WatchProviders';
+import TrailerModal from './TrailerModal';
 import { X, Trash2, Tv, ChevronDown, FolderPlus, FolderMinus, Star, Play } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
@@ -117,6 +118,7 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
   const [watchProviders, setWatchProviders] = useState<WatchProvidersResult | null>(null);
   const [loadingProviders, setLoadingProviders] = useState(false);
   const [trailerLoading, setTrailerLoading] = useState(false);
+  const [trailerKey, setTrailerKey] = useState<string | null>(null);
 
   // Rafraîchissement silencieux des données TMDB à l'ouverture pour les séries en cours
   useEffect(() => {
@@ -370,7 +372,7 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
                   setTrailerLoading(true);
                   const key = await fetchTrailerKey('tv', series.tmdb_id!);
                   setTrailerLoading(false);
-                  if (key) window.open(`https://www.youtube.com/watch?v=${key}`, '_blank');
+                  if (key) setTrailerKey(key);
                   else toast.error(t('common.trailerNotFound'));
                 }}
                 disabled={trailerLoading}
@@ -381,6 +383,8 @@ export default function SeriesDetailModal({ series, onClose }: Props) {
               </button>
             </div>
           )}
+
+          {trailerKey && <TrailerModal videoKey={trailerKey} onClose={() => setTrailerKey(null)} />}
 
           {/* Description */}
           {localSeries.description && (

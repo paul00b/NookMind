@@ -202,7 +202,7 @@ const en = {
     notifMovies: 'Movies in theaters (want to watch)',
     notifEnabled: 'Notifications enabled',
     notifDisabled: 'Notifications disabled',
-    trailer: 'Trailer',
+    trailer: 'Watch trailer',
     trailerNotFound: 'No trailer available',
     notifDenied: 'Notifications are blocked in your browser settings.',
     notifPermissionDenied: 'Permission denied. Enable notifications in your device settings.',

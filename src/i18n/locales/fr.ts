@@ -202,7 +202,7 @@ const fr = {
     notifMovies: 'Films en salles (à voir)',
     notifEnabled: 'Notifications activées',
     notifDisabled: 'Notifications désactivées',
-    trailer: 'Bande annonce',
+    trailer: 'Voir la bande annonce',
     trailerNotFound: 'Aucune bande annonce disponible',
     notifDenied: 'Les notifications sont bloquées dans les paramètres du navigateur.',
     notifPermissionDenied: 'Permission refusée. Active les notifications dans les paramètres de l\'appareil.',
