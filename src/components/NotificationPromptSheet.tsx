@@ -28,27 +28,23 @@ export default function NotificationPromptSheet({ onDismiss }: Props) {
 
         const fcmToken = await getNativeFcmToken();
         if (!fcmToken) {
-          toast.error(isFr ? "Impossible d'obtenir le token FCM." : 'Could not get push token.');
+          toast.error(isFr ? "Impossible d'obtenir le token push. Vérifie la configuration Firebase." : 'Could not get push token. Check your Firebase setup.');
           return;
         }
 
-        const { data } = await supabase.auth.getSession();
-        const accessToken = data.session?.access_token;
-        if (!accessToken) return;
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-        const res = await fetch('/api/push/subscribe', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({ transport: 'fcm', fcm_token: fcmToken }),
-        });
+        await supabase.from('push_subscriptions').delete().eq('user_id', user.id).eq('fcm_token', fcmToken);
+        const { error } = await supabase.from('push_subscriptions').insert(
+          { user_id: user.id, transport: 'fcm', fcm_token: fcmToken, notify_episodes: true, notify_seasons: true, notify_movies: true, updated_at: new Date().toISOString() }
+        );
 
-        if (res.ok) {
+        if (!error) {
           toast.success(isFr ? 'Notifications activées !' : 'Notifications enabled!');
           onDismiss();
         } else {
+          console.error('[push] upsert error', error);
           toast.error(isFr ? "Erreur lors de l'activation." : 'Failed to enable notifications.');
         }
       } finally {

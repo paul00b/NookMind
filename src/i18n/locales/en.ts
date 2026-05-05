@@ -203,6 +203,8 @@ const en = {
     notifEnabled: 'Notifications enabled',
     notifDisabled: 'Notifications disabled',
     notifDenied: 'Notifications are blocked in your browser settings.',
+    notifPermissionDenied: 'Permission denied. Enable notifications in your device settings.',
+    notifTokenError: 'Could not get push token. Check your Firebase setup.',
     notifNotSupported: 'Push notifications are not supported on this device.',
     replayOnboarding: 'Replay onboarding',
     searchSections: 'Search sections',

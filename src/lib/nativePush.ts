@@ -7,33 +7,22 @@ export async function requestNativePushPermission(): Promise<boolean> {
   return receive === 'granted';
 }
 
-export async function getNativeFcmToken(): Promise<string | null> {
+export async function getNativeFcmToken(timeoutMs = 10000): Promise<string | null> {
   if (!isNative()) return null;
   return new Promise<string | null>((resolve) => {
     let settled = false;
 
-    PushNotifications.addListener('registration', ({ value }) => {
-      if (!settled) {
-        settled = true;
-        PushNotifications.removeAllListeners();
-        resolve(value);
-      }
-    });
+    const finish = (value: string | null) => {
+      if (settled) return;
+      settled = true;
+      PushNotifications.removeAllListeners();
+      resolve(value);
+    };
 
-    PushNotifications.addListener('registrationError', () => {
-      if (!settled) {
-        settled = true;
-        PushNotifications.removeAllListeners();
-        resolve(null);
-      }
-    });
+    setTimeout(() => finish(null), timeoutMs);
 
-    PushNotifications.register().catch(() => {
-      if (!settled) {
-        settled = true;
-        PushNotifications.removeAllListeners();
-        resolve(null);
-      }
-    });
+    PushNotifications.addListener('registration', ({ value }) => finish(value));
+    PushNotifications.addListener('registrationError', () => finish(null));
+    PushNotifications.register().catch(() => finish(null));
   });
 }

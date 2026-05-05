@@ -9,6 +9,9 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useNotificationSubscription } from '../hooks/useNotificationSubscription';
+import { isNative } from '../lib/platform';
+import { requestNativePushPermission, getNativeFcmToken } from '../lib/nativePush';
+import { supabase } from '../lib/supabase';
 import {
   useSearchSectionOrder,
 } from '../lib/searchSectionOrder';
@@ -124,6 +127,23 @@ export default function SettingsPanel({ onClose }: Props) {
 
   const [refreshing, setRefreshing] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [nativeSubscribed, setNativeSubscribed] = useState(false);
+  const [nativeLoading, setNativeLoading] = useState(false);
+
+  // Check existing FCM subscription on mount
+  useEffect(() => {
+    if (!isNative()) return;
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase
+        .from('push_subscriptions')
+        .select('fcm_token')
+        .eq('user_id', user.id)
+        .eq('transport', 'fcm')
+        .maybeSingle()
+        .then(({ data }) => { if (data?.fcm_token) setNativeSubscribed(true); });
+    });
+  }, []);
   const [testNotifState, setTestNotifState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [testNotifMessage, setTestNotifMessage] = useState('');
   const [sectionMode, setSectionMode] = useState<MediaMode>(mode);
@@ -156,6 +176,31 @@ export default function SettingsPanel({ onClose }: Props) {
   };
 
   const handleToggleNotifications = async () => {
+    if (isNative()) {
+      if (nativeSubscribed) {
+        setNativeSubscribed(false);
+        toast.success(t('settings.notifDisabled'));
+        return;
+      }
+      setNativeLoading(true);
+      try {
+        const granted = await requestNativePushPermission();
+        if (!granted) { toast.error(t('settings.notifPermissionDenied')); return; }
+        const fcmToken = await getNativeFcmToken();
+        if (!fcmToken) { toast.error(t('settings.notifTokenError')); return; }
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        await supabase.from('push_subscriptions').delete().eq('user_id', user.id).eq('fcm_token', fcmToken);
+        const { error } = await supabase.from('push_subscriptions').insert(
+          { user_id: user.id, transport: 'fcm', fcm_token: fcmToken, notify_episodes: true, notify_seasons: true, notify_movies: true, updated_at: new Date().toISOString() }
+        );
+        if (!error) { setNativeSubscribed(true); toast.success(t('settings.notifEnabled')); }
+        else { console.error('[push] insert error', error); toast.error(t('settings.notifTokenError')); }
+      } finally {
+        setNativeLoading(false);
+      }
+      return;
+    }
     if (subscribed) {
       await unsubscribe();
       toast.success(t('settings.notifDisabled'));
@@ -514,11 +559,11 @@ export default function SettingsPanel({ onClose }: Props) {
           <section>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-4">{t('settings.notifications')}</h3>
             <div className="card p-4 space-y-4">
-              {!notifSupported ? (
+              {!(isNative() || notifSupported) ? (
                 <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">
                   {t('settings.notifNotSupported')}
                 </p>
-              ) : permission === 'denied' ? (
+              ) : !isNative() && permission === 'denied' ? (
                 <div className="flex items-start gap-3">
                   <BellOff size={16} className="text-red-400 mt-0.5 shrink-0" />
                   <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.notifDenied')}</p>
@@ -526,28 +571,36 @@ export default function SettingsPanel({ onClose }: Props) {
               ) : (
                 <>
                   {/* Enable / Disable toggle */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <Bell size={15} className={subscribed ? 'text-teal-500' : 'text-gray-400'} />
-                      <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                        {subscribed ? t('settings.notifActive') : t('settings.enableNotifications')}
-                      </span>
-                    </div>
-                    <button
-                      onClick={handleToggleNotifications}
-                      disabled={notifLoading}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all disabled:opacity-60 ${
-                        subscribed
-                          ? 'bg-teal-500/10 text-teal-600 dark:text-teal-400 hover:bg-teal-500/20'
-                          : 'bg-teal-500 text-white hover:bg-teal-600 shadow-sm'
-                      }`}
-                    >
-                      {notifLoading ? '…' : subscribed ? t('settings.notifDeactivate') : t('settings.notifActivate')}
-                    </button>
-                  </div>
+                  {(() => {
+                    const isSubscribed = isNative() ? nativeSubscribed : subscribed;
+                    const isLoading = isNative() ? nativeLoading : notifLoading;
+                    return (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <Bell size={15} className={isSubscribed ? 'text-teal-500' : 'text-gray-400'} />
+                            <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                              {isSubscribed ? t('settings.notifActive') : t('settings.enableNotifications')}
+                            </span>
+                          </div>
+                          <button
+                            onClick={handleToggleNotifications}
+                            disabled={isLoading}
+                            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all disabled:opacity-60 ${
+                              isSubscribed
+                                ? 'bg-teal-500/10 text-teal-600 dark:text-teal-400 hover:bg-teal-500/20'
+                                : 'bg-teal-500 text-white hover:bg-teal-600 shadow-sm'
+                            }`}
+                          >
+                            {isLoading ? '…' : isSubscribed ? t('settings.notifDeactivate') : t('settings.notifActivate')}
+                          </button>
+                        </div>
+                      </>
+                    );
+                  })()}
 
                   {/* Per-type toggles (only when subscribed) */}
-                  {subscribed && (
+                  {(isNative() ? nativeSubscribed : subscribed) && (
                     <div className="space-y-3 pt-1 border-t border-black/[0.06] dark:border-white/[0.06]">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
