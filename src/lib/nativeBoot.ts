@@ -48,6 +48,12 @@ export async function nativeBoot(): Promise<void> {
     console.log('[push] foreground notification:', notification.title);
   });
 
+  // Push — handle tap on notification (background/killed state)
+  PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+    const route: string = (action.notification.data as Record<string, string>)?.route ?? '/library';
+    window.dispatchEvent(new CustomEvent('nookmind:navigate', { detail: { route } }));
+  });
+
   // Hardware back button (Android) — go back in router history, exit if at root
   if (isAndroid()) {
     App.addListener('backButton', ({ canGoBack }) => {

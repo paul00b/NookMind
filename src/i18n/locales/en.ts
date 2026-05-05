@@ -207,6 +207,8 @@ const en = {
     notifTokenError: 'Could not get push token. Check your Firebase setup.',
     notifNotSupported: 'Push notifications are not supported on this device.',
     replayOnboarding: 'Replay onboarding',
+    privacyPolicy: 'Privacy policy',
+    terms: 'Terms of use',
     searchSections: 'Search sections',
     searchSectionsTitle: 'Reorder sections on the Search page',
     searchSectionsHelp: 'Choose which sections appear first for each mode. Changes are applied instantly on this device.',

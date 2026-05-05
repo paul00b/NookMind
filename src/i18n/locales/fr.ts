@@ -207,6 +207,8 @@ const fr = {
     notifTokenError: 'Impossible d\'obtenir le token push. Vérifie la configuration Firebase.',
     notifNotSupported: 'Les notifications push ne sont pas supportées sur cet appareil.',
     replayOnboarding: 'Revoir la présentation',
+    privacyPolicy: 'Politique de confidentialité',
+    terms: 'Conditions d\'utilisation',
     searchSections: 'Sections de recherche',
     searchSectionsTitle: 'Réorganiser les sections de la page Recherche',
     searchSectionsHelp: 'Choisissez quelles sections apparaissent en premier pour chaque mode. Les changements sont appliqués immédiatement sur cet appareil.',
