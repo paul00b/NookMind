@@ -162,8 +162,7 @@ export default function NextUpMovies() {
           className="flex gap-5 overflow-x-auto pb-2 px-4 md:px-0"
           style={{ scrollbarWidth: 'none' }}
         >
-          {sectionMovies.map(movie => {
-            const inList = watchlistIds.has(movie.id);
+          {sectionMovies.filter(movie => !watchlistIds.has(movie.id)).map(movie => {
             const days = movie.release_date ? daysUntil(movie.release_date) : null;
             const dateStr = movie.release_date ? formatDate(movie.release_date, i18n.language) : null;
 
@@ -200,17 +199,12 @@ export default function NextUpMovies() {
                 {dateLabel && (
                   <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">{dateLabel}</p>
                 )}
-                {!inList && (
-                  <button
+                <button
                     onClick={() => void handleAdd(movie)}
                     className="mt-auto inline-flex min-h-8 items-center justify-center rounded-full border border-gray-200 bg-white px-2 text-xs font-medium text-gray-600 transition-colors hover:border-amber-200 hover:bg-amber-50 hover:text-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-400/40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-amber-800/60 dark:hover:bg-amber-500/10 dark:hover:text-amber-300"
                   >
                     {t('nextUp.addToWatchlist')}
                   </button>
-                )}
-                {inList && (
-                  <p className="mt-auto inline-flex min-h-8 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 px-3 text-xs font-medium text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-500/10 dark:text-emerald-300">✓ {t('movieHome.inWatchlist')}</p>
-                )}
               </div>
             );
           })}

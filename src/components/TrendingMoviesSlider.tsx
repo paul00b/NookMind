@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Film, Flame } from 'lucide-react';
 import { fetchTopRatedMoviesPaged, fetchTrendingMoviesPaged, fetchNowPlayingMoviesPaged, getPosterUrl } from '../lib/tmdb';
 import type { TmdbMovie } from '../types';
 import { useTranslation } from 'react-i18next';
+import { useMovies } from '../context/MoviesContext';
 
 type Category = 'top_rated' | 'trending' | 'now_playing';
 
@@ -27,7 +28,12 @@ const fetchers: Record<Category, (page: number) => Promise<{ results: TmdbMovie[
 
 export default function TrendingMoviesSlider({ onSelect }: TrendingMoviesSliderProps) {
   const { t } = useTranslation();
-  const [category, setCategory] = useState<Category>('top_rated');
+  const { movies: libraryMovies } = useMovies();
+  const trackedIds = useMemo(
+    () => new Set(libraryMovies.filter(m => m.tmdb_id != null).map(m => m.tmdb_id!)),
+    [libraryMovies]
+  );
+  const [category, setCategory] = useState<Category>('trending');
   const [movies, setMovies] = useState<TmdbMovie[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -90,9 +96,9 @@ export default function TrendingMoviesSlider({ onSelect }: TrendingMoviesSliderP
   }, [hasMore, loadingMore, initialLoading, fetchNext]);
 
   const tabs: { key: Category; label: string }[] = [
-    { key: 'top_rated',   label: t('movieHome.categoryTopRated') },
     { key: 'trending',    label: t('movieHome.categoryTrending') },
     { key: 'now_playing', label: t('movieHome.categoryNowPlaying') },
+    { key: 'top_rated',   label: t('movieHome.categoryTopRated') },
   ];
 
   return (
@@ -126,7 +132,7 @@ export default function TrendingMoviesSlider({ onSelect }: TrendingMoviesSliderP
         >
           {initialLoading
             ? Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
-            : movies.map(movie => {
+            : movies.filter(movie => !trackedIds.has(movie.id)).map(movie => {
                 const poster = getPosterUrl(movie.poster_path) ?? undefined;
                 return (
                   <div

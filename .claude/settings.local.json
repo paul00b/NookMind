@@ -49,7 +49,10 @@
       "Read(//Users/Paul/.nvm/versions/**)",
       "Bash(~/.asdf/installs/nodejs/20.19.0/bin/npx tsc:*)",
       "Bash(kill %1)",
-      "Bash(gh pr:*)"
+      "Bash(gh pr:*)",
+      "Bash(git pull *)",
+      "Bash(git fetch *)",
+      "Bash(git stash *)"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Tv, Flame } from 'lucide-react';
 import { fetchTrendingSeries, fetchTopRatedSeries, fetchOnAirSeries, getPosterUrl } from '../lib/tmdb';
 import type { TmdbSeries } from '../types';
 import { useTranslation } from 'react-i18next';
+import { useSeries } from '../context/SeriesContext';
 
 type Category = 'top_rated' | 'trending' | 'on_air';
 
@@ -27,7 +28,12 @@ const fetchers: Record<Category, (page: number) => Promise<{ results: TmdbSeries
 
 export default function TrendingSeriesSlider({ onSelect }: TrendingSeriesSliderProps) {
   const { t } = useTranslation();
-  const [category, setCategory] = useState<Category>('top_rated');
+  const { series: librarySeries } = useSeries();
+  const trackedIds = useMemo(
+    () => new Set(librarySeries.filter(s => s.tmdb_id != null).map(s => s.tmdb_id!)),
+    [librarySeries]
+  );
+  const [category, setCategory] = useState<Category>('trending');
   const [series, setSeries] = useState<TmdbSeries[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -93,9 +99,9 @@ export default function TrendingSeriesSlider({ onSelect }: TrendingSeriesSliderP
   }, [hasMore, loadingMore, initialLoading, fetchNext]);
 
   const tabs: { key: Category; label: string }[] = [
-    { key: 'top_rated', label: t('seriesHome.categoryTopRated') },
     { key: 'trending',  label: t('seriesHome.categoryTrending') },
     { key: 'on_air',    label: t('seriesHome.categoryOnAir') },
+    { key: 'top_rated', label: t('seriesHome.categoryTopRated') },
   ];
 
   return (
@@ -132,7 +138,7 @@ export default function TrendingSeriesSlider({ onSelect }: TrendingSeriesSliderP
         >
           {initialLoading
             ? Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
-            : series.map(s => {
+            : series.filter(s => !trackedIds.has(s.id)).map(s => {
                 const poster = getPosterUrl(s.poster_path) ?? undefined;
                 return (
                   <div
