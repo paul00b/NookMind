@@ -17,6 +17,15 @@ const config: CapacitorConfig = {
     Keyboard: {
       resize: 'native',
     },
+    SocialLogin: {
+      providers: {
+        google: true,
+        apple: true,
+        facebook: false,
+        twitter: false,
+      },
+      logLevel: 1,
+    },
   },
 };
 

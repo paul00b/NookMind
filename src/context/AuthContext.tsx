@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { isNative } from '../lib/platform';
-import { nativeGoogleSignIn, nativeGoogleSignOut } from '../lib/nativeAuth';
+import { nativeAppleSignIn, nativeAppleSignOut, nativeGoogleSignIn, nativeGoogleSignOut } from '../lib/nativeAuth';
 
 interface AuthContextValue {
   user: User | null;
@@ -12,6 +12,7 @@ interface AuthContextValue {
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
+  signInWithApple: () => Promise<{ error: Error | null }>;
   deleteAccount: () => Promise<{ error: Error | null }>;
 }
 
@@ -50,6 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     if (isNative()) {
       await nativeGoogleSignOut();
+      await nativeAppleSignOut();
     }
     await supabase.auth.signOut();
     localStorage.removeItem('nookmind_onboarding_completed');
@@ -73,6 +75,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
     return { error: error as Error | null };
+  };
+
+  const signInWithApple = async () => {
+    try {
+      const { idToken, nonce, profile } = await nativeAppleSignIn();
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: 'apple',
+        token: idToken,
+        nonce,
+      });
+      if (error) {
+        return { error: error as Error };
+      }
+
+      const fullName = [profile?.givenName, profile?.familyName].filter(Boolean).join(' ');
+      if (fullName || profile?.givenName || profile?.familyName) {
+        await supabase.auth.updateUser({
+          data: {
+            ...(fullName ? { full_name: fullName } : {}),
+            ...(profile?.givenName ? { given_name: profile.givenName } : {}),
+            ...(profile?.familyName ? { family_name: profile.familyName } : {}),
+          },
+        });
+      }
+      return { error: null };
+    } catch (e) {
+      return { error: e as Error };
+    }
   };
 
   const deleteAccount = async () => {
@@ -105,6 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signUp,
         signOut,
         signInWithGoogle,
+        signInWithApple,
         deleteAccount,
       }}
     >
