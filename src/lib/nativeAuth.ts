@@ -78,16 +78,6 @@ async function sha256Hex(plain: string): Promise<string> {
         .join('');
 }
 
-function decodeJwtPayload(token: string): Record<string, unknown> {
-    try {
-        const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-        const json = atob(base64);
-        return JSON.parse(json) as Record<string, unknown>;
-    } catch {
-        return {};
-    }
-}
-
 export async function nativeAppleSignIn(): Promise<NativeAppleSignInResult> {
     if (!isIOS()) {
         throw new Error('Apple sign-in is only available on iOS');
@@ -96,9 +86,6 @@ export async function nativeAppleSignIn(): Promise<NativeAppleSignInResult> {
 
     const rawNonce = generateNonce(32);
     const hashedNonce = await sha256Hex(rawNonce);
-
-    console.log('[AppleAuth] rawNonce:', rawNonce);
-    console.log('[AppleAuth] hashedNonce sent to Apple:', hashedNonce);
 
     const res = await SocialLogin.login({
         provider: 'apple',
@@ -116,11 +103,6 @@ export async function nativeAppleSignIn(): Promise<NativeAppleSignInResult> {
     if (!idToken) {
         throw new Error('Apple sign-in returned no idToken');
     }
-
-    const jwtPayload = decodeJwtPayload(idToken);
-    console.log('[AppleAuth] JWT nonce claim:', jwtPayload['nonce']);
-    console.log('[AppleAuth] rawNonce passed to Supabase:', rawNonce);
-    console.log('[AppleAuth] match?', jwtPayload['nonce'] === hashedNonce);
 
     return {
         idToken,
