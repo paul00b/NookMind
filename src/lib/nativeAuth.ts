@@ -22,7 +22,7 @@ export function initNativeAuth(): Promise<void> {
         const config: Parameters<typeof SocialLogin.initialize>[0] = {
             google: {
                 webClientId,
-                iOSClientId,
+                ...(iOSClientId ? { iOSClientId } : {}),
                 iOSServerClientId: webClientId,
                 mode: 'online',
             },

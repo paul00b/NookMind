@@ -1,11 +1,9 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 
-vi.mock('@capacitor/push-notifications', () => ({
-  PushNotifications: {
+vi.mock('@capacitor-firebase/messaging', () => ({
+  FirebaseMessaging: {
     requestPermissions: vi.fn(),
-    register: vi.fn(),
-    addListener: vi.fn(),
-    removeAllListeners: vi.fn(),
+    getToken: vi.fn(),
   },
 }));
 
@@ -13,7 +11,7 @@ vi.mock('./platform', () => ({
   isNative: vi.fn(),
 }));
 
-import { PushNotifications } from '@capacitor/push-notifications';
+import { FirebaseMessaging } from '@capacitor-firebase/messaging';
 import { isNative } from './platform';
 import { requestNativePushPermission, getNativeFcmToken } from './nativePush';
 
@@ -24,19 +22,19 @@ describe('requestNativePushPermission', () => {
     vi.mocked(isNative).mockReturnValue(false);
     const result = await requestNativePushPermission();
     expect(result).toBe(false);
-    expect(PushNotifications.requestPermissions).not.toHaveBeenCalled();
+    expect(FirebaseMessaging.requestPermissions).not.toHaveBeenCalled();
   });
 
   it('returns true when permission is granted on native', async () => {
     vi.mocked(isNative).mockReturnValue(true);
-    vi.mocked(PushNotifications.requestPermissions).mockResolvedValue({ receive: 'granted' });
+    vi.mocked(FirebaseMessaging.requestPermissions).mockResolvedValue({ receive: 'granted' });
     const result = await requestNativePushPermission();
     expect(result).toBe(true);
   });
 
   it('returns false when permission is denied on native', async () => {
     vi.mocked(isNative).mockReturnValue(true);
-    vi.mocked(PushNotifications.requestPermissions).mockResolvedValue({ receive: 'denied' });
+    vi.mocked(FirebaseMessaging.requestPermissions).mockResolvedValue({ receive: 'denied' });
     const result = await requestNativePushPermission();
     expect(result).toBe(false);
   });
@@ -44,7 +42,6 @@ describe('requestNativePushPermission', () => {
 
 describe('getNativeFcmToken', () => {
   beforeEach(() => vi.clearAllMocks());
-  afterEach(() => vi.clearAllMocks());
 
   it('returns null on web', async () => {
     vi.mocked(isNative).mockReturnValue(false);
@@ -52,26 +49,16 @@ describe('getNativeFcmToken', () => {
     expect(token).toBeNull();
   });
 
-  it('returns FCM token on native when registration succeeds', async () => {
+  it('returns FCM token on native when getToken succeeds', async () => {
     vi.mocked(isNative).mockReturnValue(true);
-    vi.mocked(PushNotifications.register).mockResolvedValue(undefined);
-    vi.mocked(PushNotifications.addListener).mockImplementation((event: string, cb: unknown) => {
-      if (event === 'registration') {
-        setTimeout(() => (cb as (data: { value: string }) => void)({ value: 'fake-fcm-token' }), 0);
-      }
-      return Promise.resolve({ remove: vi.fn() });
-    });
-
+    vi.mocked(FirebaseMessaging.getToken).mockResolvedValue({ token: 'fake-fcm-token' });
     const token = await getNativeFcmToken();
     expect(token).toBe('fake-fcm-token');
-    expect(PushNotifications.removeAllListeners).toHaveBeenCalled();
   });
 
-  it('returns null when registration throws', async () => {
+  it('returns null when getToken throws', async () => {
     vi.mocked(isNative).mockReturnValue(true);
-    vi.mocked(PushNotifications.register).mockRejectedValue(new Error('Registration failed'));
-    vi.mocked(PushNotifications.addListener).mockResolvedValue({ remove: vi.fn() });
-
+    vi.mocked(FirebaseMessaging.getToken).mockRejectedValue(new Error('Registration failed'));
     const token = await getNativeFcmToken();
     expect(token).toBeNull();
   });

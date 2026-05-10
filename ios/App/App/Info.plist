@@ -49,6 +49,8 @@
 	<true/>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>NookMind uses notifications to alert you when your favourite series and movies release.</string>
+	<key>GIDClientID</key>
+	<string>281878781279-gdrp9tv0e9r5jtbrh0mbfr9rtp8n3gqd.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
