@@ -29,7 +29,7 @@ export default function MovieDetailModal({ movie, onClose }: Props) {
   const [localMovie, setLocalMovie] = useState<Movie>(movie);
   const [tmdbMovie, setTmdbMovie] = useState<TmdbMovie | null>(null);
   const [watchProviders, setWatchProviders] = useState<WatchProvidersResult | null>(null);
-  const [loadingProviders, setLoadingProviders] = useState(false);
+  const [loadingProviders, setLoadingProviders] = useState(true);
   const [castOpen, setCastOpen] = useState(false);
   const [trailerLoading, setTrailerLoading] = useState(false);
   const [trailerKey, setTrailerKey] = useState<string | null>(null);
@@ -40,7 +40,6 @@ export default function MovieDetailModal({ movie, onClose }: Props) {
     fetchMovieDetails(movie.tmdb_id).then(details => {
       if (active) setTmdbMovie(details);
     });
-    setLoadingProviders(true);
     fetchMovieWatchProviders(movie.tmdb_id).then(result => {
       if (active) {
         setWatchProviders(result);

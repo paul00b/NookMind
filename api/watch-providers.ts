@@ -26,7 +26,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     while ((match = regex.exec(html)) !== null) {
       const href = match[1];
-      const imgSrc = match[2];
 
       // Decode the cx parameter to get provider name
       try {
