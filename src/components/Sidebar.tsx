@@ -39,15 +39,15 @@ export default function Sidebar({onOpenSettings}: Props) {
             {/* Books / Movies toggle */}
             <div className="flex items-center bg-gray-100 dark:bg-gray-800/60 rounded-xl p-1 gap-0.5 mb-6">
                 <button
-                    onClick={() => setMode('books')}
+                    onClick={() => setMode('series')}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${
-                        mode === 'books'
-                            ? 'bg-white dark:bg-[#1a1f2e] text-amber-600 dark:text-amber-400 shadow-sm'
+                        mode === 'series'
+                            ? 'bg-white dark:bg-[#1a1f2e] text-teal-600 dark:text-teal-400 shadow-sm'
                             : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                     }`}
                 >
-                    <BookOpen size={13}/>
-                    {t('nav.books')}
+                    <Tv size={13}/>
+                    {t('nav.series')}
                 </button>
                 <button
                     onClick={() => setMode('movies')}
@@ -61,15 +61,15 @@ export default function Sidebar({onOpenSettings}: Props) {
                     {t('nav.movies')}
                 </button>
                 <button
-                    onClick={() => setMode('series')}
+                    onClick={() => setMode('books')}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${
-                        mode === 'series'
-                            ? 'bg-white dark:bg-[#1a1f2e] text-teal-600 dark:text-teal-400 shadow-sm'
+                        mode === 'books'
+                            ? 'bg-white dark:bg-[#1a1f2e] text-amber-600 dark:text-amber-400 shadow-sm'
                             : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                     }`}
                 >
-                    <Tv size={13}/>
-                    {t('nav.series')}
+                    <BookOpen size={13}/>
+                    {t('nav.books')}
                 </button>
             </div>
 

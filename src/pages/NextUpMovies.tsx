@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CalendarDays, Clock3, Film, Plus, X } from 'lucide-react';
+import { CalendarDays, Clock3, Film, Plus, Play, X } from 'lucide-react';
 import SheetModal, { SheetCloseButton } from '../components/SheetModal';
+import TrailerModal from '../components/TrailerModal';
 import { useMovies } from '../context/MoviesContext';
-import { extractDirector, extractMovieData, fetchMovieDetails, fetchRecentMovies, fetchUpcomingMovies, getPosterUrl } from '../lib/tmdb';
+import { extractDirector, extractMovieData, fetchMovieDetails, fetchRecentMovies, fetchTrailerKey, fetchUpcomingMovies, getPosterUrl } from '../lib/tmdb';
+import toast from 'react-hot-toast';
 import type { Movie, TmdbMovie } from '../types';
 
 function daysUntil(dateStr: string): number {
@@ -160,8 +162,7 @@ export default function NextUpMovies() {
           className="flex gap-5 overflow-x-auto pb-2 px-4 md:px-0"
           style={{ scrollbarWidth: 'none' }}
         >
-          {sectionMovies.map(movie => {
-            const inList = watchlistIds.has(movie.id);
+          {sectionMovies.filter(movie => !watchlistIds.has(movie.id)).map(movie => {
             const days = movie.release_date ? daysUntil(movie.release_date) : null;
             const dateStr = movie.release_date ? formatDate(movie.release_date, i18n.language) : null;
 
@@ -198,17 +199,12 @@ export default function NextUpMovies() {
                 {dateLabel && (
                   <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">{dateLabel}</p>
                 )}
-                {!inList && (
-                  <button
+                <button
                     onClick={() => void handleAdd(movie)}
                     className="mt-auto inline-flex min-h-8 items-center justify-center rounded-full border border-gray-200 bg-white px-2 text-xs font-medium text-gray-600 transition-colors hover:border-amber-200 hover:bg-amber-50 hover:text-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-400/40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-amber-800/60 dark:hover:bg-amber-500/10 dark:hover:text-amber-300"
                   >
                     {t('nextUp.addToWatchlist')}
                   </button>
-                )}
-                {inList && (
-                  <p className="mt-auto inline-flex min-h-8 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 px-3 text-xs font-medium text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-500/10 dark:text-emerald-300">✓ {t('movieHome.inWatchlist')}</p>
-                )}
               </div>
             );
           })}
@@ -266,6 +262,8 @@ function MoviePreviewSheet({
   onClose: () => void;
 }) {
   const mergedMovie = details ?? movie;
+  const [trailerLoading, setTrailerLoading] = useState(false);
+  const [trailerKey, setTrailerKey] = useState<string | null>(null);
   const posterUrl = getPosterUrl(mergedMovie.poster_path) ?? existingMovie?.poster_url ?? null;
   const director = existingMovie?.director || extractDirector(mergedMovie);
   const rawRuntime = mergedMovie.runtime ?? existingMovie?.runtime ?? null;
@@ -337,7 +335,25 @@ function MoviePreviewSheet({
             </p>
           </div>
 
-          <div className="mt-6 flex justify-center">
+          <div className="mt-4">
+            <button
+              onClick={async () => {
+                setTrailerLoading(true);
+                const key = await fetchTrailerKey('movie', movie.id);
+                setTrailerLoading(false);
+                if (key) setTrailerKey(key);
+                else toast.error(t('common.trailerNotFound'));
+              }}
+              disabled={trailerLoading}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+            >
+              {trailerLoading ? <span className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" /> : <Play size={15} />}
+              {t('common.trailer')}
+            </button>
+          </div>
+          {trailerKey && <TrailerModal videoKey={trailerKey} onClose={() => setTrailerKey(null)} />}
+
+          <div className="mt-4 flex justify-center">
             {inList ? (
               <div className="inline-flex min-h-10 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 px-4 text-sm font-medium text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-500/10 dark:text-emerald-300">
                 {t('movieHome.inWatchlist')}

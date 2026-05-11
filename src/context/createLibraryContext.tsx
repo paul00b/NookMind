@@ -104,7 +104,7 @@ export function createLibraryContext<TEntity extends EntityWithId>({
       try {
         const { data, error } = await supabase
           .from(table)
-          .update(updates)
+          .update(updates as never)
           .eq('id', id)
           .select()
           .single();

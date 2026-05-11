@@ -43,6 +43,9 @@ const fr = {
     confirmEmail: 'Vérifiez votre e-mail pour confirmer votre compte, puis connectez-vous.',
     or: 'ou',
     continueWithGoogle: 'Continuer avec Google',
+    continueWithApple: 'Continuer avec Apple',
+    googleSignInFailed: 'Échec de la connexion Google',
+    appleSignInFailed: 'Échec de la connexion Apple',
   },
   home: {
     title: 'Livres',
@@ -169,6 +172,13 @@ const fr = {
     save: 'Enregistrer',
     cancel: 'Annuler',
     signOut: 'Se déconnecter',
+    deleteAccount: 'Supprimer le compte',
+    deleteAccountSubtitle: 'Suppression définitive de votre compte et de toutes vos données',
+    deleteAccountConfirmTitle: 'Supprimer votre compte ?',
+    deleteAccountConfirmBody: 'Cette action supprimera définitivement votre compte, vos livres, films, séries, catégories et abonnements aux notifications. Elle est irréversible.',
+    deleteAccountConfirmCta: 'Oui, supprimer mon compte',
+    deleteAccountCancel: 'Annuler',
+    deleteAccountFailed: 'Échec de la suppression du compte',
     appearance: 'Apparence',
     theme: 'Thème',
     light: 'Clair',
@@ -193,6 +203,8 @@ const fr = {
     notifEnabled: 'Notifications activées',
     notifDisabled: 'Notifications désactivées',
     notifDenied: 'Les notifications sont bloquées dans les paramètres du navigateur.',
+    notifPermissionDenied: 'Permission refusée. Active les notifications dans les paramètres de l\'appareil.',
+    notifTokenError: 'Impossible d\'obtenir le token push. Vérifie la configuration Firebase.',
     notifNotSupported: 'Les notifications push ne sont pas supportées sur cet appareil.',
     replayOnboarding: 'Revoir la présentation',
     searchSections: 'Sections de recherche',
@@ -537,6 +549,10 @@ const fr = {
   },
   watchProviders: {
     availableOn: 'Disponible sur',
+  },
+  common: {
+    trailer: 'Voir la bande annonce',
+    trailerNotFound: 'Aucune bande annonce disponible',
   },
 };
 

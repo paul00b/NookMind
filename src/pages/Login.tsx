@@ -3,10 +3,11 @@ import { useAuth } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { isIOS } from '../lib/platform';
 import nookmindLogo from '/logo.svg';
 
 export default function Login() {
-  const { user, signIn, signUp, signInWithGoogle } = useAuth();
+  const { user, signIn, signUp, signInWithGoogle, signInWithApple } = useAuth();
   const { t } = useTranslation();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
@@ -16,6 +17,8 @@ export default function Login() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
+  const showAppleSignIn = isIOS();
 
   if (user) return <Navigate to="/" replace />;
 
@@ -130,6 +133,7 @@ export default function Login() {
           {/* Google */}
           <button
             onClick={async () => {
+              setError('');
               setGoogleLoading(true);
               const { error } = await signInWithGoogle();
               if (error) setError(error.message);
@@ -150,6 +154,28 @@ export default function Login() {
             )}
             {t('login.continueWithGoogle')}
           </button>
+
+          {showAppleSignIn && (
+            <button
+              onClick={async () => {
+                setError('');
+                setAppleLoading(true);
+                const { error } = await signInWithApple();
+                if (error) setError(error.message || t('login.appleSignInFailed'));
+                setAppleLoading(false);
+              }}
+              disabled={appleLoading}
+              className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-xl border border-gray-900 bg-gray-950 text-white text-sm font-medium hover:bg-black transition-colors disabled:opacity-50"
+            >
+              {appleLoading ? (
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <span className="text-base font-semibold leading-none" aria-hidden="true">{'\uF8FF'}</span>
+              )}
+              {t('login.continueWithApple')}
+            </button>
+          )}
+
         </div>
       </div>
     </div>

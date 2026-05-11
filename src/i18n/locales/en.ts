@@ -43,6 +43,9 @@ const en = {
     confirmEmail: 'Check your email to confirm your account, then log in.',
     or: 'or',
     continueWithGoogle: 'Continue with Google',
+    continueWithApple: 'Continue with Apple',
+    googleSignInFailed: 'Google sign-in failed',
+    appleSignInFailed: 'Apple sign-in failed',
   },
   home: {
     title: 'Reading tracker',
@@ -169,6 +172,13 @@ const en = {
     save: 'Save',
     cancel: 'Cancel',
     signOut: 'Sign out',
+    deleteAccount: 'Delete account',
+    deleteAccountSubtitle: 'Permanently remove your account and all data',
+    deleteAccountConfirmTitle: 'Delete your account?',
+    deleteAccountConfirmBody: 'This will permanently delete your account, books, movies, series, categories, and notification subscriptions. This cannot be undone.',
+    deleteAccountConfirmCta: 'Yes, delete my account',
+    deleteAccountCancel: 'Cancel',
+    deleteAccountFailed: 'Failed to delete account',
     appearance: 'Appearance',
     theme: 'Theme',
     light: 'Light',
@@ -193,6 +203,8 @@ const en = {
     notifEnabled: 'Notifications enabled',
     notifDisabled: 'Notifications disabled',
     notifDenied: 'Notifications are blocked in your browser settings.',
+    notifPermissionDenied: 'Permission denied. Enable notifications in your device settings.',
+    notifTokenError: 'Could not get push token. Check your Firebase setup.',
     notifNotSupported: 'Push notifications are not supported on this device.',
     replayOnboarding: 'Replay onboarding',
     searchSections: 'Search sections',
@@ -536,6 +548,10 @@ const en = {
   },
   watchProviders: {
     availableOn: 'Available on',
+  },
+  common: {
+    trailer: 'Watch trailer',
+    trailerNotFound: 'No trailer available',
   },
 };
 

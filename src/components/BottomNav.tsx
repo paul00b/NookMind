@@ -22,15 +22,15 @@ export default function BottomNav() {
       <div className="flex items-center justify-center">
         <div className="flex items-center bg-white/85 dark:bg-[#1a1f2e]/85 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.08] rounded-full shadow-md p-1 gap-0.5">
           <button
-            onPointerDown={(e) => { e.preventDefault(); setMode('books'); }}
+            onPointerDown={(e) => { e.preventDefault(); setMode('series'); }}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all touch-manipulation ${
-              mode === 'books'
-                ? 'bg-amber-500 text-white shadow-sm'
+              mode === 'series'
+                ? 'bg-teal-500 text-white shadow-sm'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
-            <BookOpen size={12} />
-            {t('nav.books')}
+            <Tv size={12} />
+            {t('nav.series')}
           </button>
           <button
             onPointerDown={(e) => { e.preventDefault(); setMode('movies'); }}
@@ -44,15 +44,15 @@ export default function BottomNav() {
             {t('nav.movies')}
           </button>
           <button
-            onPointerDown={(e) => { e.preventDefault(); setMode('series'); }}
+            onPointerDown={(e) => { e.preventDefault(); setMode('books'); }}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all touch-manipulation ${
-              mode === 'series'
-                ? 'bg-teal-500 text-white shadow-sm'
+              mode === 'books'
+                ? 'bg-amber-500 text-white shadow-sm'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
-            <Tv size={12} />
-            {t('nav.series')}
+            <BookOpen size={12} />
+            {t('nav.books')}
           </button>
         </div>
       </div>

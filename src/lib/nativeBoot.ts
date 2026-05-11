@@ -2,7 +2,9 @@ import { App } from '@capacitor/app';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
+import { FirebaseMessaging } from '@capacitor-firebase/messaging';
 import { isNative, isIOS, isAndroid } from './platform';
+import { initNativeAuth } from './nativeAuth';
 
 /**
  * Wires native plugin behaviors. Safe to call on web — no-ops there.
@@ -15,6 +17,12 @@ export async function nativeBoot(): Promise<void> {
   booted = true;
 
   if (!isNative()) return;
+
+  try {
+    await initNativeAuth();
+  } catch (e) {
+    console.error('Failed to init native auth', e);
+  }
 
   // Status bar — match dark background of theme
   try {
@@ -34,6 +42,11 @@ export async function nativeBoot(): Promise<void> {
       // ignore
     }
   }
+
+  // Push — handle foreground notifications silently (permission + registration happens via UI)
+  FirebaseMessaging.addListener('notificationReceived', ({ notification }) => {
+    console.log('[push] foreground notification:', notification.title);
+  });
 
   // Hardware back button (Android) — go back in router history, exit if at root
   if (isAndroid()) {

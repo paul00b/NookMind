@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { X, Tv, Plus, ChevronDown, Star, CheckCircle2 } from 'lucide-react';
+import { X, Tv, Plus, ChevronDown, Star, CheckCircle2, Play } from 'lucide-react';
 import { fetchSeriesImdbId, fetchSeasonRatings, type EpisodeRating } from '../lib/imdb';
 import { getRatingStyle, type SeasonState } from '../lib/imdbRatingStyle';
-import { fetchSeasonDetails, fetchSeriesDetails, getPosterUrl } from '../lib/tmdb';
+import { fetchSeasonDetails, fetchSeriesDetails, fetchTrailerKey, getPosterUrl } from '../lib/tmdb';
+import TrailerModal from './TrailerModal';
+import toast from 'react-hot-toast';
 import type { TmdbEpisode, TmdbSeries } from '../types';
 import { useTranslation } from 'react-i18next';
 import SheetModal, { SheetCloseButton } from './SheetModal';
@@ -169,6 +171,9 @@ export default function SeriesPreviewSheet({
   const [imdbError, setImdbError] = useState<'not_found' | 'no_key' | null>(null);
   const [seasonRatings, setSeasonRatings] = useState<Record<number, SeasonState>>({});
   const [fetchKey, setFetchKey] = useState(0);
+
+  const [trailerLoading, setTrailerLoading] = useState(false);
+  const [trailerKey, setTrailerKey] = useState<string | null>(null);
 
   // Accordion state
   const [imdbSectionOpen, setImdbSectionOpen] = useState(false);
@@ -374,6 +379,26 @@ export default function SeriesPreviewSheet({
         </div>
 
         <div className="overflow-y-auto flex-1 min-h-0">
+
+        {tmdbId && (
+          <div className="px-6 pb-3">
+            <button
+              onClick={async () => {
+                setTrailerLoading(true);
+                const key = await fetchTrailerKey('tv', tmdbId);
+                setTrailerLoading(false);
+                if (key) setTrailerKey(key);
+                else toast.error(t('common.trailerNotFound'));
+              }}
+              disabled={trailerLoading}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+            >
+              {trailerLoading ? <span className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" /> : <Play size={15} />}
+              {t('common.trailer')}
+            </button>
+          </div>
+        )}
+        {trailerKey && <TrailerModal videoKey={trailerKey} onClose={() => setTrailerKey(null)} />}
 
         {description && (
           <div className="px-6 pb-4">
