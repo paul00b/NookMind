@@ -1,5 +1,6 @@
 import {useState, useEffect, useCallback} from 'react';
 import {supabase} from '../lib/supabase';
+import {getApiUrl} from '../lib/api';
 import toast from 'react-hot-toast';
 
 export interface NotificationPreferences {
@@ -14,6 +15,7 @@ export interface PushTestResult {
 }
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
+const API_TIMEOUT_MS = 15000;
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
     const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -38,6 +40,20 @@ async function getAuthToken(): Promise<string | null> {
     return data.session?.access_token ?? null;
 }
 
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit): Promise<Response> {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+
+    try {
+        return await fetch(input, {
+            ...init,
+            signal: controller.signal,
+        });
+    } finally {
+        window.clearTimeout(timeoutId);
+    }
+}
+
 async function callApi(
     path: string,
     method: string,
@@ -45,7 +61,7 @@ async function callApi(
 ): Promise<boolean> {
     const token = await getAuthToken();
     if (!token) return false;
-    const res = await fetch(path, {
+    const res = await fetchWithTimeout(getApiUrl(path), {
         method,
         headers: {
             'Content-Type': 'application/json',
@@ -64,14 +80,22 @@ async function callApiJson<T>(
     const token = await getAuthToken();
     if (!token) return {ok: false, data: null, status: 401, rawText: 'Missing auth token'};
 
-    const res = await fetch(path, {
-        method,
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(body),
-    });
+    let res: Response;
+    try {
+        res = await fetchWithTimeout(getApiUrl(path), {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(body),
+        });
+    } catch (error) {
+        const message = error instanceof Error && error.name === 'AbortError'
+            ? `Request timed out after ${API_TIMEOUT_MS / 1000}s`
+            : (error instanceof Error ? error.message : String(error));
+        return {ok: false, data: null, status: 0, rawText: message};
+    }
 
     const rawText = await res.text();
     let data: T | null = null;

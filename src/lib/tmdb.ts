@@ -390,7 +390,7 @@ export async function fetchWatchProviderDeepLinks(tmdbWatchUrl: string): Promise
   if (cached) return cached;
 
   try {
-    const res = await fetch(`/api/watch-providers?url=${encodeURIComponent(tmdbWatchUrl)}`);
+    const res = await fetch(`${getApiUrl('/api/watch-providers')}?url=${encodeURIComponent(tmdbWatchUrl)}`);
     if (!res.ok) return {};
     const data = await res.json();
     const providers = data.providers ?? {};
@@ -440,3 +440,4 @@ export async function fetchTrailerKey(type: 'movie' | 'tv', tmdbId: number): Pro
     return null;
   }
 }
+import { getApiUrl } from './api';

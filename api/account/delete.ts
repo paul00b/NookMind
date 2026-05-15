@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import { applyCors } from '../_lib/cors';
 
 const admin = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -17,6 +18,8 @@ const TABLES_WITH_USER_ID = [
 ] as const;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (applyCors(req, res, ['POST'])) return;
+
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).end();

@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import crypto from 'node:crypto';
 import webpush from 'web-push';
 import * as admin from 'firebase-admin';
+import { applyCors } from '../_lib/cors';
 
 // Initialisation de Supabase
 const supabase = createClient(
@@ -67,6 +68,8 @@ function getVapidConfig() {
 // --- Handler Principal ---
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+    if (applyCors(req, res, ['POST'])) return;
+
     // 1. Configuration Web-Push
     try {
         const vapid = getVapidConfig();

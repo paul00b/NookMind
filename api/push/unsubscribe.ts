@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import { applyCors } from '../_lib/cors';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -7,6 +8,8 @@ const supabase = createClient(
 );
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (applyCors(req, res, ['DELETE'])) return;
+
   if (req.method !== 'DELETE') return res.status(405).end();
 
   const authHeader = req.headers.authorization;

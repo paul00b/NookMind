@@ -1,6 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { applyCors } from './_lib/cors';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (applyCors(req, res, ['GET'])) return;
+
   const { firstChar, query } = req.query;
   if (!firstChar || !query) return res.status(400).json({ error: 'Missing params' });
 

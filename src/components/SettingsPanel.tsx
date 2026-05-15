@@ -259,24 +259,28 @@ export default function SettingsPanel({onClose}: Props) {
         setTestNotifState('loading');
         setTestNotifMessage('Envoi du test en cours...');
 
-        let result;
+        try {
+            let result;
 
-        if (isNative()) {
-            // 1. Récupérer le token FCM de l'appareil
-            const fcmToken = await getNativeFcmToken();
-            if (!fcmToken) {
-                result = {ok: false, message: "Impossible de récupérer le jeton de l'appareil."};
+            if (isNative()) {
+                const fcmToken = await getNativeFcmToken();
+                if (!fcmToken) {
+                    result = {ok: false, message: "Impossible de récupérer le jeton de l'appareil."};
+                } else {
+                    result = await sendTestNotification(fcmToken);
+                }
             } else {
-                // 2. Appeler la fonction de test du hook avec le token
-                result = await sendTestNotification(fcmToken);
+                result = await sendTestNotification();
             }
-        } else {
-            // Logique Web-Push classique
-            result = await sendTestNotification();
-        }
 
-        setTestNotifState(result.ok ? 'success' : 'error');
-        setTestNotifMessage(result.message);
+            setTestNotifState(result.ok ? 'success' : 'error');
+            setTestNotifMessage(result.message);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Le test a echoue.';
+            console.error('[push] test notification failed', error);
+            setTestNotifState('error');
+            setTestNotifMessage(message);
+        }
     };
 
     const [displayName, setDisplayName] = useState(

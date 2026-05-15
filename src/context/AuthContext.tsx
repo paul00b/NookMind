@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { getApiUrl } from '../lib/api';
 import { isNative } from '../lib/platform';
 import { nativeAppleSignIn, nativeAppleSignOut, nativeGoogleSignIn, nativeGoogleSignOut } from '../lib/nativeAuth';
 
@@ -110,7 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!session) {
         return { error: new Error('Not signed in') };
       }
-      const res = await fetch('/api/account/delete', {
+      const res = await fetch(getApiUrl('/api/account/delete'), {
         method: 'POST',
         headers: { Authorization: `Bearer ${session.access_token}` },
       });

@@ -1,5 +1,7 @@
-const IMDB_GRAPHQL = '/api/imdb-graphql';
-const IMDB_SUGGEST = '/api/imdb-suggest';
+import { getApiUrl } from './api';
+
+const IMDB_GRAPHQL = getApiUrl('/api/imdb-graphql');
+const IMDB_SUGGEST = getApiUrl('/api/imdb-suggest');
 const IMDB_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 export interface EpisodeRating {
