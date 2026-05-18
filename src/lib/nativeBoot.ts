@@ -49,7 +49,7 @@ export async function nativeBoot(): Promise<void> {
   });
 
   // Push — handle tap on notification (background/killed state)
-  PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+  FirebaseMessaging.addListener('notificationActionPerformed', (action) => {
     const route: string = (action.notification.data as Record<string, string>)?.route ?? '/library';
     window.dispatchEvent(new CustomEvent('nookmind:navigate', { detail: { route } }));
   });
