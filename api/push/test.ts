@@ -68,137 +68,141 @@ function getVapidConfig() {
 // --- Handler Principal ---
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    if (applyCors(req, res, ['POST'])) return;
-
-    if (req.method !== 'POST') return res.status(405).end();
-
-    // 2. Vérification de l'authentification
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) {
-        return res.status(401).json({ error: 'Missing auth token' });
-    }
-
-    const token = authHeader.slice(7);
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-        return res.status(401).json({ error: 'Invalid token' });
-    }
-
-    // 3. Extraction des données du test
-    const { title, body, url, transport, token: fcmToken } = (req.body ?? {}) as {
-        title?: string;
-        body?: string;
-        url?: string;
-        transport?: 'webpush' | 'fcm';
-        token?: string;
-    };
-
-    const payload = {
-        title: title?.trim() || 'NookMind Test 🚀',
-        body: body?.trim() || 'Si tu vois ceci, tes notifications fonctionnent !',
-        url: url?.trim() || '/',
-        tag: `test-${Date.now()}`,
-    };
-
-    // --- CAS A : TEST NATIF (FCM) ---
-    if (transport === 'fcm' && fcmToken) {
-        try {
-            const app = getFirebaseApp();
-            await admin.messaging(app).send({
-                token: fcmToken,
-                notification: {
-                    title: payload.title,
-                    body: payload.body,
-                },
-                data: {
-                    url: payload.url,
-                },
-                android: {
-                    priority: 'high',
-                    notification: { sound: 'default' },
-                },
-                apns: {
-                    payload: {
-                        aps: { sound: 'default', badge: 1 },
-                    },
-                },
-            });
-
-            return res.status(200).json({
-                ok: true,
-                sent: 1,
-                failed: 0,
-                results: [{ ok: true, endpoint: 'fcm-device', statusCode: 200 }],
-            });
-        } catch (err) {
-            console.error('[push] FCM test failed', err);
-            return res.status(500).json({
-                ok: false,
-                error: err instanceof Error ? err.message : 'FCM delivery failed'
-            });
-        }
-    }
-
-    // --- CAS B : TEST WEB-PUSH (LOGIQUE EXISTANTE) ---
-    let vapid: ReturnType<typeof getVapidConfig>;
     try {
-        vapid = getVapidConfig();
-        webpush.setVapidDetails(vapid.subject, vapid.publicKey, vapid.privateKey);
-    } catch (err: unknown) {
-        console.error('[push] invalid VAPID config', err);
-        return res.status(500).json({ error: 'Invalid VAPID configuration' });
-    }
+        if (applyCors(req, res, ['POST'])) return;
 
-    const { data: subscriptions, error: subError } = await supabase
-        .from('push_subscriptions')
-        .select('user_id, subscription, transport')
-        .eq('user_id', user.id)
-        .eq('transport', 'webpush'); // On ne teste que les abonnements web ici
+        if (req.method !== 'POST') return res.status(405).end();
 
-    if (subError) return res.status(500).json({ error: subError.message });
-    if (!subscriptions?.length) {
-        return res.status(404).json({ error: 'No web push subscription found for this user' });
-    }
+        const authHeader = req.headers.authorization;
+        if (!authHeader?.startsWith('Bearer ')) {
+            return res.status(401).json({ error: 'Missing auth token' });
+        }
 
-    const results = await Promise.all(
-        subscriptions.map(async (row) => {
-            const sub = row.subscription as unknown as webpush.PushSubscription;
-            const endpoint = sub.endpoint || 'unknown';
+        const token = authHeader.slice(7);
+        const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+        if (authError || !user) {
+            return res.status(401).json({ error: 'Invalid token' });
+        }
 
+        const { title, body, url, transport, token: fcmToken } = (req.body ?? {}) as {
+            title?: string;
+            body?: string;
+            url?: string;
+            transport?: 'webpush' | 'fcm';
+            token?: string;
+        };
+
+        const payload = {
+            title: title?.trim() || 'NookMind Test 🚀',
+            body: body?.trim() || 'Si tu vois ceci, tes notifications fonctionnent !',
+            url: url?.trim() || '/',
+            tag: `test-${Date.now()}`,
+        };
+
+        if (transport === 'fcm' && fcmToken) {
             try {
-                await webpush.sendNotification(sub, JSON.stringify(payload));
-                return { ok: true, statusCode: 201, endpoint } satisfies PushAttemptResult;
-            } catch (err: unknown) {
-                const errorWithMeta = err as { statusCode?: number; body?: string };
-                const statusCode = errorWithMeta.statusCode ?? null;
+                const app = getFirebaseApp();
+                await admin.messaging(app).send({
+                    token: fcmToken,
+                    notification: {
+                        title: payload.title,
+                        body: payload.body,
+                    },
+                    data: {
+                        url: payload.url,
+                    },
+                    android: {
+                        priority: 'high',
+                        notification: { sound: 'default' },
+                    },
+                    apns: {
+                        payload: {
+                            aps: { sound: 'default', badge: 1 },
+                        },
+                    },
+                });
 
-                if (statusCode === 404 || statusCode === 410) {
-                    await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint);
-                }
-
-                return {
+                return res.status(200).json({
+                    ok: true,
+                    sent: 1,
+                    failed: 0,
+                    results: [{ ok: true, endpoint: 'fcm-device', statusCode: 200 }],
+                });
+            } catch (err) {
+                console.error('[push] FCM test failed', err);
+                return res.status(500).json({
                     ok: false,
-                    statusCode,
-                    endpoint,
-                    error: err instanceof Error ? err.message : String(err),
-                    details: errorWithMeta.body,
-                } satisfies PushAttemptResult;
+                    error: err instanceof Error ? err.message : 'FCM delivery failed'
+                });
             }
-        })
-    );
+        }
 
-    const sent = results.filter((r) => r.ok).length;
+        let vapid: ReturnType<typeof getVapidConfig>;
+        try {
+            vapid = getVapidConfig();
+            webpush.setVapidDetails(vapid.subject, vapid.publicKey, vapid.privateKey);
+        } catch (err: unknown) {
+            console.error('[push] invalid VAPID config', err);
+            return res.status(500).json({ error: 'Invalid VAPID configuration' });
+        }
 
-    return res.status(200).json({
-        ok: sent > 0,
-        attempted: results.length,
-        sent,
-        failed: results.length - sent,
-        diagnostics: {
-            serverPublicKey: vapid.publicKey,
-            derivedPublicKey: derivePublicKey(vapid.privateKey),
-            endpointHosts: results.map(r => { try { return new URL(r.endpoint).host; } catch { return 'fcm'; } })
-        },
-        results,
-    });
+        const { data: subscriptions, error: subError } = await supabase
+            .from('push_subscriptions')
+            .select('user_id, subscription, transport')
+            .eq('user_id', user.id)
+            .eq('transport', 'webpush');
+
+        if (subError) return res.status(500).json({ error: subError.message });
+        if (!subscriptions?.length) {
+            return res.status(404).json({ error: 'No web push subscription found for this user' });
+        }
+
+        const results = await Promise.all(
+            subscriptions.map(async (row) => {
+                const sub = row.subscription as unknown as webpush.PushSubscription;
+                const endpoint = sub.endpoint || 'unknown';
+
+                try {
+                    await webpush.sendNotification(sub, JSON.stringify(payload));
+                    return { ok: true, statusCode: 201, endpoint } satisfies PushAttemptResult;
+                } catch (err: unknown) {
+                    const errorWithMeta = err as { statusCode?: number; body?: string };
+                    const statusCode = errorWithMeta.statusCode ?? null;
+
+                    if (statusCode === 404 || statusCode === 410) {
+                        await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint);
+                    }
+
+                    return {
+                        ok: false,
+                        statusCode,
+                        endpoint,
+                        error: err instanceof Error ? err.message : String(err),
+                        details: errorWithMeta.body,
+                    } satisfies PushAttemptResult;
+                }
+            })
+        );
+
+        const sent = results.filter((r) => r.ok).length;
+
+        return res.status(200).json({
+            ok: sent > 0,
+            attempted: results.length,
+            sent,
+            failed: results.length - sent,
+            diagnostics: {
+                serverPublicKey: vapid.publicKey,
+                derivedPublicKey: derivePublicKey(vapid.privateKey),
+                endpointHosts: results.map(r => { try { return new URL(r.endpoint).host; } catch { return 'fcm'; } })
+            },
+            results,
+        });
+    } catch (err) {
+        console.error('[push] unhandled test route failure', err);
+        return res.status(500).json({
+            ok: false,
+            error: err instanceof Error ? err.message : 'Unhandled push test failure',
+        });
+    }
 }
