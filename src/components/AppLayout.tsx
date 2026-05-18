@@ -33,7 +33,7 @@ export default function AppLayout() {
   const [installSheetOpen, setInstallSheetOpen] = useState(false);
   const [notifSheetOpen, setNotifSheetOpen] = useState(false);
   const { mode, setMode } = useMediaMode();
-  const mainRef = useRef<HTMLElement>(null);
+  const mainRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
 
@@ -116,13 +116,14 @@ export default function AppLayout() {
 
       {/* Main content */}
       <main
-        ref={mainRef}
-        className="md:ml-60 min-h-screen pb-36 md:pb-0"
+        className="md:ml-60 min-h-screen pb-36 md:pb-0 overflow-hidden"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <Outlet />
+        <div ref={mainRef}>
+          <Outlet />
+        </div>
       </main>
 
       {/* Settings panel */}
