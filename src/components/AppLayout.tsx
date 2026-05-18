@@ -77,8 +77,13 @@ export default function AppLayout() {
     touchStartY.current = null;
 
     if (mainRef.current) {
-      mainRef.current.style.transition = 'transform 0.25s ease-out';
-      mainRef.current.style.transform = 'translateX(0px)';
+      const el = mainRef.current;
+      el.style.transition = 'transform 0.25s ease-out';
+      el.style.transform = 'translateX(0px)';
+      // Remove transform entirely after transition so it doesn't create a stacking context
+      // (which would break z-index of fixed children like sheets vs BottomNav)
+      const onEnd = () => { el.style.transform = ''; el.style.transition = ''; el.removeEventListener('transitionend', onEnd); };
+      el.addEventListener('transitionend', onEnd);
     }
 
     if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;

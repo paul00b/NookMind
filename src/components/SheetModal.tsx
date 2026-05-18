@@ -157,6 +157,9 @@ export default function SheetModal({
             transform: dragOffset > 0 ? `translateY(${dragOffset}px)` : undefined,
             transition: isDragging ? 'none' : `transform ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
           }}
+          onTouchStart={e => e.stopPropagation()}
+          onTouchMove={e => e.stopPropagation()}
+          onTouchEnd={e => e.stopPropagation()}
         >
           {showHandle && (
             <div className={`md:hidden z-10 px-6 pt-1 pb-3 bg-white dark:bg-[#1a1f2e] ${scrollable ? 'flex-shrink-0' : 'sticky top-0'}`}>
