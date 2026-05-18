@@ -12,7 +12,7 @@ export default function ProtectedRoute({ children }: Props) {
     return (
       <div className="min-h-screen bg-[#f8f6f1] dark:bg-[#0f1117] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <img src="/logo.svg" alt="NookMind" className="w-12 h-12 animate-pulse" />
+          <img src="/logo.png" alt="NookMind" className="w-12 h-12 animate-pulse" />
           <div className="w-5 h-5 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
         </div>
       </div>

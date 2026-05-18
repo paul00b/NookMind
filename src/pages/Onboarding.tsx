@@ -23,7 +23,7 @@ function Slide1Illustration() {
       <span className="absolute top-4 right-0 text-2xl opacity-12 animate-[float2_7s_ease-in-out_infinite]">📺</span>
       <span className="absolute bottom-2 left-4 text-2xl opacity-10 animate-[float3_8s_ease-in-out_infinite]">📖</span>
       {/* Logo */}
-      <img src="/logo.svg" alt="NookMind" className="w-20 h-20 drop-shadow-[0_8px_32px_rgba(245,158,11,0.27)]" />
+      <img src="/logo.png" alt="NookMind" className="w-20 h-20 drop-shadow-[0_8px_32px_rgba(245,158,11,0.27)]" />
     </div>
   );
 }

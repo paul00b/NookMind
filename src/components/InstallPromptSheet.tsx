@@ -36,7 +36,7 @@ export default function InstallPromptSheet({ onDismiss }: Props) {
 
         {/* Header */}
         <div className="flex items-center gap-4 mb-4">
-          <img src="/logo.svg" className="w-14 h-14" alt="" />
+          <img src="/logo.png" className="w-14 h-14" alt="" />
           <div>
             <h2 className="font-serif text-xl font-bold text-gray-900 dark:text-gray-100">
               {isFr ? 'Installez NookMind' : 'Install NookMind'}

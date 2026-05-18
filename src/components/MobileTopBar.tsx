@@ -12,7 +12,7 @@ export default function MobileTopBar({ onOpenSettings }: Props) {
   return (
     <header className="md:hidden flex items-center justify-between px-4 py-3 backdrop-blur-[8px] sticky top-0 z-20" style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
       <div className="flex items-center gap-2">
-        <img src="/logo.svg" className="w-7 h-7" alt="" />
+        <img src="/logo.png" className="w-7 h-7" alt="" />
         <span className="font-serif font-bold text-lg text-gray-900 dark:text-gray-100">NookMind</span>
       </div>
       <button onClick={onOpenSettings} className="rounded-full transition-opacity hover:opacity-80">
