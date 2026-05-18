@@ -36,14 +36,30 @@ export default function AppLayout() {
   const mainRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
+  const touchBlocked = useRef(false);
+
+  function isInsideHScroll(el: EventTarget | null): boolean {
+    let node = el as HTMLElement | null;
+    while (node && node !== mainRef.current) {
+      const style = window.getComputedStyle(node);
+      const overflow = style.overflowX;
+      if ((overflow === 'auto' || overflow === 'scroll') && node.scrollWidth > node.clientWidth) {
+        return true;
+      }
+      node = node.parentElement;
+    }
+    return false;
+  }
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    touchBlocked.current = isInsideHScroll(e.target);
+    if (touchBlocked.current) return;
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (touchStartX.current === null || touchStartY.current === null || !mainRef.current) return;
+    if (touchBlocked.current || touchStartX.current === null || touchStartY.current === null || !mainRef.current) return;
     const dx = e.touches[0].clientX - touchStartX.current;
     const dy = e.touches[0].clientY - touchStartY.current;
     if (Math.abs(dx) > Math.abs(dy)) {
@@ -53,6 +69,7 @@ export default function AppLayout() {
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchBlocked.current) { touchBlocked.current = false; return; }
     if (touchStartX.current === null || touchStartY.current === null) return;
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     const dy = e.changedTouches[0].clientY - touchStartY.current;
