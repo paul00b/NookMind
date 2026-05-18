@@ -133,7 +133,7 @@ export default function AppLayout() {
 
       {/* Main content */}
       <main
-        className="md:ml-60 min-h-screen pb-36 md:pb-0 overflow-hidden"
+        className="md:ml-60 min-h-screen pb-36 md:pb-0"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
