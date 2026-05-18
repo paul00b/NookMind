@@ -15,6 +15,9 @@ const config: CapacitorConfig = {
       androidScaleType: 'CENTER_CROP',
       showSpinner: false,
     },
+    CapacitorHttp: {
+      enabled: true,
+    },
     Keyboard: {
       resize: 'native',
     },

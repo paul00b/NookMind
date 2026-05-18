@@ -130,8 +130,8 @@ export default function Login() {
             <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
           </div>
 
-          {/* Google — hidden on iOS (App Store guideline 4.8 requires Apple Sign-In alongside any social login) */}
-          {!isIOS() && <button
+          {/* Google */}
+          <button
             onClick={async () => {
               setError('');
               setGoogleLoading(true);
@@ -153,7 +153,7 @@ export default function Login() {
               </svg>
             )}
             {t('login.continueWithGoogle')}
-          </button>}
+          </button>
 
           {showAppleSignIn && (
             <button
