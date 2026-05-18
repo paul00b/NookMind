@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react';
-import { Search, Plus, X, Film, CheckCircle2, Bookmark, CheckCheck } from 'lucide-react';
+import { Search, X, Film, CheckCircle2, Bookmark, CheckCheck } from 'lucide-react';
 import { searchMovies, extractMovieData, fetchMovieDetails, getPosterUrl } from '../lib/tmdb';
 import TrendingMoviesSlider from '../components/TrendingMoviesSlider';
 import type { TmdbMovie, Movie } from '../types';
@@ -253,10 +253,6 @@ export default function MovieHome() {
     setQuery('');
   };
 
-  const handleAddManually = () => {
-    setPrefill(null);
-    setModalOpen(true);
-  };
 
   const orderedSections = orderSearchSections([
     { id: 'trending', node: <TrendingMoviesSlider key="trending" onSelect={movie => void handleSelectMovie(movie)} /> },
@@ -387,15 +383,6 @@ export default function MovieHome() {
         <p className="mt-3 text-sm text-red-500">{searchError}</p>
       )}
 
-      {/* Add manually */}
-      <div className="mt-6 flex items-center gap-3">
-        <div className="w-16 h-px bg-gray-200 dark:bg-gray-700" />
-        <span className="text-sm text-gray-400 dark:text-gray-500">{t('movieHome.or')}</span>
-        <div className="w-16 h-px bg-gray-200 dark:bg-gray-700" />
-      </div>
-      <button onClick={handleAddManually} className="mt-4 btn-ghost flex items-center gap-2 text-sm">
-        <Plus size={16} /> {t('movieHome.addManually')}
-      </button>
 
       <SearchSectionStack
         items={orderedSections.map(section => ({
