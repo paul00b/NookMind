@@ -70,15 +70,6 @@ function getVapidConfig() {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (applyCors(req, res, ['POST'])) return;
 
-    // 1. Configuration Web-Push
-    try {
-        const vapid = getVapidConfig();
-        webpush.setVapidDetails(vapid.subject, vapid.publicKey, vapid.privateKey);
-    } catch (err: unknown) {
-        console.error('[push] invalid VAPID config', err);
-        return res.status(500).json({ error: 'Invalid VAPID configuration' });
-    }
-
     if (req.method !== 'POST') return res.status(405).end();
 
     // 2. Vérification de l'authentification
@@ -149,6 +140,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // --- CAS B : TEST WEB-PUSH (LOGIQUE EXISTANTE) ---
+    let vapid: ReturnType<typeof getVapidConfig>;
+    try {
+        vapid = getVapidConfig();
+        webpush.setVapidDetails(vapid.subject, vapid.publicKey, vapid.privateKey);
+    } catch (err: unknown) {
+        console.error('[push] invalid VAPID config', err);
+        return res.status(500).json({ error: 'Invalid VAPID configuration' });
+    }
+
     const { data: subscriptions, error: subError } = await supabase
         .from('push_subscriptions')
         .select('user_id, subscription, transport')
@@ -160,7 +160,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(404).json({ error: 'No web push subscription found for this user' });
     }
 
-    const vapid = getVapidConfig();
     const results = await Promise.all(
         subscriptions.map(async (row) => {
             const sub = row.subscription as unknown as webpush.PushSubscription;
