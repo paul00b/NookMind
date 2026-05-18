@@ -1,7 +1,5 @@
 import { isNative } from './platform';
 
-const NATIVE_FALLBACK_API_BASE_URL = 'https://paulbr.fr';
-
 function normalizeBaseUrl(value: string): string {
   return value.replace(/\/+$/, '');
 }
@@ -15,7 +13,7 @@ export function getApiUrl(path: string): string {
   }
 
   if (isNative()) {
-    return `${NATIVE_FALLBACK_API_BASE_URL}${normalizedPath}`;
+    throw new Error('VITE_API_BASE_URL is required for native builds.');
   }
 
   return normalizedPath;
