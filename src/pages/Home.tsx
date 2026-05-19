@@ -368,12 +368,14 @@ export default function Home() {
       )}
 
 
-      <SearchSectionStack
-        items={orderedSections.map(section => ({
-          ...section,
-          visible: visibilityMap.get(section.id) !== false,
-        }))}
-      />
+      <div className={(dropdownOpen || searching) && query ? 'pointer-events-none select-none' : ''}>
+        <SearchSectionStack
+          items={orderedSections.map(section => ({
+            ...section,
+            visible: visibilityMap.get(section.id) !== false,
+          }))}
+        />
+      </div>
 
       {/* Add book modal */}
       {modalOpen && (

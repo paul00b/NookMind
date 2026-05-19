@@ -455,12 +455,14 @@ export default function SeriesHome() {
       {searchError && <p className="mt-3 text-sm text-red-500">{searchError}</p>}
 
 
-      <SearchSectionStack
-        items={orderedSections.map(section => ({
-          ...section,
-          visible: visibilityMap.get(section.id) !== false,
-        }))}
-      />
+      <div className={(dropdownOpen || searching) && query ? 'pointer-events-none select-none' : ''}>
+        <SearchSectionStack
+          items={orderedSections.map(section => ({
+            ...section,
+            visible: visibilityMap.get(section.id) !== false,
+          }))}
+        />
+      </div>
 
       {modalOpen && (
         <AddSeriesModal
