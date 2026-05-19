@@ -146,6 +146,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(500).json({ error: 'Invalid VAPID configuration' });
         }
 
+        // Also send to all FCM tokens for this user (e.g. when testing from web)
+        const { data: fcmSubs } = await supabase
+            .from('push_subscriptions')
+            .select('fcm_token')
+            .eq('user_id', user.id)
+            .eq('transport', 'fcm');
+
+        if (fcmSubs?.length) {
+            try {
+                const app = getFirebaseApp();
+                await Promise.all(fcmSubs.map(row => admin.messaging(app).send({
+                    token: row.fcm_token as string,
+                    notification: { title: payload.title, body: payload.body },
+                    data: { url: payload.url },
+                    android: { priority: 'high', notification: { sound: 'default', channelId: 'default' } },
+                    apns: { payload: { aps: { sound: 'default', badge: 1 } } },
+                })));
+            } catch (err) {
+                console.error('[push] FCM broadcast in web test failed', err);
+            }
+        }
+
         const { data: subscriptions, error: subError } = await supabase
             .from('push_subscriptions')
             .select('user_id, subscription, transport')
