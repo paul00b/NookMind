@@ -43,6 +43,24 @@ export async function nativeBoot(): Promise<void> {
     }
   }
 
+  // Android requires a notification channel (API 26+) — create it once at boot
+  if (isAndroid()) {
+    try {
+      await FirebaseMessaging.createChannel({
+        id: 'default',
+        name: 'NookMind',
+        description: 'Notifications NookMind',
+        importance: 4, // HIGH
+        visibility: 1, // PUBLIC
+        sound: 'default',
+        lights: true,
+        vibration: true,
+      });
+    } catch {
+      // channel may already exist — ignore
+    }
+  }
+
   // Push — handle foreground notifications silently (permission + registration happens via UI)
   FirebaseMessaging.addListener('notificationReceived', ({ notification }) => {
     console.log('[push] foreground notification:', notification?.title);

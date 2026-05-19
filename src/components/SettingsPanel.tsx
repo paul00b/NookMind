@@ -264,6 +264,7 @@ export default function SettingsPanel({onClose}: Props) {
 
             if (isNative()) {
                 const fcmToken = await getNativeFcmToken();
+                console.log('[push] FCM token:', fcmToken);
                 if (!fcmToken) {
                     result = {ok: false, message: "Impossible de récupérer le jeton de l'appareil."};
                 } else {
