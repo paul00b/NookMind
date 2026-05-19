@@ -1,7 +1,8 @@
 import { isNative } from './platform';
 
 function normalizeBaseUrl(value: string): string {
-  return value.replace(/\/+$/, '');
+  // Strip surrounding/trailing quotes (Vercel dashboard copy-paste artifact)
+  return value.trim().replace(/^['"]|['"]$/g, '').replace(/\/+$/, '');
 }
 
 export function getApiUrl(path: string): string {
