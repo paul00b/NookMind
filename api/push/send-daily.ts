@@ -71,8 +71,9 @@ async function sendFcm(fcmToken: string, payload: { title: string; body: string 
     await admin.messaging(app).send({
       token: fcmToken,
       notification: { title: payload.title, body: payload.body },
+      data: { route: '/library' },
       apns: { payload: { aps: { sound: 'default' } } },
-      android: { priority: 'high' },
+      android: { priority: 'high', notification: { sound: 'default', channelId: 'default' } },
     });
     return { ok: true, statusCode: 200, endpoint: fcmToken.slice(0, 20) + '…' };
   } catch (err) {

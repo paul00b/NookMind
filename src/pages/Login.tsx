@@ -4,7 +4,7 @@ import { Navigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { isIOS } from '../lib/platform';
-import nookmindLogo from '/logo.svg';
+import nookmindLogo from '/logo.png';
 
 export default function Login() {
   const { user, signIn, signUp, signInWithGoogle, signInWithApple } = useAuth();

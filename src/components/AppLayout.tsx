@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import MobileTopBar from './MobileTopBar';
@@ -9,6 +9,8 @@ import { useMediaMode } from '../context/MediaModeContext';
 import { useNotificationSubscription } from '../hooks/useNotificationSubscription';
 import { isNative } from '../lib/platform';
 import type { MediaMode } from '../types';
+
+const MODES: MediaMode[] = ['series', 'movies', 'books'];
 
 function modeGlowClass(mode: MediaMode): string {
   const classes: Record<MediaMode, string> = {
@@ -30,7 +32,66 @@ export default function AppLayout() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [installSheetOpen, setInstallSheetOpen] = useState(false);
   const [notifSheetOpen, setNotifSheetOpen] = useState(false);
-  const { mode } = useMediaMode();
+  const { mode, setMode } = useMediaMode();
+  const mainRef = useRef<HTMLDivElement>(null);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const touchBlocked = useRef(false);
+
+  function isInsideHScroll(el: EventTarget | null): boolean {
+    let node = el as HTMLElement | null;
+    while (node && node !== mainRef.current) {
+      const style = window.getComputedStyle(node);
+      const overflow = style.overflowX;
+      if ((overflow === 'auto' || overflow === 'scroll') && node.scrollWidth > node.clientWidth) {
+        return true;
+      }
+      node = node.parentElement;
+    }
+    return false;
+  }
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchBlocked.current = isInsideHScroll(e.target);
+    if (touchBlocked.current) return;
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchBlocked.current || touchStartX.current === null || touchStartY.current === null || !mainRef.current) return;
+    const dx = e.touches[0].clientX - touchStartX.current;
+    const dy = e.touches[0].clientY - touchStartY.current;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      mainRef.current.style.transform = `translateX(${dx * 0.25}px)`;
+      mainRef.current.style.transition = 'none';
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchBlocked.current) { touchBlocked.current = false; return; }
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    touchStartX.current = null;
+    touchStartY.current = null;
+
+    if (mainRef.current) {
+      const el = mainRef.current;
+      el.style.transition = 'transform 0.25s ease-out';
+      el.style.transform = 'translateX(0px)';
+      // Remove transform entirely after transition so it doesn't create a stacking context
+      // (which would break z-index of fixed children like sheets vs BottomNav)
+      const onEnd = () => { el.style.transform = ''; el.style.transition = ''; el.removeEventListener('transitionend', onEnd); };
+      el.addEventListener('transitionend', onEnd);
+    }
+
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+
+    const idx = MODES.indexOf(mode);
+    const next = MODES[(idx + (dx > 0 ? -1 : 1) + MODES.length) % MODES.length];
+    setMode(next);
+  };
   const { supported: notifSupported, subscribed, permission } = useNotificationSubscription();
 
   // Install prompt — mobile only, once
@@ -76,8 +137,15 @@ export default function AppLayout() {
       <MobileTopBar onOpenSettings={() => setSettingsOpen(true)} />
 
       {/* Main content */}
-      <main className="md:ml-60 min-h-screen pb-36 md:pb-0">
-        <Outlet />
+      <main
+        className="md:ml-60 min-h-screen pb-36 md:pb-0"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div ref={mainRef}>
+          <Outlet />
+        </div>
       </main>
 
       {/* Settings panel */}

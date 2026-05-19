@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react';
-import { Search, Plus, X, Tv, CheckCircle2, Eye, Bookmark, Play, Clock, CheckCheck } from 'lucide-react';
+import { Search, X, Tv, CheckCircle2, Eye, Bookmark, Play, Clock, CheckCheck } from 'lucide-react';
 import { searchSeries as searchTmdbSeries, extractSeriesData, fetchSeriesDetails, getPosterUrl } from '../lib/tmdb';
 import type { TmdbSeries, Series } from '../types';
 import AddSeriesModal from '../components/AddSeriesModal';
@@ -324,10 +324,6 @@ export default function SeriesHome() {
     setQuery('');
   };
 
-  const handleAddManually = () => {
-    setPrefill(null);
-    setModalOpen(true);
-  };
 
   const orderedSections = orderSearchSections([
     { id: 'trending', node: <TrendingSeriesSlider key="trending" onSelect={setRatingsTarget} /> },
@@ -458,14 +454,6 @@ export default function SeriesHome() {
 
       {searchError && <p className="mt-3 text-sm text-red-500">{searchError}</p>}
 
-      <div className="mt-6 flex items-center gap-3">
-        <div className="w-16 h-px bg-gray-200 dark:bg-gray-700" />
-        <span className="text-sm text-gray-400 dark:text-gray-500">{t('seriesHome.or')}</span>
-        <div className="w-16 h-px bg-gray-200 dark:bg-gray-700" />
-      </div>
-      <button onClick={handleAddManually} className="mt-4 btn-ghost flex items-center gap-2 text-sm">
-        <Plus size={16} /> {t('seriesHome.addManually')}
-      </button>
 
       <SearchSectionStack
         items={orderedSections.map(section => ({

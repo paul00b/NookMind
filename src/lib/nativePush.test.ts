@@ -4,15 +4,17 @@ vi.mock('@capacitor-firebase/messaging', () => ({
   FirebaseMessaging: {
     requestPermissions: vi.fn(),
     getToken: vi.fn(),
+    addListener: vi.fn(),
   },
 }));
 
 vi.mock('./platform', () => ({
   isNative: vi.fn(),
+  isIOS: vi.fn(),
 }));
 
 import { FirebaseMessaging } from '@capacitor-firebase/messaging';
-import { isNative } from './platform';
+import { isIOS, isNative } from './platform';
 import { requestNativePushPermission, getNativeFcmToken } from './nativePush';
 
 describe('requestNativePushPermission', () => {
@@ -41,7 +43,10 @@ describe('requestNativePushPermission', () => {
 });
 
 describe('getNativeFcmToken', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(isIOS).mockReturnValue(false);
+  });
 
   it('returns null on web', async () => {
     vi.mocked(isNative).mockReturnValue(false);
@@ -61,5 +66,27 @@ describe('getNativeFcmToken', () => {
     vi.mocked(FirebaseMessaging.getToken).mockRejectedValue(new Error('Registration failed'));
     const token = await getNativeFcmToken();
     expect(token).toBeNull();
+  });
+
+  it('waits for tokenReceived on iOS when initial getToken fails', async () => {
+    vi.useFakeTimers();
+    vi.mocked(isNative).mockReturnValue(true);
+    vi.mocked(isIOS).mockReturnValue(true);
+    vi.mocked(FirebaseMessaging.getToken).mockRejectedValueOnce(new Error('APNS token has not been set yet'));
+
+    const remove = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(FirebaseMessaging.addListener).mockImplementation(async (eventName, listener) => {
+      if ((eventName as string) === 'tokenReceived') {
+        setTimeout(() => listener({ token: 'delayed-fcm-token' }), 10);
+      }
+      return { remove };
+    });
+
+    const tokenPromise = getNativeFcmToken();
+    await vi.advanceTimersByTimeAsync(20);
+
+    await expect(tokenPromise).resolves.toBe('delayed-fcm-token');
+    expect(remove).toHaveBeenCalled();
+    vi.useRealTimers();
   });
 });

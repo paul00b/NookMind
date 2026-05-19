@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react';
-import { Search, Plus, X, BookOpen, CheckCircle2 } from 'lucide-react';
+import { Search, X, BookOpen, CheckCircle2 } from 'lucide-react';
 import { searchBooks, extractBookData } from '../lib/googleBooks';
 import type { GoogleBookVolume, Book } from '../types';
 import AddBookModal from '../components/AddBookModal';
@@ -241,10 +241,6 @@ export default function Home() {
     setQuery('');
   };
 
-  const handleAddManually = () => {
-    setPrefill(null);
-    setModalOpen(true);
-  };
 
   const orderedSections = orderSearchSections([
     { id: 'want_to_read', node: <WantToReadSlider key="want_to_read" onSelect={setSelectedBook} /> },
@@ -371,15 +367,6 @@ export default function Home() {
         <p className="mt-3 text-sm text-red-500">{searchError}</p>
       )}
 
-      {/* Add manually */}
-      <div className="mt-6 flex items-center gap-3">
-        <div className="w-16 h-px bg-gray-200 dark:bg-gray-700" />
-        <span className="text-sm text-gray-400 dark:text-gray-500">{t('home.or')}</span>
-        <div className="w-16 h-px bg-gray-200 dark:bg-gray-700" />
-      </div>
-      <button onClick={handleAddManually} className="mt-4 btn-ghost flex items-center gap-2 text-sm">
-        <Plus size={16} /> {t('home.addManually')}
-      </button>
 
       <SearchSectionStack
         items={orderedSections.map(section => ({

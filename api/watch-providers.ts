@@ -1,6 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { applyCors } from './_lib/cors.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (applyCors(req, res, ['GET'])) return;
+
   if (req.method !== 'GET') return res.status(405).end();
 
   const { url } = req.query;
@@ -26,7 +29,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     while ((match = regex.exec(html)) !== null) {
       const href = match[1];
-      const imgSrc = match[2];
 
       // Decode the cx parameter to get provider name
       try {

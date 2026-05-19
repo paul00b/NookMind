@@ -6,6 +6,7 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: {
     androidScheme: 'https',
+    allowNavigation: ['*.youtube.com', '*.youtube-nocookie.com', '*.googlevideo.com'],
   },
   plugins: {
     SplashScreen: {
@@ -13,6 +14,9 @@ const config: CapacitorConfig = {
       backgroundColor: '#0f1117',
       androidScaleType: 'CENTER_CROP',
       showSpinner: false,
+    },
+    CapacitorHttp: {
+      enabled: true,
     },
     Keyboard: {
       resize: 'native',

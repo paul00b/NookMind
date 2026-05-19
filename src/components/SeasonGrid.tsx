@@ -471,4 +471,5 @@ export default function SeasonGrid({
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { deriveSeriesStatus };

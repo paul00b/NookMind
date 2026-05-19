@@ -43,9 +43,33 @@ export async function nativeBoot(): Promise<void> {
     }
   }
 
+  // Android requires a notification channel (API 26+) — create it once at boot
+  if (isAndroid()) {
+    try {
+      await FirebaseMessaging.createChannel({
+        id: 'default',
+        name: 'NookMind',
+        description: 'Notifications NookMind',
+        importance: 4, // HIGH
+        visibility: 1, // PUBLIC
+        sound: 'default',
+        lights: true,
+        vibration: true,
+      });
+    } catch {
+      // channel may already exist — ignore
+    }
+  }
+
   // Push — handle foreground notifications silently (permission + registration happens via UI)
   FirebaseMessaging.addListener('notificationReceived', ({ notification }) => {
-    console.log('[push] foreground notification:', notification.title);
+    console.log('[push] foreground notification:', notification?.title);
+  });
+
+  // Push — handle tap on notification (background/killed state)
+  FirebaseMessaging.addListener('notificationActionPerformed', (action) => {
+    const route: string = (action.notification.data as Record<string, string>)?.route ?? '/library';
+    window.dispatchEvent(new CustomEvent('nookmind:navigate', { detail: { route } }));
   });
 
   // Hardware back button (Android) — go back in router history, exit if at root
