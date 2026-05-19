@@ -4,13 +4,6 @@ vi.mock('./platform', () => ({ isNative: vi.fn() }));
 
 import { isNative } from './platform';
 
-// Import the module after mocking — env is injected at import time via import.meta.env
-let getApiUrl: (path: string) => string;
-
-function mockEnvAndReload(value: string | undefined) {
-    vi.stubEnv('VITE_API_BASE_URL', value as string);
-}
-
 describe('getApiUrl', () => {
     beforeEach(async () => {
         vi.resetModules();
