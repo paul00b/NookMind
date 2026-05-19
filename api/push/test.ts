@@ -113,7 +113,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     },
                     android: {
                         priority: 'high',
-                        notification: { sound: 'default' },
+                        notification: { sound: 'default', channelId: 'default' },
                     },
                     apns: {
                         payload: {
