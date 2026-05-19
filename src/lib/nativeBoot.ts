@@ -45,7 +45,7 @@ export async function nativeBoot(): Promise<void> {
 
   // Push — handle foreground notifications silently (permission + registration happens via UI)
   FirebaseMessaging.addListener('notificationReceived', ({ notification }) => {
-    console.log('[push] foreground notification:', notification.title);
+    console.log('[push] foreground notification:', notification?.title);
   });
 
   // Push — handle tap on notification (background/killed state)

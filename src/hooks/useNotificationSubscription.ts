@@ -97,15 +97,27 @@ async function callApiJson<T>(
         return {ok: false, data: null, status: 0, rawText: message};
     }
 
-    const rawText = await res.text();
+    const ok = res.ok;
+    const status = res.status;
+
+    // res.text() can throw inside CapacitorHttp on Android when the body is
+    // undefined or pre-parsed. We try json() first (direct), then text() as fallback.
     let data: T | null = null;
+    let rawText: string | undefined;
     try {
-        data = rawText ? (JSON.parse(rawText) as T) : null;
+        data = await res.json() as T;
+        rawText = undefined;
     } catch {
-        data = null;
+        try {
+            rawText = await res.text();
+            data = rawText ? (JSON.parse(rawText) as T) : null;
+        } catch {
+            rawText = undefined;
+            data = null;
+        }
     }
 
-    return {ok: res.ok, data, status: res.status, rawText};
+    return {ok, data, status, rawText};
 }
 
 export function useNotificationSubscription() {
