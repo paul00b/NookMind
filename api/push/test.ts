@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import crypto from 'node:crypto';
 import webpush from 'web-push';
 import * as admin from 'firebase-admin';
-import { applyCors } from '../_lib/cors';
+import { applyCors } from '../_lib/cors.js';
 
 // Initialisation de Supabase
 const supabase = createClient(

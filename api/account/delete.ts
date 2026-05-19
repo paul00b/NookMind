@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
-import { applyCors } from '../_lib/cors';
+import { applyCors } from '../_lib/cors.js';
 
 const admin = createClient(
   process.env.VITE_SUPABASE_URL!,
