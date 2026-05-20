@@ -81,6 +81,18 @@ async function sendFcm(fcmToken: string, payload: { title: string; body: string 
   } catch (err) {
     const error = err instanceof Error ? err.message : String(err);
     console.error('[push] FCM send failed', { token: shortToken, error });
+
+    const isPermanent =
+      error.includes('Requested entity was not found') ||
+      error.includes('missing required authentication credential') ||
+      error.includes('registration-token-not-registered') ||
+      error.includes('invalid-registration-token');
+
+    if (isPermanent) {
+      await supabase.from('push_subscriptions').delete().eq('fcm_token', fcmToken);
+      console.info('[push] FCM token removed from DB (permanent failure)', { token: shortToken });
+    }
+
     return { ok: false, statusCode: null, endpoint: shortToken, error };
   }
 }
