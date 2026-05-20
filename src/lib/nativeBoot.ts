@@ -5,6 +5,7 @@ import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
 import { FirebaseMessaging } from '@capacitor-firebase/messaging';
 import { isNative, isIOS, isAndroid } from './platform';
 import { initNativeAuth } from './nativeAuth';
+import { supabase } from './supabase';
 
 /**
  * Wires native plugin behaviors. Safe to call on web — no-ops there.
@@ -60,6 +61,26 @@ export async function nativeBoot(): Promise<void> {
       // channel may already exist — ignore
     }
   }
+
+  // Push — keep DB token in sync if Google refreshes it
+  FirebaseMessaging.addListener('tokenReceived', async ({ token }) => {
+    if (!token) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data: existing } = await supabase
+      .from('push_subscriptions')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('transport', 'fcm')
+      .maybeSingle();
+    if (!existing) return;
+    await supabase
+      .from('push_subscriptions')
+      .update({ fcm_token: token, updated_at: new Date().toISOString() })
+      .eq('user_id', user.id)
+      .eq('transport', 'fcm');
+    console.log('[push] FCM token refreshed in DB');
+  });
 
   // Push — handle foreground notifications silently (permission + registration happens via UI)
   FirebaseMessaging.addListener('notificationReceived', ({ notification }) => {
