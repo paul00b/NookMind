@@ -16,6 +16,9 @@ const supabase = createClient(
 function getFirebaseApp() {
     if (getApps().length > 0) return getApps()[0]!;
     const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON ?? '{}');
+    if (serviceAccount.private_key) {
+        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+    }
     return initializeApp({ credential: cert(serviceAccount) });
 }
 
