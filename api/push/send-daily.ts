@@ -66,6 +66,7 @@ function configureWebPush() {
 }
 
 async function sendFcm(fcmToken: string, payload: { title: string; body: string }): Promise<PushSendResult> {
+  const shortToken = fcmToken.slice(0, 20) + '…';
   try {
     const app = getFirebaseApp();
     await admin.messaging(app).send({
@@ -75,9 +76,11 @@ async function sendFcm(fcmToken: string, payload: { title: string; body: string 
       apns: { payload: { aps: { sound: 'default' } } },
       android: { priority: 'high', notification: { sound: 'default', channelId: 'default' } },
     });
-    return { ok: true, statusCode: 200, endpoint: fcmToken.slice(0, 20) + '…' };
+    return { ok: true, statusCode: 200, endpoint: shortToken };
   } catch (err) {
-    return { ok: false, statusCode: null, endpoint: fcmToken.slice(0, 20) + '…', error: err instanceof Error ? err.message : String(err) };
+    const error = err instanceof Error ? err.message : String(err);
+    console.error('[push] FCM send failed', { token: shortToken, error });
+    return { ok: false, statusCode: null, endpoint: shortToken, error };
   }
 }
 
