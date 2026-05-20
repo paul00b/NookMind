@@ -1,12 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
-import * as admin from 'firebase-admin';
+import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
+import { getMessaging } from 'firebase-admin/messaging';
 
-function getFirebaseApp(): admin.app.App {
-  if (admin.apps.length > 0) return admin.apps[0]!;
-  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON ?? '{}') as admin.ServiceAccount;
-  return admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+function getFirebaseApp(): App {
+  if (getApps().length > 0) return getApps()[0]!;
+  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON ?? '{}');
+  return initializeApp({ credential: cert(serviceAccount) });
 }
 
 const supabase = createClient(
@@ -69,7 +70,7 @@ async function sendFcm(fcmToken: string, payload: { title: string; body: string 
   const shortToken = fcmToken.slice(0, 20) + '…';
   try {
     const app = getFirebaseApp();
-    await admin.messaging(app).send({
+    await getMessaging(app).send({
       token: fcmToken,
       notification: { title: payload.title, body: payload.body },
       data: { route: '/library' },

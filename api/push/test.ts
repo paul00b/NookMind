@@ -2,7 +2,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'node:crypto';
 import webpush from 'web-push';
-import * as admin from 'firebase-admin';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getMessaging } from 'firebase-admin/messaging';
 import { applyCors } from '../_lib/cors.js';
 
 // Initialisation de Supabase
@@ -12,12 +13,10 @@ const supabase = createClient(
 );
 
 // Initialisation de Firebase Admin (Singleton)
-function getFirebaseApp(): admin.app.App {
-    if (admin.apps.length > 0) return admin.apps[0]!;
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON ?? '{}') as admin.ServiceAccount;
-    return admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-    });
+function getFirebaseApp() {
+    if (getApps().length > 0) return getApps()[0]!;
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON ?? '{}');
+    return initializeApp({ credential: cert(serviceAccount) });
 }
 
 interface PushAttemptResult {
@@ -102,7 +101,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (transport === 'fcm' && fcmToken) {
             try {
                 const app = getFirebaseApp();
-                await admin.messaging(app).send({
+                await getMessaging(app).send({
                     token: fcmToken,
                     notification: {
                         title: payload.title,
@@ -156,7 +155,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (fcmSubs?.length) {
             try {
                 const app = getFirebaseApp();
-                await Promise.all(fcmSubs.map(row => admin.messaging(app).send({
+                await Promise.all(fcmSubs.map(row => getMessaging(app).send({
                     token: row.fcm_token as string,
                     notification: { title: payload.title, body: payload.body },
                     data: { url: payload.url },
