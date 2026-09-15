@@ -56,9 +56,9 @@ import androidx.compose.ui.unit.dp
 import fr.paulbr.nookmind.core.designsystem.NookShapes
 import fr.paulbr.nookmind.core.designsystem.NookTheme
 import fr.paulbr.nookmind.core.designsystem.Palette
-import fr.paulbr.nookmind.core.designsystem.components.noiseImageBitmap
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
 import fr.paulbr.nookmind.resources.Res
+import fr.paulbr.nookmind.resources.ambiance_noise
 import fr.paulbr.nookmind.resources.logo
 import fr.paulbr.nookmind.resources.onboarding_getStarted
 import fr.paulbr.nookmind.resources.onboarding_skip
@@ -68,6 +68,7 @@ import fr.paulbr.nookmind.resources.onboarding_slide2Body
 import fr.paulbr.nookmind.resources.onboarding_slide2Title
 import fr.paulbr.nookmind.resources.onboarding_slide3Body
 import fr.paulbr.nookmind.resources.onboarding_slide3Title
+import org.jetbrains.compose.resources.imageResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -141,7 +142,7 @@ fun OnboardingScreen(onFinish: () -> Unit) {
 
 @Composable
 private fun OnboardingSlide(title: String, body: String, gradientColor: Color, illustration: @Composable () -> Unit) {
-    val noise = remember { noiseImageBitmap() }
+    val noise = imageResource(Res.drawable.ambiance_noise)
     Box(Modifier.fillMaxSize().background(Palette.Night)) {
         Canvas(Modifier.fillMaxSize()) {
             val w = size.width

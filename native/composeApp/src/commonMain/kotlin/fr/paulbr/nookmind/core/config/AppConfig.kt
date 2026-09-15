@@ -11,6 +11,24 @@ object AppConfig {
 
     val isConfigured: Boolean get() = AppSecrets.SUPABASE_URL.isNotBlank() && AppSecrets.SUPABASE_ANON_KEY.isNotBlank()
 
+    /**
+     * Names of the secrets that are missing or still hold the value of `secrets.properties.example`.
+     *
+     * Worth logging at startup: a key that never reached the build looks exactly like a network
+     * failure once the app is running, because the search screens report every error as a timeout.
+     */
+    fun missingSecrets(): List<String> = buildList {
+        fun check(name: String, value: String) {
+            if (value.isBlank() || value.startsWith("your_") || value.startsWith("your-") || value.contains("placeholder")) add(name)
+        }
+        check("SUPABASE_URL", AppSecrets.SUPABASE_URL)
+        check("SUPABASE_ANON_KEY", AppSecrets.SUPABASE_ANON_KEY)
+        check("API_BASE_URL", AppSecrets.API_BASE_URL)
+        check("GOOGLE_BOOKS_API_KEY", AppSecrets.GOOGLE_BOOKS_API_KEY)
+        check("TMDB_API_KEY", AppSecrets.TMDB_API_KEY)
+        check("GOOGLE_AUTH_WEB_CLIENT_ID", AppSecrets.GOOGLE_AUTH_WEB_CLIENT_ID)
+    }
+
     /** Absolute URL of a Vercel `/api/...` route. Port of `getApiUrl` (native branch). */
     fun apiUrl(path: String): String = ApiUrl.build(apiBaseUrl, path)
 }

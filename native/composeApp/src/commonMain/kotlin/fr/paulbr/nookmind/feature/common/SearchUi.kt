@@ -79,6 +79,7 @@ import fr.paulbr.nookmind.core.designsystem.components.SkeletonBox
 import fr.paulbr.nookmind.core.designsystem.components.StarRating
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
 import fr.paulbr.nookmind.core.model.MediaMode
+import fr.paulbr.nookmind.core.platform.logDebug
 import fr.paulbr.nookmind.feature.shell.TABLET_BREAKPOINT_DP
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
@@ -127,7 +128,10 @@ class SearchController<T> internal constructor(private val minLength: Int) {
             dropdownOpen = true
         } catch (e: CancellationException) {
             throw e
-        } catch (_: Throwable) {
+        } catch (t: Throwable) {
+            // The web app shows the same message whatever went wrong, so the real cause is logged:
+            // a rejected API key reads exactly like a network timeout otherwise.
+            logDebug("search", "search failed for \"$q\"", t)
             error = timeoutText
             dropdownOpen = false
         } finally {

@@ -244,6 +244,18 @@ compose.resources {
     generateResClass = always
 }
 
+/** Probes every backend and reports which one fails, with the real HTTP status. */
+val checkApis by tasks.registering(JavaExec::class) {
+    group = "nookmind"
+    description = "Checks the secrets and calls Google Books, TMDB, the Vercel routes and Supabase"
+    val desktopTarget = kotlin.targets.getByName("desktop") as org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
+    val mainCompilation = desktopTarget.compilations.getByName("main")
+    dependsOn(mainCompilation.compileTaskProvider)
+    classpath(mainCompilation.output.allOutputs, mainCompilation.runtimeDependencyFiles)
+    mainClass.set("fr.paulbr.nookmind.tools.CheckApis")
+    defaultCharacterEncoding = "UTF-8"
+}
+
 /** Renders [fr.paulbr.nookmind.tools.ScreenshotCatalog] to PNG files, headless (design review, CI). */
 val screenshots by tasks.registering(JavaExec::class) {
     group = "nookmind"
@@ -253,6 +265,7 @@ val screenshots by tasks.registering(JavaExec::class) {
     dependsOn(mainCompilation.compileTaskProvider)
     classpath(mainCompilation.output.allOutputs, mainCompilation.runtimeDependencyFiles)
     mainClass.set("fr.paulbr.nookmind.tools.ScreenshotsKt")
+    defaultCharacterEncoding = "UTF-8"
     systemProperty("java.awt.headless", "true")
     args(
         listOf(project.findProperty("outDir")?.toString() ?: "build/screenshots") +

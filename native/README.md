@@ -120,6 +120,31 @@ Les préférences locales (thème, mode d'affichage, ordre des sections, session
 préférences Java de l'utilisateur, pas dans le dépôt. Pour repartir de zéro : se déconnecter depuis
 les réglages, et « Revoir l'onboarding » pour réafficher le tutoriel d'accueil.
 
+### Quand une recherche échoue ou qu'un écran reste vide
+
+```bash
+./gradlew :composeApp:checkApis
+```
+
+La commande relit `secrets.properties`, signale toute clé absente ou restée à la valeur d'exemple,
+puis appelle Google Books, TMDB, les routes Vercel et Supabase et affiche le vrai code HTTP.
+
+C'est nécessaire parce que les trois écrans de recherche affichent « La recherche a expiré » quelle
+que soit la panne, exactement comme la web app : une clé refusée est indiscernable d'une coupure
+réseau. Le vrai motif part aussi dans la console de l'app, préfixé `[search]`.
+
+Les symptômes les plus courants :
+
+| Ce que tu vois | Cause presque toujours |
+|---|---|
+| « La recherche a expiré » sur Films ou Séries | `TMDB_API_KEY` absente ou refusée |
+| « La recherche a expiré » sur Livres | `GOOGLE_BOOKS_API_KEY` absente, ou quota Google atteint |
+| L'onglet « À suivre » reste vide en Films et Séries | même cause : il est entièrement alimenté par TMDB |
+| Pas de note IMDb, pas de plateformes de streaming | `API_BASE_URL` absente |
+
+L'onglet « À suivre » qui n'affiche rien quand TMDB ne répond pas est le comportement de la web app,
+qui ne rend rien non plus quand les deux listes sont vides. Ce n'est pas un écran cassé.
+
 ### Android
 
 ```bash
@@ -215,9 +240,10 @@ les deux apps ont exactement la même silhouette d'icônes.
 ```bash
 ./gradlew :composeApp:desktopTest        # 47 tests de la logique partagée
 ./gradlew :composeApp:screenshots        # rend le catalogue en PNG, sans écran
+./gradlew :composeApp:checkApis          # vérifie les secrets et appelle chaque backend
 ```
 
-Le catalogue de captures (`desktopMain/tools/ScreenshotCatalog.kt`) rend 33 écrans sur des données
+Le catalogue de captures (`desktopMain/tools/ScreenshotCatalog.kt`) rend 34 écrans sur des données
 fictives, en clair et en sombre, pour comparer pixel à pixel avec la web app. Options :
 
 ```bash

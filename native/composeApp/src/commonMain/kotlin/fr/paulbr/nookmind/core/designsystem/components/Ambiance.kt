@@ -6,12 +6,10 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.ImageShader
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.TileMode
@@ -19,35 +17,9 @@ import androidx.compose.ui.graphics.drawscope.scale
 import fr.paulbr.nookmind.core.designsystem.NookTheme
 import fr.paulbr.nookmind.core.designsystem.Palette
 import fr.paulbr.nookmind.core.model.MediaMode
-
-/** 256 x 256 RGBA noise tile (the SVG `feTurbulence type="fractalNoise"` of `mode-bg-*`). */
-expect fun noiseImageBitmap(size: Int = 256, seed: Int = 7): ImageBitmap
-
-/**
- * Pixels of the noise tile as non-premultiplied ARGB ints. Mirrors `feTurbulence` with
- * `baseFrequency=0.9 numOctaves=4`: every channel, alpha included, is an independent fractal sum
- * of four octaves (amplitudes 1, 1/2, 1/4, 1/8) mapped from [-1, 1] to [0, 1]. At 0.9 cycles per
- * pixel the lattice is finer than a pixel, so each pixel is effectively an independent sample.
- */
-fun noisePixels(size: Int, seed: Int): IntArray {
-    val random = kotlin.random.Random(seed)
-    fun channel(): Int {
-        var sum = 0f
-        var amplitude = 1f
-        repeat(4) {
-            sum += (random.nextFloat() * 2f - 1f) * amplitude
-            amplitude /= 2f
-        }
-        return (((sum + 1f) / 2f).coerceIn(0f, 1f) * 255f).toInt()
-    }
-    return IntArray(size * size) {
-        val r = channel()
-        val g = channel()
-        val b = channel()
-        val a = channel()
-        (a shl 24) or (r shl 16) or (g shl 8) or b
-    }
-}
+import fr.paulbr.nookmind.resources.Res
+import fr.paulbr.nookmind.resources.ambiance_noise
+import org.jetbrains.compose.resources.imageResource
 
 fun modeGlowColor(mode: MediaMode): Color = when (mode) {
     MediaMode.BOOKS -> Palette.Amber500
@@ -59,12 +31,21 @@ fun modeGlowColor(mode: MediaMode): Color = when (mode) {
  * Port of the `.mode-bg-*` ambiance: a radial halo of the mode colour (ellipse 80 % x 40 % at
  * 50 % / -10 %) under a tiled noise texture, the whole layer at 25 % (light) / 30 % (dark).
  * Colour changes are cross-faded over 700 ms like the web transition.
+ *
+ * The noise is `drawable/ambiance_noise.png`, the 256 x 256 tile of the web app's own
+ * `feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"`,
+ * rasterised once from that SVG so both apps show the same grain.
+ *
+ * It used to be generated in Kotlin as a plain fractal sum, which is what made the background look
+ * sandblasted: measured against the browser, that produced a standard deviation of about 22 levels
+ * where the browser draws about 2.4. A browser clamps the colour channels against the alpha channel
+ * of the turbulence, which flattens the result far more than the raw formula suggests.
  */
 @Composable
 fun ModeAmbianceBackground(mode: MediaMode, modifier: Modifier = Modifier) {
     val isDark = NookTheme.colors.isDark
     val glow by animateColorAsState(modeGlowColor(mode), tween(700), label = "glow")
-    val noise = remember { noiseImageBitmap() }
+    val noise = imageResource(Res.drawable.ambiance_noise)
     val layerAlpha = if (isDark) 0.30f else 0.25f
     Canvas(modifier.fillMaxSize()) {
         val w = size.width

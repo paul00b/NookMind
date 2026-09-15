@@ -7,7 +7,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.dp
 import fr.paulbr.nookmind.App
 import fr.paulbr.nookmind.app.AppContainer
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
 import fr.paulbr.nookmind.core.designsystem.NookTheme
+import fr.paulbr.nookmind.core.designsystem.components.ModeAmbianceBackground
 import fr.paulbr.nookmind.core.model.GoogleBookVolume
 import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.core.model.ThemeMode
@@ -63,6 +68,14 @@ object ScreenshotCatalog {
 
     val entries: List<ScreenshotEntry> = listOf(
         ScreenshotEntry("smoke") { App(container) },
+        // Background layer alone, to compare the grain with the web app's `.mode-bg-*`.
+        ScreenshotEntry("ambiance", widthDp = 256, heightDp = 256) {
+            NookTheme(ThemeMode.LIGHT, MediaMode.BOOKS) {
+                Box(Modifier.fillMaxSize().background(NookTheme.colors.background)) {
+                    ModeAmbianceBackground(MediaMode.BOOKS)
+                }
+            }
+        },
         ScreenshotEntry("books-home", content = shell(MediaMode.BOOKS, MainTab.SEARCH)),
         ScreenshotEntry("books-home-dark", content = shell(MediaMode.BOOKS, MainTab.SEARCH, dark = true)),
         ScreenshotEntry("books-home-dropdown") {

@@ -1,6 +1,7 @@
 package fr.paulbr.nookmind.app
 
 import fr.paulbr.nookmind.core.config.AppConfig
+import fr.paulbr.nookmind.core.platform.logDebug
 import fr.paulbr.nookmind.core.data.AppPreferences
 import fr.paulbr.nookmind.core.data.AuthRepository
 import fr.paulbr.nookmind.core.data.CollectionMessages
@@ -72,6 +73,18 @@ class AppContainer(
     pushPlatform: PushPlatform = UnsupportedPushPlatform,
 ) {
     val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    init {
+        val missing = AppConfig.missingSecrets()
+        if (missing.isNotEmpty()) {
+            logDebug(
+                "config",
+                "Missing from native/secrets.properties: ${missing.joinToString(", ")}. " +
+                    "Searches and the Next Up tab depend on TMDB_API_KEY, GOOGLE_BOOKS_API_KEY and API_BASE_URL. " +
+                    "Run ./gradlew :composeApp:checkApis for the detail.",
+            )
+        }
+    }
 
     private val settings = createPlatformSettings("prefs")
     private val cacheSettings = createPlatformSettings("cache")
