@@ -1,0 +1,21 @@
+# Gradle
+.gradle/
+build/
+**/build/
+.kotlin/
+local.properties
+
+# IDE
+.idea/
+*.iml
+.DS_Store
+
+# Secrets (copy secrets.properties.example -> secrets.properties)
+secrets.properties
+composeApp/google-services.json
+composeApp/src/iosMain/**/GoogleService-Info.plist
+
+# Signing
+*.jks
+*.keystore
+keystore.properties
