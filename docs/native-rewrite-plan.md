@@ -41,7 +41,7 @@ Le projet est structuré pour laisser les deux options ouvertes : la logique n'a
 | Compose Multiplatform | 1.8.2 | Dernière version dont les artefacts desktop sont autonomes sur Maven Central, ce qui a permis de compiler et d'exécuter le code partagé dans l'environnement de travail (voir section 10). Montée vers 1.12.x = une ligne dans `gradle/libs.versions.toml`, à faire dans Android Studio. |
 | Android Gradle Plugin | 8.13.0 | Identique au projet Capacitor (déjà en cache sur ta machine). |
 | Gradle | 8.14.3 | Wrapper inclus. |
-| Android | minSdk 26, compileSdk/targetSdk 36 | minSdk relevé de 24 à 26 (Android 8.0, 2017) : polices variables et API modernes sans code de compatibilité. |
+| Android | minSdk 24, compileSdk/targetSdk 36 | Même plancher que le paquet Capacitor : aucun appareil ne perd les mises à jour. Le seul appel Android 8+ du code (création du canal de notification) est gardé par un test de version. |
 | supabase-kt | 3.8.0 | Auth (e-mail, ID token Google/Apple) + Postgrest. |
 | Ktor | 3.5.2 | Client HTTP (OkHttp sur Android, Java sur desktop, Darwin sur iOS). |
 | Coil | 3.3.0 | Chargement d'images multiplateforme (build compatible Compose 1.8.x). |
@@ -152,18 +152,51 @@ Ce qu'il restera à faire, tout le reste étant déjà partagé :
 
 ## 9. Différences assumées
 
-- Pas de flou d'arrière-plan (`backdrop-blur`) derrière les pilules de navigation : Compose n'a pas d'équivalent stable ; fond à 85 % d'opacité identique au web sans le flou.
-- Pas de prompt "Installer l'application" ni de service worker (PWA).
-- Le nom d'affichage modifié dans les réglages est enregistré dans les métadonnées Supabase de l'utilisateur (sur le web il n'était pas persisté : c'était un bug).
-- Le trailer YouTube s'affiche dans une WebView (l'iframe n'a pas d'équivalent natif).
+Écarts volontaires entre la web app et l'app native, tous vérifiés écran par écran :
+
+- **Pas de flou d'arrière-plan** (`backdrop-blur`) derrière les pilules de navigation : Compose n'a pas d'équivalent stable et peu coûteux. Le fond opaque à 85 % est identique au web, le flou en moins.
+- **Pas de prompt « Installer l'application » ni de service worker** : ces deux écrans n'ont plus d'objet une fois l'app installée depuis le store. `InstallPromptSheet` n'est donc pas porté ; `NotificationPromptSheet`, lui, l'est.
+- **Le nom d'affichage modifié dans les réglages est persisté** dans les métadonnées Supabase de l'utilisateur. Sur le web il ne l'était pas : la modification disparaissait au rechargement. C'était un bug, il est corrigé ici.
+- **Le trailer YouTube s'affiche dans une WebView**, faute d'iframe. Même lecteur, même comportement, mais le plein écran dépend de la WebView du système.
+- **Le bruit de l'ambiance est une bitmap générée en Kotlin** au lieu d'un filtre SVG `feTurbulence`. Même algorithme (4 octaves, amplitude divisée par deux à chaque passe), même grain à l'œil, mais le motif exact diffère du rendu SVG du navigateur.
+- **Désactiver les notifications supprime vraiment la ligne FCM.** Sur le web, la désactivation ne changeait qu'un état local (`setNativeSubscribed(false)` dans `SettingsPanel.tsx`) : la ligne restait en base et le cron continuait d'envoyer. Deuxième correction du même endroit : les trois préférences (épisodes, saisons, sorties) sont réécrites depuis l'état courant à la réactivation, là où le web les forçait toutes les trois à `true`.
+- **Les dates sont formatées par `java.time`** sur Android et desktop, pas par `Intl.DateTimeFormat`. Les motifs ont été alignés locale par locale (`d MMM yyyy` en français, `MMMM d, yyyy` en anglais) ; un écart de ponctuation reste possible sur des locales exotiques.
 
 ## 10. Vérification (état exact)
 
-L'environnement de travail utilisé pour cette réécriture n'a pas accès à Google Maven ni au SDK Android (politique réseau). En conséquence :
+L'environnement de travail utilisé pour cette réécriture n'a accès ni à Google Maven ni au SDK
+Android (politique réseau). La cible Android n'a donc jamais été assemblée. Pour ne pas livrer du
+code jamais exécuté pour autant, une chaîne de vérification hors ligne a été montée autour de la
+cible desktop.
 
-- **Compilé et exécuté ici** : tout le code partagé (`commonMain`, ~90 % de l'app : logique, réseau, UI Compose) via la cible desktop JVM, avec les forks JetBrains des bibliothèques androidx ; tests unitaires (`commonTest`) exécutés ; captures d'écran headless de chaque écran (voir `native/docs/screenshots/` si présent) pour comparer au design web.
-- **Écrit mais non compilé ici** : la couche `androidMain` (Application, MainActivity, Google Sign-In, service FCM, WebView) et la configuration Android du Gradle. Ce sont des fichiers courts qui utilisent des API stables ; ils doivent être compilés une première fois dans Android Studio.
-- **À valider sur appareil** : connexion Google (dépend des SHA-1 déclarés), réception des push, comportement du clavier et des gestes, performances de la liste.
+### Ce qui a été compilé, exécuté et regardé
+
+| Vérification | Comment | Résultat |
+|---|---|---|
+| Code partagé (`commonMain`, ~14 600 lignes, 86 fichiers) | Compilé sur la cible desktop JVM | Compile |
+| Logique métier | 40 tests unitaires (`commonTest`) : URLs d'API, aides de formatage, prochain épisode, utilitaires de séries, statistiques de séries | 40 réussis, 0 échec |
+| Rendu de chaque écran | 33 captures headless via `ImageComposeScene`, en anglais **et** en français, clair et sombre, plus une mise en page tablette 1024x768 | 33 + 33 rendues et relues une à une |
+| Couche `androidMain` | Module de contrôle de types compilant le code Android contre le jar `android-all` de Robolectric et des stubs androidx/Firebase écrits à la main | Compile |
+| Ressources | Audit des 545 chaînes : 483 utilisées, 62 inutilisées (toutes déjà inutilisées côté web ou propres à des états d'une autre plateforme), 0 manquante | Aucune chaîne absente |
+
+Deux détails d'outillage, utiles si la chaîne doit être remontée :
+
+- les forks JetBrains d'androidx pour desktop sont en retard sur `androidx.collection`, ce qui fait
+  échouer le rendu (`NoClassDefFoundError: OrderedScatterSetKt`). Le contournement est de compiler
+  `androidx.collection` et `androidx.annotation` depuis les sources AOSP dans un module à part ;
+- le contrôle de types de `androidMain` se fait contre le jar `android-all` de Robolectric, qui
+  contient le vrai framework Android, complété par des stubs pour ce que Robolectric ne fournit pas
+  (Credential Manager, Firebase Messaging, splash screen).
+
+### Ce qui n'a pas pu être vérifié ici
+
+- **L'assemblage Android lui-même** : AGP, la fusion des manifestes, la génération de `R`, R8. La
+  première ouverture dans Android Studio est la première vraie compilation Android.
+- **Les écrans « À suivre » avec des données réelles** : ils dépendent de TMDB, inatteignable hors
+  ligne. Ils rendent donc vide en capture, ce qui est le comportement attendu, identique au web qui
+  ne rend rien quand les deux listes sont vides (`NextUpMovies.tsx`).
+- **Le comportement à l'exécution sur appareil** : connexion Google (dépend des SHA-1 déclarés),
+  réception des push, gestes et clavier, fluidité des listes longues.
 
 ## 11. Étapes suivantes pour toi
 
@@ -183,3 +216,4 @@ L'environnement de travail utilisé pour cette réécriture n'a pas accès à Go
 | Connexion Google refusée (`DEVELOPER_ERROR`) | Même `applicationId` et même keystore que l'app Capacitor : les SHA-1 déjà déclarés s'appliquent ; vérifier le SHA-1 du build debug (`~/.android/debug.keystore`). |
 | Token FCM absent | Nécessite `google-services.json` du projet Firebase ; le build fonctionne sans, les notifications non. |
 | Montée de version Compose 1.8.2 → 1.12 | Une ligne dans le catalogue ; à faire dans Android Studio où Google Maven est accessible. |
+| `minSdk` 24 refusé par la fusion des manifestes (une dépendance exigeant plus) | Non vérifiable ici : Google Maven est inaccessible, donc aucun manifeste de dépendance n'a pu être lu. L'erreur nomme la bibliothèque fautive ; la remonter à 26 dans `libs.versions.toml` débloque (au prix d'Android 7.x). |

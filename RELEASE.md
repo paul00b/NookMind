@@ -1,5 +1,37 @@
 # NookMind — Release Status
 
+## Android : l'app native remplace le paquet Capacitor
+
+Depuis la version 2.0.0, l'app Android n'est plus une WebView Capacitor mais une app native
+Kotlin + Compose, dans `native/`. Tout ce qui suit sur cette page (build `npm run cap:sync`,
+`android/gradlew bundleRelease`) concerne l'ancien paquet et ne sert plus que de repli tant que
+l'app native n'a pas été validée sur appareil.
+
+Build de release natif :
+
+```bash
+cd native
+./gradlew :composeApp:bundleRelease
+# composeApp/build/outputs/bundle/release/composeApp-release.aab
+```
+
+Même `applicationId` (`fr.paulbr.nookmind`), même keystore (`~/nookmind-release.jks`, alias
+`nookmind`) : c'est une mise à jour de l'app déjà publiée, pas une nouvelle fiche. Le
+`keystore.properties` va dans `native/` au lieu de `android/`. Prérequis et configuration complets
+dans `native/README.md` ; ce qui a été vérifié et ce qui reste à valider sur appareil dans
+`docs/native-rewrite-plan.md`.
+
+À faire avant le premier envoi de l'AAB natif :
+
+- [ ] Compiler une première fois dans Android Studio (`native/`) et corriger ce que la compilation
+      Android remonte : elle n'a jamais pu être lancée pendant la réécriture.
+- [ ] Vérifier sur appareil la connexion Google, la réception d'une notification et l'ouverture des
+      liens externes, sur un build **de release** (R8 peut casser ces trois chemins).
+- [ ] Une fois l'app native validée en production : supprimer `android/`, `ios/`,
+      `capacitor.config.ts` et les dépendances `@capacitor/*` du `package.json`.
+
+---
+
 ## État actuel (2026-05-21)
 
 ### ✅ Ce qui est fait
@@ -92,9 +124,10 @@ cd android && JAVA_HOME=$(/usr/libexec/java_home -v 21) ./gradlew bundleRelease
 |---------|--------|
 | App ID Android | `fr.paulbr.nookmind` |
 | App ID iOS | `fr.paulbr.nookmind` |
-| Version | 1.0 (versionCode 1) |
+| Version | 2.0.0 (versionCode 2) — native ; 1.0 (versionCode 1) était le paquet Capacitor |
 | Min Android SDK | 24 (Android 7.0) |
 | Target Android SDK | 36 (Android 15) |
+| Source Android | `native/` (Kotlin Multiplatform + Compose) |
 | Keystore alias | `nookmind` |
 | Keystore location | `~/nookmind-release.jks` (hors repo) |
 | Firebase project | `nookmind-8f5be` |

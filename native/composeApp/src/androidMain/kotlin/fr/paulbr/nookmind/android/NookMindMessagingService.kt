@@ -4,6 +4,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
+import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -37,13 +38,17 @@ class NookMindMessagingService : FirebaseMessagingService() {
         val body = message.notification?.body ?: message.data["body"] ?: ""
         val route = message.data["route"]
 
-        val manager = getSystemService(NotificationManager::class.java) ?: return
-        if (manager.getNotificationChannel(CHANNEL_ID) == null) {
-            manager.createNotificationChannel(
-                NotificationChannel(CHANNEL_ID, getString(R.string.notification_channel_name), NotificationManager.IMPORTANCE_DEFAULT).apply {
-                    description = getString(R.string.notification_channel_description)
-                },
-            )
+        // Notification channels only exist from Android 8; below that the importance is carried by
+        // the notification itself and the channel id passed to the builder is ignored.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val manager = getSystemService(NotificationManager::class.java) ?: return
+            if (manager.getNotificationChannel(CHANNEL_ID) == null) {
+                manager.createNotificationChannel(
+                    NotificationChannel(CHANNEL_ID, getString(R.string.notification_channel_name), NotificationManager.IMPORTANCE_DEFAULT).apply {
+                        description = getString(R.string.notification_channel_description)
+                    },
+                )
+            }
         }
 
         val intent = Intent(this, MainActivity::class.java).apply {
