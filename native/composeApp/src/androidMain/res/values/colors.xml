@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Same palette as the app: cream background in light, night in dark. -->
+    <color name="splash_background">#F8F6F1</color>
+    <color name="splash_background_dark">#0F1117</color>
+</resources>

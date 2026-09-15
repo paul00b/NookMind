@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NookMind</string>
+    <string name="notification_channel_name">NookMind</string>
+    <string name="notification_channel_description">Sorties d\'épisodes, de saisons et de films suivis</string>
+</resources>

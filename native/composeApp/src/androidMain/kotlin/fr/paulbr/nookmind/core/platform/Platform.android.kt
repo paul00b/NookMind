@@ -20,7 +20,8 @@ actual fun createPlatformSettings(name: String): Settings {
 }
 
 actual fun exitApplication() {
-    // Handled by the Activity (finishAffinity) through AndroidBackHandler; nothing to do here.
+    // Back at the root of the app: leave it like the hardware back button on the launcher task.
+    fr.paulbr.nookmind.android.ActivityTracker.current?.finish()
 }
 
 actual fun logDebug(tag: String, message: String, throwable: Throwable?) {

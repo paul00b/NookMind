@@ -15,3 +15,14 @@
 
 # Supabase-kt
 -keep class io.github.jan.supabase.** { *; }
+
+# Compose Multiplatform resources (strings, fonts, drawables are looked up by name)
+-keep class fr.paulbr.nookmind.resources.** { *; }
+
+# Credential Manager / Google ID token (reflection on the credential bundle)
+-keep class com.google.android.libraries.identity.googleid.** { *; }
+-if class androidx.credentials.CredentialManager
+-keep class androidx.credentials.playservices.** { *; }
+
+# Firebase Cloud Messaging service entry point
+-keep class fr.paulbr.nookmind.android.NookMindMessagingService { *; }
