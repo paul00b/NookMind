@@ -13,6 +13,11 @@ import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.core.model.ThemeMode
 import fr.paulbr.nookmind.feature.books.AddBookSheet
 import fr.paulbr.nookmind.feature.books.BookDetailSheet
+import fr.paulbr.nookmind.feature.movies.AddMovieSheet
+import fr.paulbr.nookmind.feature.movies.MovieDetailSheet
+import fr.paulbr.nookmind.feature.series.AddSeriesSheet
+import fr.paulbr.nookmind.feature.series.SeriesDetailSheet
+import fr.paulbr.nookmind.feature.series.SeriesStatsSheet
 import fr.paulbr.nookmind.feature.common.HomeScreenScaffold
 import fr.paulbr.nookmind.feature.common.HomeSection
 import fr.paulbr.nookmind.feature.common.SearchResultRow
@@ -66,5 +71,19 @@ object ScreenshotCatalog {
         ScreenshotEntry("books-nextup", shell(MediaMode.BOOKS, MainTab.NEXT_UP)),
         ScreenshotEntry("books-detail", shell(MediaMode.BOOKS, MainTab.LIBRARY) { BookDetailSheet(container, FakeData.books[0], onClose = {}) }),
         ScreenshotEntry("books-add", shell(MediaMode.BOOKS, MainTab.SEARCH) { AddBookSheet(container, FakeData.books[3].copy(id = "", rating = null, personalNote = null), onClose = {}) }),
+        ScreenshotEntry("movies-home", shell(MediaMode.MOVIES, MainTab.SEARCH)),
+        ScreenshotEntry("movies-home-dark", shell(MediaMode.MOVIES, MainTab.SEARCH, dark = true)),
+        ScreenshotEntry("movies-library", shell(MediaMode.MOVIES, MainTab.LIBRARY)),
+        ScreenshotEntry("movies-nextup", shell(MediaMode.MOVIES, MainTab.NEXT_UP)),
+        ScreenshotEntry("movies-detail", shell(MediaMode.MOVIES, MainTab.LIBRARY) { MovieDetailSheet(container, FakeData.movies[0], onClose = {}) }),
+        ScreenshotEntry("movies-add", shell(MediaMode.MOVIES, MainTab.SEARCH) { AddMovieSheet(container, FakeData.movies[2].copy(id = ""), onClose = {}) }),
+        ScreenshotEntry("series-home", shell(MediaMode.SERIES, MainTab.SEARCH)),
+        ScreenshotEntry("series-home-dark", shell(MediaMode.SERIES, MainTab.SEARCH, dark = true)),
+        ScreenshotEntry("series-library", shell(MediaMode.SERIES, MainTab.LIBRARY)),
+        ScreenshotEntry("series-library-dark", shell(MediaMode.SERIES, MainTab.LIBRARY, dark = true)),
+        ScreenshotEntry("series-nextup", shell(MediaMode.SERIES, MainTab.NEXT_UP)),
+        ScreenshotEntry("series-detail", shell(MediaMode.SERIES, MainTab.LIBRARY) { SeriesDetailSheet(container, FakeData.series[0], onClose = {}) }),
+        ScreenshotEntry("series-add", shell(MediaMode.SERIES, MainTab.SEARCH) { AddSeriesSheet(container, FakeData.series[4].copy(id = ""), onClose = {}) }),
+        ScreenshotEntry("series-stats", shell(MediaMode.SERIES, MainTab.LIBRARY) { SeriesStatsSheet(container, FakeData.series, onClose = {}) }),
     )
 }
