@@ -101,24 +101,51 @@ pour la connexion Google. Sans ce fichier le bloc `signingConfigs` n'est simplem
 
 ## 3. Compiler et lancer
 
+### Aperçu desktop, le plus rapide
+
 ```bash
 cd native
+./gradlew :composeApp:run
+```
 
+La fenêtre fait 430x932, la taille d'un téléphone. C'est exactement le même code que sur Android,
+branché sur le vrai Supabase : la bibliothèque, les recherches, les fiches, les collections et les
+réglages fonctionnent pour de bon.
+
+Deux choses ne marchent pas sur desktop, et c'est normal : la connexion Google affiche « Google
+sign-in is not available on this platform » (connecte-toi par e-mail), et les réglages affichent que
+les notifications ne sont pas gérées.
+
+Les préférences locales (thème, mode d'affichage, ordre des sections, session) sont rangées dans les
+préférences Java de l'utilisateur, pas dans le dépôt. Pour repartir de zéro : se déconnecter depuis
+les réglages, et « Revoir l'onboarding » pour réafficher le tutoriel d'accueil.
+
+### Android
+
+```bash
 ./gradlew :composeApp:assembleDebug     # APK debug (applicationId fr.paulbr.nookmind.debug)
 ./gradlew :composeApp:installDebug      # installe sur l'appareil ou l'émulateur connecté
 ./gradlew :composeApp:bundleRelease     # AAB signé pour le Play Store
-```
-
-Aperçu desktop, pratique pour itérer sur l'UI sans émulateur :
-
-```bash
-./gradlew :composeApp:run
 ```
 
 Le build debug porte le suffixe `.debug` sur l'`applicationId`, il cohabite donc avec la version du
 Play Store sur le même appareil. Attention : ce suffixe change l'empreinte attendue par Google
 Sign-In, il faut déclarer le SHA-1 du keystore de debug (`~/.android/debug.keystore`, mot de passe
 `android`) dans la console Google Cloud pour tester la connexion Google en debug.
+
+### Le SDK Android est requis même pour l'aperçu desktop
+
+Le module `composeApp` déclare la cible Android, donc le plugin Android est configuré à chaque
+invocation de Gradle. Sans SDK :
+
+```
+SDK location not found. Define a valid SDK location with an ANDROID_HOME environment variable
+or by setting the sdk.dir path in your project's local.properties file.
+```
+
+Installer Android Studio suffit (il pose le SDK et renseigne le chemin). Sinon, créer
+`native/local.properties` avec `sdk.dir=/chemin/vers/Android/sdk`, ou exporter `ANDROID_HOME`.
+Ce fichier est propre à ta machine et ne doit pas être versionné.
 
 ## 4. Structure du projet
 
