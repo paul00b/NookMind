@@ -18,6 +18,8 @@ import fr.paulbr.nookmind.feature.movies.MovieDetailSheet
 import fr.paulbr.nookmind.feature.series.AddSeriesSheet
 import fr.paulbr.nookmind.feature.series.SeriesDetailSheet
 import fr.paulbr.nookmind.feature.series.SeriesStatsSheet
+import fr.paulbr.nookmind.feature.settings.NotificationPromptSheet
+import fr.paulbr.nookmind.feature.settings.SettingsPanel
 import fr.paulbr.nookmind.feature.common.HomeScreenScaffold
 import fr.paulbr.nookmind.feature.common.HomeSection
 import fr.paulbr.nookmind.feature.common.SearchResultRow
@@ -85,5 +87,8 @@ object ScreenshotCatalog {
         ScreenshotEntry("series-detail", shell(MediaMode.SERIES, MainTab.LIBRARY) { SeriesDetailSheet(container, FakeData.series[0], onClose = {}) }),
         ScreenshotEntry("series-add", shell(MediaMode.SERIES, MainTab.SEARCH) { AddSeriesSheet(container, FakeData.series[4].copy(id = ""), onClose = {}) }),
         ScreenshotEntry("series-stats", shell(MediaMode.SERIES, MainTab.LIBRARY) { SeriesStatsSheet(container, FakeData.series, onClose = {}) }),
+        ScreenshotEntry("settings", shell(MediaMode.BOOKS, MainTab.SEARCH) { SettingsPanel(container, onClose = {}, onOpenLegal = {}, onReplayOnboarding = {}) }),
+        ScreenshotEntry("settings-dark", shell(MediaMode.BOOKS, MainTab.SEARCH, dark = true) { SettingsPanel(container, onClose = {}, onOpenLegal = {}, onReplayOnboarding = {}) }),
+        ScreenshotEntry("notif-prompt", shell(MediaMode.SERIES, MainTab.SEARCH) { NotificationPromptSheet(container, onDismiss = {}) }),
     )
 }
