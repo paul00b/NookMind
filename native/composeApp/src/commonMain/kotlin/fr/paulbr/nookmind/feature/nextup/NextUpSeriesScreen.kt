@@ -59,6 +59,7 @@ import fr.paulbr.nookmind.core.designsystem.components.Pill
 import fr.paulbr.nookmind.core.designsystem.components.PrimaryButton
 import fr.paulbr.nookmind.core.designsystem.components.SheetCloseButton
 import fr.paulbr.nookmind.core.designsystem.components.SkeletonBox
+import fr.paulbr.nookmind.core.designsystem.components.pulse
 import fr.paulbr.nookmind.core.designsystem.components.NookSheet
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
 import fr.paulbr.nookmind.core.domain.EpisodeState
@@ -234,7 +235,7 @@ fun NextUpSeriesScreen(container: AppContainer, contentPadding: PaddingValues) {
 private fun StateBadge(state: EpisodeState) {
     val colors = NookTheme.colors
     when (state) {
-        EpisodeState.Unknown -> Text("…", style = NookTheme.type.xs, color = colors.textFaint)
+        EpisodeState.Unknown -> Text("…", Modifier.pulse(), style = NookTheme.type.xs, color = colors.textFaint)
         EpisodeState.UpToDate -> Pill(
             stringResource(Res.string.nextUp_upToDate),
             background = colors.surfaceMuted,

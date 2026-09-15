@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -203,13 +204,22 @@ fun Sidebar(
     val fallback = stringResource(Res.string.common_defaultDisplayName)
     val name = user?.displayName(fallback) ?: fallback
     val accent = colors.accent(mode)
+    val borderColor = colors.border
 
     Column(
         modifier
             .sidebarWidth()
             .fillMaxHeight()
             .background(colors.background)
-            .border(0.dp, Color.Transparent)
+            .drawBehind {
+                // `border-r border-black/8 dark:border-white/8`
+                val stroke = 1.dp.toPx()
+                drawRect(
+                    color = borderColor,
+                    topLeft = androidx.compose.ui.geometry.Offset(size.width - stroke, 0f),
+                    size = androidx.compose.ui.geometry.Size(stroke, size.height),
+                )
+            }
             .windowInsetsPadding(WindowInsets.statusBars)
             .padding(horizontal = 16.dp, vertical = 24.dp),
     ) {

@@ -77,7 +77,9 @@ import fr.paulbr.nookmind.resources.nextUp_inDays
 import fr.paulbr.nookmind.resources.nextUp_inDaysPlural
 import fr.paulbr.nookmind.resources.nextUp_loadingMovieDetails
 import fr.paulbr.nookmind.resources.nextUp_newlyReleasedMovies
+import fr.paulbr.nookmind.resources.nextUp_closeMovieDetails
 import fr.paulbr.nookmind.resources.nextUp_noMovieOverview
+import fr.paulbr.nookmind.resources.nextUp_openMovieDetails
 import fr.paulbr.nookmind.resources.nextUp_popularReleases
 import fr.paulbr.nookmind.resources.nextUp_recentReleasesMovies
 import fr.paulbr.nookmind.resources.nextUp_releasedOn
@@ -227,7 +229,8 @@ private fun MovieReleaseSection(
             items(movies, key = { it.id }) { movie ->
                 Column(Modifier.width(144.dp).heightIn(min = 336.dp)) {
                     MediaImage(
-                        TmdbApi.posterUrl(movie.posterPath, "w300"), movie.title,
+                        TmdbApi.posterUrl(movie.posterPath, "w300"),
+                        stringResource(Res.string.nextUp_openMovieDetails, movie.title),
                         Modifier.fillMaxWidth().clip(NookShapes.xl).clickable { onOpen(movie) },
                         mode = MediaMode.MOVIES, placeholderIconSize = 24.dp,
                     )
@@ -343,7 +346,7 @@ fun MoviePreviewSheet(container: AppContainer, movie: TmdbMovie, existing: Movie
                     .clickable { controller.close() },
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(LucideIcons.X, null, Modifier.size(18.dp), tint = colors.textBody2)
+                Icon(LucideIcons.X, stringResource(Res.string.nextUp_closeMovieDetails), Modifier.size(18.dp), tint = colors.textBody2)
             }
         }
     }

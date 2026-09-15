@@ -24,6 +24,12 @@ import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import fr.paulbr.nookmind.core.designsystem.NookTheme
+import fr.paulbr.nookmind.resources.Res
+import fr.paulbr.nookmind.resources.legal_back
+import fr.paulbr.nookmind.resources.legal_lastUpdated
+import fr.paulbr.nookmind.resources.legal_privacyTitle
+import fr.paulbr.nookmind.resources.legal_termsTitle
+import org.jetbrains.compose.resources.stringResource
 
 enum class LegalKind { PRIVACY, TERMS }
 
@@ -77,13 +83,13 @@ private val TERMS_SECTIONS = listOf(
 fun LegalScreen(kind: LegalKind, onBack: () -> Unit) {
     val colors = NookTheme.colors
     BackHandler(enabled = true, onBack = onBack)
-    val title = if (kind == LegalKind.PRIVACY) "Politique de confidentialité" else "Conditions d'utilisation"
+    val title = if (kind == LegalKind.PRIVACY) stringResource(Res.string.legal_privacyTitle) else stringResource(Res.string.legal_termsTitle)
     val sections = if (kind == LegalKind.PRIVACY) PRIVACY_SECTIONS else TERMS_SECTIONS
     Box(Modifier.fillMaxSize().background(colors.background).windowInsetsPadding(WindowInsets.safeDrawing), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.fillMaxWidth().widthIn(max = 672.dp).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 48.dp)) {
             Text(title, style = NookTheme.type.h1Serif, color = colors.textStrong)
             Spacer(Modifier.height(8.dp))
-            Text("Dernière mise à jour : mars 2025", style = NookTheme.type.sm, color = colors.textSubtle)
+            Text(stringResource(Res.string.legal_lastUpdated), style = NookTheme.type.sm, color = colors.textSubtle)
             Spacer(Modifier.height(32.dp))
             sections.forEach { section ->
                 Text(section.title, style = NookTheme.type.sans(14, FontWeight.SemiBold, 20), color = colors.textStrong)
@@ -106,7 +112,7 @@ fun LegalScreen(kind: LegalKind, onBack: () -> Unit) {
             }
             Spacer(Modifier.height(16.dp))
             Text(
-                "← Retour",
+                stringResource(Res.string.legal_back),
                 style = NookTheme.type.sm,
                 color = colors.amberText,
                 modifier = Modifier.clickable(onClick = onBack).padding(vertical = 4.dp),

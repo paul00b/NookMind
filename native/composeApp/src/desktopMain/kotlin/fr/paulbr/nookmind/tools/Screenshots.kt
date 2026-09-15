@@ -61,7 +61,7 @@ fun main(args: Array<String>) {
     val entries = ScreenshotCatalog.entries.filter { only.isEmpty() || it.name in only }
     entries.forEach { entry ->
         val file = File(outDir, "${entry.name}.png")
-        Screenshots.render(file, content = entry.content)
+        Screenshots.render(file, widthDp = entry.widthDp, heightDp = entry.heightDp, content = entry.content)
         println("wrote ${file.path}")
     }
     println("done: ${entries.size} screenshot(s) in ${outDir.path}")

@@ -48,6 +48,7 @@ import fr.paulbr.nookmind.core.platform.openExternalUrl
 import fr.paulbr.nookmind.feature.common.formatIsoDate
 import fr.paulbr.nookmind.resources.Res
 import fr.paulbr.nookmind.resources.common_episodeNumber
+import fr.paulbr.nookmind.resources.nextUp_closeEpisodeDetails
 import fr.paulbr.nookmind.resources.nextUp_episodeSynopsis
 import fr.paulbr.nookmind.resources.nextUp_noEpisodeOverview
 import fr.paulbr.nookmind.resources.seriesDetail_noEpisodeData
@@ -207,7 +208,7 @@ fun EpisodeDetailSheet(info: EpisodeInfo, seasonNum: Int, onClose: () -> Unit) {
                     }
                 }
             }
-            SheetCloseButton(controller, Modifier.align(Alignment.TopEnd).padding(16.dp))
+            SheetCloseButton(controller, Modifier.align(Alignment.TopEnd).padding(16.dp), contentDescription = stringResource(Res.string.nextUp_closeEpisodeDetails))
         }
     }
 }

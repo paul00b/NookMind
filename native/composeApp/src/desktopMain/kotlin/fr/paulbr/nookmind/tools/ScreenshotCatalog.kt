@@ -26,8 +26,17 @@ import fr.paulbr.nookmind.feature.common.SearchResultRow
 import fr.paulbr.nookmind.feature.common.rememberSearchController
 import fr.paulbr.nookmind.feature.shell.MainScaffold
 import fr.paulbr.nookmind.feature.shell.MainTab
+import fr.paulbr.nookmind.feature.auth.LoginScreen
+import fr.paulbr.nookmind.feature.legal.LegalKind
+import fr.paulbr.nookmind.feature.legal.LegalScreen
+import fr.paulbr.nookmind.feature.onboarding.OnboardingScreen
 
-class ScreenshotEntry(val name: String, val content: @Composable () -> Unit)
+class ScreenshotEntry(
+    val name: String,
+    val widthDp: Int = Screenshots.WIDTH_DP,
+    val heightDp: Int = Screenshots.HEIGHT_DP,
+    val content: @Composable () -> Unit,
+)
 
 /** Screens rendered by the `screenshots` tool. Extended as features land. */
 object ScreenshotCatalog {
@@ -54,8 +63,8 @@ object ScreenshotCatalog {
 
     val entries: List<ScreenshotEntry> = listOf(
         ScreenshotEntry("smoke") { App(container) },
-        ScreenshotEntry("books-home", shell(MediaMode.BOOKS, MainTab.SEARCH)),
-        ScreenshotEntry("books-home-dark", shell(MediaMode.BOOKS, MainTab.SEARCH, dark = true)),
+        ScreenshotEntry("books-home", content = shell(MediaMode.BOOKS, MainTab.SEARCH)),
+        ScreenshotEntry("books-home-dark", content = shell(MediaMode.BOOKS, MainTab.SEARCH, dark = true)),
         ScreenshotEntry("books-home-dropdown") {
             NookTheme(ThemeMode.LIGHT, MediaMode.BOOKS) {
                 val search = rememberSearchController<GoogleBookVolume>(timeoutText = "timeout") { FakeData.bookSearchResults }
@@ -68,27 +77,46 @@ object ScreenshotCatalog {
                 ) { vol -> SearchResultRow(null, vol.volumeInfo.title, vol.volumeInfo.authors?.joinToString() ?: "", onClick = {}) }
             }
         },
-        ScreenshotEntry("books-library", shell(MediaMode.BOOKS, MainTab.LIBRARY)),
-        ScreenshotEntry("books-library-dark", shell(MediaMode.BOOKS, MainTab.LIBRARY, dark = true)),
-        ScreenshotEntry("books-nextup", shell(MediaMode.BOOKS, MainTab.NEXT_UP)),
-        ScreenshotEntry("books-detail", shell(MediaMode.BOOKS, MainTab.LIBRARY) { BookDetailSheet(container, FakeData.books[0], onClose = {}) }),
-        ScreenshotEntry("books-add", shell(MediaMode.BOOKS, MainTab.SEARCH) { AddBookSheet(container, FakeData.books[3].copy(id = "", rating = null, personalNote = null), onClose = {}) }),
-        ScreenshotEntry("movies-home", shell(MediaMode.MOVIES, MainTab.SEARCH)),
-        ScreenshotEntry("movies-home-dark", shell(MediaMode.MOVIES, MainTab.SEARCH, dark = true)),
-        ScreenshotEntry("movies-library", shell(MediaMode.MOVIES, MainTab.LIBRARY)),
-        ScreenshotEntry("movies-nextup", shell(MediaMode.MOVIES, MainTab.NEXT_UP)),
-        ScreenshotEntry("movies-detail", shell(MediaMode.MOVIES, MainTab.LIBRARY) { MovieDetailSheet(container, FakeData.movies[0], onClose = {}) }),
-        ScreenshotEntry("movies-add", shell(MediaMode.MOVIES, MainTab.SEARCH) { AddMovieSheet(container, FakeData.movies[2].copy(id = ""), onClose = {}) }),
-        ScreenshotEntry("series-home", shell(MediaMode.SERIES, MainTab.SEARCH)),
-        ScreenshotEntry("series-home-dark", shell(MediaMode.SERIES, MainTab.SEARCH, dark = true)),
-        ScreenshotEntry("series-library", shell(MediaMode.SERIES, MainTab.LIBRARY)),
-        ScreenshotEntry("series-library-dark", shell(MediaMode.SERIES, MainTab.LIBRARY, dark = true)),
-        ScreenshotEntry("series-nextup", shell(MediaMode.SERIES, MainTab.NEXT_UP)),
-        ScreenshotEntry("series-detail", shell(MediaMode.SERIES, MainTab.LIBRARY) { SeriesDetailSheet(container, FakeData.series[0], onClose = {}) }),
-        ScreenshotEntry("series-add", shell(MediaMode.SERIES, MainTab.SEARCH) { AddSeriesSheet(container, FakeData.series[4].copy(id = ""), onClose = {}) }),
-        ScreenshotEntry("series-stats", shell(MediaMode.SERIES, MainTab.LIBRARY) { SeriesStatsSheet(container, FakeData.series, onClose = {}) }),
-        ScreenshotEntry("settings", shell(MediaMode.BOOKS, MainTab.SEARCH) { SettingsPanel(container, onClose = {}, onOpenLegal = {}, onReplayOnboarding = {}) }),
-        ScreenshotEntry("settings-dark", shell(MediaMode.BOOKS, MainTab.SEARCH, dark = true) { SettingsPanel(container, onClose = {}, onOpenLegal = {}, onReplayOnboarding = {}) }),
-        ScreenshotEntry("notif-prompt", shell(MediaMode.SERIES, MainTab.SEARCH) { NotificationPromptSheet(container, onDismiss = {}) }),
+        ScreenshotEntry("books-library", content = shell(MediaMode.BOOKS, MainTab.LIBRARY)),
+        ScreenshotEntry("books-library-dark", content = shell(MediaMode.BOOKS, MainTab.LIBRARY, dark = true)),
+        ScreenshotEntry("books-nextup", content = shell(MediaMode.BOOKS, MainTab.NEXT_UP)),
+        ScreenshotEntry("books-detail", content = shell(MediaMode.BOOKS, MainTab.LIBRARY) { BookDetailSheet(container, FakeData.books[0], onClose = {}) }),
+        ScreenshotEntry("books-add", content = shell(MediaMode.BOOKS, MainTab.SEARCH) { AddBookSheet(container, FakeData.books[3].copy(id = "", rating = null, personalNote = null), onClose = {}) }),
+        ScreenshotEntry("movies-home", content = shell(MediaMode.MOVIES, MainTab.SEARCH)),
+        ScreenshotEntry("movies-home-dark", content = shell(MediaMode.MOVIES, MainTab.SEARCH, dark = true)),
+        ScreenshotEntry("movies-library", content = shell(MediaMode.MOVIES, MainTab.LIBRARY)),
+        ScreenshotEntry("movies-nextup", content = shell(MediaMode.MOVIES, MainTab.NEXT_UP)),
+        ScreenshotEntry("movies-detail", content = shell(MediaMode.MOVIES, MainTab.LIBRARY) { MovieDetailSheet(container, FakeData.movies[0], onClose = {}) }),
+        ScreenshotEntry("movies-add", content = shell(MediaMode.MOVIES, MainTab.SEARCH) { AddMovieSheet(container, FakeData.movies[2].copy(id = ""), onClose = {}) }),
+        ScreenshotEntry("series-home", content = shell(MediaMode.SERIES, MainTab.SEARCH)),
+        ScreenshotEntry("series-home-dark", content = shell(MediaMode.SERIES, MainTab.SEARCH, dark = true)),
+        ScreenshotEntry("series-library", content = shell(MediaMode.SERIES, MainTab.LIBRARY)),
+        ScreenshotEntry("series-library-dark", content = shell(MediaMode.SERIES, MainTab.LIBRARY, dark = true)),
+        ScreenshotEntry("series-nextup", content = shell(MediaMode.SERIES, MainTab.NEXT_UP)),
+        ScreenshotEntry("series-detail", content = shell(MediaMode.SERIES, MainTab.LIBRARY) { SeriesDetailSheet(container, FakeData.series[0], onClose = {}) }),
+        ScreenshotEntry("series-add", content = shell(MediaMode.SERIES, MainTab.SEARCH) { AddSeriesSheet(container, FakeData.series[4].copy(id = ""), onClose = {}) }),
+        ScreenshotEntry("series-stats", content = shell(MediaMode.SERIES, MainTab.LIBRARY) { SeriesStatsSheet(container, FakeData.series, onClose = {}) }),
+        ScreenshotEntry("settings", content = shell(MediaMode.BOOKS, MainTab.SEARCH) { SettingsPanel(container, onClose = {}, onOpenLegal = {}, onReplayOnboarding = {}) }),
+        ScreenshotEntry("settings-dark", content = shell(MediaMode.BOOKS, MainTab.SEARCH, dark = true) { SettingsPanel(container, onClose = {}, onOpenLegal = {}, onReplayOnboarding = {}) }),
+        ScreenshotEntry("notif-prompt", content = shell(MediaMode.SERIES, MainTab.SEARCH) { NotificationPromptSheet(container, onDismiss = {}) }),
+        ScreenshotEntry("onboarding") { NookTheme(ThemeMode.LIGHT, MediaMode.SERIES) { OnboardingScreen(onFinish = {}) } },
+        ScreenshotEntry("login") { NookTheme(ThemeMode.LIGHT, MediaMode.BOOKS) { LoginScreen(container) } },
+        ScreenshotEntry("login-dark") { NookTheme(ThemeMode.DARK, MediaMode.BOOKS) { LoginScreen(container) } },
+        ScreenshotEntry("legal") { NookTheme(ThemeMode.LIGHT, MediaMode.BOOKS) { LegalScreen(LegalKind.PRIVACY, onBack = {}) } },
+        ScreenshotEntry("books-library-list", content = shellWithView(MediaMode.BOOKS, MainTab.LIBRARY, list = true)),
+        ScreenshotEntry("tablet-books-library", widthDp = 1024, heightDp = 768, content = shell(MediaMode.BOOKS, MainTab.LIBRARY)),
+        ScreenshotEntry("tablet-series-home", widthDp = 1024, heightDp = 768, content = shell(MediaMode.SERIES, MainTab.SEARCH)),
     )
+
+    /** Same as [shell] but forces the list view mode of the library. */
+    private fun shellWithView(mode: MediaMode, tab: MainTab, list: Boolean): @Composable () -> Unit = {
+        remember {
+            container.prefs.setMediaMode(mode)
+            container.prefs.setViewMode(mode, if (list) fr.paulbr.nookmind.core.data.ViewMode.LIST else fr.paulbr.nookmind.core.data.ViewMode.GRID)
+            seed(container)
+        }
+        NookTheme(ThemeMode.LIGHT, mode) {
+            MainScaffold(container, onOpenLegal = {}, onReplayOnboarding = {}, initialTab = tab)
+        }
+    }
 }

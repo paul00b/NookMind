@@ -50,6 +50,7 @@ import fr.paulbr.nookmind.feature.series.SeriesDetailSheet
 import fr.paulbr.nookmind.feature.series.SeriesPreviewSheet
 import fr.paulbr.nookmind.feature.series.waitingLabel
 import fr.paulbr.nookmind.resources.Res
+import fr.paulbr.nookmind.resources.seriesDetail_viewImdbRatings
 import fr.paulbr.nookmind.resources.seriesHome_categoryOnAir
 import fr.paulbr.nookmind.resources.seriesHome_categoryTopRated
 import fr.paulbr.nookmind.resources.seriesHome_categoryTrending
@@ -212,7 +213,7 @@ fun SeriesHomeScreen(container: AppContainer, contentPadding: PaddingValues) {
                         .clickable(enabled = selectingId == null) { search.hideDropdown(); previewTarget = tmdb },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(LucideIcons.Eye, null, Modifier.size(17.dp), tint = Palette.White)
+                    Icon(LucideIcons.Eye, stringResource(Res.string.seriesDetail_viewImdbRatings), Modifier.size(17.dp), tint = Palette.White)
                 }
             },
         )

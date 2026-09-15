@@ -95,6 +95,11 @@ fun NookSheet(
 
 /** Close cross of the sheets (`absolute top-4 right-4 btn-ghost p-2`). */
 @Composable
-fun SheetCloseButton(controller: SheetController, modifier: Modifier = Modifier, size: Dp = 20.dp) {
-    IconGhostButton(LucideIcons.X, contentDescription = null, onClick = { controller.close() }, modifier = modifier, size = size)
+fun SheetCloseButton(
+    controller: SheetController,
+    modifier: Modifier = Modifier,
+    size: Dp = 20.dp,
+    contentDescription: String? = null,
+) {
+    IconGhostButton(LucideIcons.X, contentDescription = contentDescription, onClick = { controller.close() }, modifier = modifier, size = size)
 }
