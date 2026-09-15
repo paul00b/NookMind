@@ -28,7 +28,16 @@ class AndroidPushPlatform : PushPlatform {
     }
 
     override suspend fun getToken(): String? = suspendCancellableCoroutine { continuation ->
-        FirebaseMessaging.getInstance().token
+        // Without google-services.json the default FirebaseApp is never initialised and
+        // getInstance() throws. Push is simply unavailable in that build, not a crash.
+        val messaging = try {
+            FirebaseMessaging.getInstance()
+        } catch (error: Throwable) {
+            logDebug("push", "Firebase is not configured in this build", error)
+            continuation.resume(null)
+            return@suspendCancellableCoroutine
+        }
+        messaging.token
             .addOnSuccessListener { token -> continuation.resume(token) }
             .addOnFailureListener { error ->
                 logDebug("push", "FCM token request failed", error)

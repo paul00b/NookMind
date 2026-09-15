@@ -5,6 +5,7 @@ import fr.paulbr.nookmind.core.domain.removeItemById
 import fr.paulbr.nookmind.core.domain.replaceItemById
 import fr.paulbr.nookmind.core.model.LibraryItem
 import fr.paulbr.nookmind.core.network.AppJson
+import fr.paulbr.nookmind.core.network.DbJson
 import fr.paulbr.nookmind.core.platform.logDebug
 import fr.paulbr.nookmind.core.ui.ToastController
 import fr.paulbr.nookmind.core.ui.ToastKind
@@ -24,6 +25,21 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import org.jetbrains.compose.resources.StringResource
+
+/**
+ * Body of an insert: every field of [item] except the three the database owns, plus the user id.
+ *
+ * Encoded with [DbJson] so a property still equal to its default (an empty `author`, the initial
+ * `status`) is present in the payload instead of being dropped. `books.author` is NOT NULL with no
+ * database default, so dropping it fails the insert.
+ */
+fun <T : LibraryItem> insertPayload(serializer: KSerializer<T>, item: T, userId: String): JsonObject =
+    buildJsonObject {
+        (DbJson.encodeToJsonElement(serializer, item) as JsonObject).forEach { (key, value) ->
+            if (key != "id" && key != "created_at" && key != "user_id") put(key, value)
+        }
+        put("user_id", JsonPrimitive(userId))
+    }
 
 class LibraryMessages(
     val fetchError: StringResource,
@@ -95,12 +111,7 @@ class LibraryRepository<T : LibraryItem>(
     suspend fun add(item: T): T? {
         val user = auth.currentUser ?: return null
         return try {
-            val payload = buildJsonObject {
-                AppJson.encodeToJsonElement(serializer, item).let { it as JsonObject }.forEach { (k, v) ->
-                    if (k != "id" && k != "created_at" && k != "user_id") put(k, v)
-                }
-                put("user_id", JsonPrimitive(user.id))
-            }
+            val payload = insertPayload(serializer, item, user.id)
             val stored = AppJson.decodeFromString(ListSerializer(serializer), client.from(table).insert(payload) { select() }.data).first()
             _items.update { prependItem(it, stored) }
             toasts.success(messages.addSuccess)

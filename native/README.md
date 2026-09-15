@@ -15,8 +15,9 @@ qui continue de vivre à côté.
 4. [Structure du projet](#4-structure-du-projet)
 5. [Générateurs (chaînes et icônes)](#5-générateurs-chaînes-et-icônes)
 6. [Tests et captures d'écran](#6-tests-et-captures-décran)
-7. [Publication Play Store](#7-publication-play-store)
-8. [Limites de l'environnement de développement utilisé pour la réécriture](#8-limites-de-lenvironnement-de-développement-utilisé-pour-la-réécriture)
+7. [Ce qu'il faut tester sur appareil](#7-ce-quil-faut-tester-sur-appareil)
+8. [Publication Play Store](#8-publication-play-store)
+9. [Limites de l'environnement de développement utilisé pour la réécriture](#9-limites-de-lenvironnement-de-développement-utilisé-pour-la-réécriture)
 
 ## 1. Ce qu'il faut installer
 
@@ -65,6 +66,22 @@ demande un jeton d'identité destiné au backend Supabase, qui ne reconnaît que
 `fr.paulbr.nookmind`). Sans lui le build fonctionne et l'app se lance, mais les notifications push
 sont inertes : le plugin `google-services` n'est appliqué que si le fichier existe, et un
 avertissement le rappelle au moment de la configuration Gradle.
+
+**Le build debug a besoin de son propre enregistrement.** Son `applicationId` porte le suffixe
+`.debug`, et le plugin `google-services` refuse de configurer un build dont l'`applicationId`
+n'apparaît dans aucun client du fichier :
+
+```
+No matching client found for package name 'fr.paulbr.nookmind.debug'
+```
+
+Deux issues, au choix :
+
+- déclarer `fr.paulbr.nookmind.debug` comme deuxième application Android du projet Firebase, puis
+  retélécharger le `google-services.json` (il contiendra les deux clients). C'est ce qu'il faut de
+  toute façon pour tester les notifications sur un build debug ;
+- ou retirer `applicationIdSuffix = ".debug"` du bloc `debug` de `composeApp/build.gradle.kts`, au
+  prix de ne plus pouvoir garder l'ancienne app et la nouvelle installées côte à côte.
 
 ### `native/keystore.properties`
 
@@ -123,7 +140,7 @@ native/
         feature/       un dossier par domaine : auth, books, movies, series, library,
                        nextup, home, collections, settings, shell, onboarding, legal, common
         composeResources/  strings.xml (en) et values-fr/strings.xml (générés)
-      commonTest/      40 tests unitaires de la logique métier
+      commonTest/      47 tests unitaires de la logique métier
       jvmSharedMain/   actuals partagés Android + desktop (java.time, java.util.Locale)
       androidMain/     Application, MainActivity, Google Sign-In, service FCM, WebView,
                        bitmap de bruit, manifeste, ressources et icônes Android
@@ -169,7 +186,7 @@ les deux apps ont exactement la même silhouette d'icônes.
 ## 6. Tests et captures d'écran
 
 ```bash
-./gradlew :composeApp:desktopTest        # 40 tests de la logique partagée
+./gradlew :composeApp:desktopTest        # 47 tests de la logique partagée
 ./gradlew :composeApp:screenshots        # rend le catalogue en PNG, sans écran
 ```
 
@@ -184,7 +201,58 @@ fictives, en clair et en sombre, pour comparer pixel à pixel avec la web app. O
 Une entrée du catalogue peut fixer sa propre taille, ce qui sert à vérifier la mise en page large
 (barre latérale à partir de 768 dp) sans changer d'appareil.
 
-## 7. Publication Play Store
+## 7. Ce qu'il faut tester sur appareil
+
+Le code partagé est couvert par les tests et les captures. Ce qui suit ne l'est pas : ce sont les
+chemins qui touchent au système Android, invérifiables ailleurs que sur un vrai téléphone.
+
+### Ce qui change pour un utilisateur déjà installé
+
+L'ancienne app stockait sa session et ses préférences dans le `localStorage` de la WebView
+Capacitor. L'app native utilise les préférences Android. Les clés sont les mêmes, le support ne
+l'est pas : **rien n'est repris automatiquement**. Concrètement, à la mise à jour :
+
+| | |
+|---|---|
+| Livres, films, séries, collections, notes, avancement | Intacts, ils vivent dans Supabase |
+| Session | Perdue : il faut se reconnecter une fois |
+| Onboarding | Réaffiché une fois |
+| Thème, mode d'affichage, ordre des sections | Remis par défaut |
+| Notifications | À réactiver dans les réglages (le jeton FCM change) |
+
+Aucune donnée n'est perdue, mais la première ouverture n'est pas silencieuse. À tester en
+priorité : installer l'app native par-dessus l'ancienne (même `applicationId`, même keystore) et
+vérifier que la reconnexion ramène bien toute la bibliothèque.
+
+### Check-list
+
+Connexion
+- [ ] Connexion Google (le chemin le plus fragile : il dépend des SHA-1 déclarés)
+- [ ] Connexion e-mail + mot de passe, et création de compte
+- [ ] Déconnexion, puis reconnexion : la bibliothèque revient
+- [ ] Fermer et rouvrir l'app : la session est restaurée sans repasser par l'écran de connexion
+
+Données
+- [ ] Ajouter un livre, un film, une série ; vérifier qu'ils apparaissent aussi dans la web app
+- [ ] Modifier une note, un avancement, une date : même chose dans les deux sens
+- [ ] Créer une collection, y ranger des éléments, la supprimer
+- [ ] Supprimer un élément
+
+Système
+- [ ] Notifications : activer, envoyer le test depuis les réglages, recevoir, toucher la
+      notification et vérifier qu'elle ouvre le bon écran
+- [ ] Désactiver les notifications, puis vérifier qu'il n'en arrive plus
+- [ ] Trailer YouTube : lecture et plein écran
+- [ ] Liens externes (plateformes de streaming) : ouverture dans le navigateur ou l'app dédiée
+- [ ] Bouton retour Android depuis chaque feuille et chaque écran
+- [ ] Rotation et retour, clavier qui ne masque pas les champs
+- [ ] Thème clair, sombre, et suivi du réglage système
+
+À faire sur un build **de release** et pas seulement en debug : R8 peut casser la connexion Google,
+la réception des notifications et la désérialisation des réponses réseau, et ces trois chemins ne
+sont pas couverts par les tests.
+
+## 8. Publication Play Store
 
 `versionCode` et `versionName` sont dans `composeApp/build.gradle.kts` et valent 2 / `2.0.0` ; le
 paquet Capacitor s'arrêtait à 1 / `1.0`. Les deux sont à incrémenter à chaque livraison.
@@ -201,7 +269,7 @@ Credential Manager et le service FCM (instancié par réflexion depuis le manife
 Vérifie sur un build de release avant d'envoyer : connexion Google, réception d'une notification,
 et l'ouverture des liens externes. Ce sont les trois chemins que R8 peut casser.
 
-## 8. Limites de l'environnement de développement utilisé pour la réécriture
+## 9. Limites de l'environnement de développement utilisé pour la réécriture
 
 La réécriture a été faite dans un environnement sans accès à Google Maven ni au SDK Android. Le code
 partagé y a été compilé, testé et rendu en images via la cible desktop, mais la cible Android n'a

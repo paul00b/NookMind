@@ -61,7 +61,7 @@ data class Book(
     override val id: String = "",
     @SerialName("user_id") override val userId: String = "",
     @SerialName("google_books_id") val googleBooksId: String? = null,
-    override val title: String,
+    override val title: String = "",
     val author: String = "",
     val description: String? = null,
     @SerialName("cover_url") val coverUrl: String? = null,
@@ -75,6 +75,12 @@ data class Book(
     @SerialName("created_at") override val createdAt: String = "",
 ) : LibraryItem
 
+/**
+ * Collections are never read or written through this serializer: [fr.paulbr.nookmind.core.data.CollectionRepository]
+ * builds them by hand from the joined rows. `book_ids` / `movie_ids` / `series_ids` are derived from
+ * the join table and are NOT columns, so passing one of these to an insert or an update would fail
+ * with an unknown-column error.
+ */
 @Serializable
 data class BookCategory(
     override val id: String,
@@ -101,7 +107,7 @@ data class Movie(
     override val id: String = "",
     @SerialName("user_id") override val userId: String = "",
     @SerialName("tmdb_id") val tmdbId: Int? = null,
-    override val title: String,
+    override val title: String = "",
     val director: String = "",
     val description: String? = null,
     @SerialName("poster_url") val posterUrl: String? = null,
@@ -142,7 +148,7 @@ data class Series(
     override val id: String = "",
     @SerialName("user_id") override val userId: String = "",
     @SerialName("tmdb_id") val tmdbId: Int? = null,
-    override val title: String,
+    override val title: String = "",
     val creator: String = "",
     val description: String? = null,
     @SerialName("poster_url") val posterUrl: String? = null,

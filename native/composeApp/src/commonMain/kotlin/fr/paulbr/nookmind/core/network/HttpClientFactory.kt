@@ -17,6 +17,24 @@ val AppJson: Json = Json {
     explicitNulls = false
 }
 
+/**
+ * JSON used to build the bodies written to Supabase.
+ *
+ * `encodeDefaults` is what separates it from [AppJson]: without it a property still equal to its
+ * declared default is left out of the payload, and a column declared NOT NULL with no DEFAULT then
+ * rejects the row. A book added without an author is exactly that case.
+ *
+ * `explicitNulls` stays off so a nullable property at null is omitted and Postgres applies its own
+ * default, which is what the web app does by sending `undefined`.
+ */
+val DbJson: Json = Json {
+    ignoreUnknownKeys = true
+    isLenient = true
+    coerceInputValues = true
+    explicitNulls = false
+    encodeDefaults = true
+}
+
 /** Ktor picks the platform engine from the classpath (OkHttp on Android, Java on desktop, Darwin on iOS). */
 fun createHttpClient(): HttpClient = HttpClient {
     expectSuccess = false

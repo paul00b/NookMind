@@ -18,15 +18,11 @@ import io.ktor.client.plugins.timeout
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.bodyAsText
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.minus
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 /** Port of src/lib/tmdb.ts (same endpoints, same caching windows, same extraction rules). */
 class TmdbApi(
@@ -244,12 +240,6 @@ class TmdbApi(
         null
     }.getOrNull()
 
-    /** Raw JSON helper for endpoints with a dynamic shape. */
-    suspend fun rawJson(path: String, params: Map<String, String>): JsonObject? = runCatching {
-        val res = getJson(path, params)
-        if (!res.ok) null else AppJson.parseToJsonElement(res.bodyAsText()).jsonObject
-    }.getOrNull()
-
     companion object {
         const val BASE_URL = "https://api.themoviedb.org/3"
         const val IMAGE_BASE = "https://image.tmdb.org/t/p/w500"
@@ -294,11 +284,5 @@ class TmdbApi(
                 nextEpisodeNumber = next?.episodeNumber,
             )
         }
-
-        /** Reads `results` from a raw TMDB page as objects (rarely needed). */
-        fun resultsOf(obj: JsonObject?): List<JsonObject> =
-            obj?.get("results")?.let { el -> runCatching { el.jsonObject }.getOrNull()?.let { listOf(it) } } ?: emptyList()
-
-        fun stringField(obj: JsonObject, key: String): String? = obj[key]?.let { runCatching { it.jsonPrimitive.content }.getOrNull() }
     }
 }

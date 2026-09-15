@@ -160,6 +160,7 @@ Ce qu'il restera à faire, tout le reste étant déjà partagé :
 - **Le trailer YouTube s'affiche dans une WebView**, faute d'iframe. Même lecteur, même comportement, mais le plein écran dépend de la WebView du système.
 - **Le bruit de l'ambiance est une bitmap générée en Kotlin** au lieu d'un filtre SVG `feTurbulence`. Même algorithme (4 octaves, amplitude divisée par deux à chaque passe), même grain à l'œil, mais le motif exact diffère du rendu SVG du navigateur.
 - **Désactiver les notifications supprime vraiment la ligne FCM.** Sur le web, la désactivation ne changeait qu'un état local (`setNativeSubscribed(false)` dans `SettingsPanel.tsx`) : la ligne restait en base et le cron continuait d'envoyer. Deuxième correction du même endroit : les trois préférences (épisodes, saisons, sorties) sont réécrites depuis l'état courant à la réactivation, là où le web les forçait toutes les trois à `true`.
+- **Rien n'est repris du stockage de l'app Capacitor.** Session, thème, mode d'affichage, ordre des sections et drapeau d'onboarding vivaient dans le `localStorage` de la WebView ; l'app native utilise les préférences Android, avec les mêmes clés mais un autre support. À la mise à jour, l'utilisateur se reconnecte une fois et revoit l'onboarding ; sa bibliothèque, elle, est dans Supabase et revient intacte. Lire l'ancien `localStorage` supposerait de parser le LevelDB de la WebView : disproportionné pour une gêne unique.
 - **Les dates sont formatées par `java.time`** sur Android et desktop, pas par `Intl.DateTimeFormat`. Les motifs ont été alignés locale par locale (`d MMM yyyy` en français, `MMMM d, yyyy` en anglais) ; un écart de ponctuation reste possible sur des locales exotiques.
 
 ## 10. Vérification (état exact)
@@ -174,7 +175,7 @@ cible desktop.
 | Vérification | Comment | Résultat |
 |---|---|---|
 | Code partagé (`commonMain`, ~14 600 lignes, 86 fichiers) | Compilé sur la cible desktop JVM | Compile |
-| Logique métier | 40 tests unitaires (`commonTest`) : URLs d'API, aides de formatage, prochain épisode, utilitaires de séries, statistiques de séries | 40 réussis, 0 échec |
+| Logique métier | 47 tests unitaires (`commonTest`) : URLs d'API, aides de formatage, prochain épisode, utilitaires de séries, statistiques de séries, corps des insertions Supabase | 47 réussis, 0 échec |
 | Rendu de chaque écran | 33 captures headless via `ImageComposeScene`, en anglais **et** en français, clair et sombre, plus une mise en page tablette 1024x768 | 33 + 33 rendues et relues une à une |
 | Couche `androidMain` | Module de contrôle de types compilant le code Android contre le jar `android-all` de Robolectric et des stubs androidx/Firebase écrits à la main | Compile |
 | Ressources | Audit des 545 chaînes : 483 utilisées, 62 inutilisées (toutes déjà inutilisées côté web ou propres à des états d'une autre plateforme), 0 manquante | Aucune chaîne absente |
@@ -187,6 +188,17 @@ Deux détails d'outillage, utiles si la chaîne doit être remontée :
 - le contrôle de types de `androidMain` se fait contre le jar `android-all` de Robolectric, qui
   contient le vrai framework Android, complété par des stubs pour ce que Robolectric ne fournit pas
   (Credential Manager, Firebase Messaging, splash screen).
+
+### Parité des API et des colonnes, vérifiée ligne à ligne
+
+Comparaison systématique du code web et du code natif, appel par appel et champ par champ :
+
+- **Colonnes Supabase** : les cinq entités (`books`, `movies`, `series`, les trois tables de collections et leurs tables de jointure, `push_subscriptions`) ont exactement les mêmes noms de colonnes des deux côtés, valeurs d'énumération comprises. Les clés d'upsert des tables de jointure sont identiques.
+- **TMDB** : mêmes chemins, mêmes paramètres, même `append_to_response`, même locale (`fr-FR` / `en-US`), même pagination (`page < 5`), mêmes tailles d'images (`w92`, `w185`, `w300`, `w400`, `w500`) aux mêmes endroits, même repli du trailer sur `en-US`.
+- **Google Books, routes Vercel** : mêmes chemins, mêmes paramètres, mêmes corps de requête, mêmes délais d'expiration (8 s, 10 s, 15 s) et mêmes durées de cache (6 h pour TMDB, 24 h pour IMDb).
+- **Deux différences assumées** : le natif n'appelle pas `/api/push/subscribe` ni `/api/push/unsubscribe`, qui sont la voie web-push du navigateur ; il écrit dans `push_subscriptions` comme le faisait déjà la branche native de la web app. Les recherches par genre et par auteur de la web app n'ont pas d'équivalent natif, mais elles n'ont aucun appelant côté web non plus : la page Discover est un écran « Coming Soon » et la barre de navigation pointe en réalité sur « À suivre ».
+
+Un bug réel est sorti de cette comparaison et a été corrigé : l'encodeur des écritures Supabase omettait les propriétés restées à leur valeur par défaut, ce qui faisait échouer l'ajout d'un livre sans auteur (`books.author` est NOT NULL sans valeur par défaut). Sept tests verrouillent désormais le contenu du corps d'insertion.
 
 ### Ce qui n'a pas pu être vérifié ici
 
