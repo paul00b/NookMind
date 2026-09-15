@@ -45,6 +45,10 @@ cp secrets.properties.example secrets.properties
 
 Puis remplis les six valeurs. Ce sont les mêmes que les variables `VITE_*` du `.env` de la web app :
 
+Le build affiche un avertissement nommant chaque valeur absente et ce qu'elle casse, donc une clé
+oubliée ne passe pas inaperçue. Si tu ne retrouves pas une valeur en local, elle est aussi dans les
+variables d'environnement du projet Vercel qui héberge la web app.
+
 | Clé | Équivalent web |
 |---|---|
 | `SUPABASE_URL` | `VITE_SUPABASE_URL` |
@@ -141,6 +145,9 @@ Les symptômes les plus courants :
 | « La recherche a expiré » sur Livres | `GOOGLE_BOOKS_API_KEY` absente, ou quota Google atteint |
 | L'onglet « À suivre » reste vide en Films et Séries | même cause : il est entièrement alimenté par TMDB |
 | Pas de note IMDb, pas de plateformes de streaming | `API_BASE_URL` absente |
+
+Le build prévient déjà au moment de générer les secrets, avec une ligne par valeur manquante et ce
+qu'elle casse. Si tu as raté ce message, `checkApis` le redit et va jusqu'à l'appel réseau.
 
 L'onglet « À suivre » qui n'affiche rien quand TMDB ne répond pas est le comportement de la web app,
 qui ne rend rien non plus quand les deux listes sont vides. Ce n'est pas un écran cassé.

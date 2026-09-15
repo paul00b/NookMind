@@ -43,6 +43,27 @@ val generateAppSecrets by tasks.registering {
     inputs.properties(values)
     outputs.dir(outDir)
     doLast {
+        // A value that never made it into the build looks like a network failure once the app is
+        // running: the search screens report every error as a timeout. So say it loudly here.
+        val missing = values.filterValues { v ->
+            v.isBlank() || v.startsWith("your_") || v.startsWith("your-") || v.contains("placeholder")
+        }.keys
+        if (missing.isNotEmpty()) {
+            val breaks = mapOf(
+                "SUPABASE_URL" to "sign-in and the whole library",
+                "SUPABASE_ANON_KEY" to "sign-in and the whole library",
+                "API_BASE_URL" to "IMDb ratings, watch providers, account deletion",
+                "GOOGLE_BOOKS_API_KEY" to "book search (it works without a key, but rate limited)",
+                "TMDB_API_KEY" to "movie and series search, and the whole Next Up tab",
+                "GOOGLE_AUTH_WEB_CLIENT_ID" to "Google sign-in",
+            )
+            logger.warn("")
+            logger.warn("NookMind: ${missing.size} value(s) missing from native/secrets.properties:")
+            missing.forEach { logger.warn("  - $it breaks ${breaks[it]}") }
+            logger.warn("  They are in the .env of the web app, same names without the VITE_ prefix.")
+            logger.warn("  Check with: ./gradlew :composeApp:checkApis")
+            logger.warn("")
+        }
         val file = outDir.get().file("fr/paulbr/nookmind/core/config/AppSecrets.kt").asFile
         file.parentFile.mkdirs()
         val body = values.entries.joinToString("\n") { (k, v) ->
