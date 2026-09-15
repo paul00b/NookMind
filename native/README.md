@@ -199,7 +199,7 @@ native/
         feature/       un dossier par domaine : auth, books, movies, series, library,
                        nextup, home, collections, settings, shell, onboarding, legal, common
         composeResources/  strings.xml (en) et values-fr/strings.xml (générés)
-      commonTest/      47 tests unitaires de la logique métier
+      commonTest/      56 tests unitaires de la logique métier
       jvmSharedMain/   actuals partagés Android + desktop (java.time, java.util.Locale)
       androidMain/     Application, MainActivity, Google Sign-In, service FCM, WebView,
                        bitmap de bruit, manifeste, ressources et icônes Android
@@ -245,12 +245,12 @@ les deux apps ont exactement la même silhouette d'icônes.
 ## 6. Tests et captures d'écran
 
 ```bash
-./gradlew :composeApp:desktopTest        # 47 tests de la logique partagée
+./gradlew :composeApp:desktopTest        # 56 tests de la logique partagée
 ./gradlew :composeApp:screenshots        # rend le catalogue en PNG, sans écran
 ./gradlew :composeApp:checkApis          # vérifie les secrets et appelle chaque backend
 ```
 
-Le catalogue de captures (`desktopMain/tools/ScreenshotCatalog.kt`) rend 34 écrans sur des données
+Le catalogue de captures (`desktopMain/tools/ScreenshotCatalog.kt`) rend 35 écrans sur des données
 fictives, en clair et en sombre, pour comparer pixel à pixel avec la web app. Options :
 
 ```bash

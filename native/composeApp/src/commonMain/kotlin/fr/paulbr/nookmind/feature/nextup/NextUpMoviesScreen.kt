@@ -235,7 +235,7 @@ private fun MovieReleaseSection(
                         mode = MediaMode.MOVIES, placeholderIconSize = 24.dp,
                     )
                     Spacer(Modifier.height(8.dp))
-                    Text(movie.title, style = NookTheme.type.sans(14, FontWeight.Medium, 17), color = colors.textStrong, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(movie.title, style = NookTheme.type.sans(14, FontWeight.Medium, 17), color = colors.textStrong, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     movie.releaseDate.takeIf { it.isNotBlank() }?.let { releaseLabel(it) }?.let {
                         Spacer(Modifier.height(2.dp))
                         Text(it, style = NookTheme.type.xs, color = colors.amberText)

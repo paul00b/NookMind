@@ -175,7 +175,7 @@ cible desktop.
 | Vérification | Comment | Résultat |
 |---|---|---|
 | Code partagé (`commonMain`, ~14 600 lignes, 86 fichiers) | Compilé sur la cible desktop JVM | Compile |
-| Logique métier | 47 tests unitaires (`commonTest`) : URLs d'API, aides de formatage, prochain épisode, utilitaires de séries, statistiques de séries, corps des insertions Supabase | 47 réussis, 0 échec |
+| Logique métier | 56 tests unitaires (`commonTest`) : URLs d'API, aides de formatage, prochain épisode, utilitaires de séries, statistiques de séries, corps des insertions Supabase, calcul du glisser-déposer | 56 réussis, 0 échec |
 | Rendu de chaque écran | 33 captures headless via `ImageComposeScene`, en anglais **et** en français, clair et sombre, plus une mise en page tablette 1024x768 | 33 + 33 rendues et relues une à une |
 | Couche `androidMain` | Module de contrôle de types compilant le code Android contre le jar `android-all` de Robolectric et des stubs androidx/Firebase écrits à la main | Compile |
 | Ressources | Audit des 545 chaînes : 483 utilisées, 62 inutilisées (toutes déjà inutilisées côté web ou propres à des états d'une autre plateforme), 0 manquante | Aucune chaîne absente |

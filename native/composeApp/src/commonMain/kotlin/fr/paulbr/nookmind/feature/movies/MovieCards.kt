@@ -65,7 +65,7 @@ fun MovieCard(movie: Movie, onClick: () -> Unit, modifier: Modifier = Modifier, 
         }
         Spacer(Modifier.height(12.dp))
         Column(Modifier.padding(horizontal = 8.dp).padding(bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(movie.title, style = NookTheme.type.cardTitleSerif, color = NookTheme.colors.textStrong, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(movie.title, style = NookTheme.type.cardTitleSerif, color = NookTheme.colors.textStrong, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(movie.director, style = NookTheme.type.xs, color = NookTheme.colors.textSubtle, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (movie.status == MovieStatus.WATCHED && movie.rating != null) StarRating(movie.rating, size = 13.dp)
         }

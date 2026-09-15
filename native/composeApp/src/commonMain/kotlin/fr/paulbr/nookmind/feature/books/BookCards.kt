@@ -72,7 +72,7 @@ fun BookCard(book: Book, onClick: () -> Unit, modifier: Modifier = Modifier, onR
         }
         Spacer(Modifier.height(12.dp))
         Column(Modifier.padding(horizontal = 8.dp).padding(bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(book.title, style = NookTheme.type.cardTitleSerif, color = NookTheme.colors.textStrong, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(book.title, style = NookTheme.type.cardTitleSerif, color = NookTheme.colors.textStrong, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(book.author, style = NookTheme.type.xs, color = NookTheme.colors.textSubtle, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (book.status == BookStatus.READ && book.rating != null) StarRating(book.rating, size = 13.dp)
         }

@@ -10,6 +10,7 @@ import fr.paulbr.nookmind.app.AppContainer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
 import fr.paulbr.nookmind.core.designsystem.NookTheme
 import fr.paulbr.nookmind.core.designsystem.components.ModeAmbianceBackground
@@ -68,6 +69,27 @@ object ScreenshotCatalog {
 
     val entries: List<ScreenshotEntry> = listOf(
         ScreenshotEntry("smoke") { App(container) },
+        // The mode icons, large, to check the generated Lucide vectors against lucide.dev.
+        ScreenshotEntry("icons", widthDp = 256, heightDp = 120) {
+            NookTheme(ThemeMode.LIGHT, MediaMode.BOOKS) {
+                Box(Modifier.fillMaxSize().background(NookTheme.colors.background)) {
+                    androidx.compose.foundation.layout.Row(
+                        Modifier.fillMaxSize(),
+                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceEvenly,
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                    ) {
+                        MediaMode.entries.forEach { m ->
+                            androidx.compose.material3.Icon(
+                                fr.paulbr.nookmind.core.designsystem.components.modeIcon(m),
+                                contentDescription = m.name,
+                                modifier = Modifier.size(64.dp),
+                                tint = NookTheme.colors.textStrong,
+                            )
+                        }
+                    }
+                }
+            }
+        },
         // Background layer alone, to compare the grain with the web app's `.mode-bg-*`.
         ScreenshotEntry("ambiance", widthDp = 256, heightDp = 256) {
             NookTheme(ThemeMode.LIGHT, MediaMode.BOOKS) {

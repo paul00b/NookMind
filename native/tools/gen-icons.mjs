@@ -128,6 +128,70 @@ function elementToPath(tag, attrs) {
   }
 }
 
+// Compose's `addPathNodes` reads path data with a greedy number tokenizer, so the compact SVG arc
+// notation, where the two flags are packed against the coordinate that follows ("A2 2 0 0022 17"),
+// parses as one number instead of three and the icon comes out mangled. Lucide ships paths in that
+// form. Re-spacing every arc argument is valid SVG and makes both parsers agree.
+//
+// An arc takes seven arguments (rx ry rot large-arc sweep x y) and a single command letter may be
+// followed by several such groups, so the flags have to be read positionally rather than by regex.
+function normalizeArcArgs(args) {
+  const groups = [];
+  let i = 0;
+  const skip = () => { while (i < args.length && /[\s,]/.test(args[i])) i++; };
+  const readNumber = () => {
+    skip();
+    const m = /^-?\d*\.?\d+(?:[eE][-+]?\d+)?/.exec(args.slice(i));
+    if (!m) return null;
+    i += m[0].length;
+    return m[0];
+  };
+  // A flag is exactly one character, 0 or 1, whatever follows it.
+  const readFlag = () => {
+    skip();
+    if (i >= args.length || (args[i] !== '0' && args[i] !== '1')) return null;
+    return args[i++];
+  };
+  while (i < args.length) {
+    const group = [readNumber(), readNumber(), readNumber(), readFlag(), readFlag(), readNumber(), readNumber()];
+    if (group.some((v) => v === null)) return null;
+    groups.push(group.join(' '));
+    skip();
+  }
+  return groups.join(' ');
+}
+
+function normalizePathData(d) {
+  return d
+    .replace(/([Aa])([^A-Za-z]*)/g, (whole, cmd, args) => {
+      const normalized = normalizeArcArgs(args);
+      return normalized === null ? whole : `${cmd} ${normalized} `;
+    })
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Guard against the bug this normaliser exists for: re-read every emitted path the way Compose
+// does, with a greedy number tokenizer, and refuse to write a file whose arcs would not survive it.
+function assertArcsSurviveGreedyTokenizer(name, d) {
+  for (const m of d.matchAll(/([Aa])([^A-Za-z]*)/g)) {
+    const nums = m[2].match(/-?\d*\.?\d+(?:[eE][-+]?\d+)?/g) || [];
+    if (nums.length === 0 || nums.length % 7 !== 0) {
+      throw new Error(
+        `${name}: an arc command reads as ${nums.length} numbers, which is not a multiple of 7. ` +
+        `The flags are probably packed against the next coordinate. Path: ${d}`,
+      );
+    }
+    for (let i = 0; i < nums.length; i += 7) {
+      for (const flag of [nums[i + 3], nums[i + 4]]) {
+        if (flag !== '0' && flag !== '1') {
+          throw new Error(`${name}: arc flag "${flag}" is not 0 or 1. Path: ${d}`);
+        }
+      }
+    }
+  }
+}
+
 function parseSvg(svg) {
   const body = svg.replace(/<!--[\s\S]*?-->/g, '');
   const elements = [];
@@ -139,7 +203,7 @@ function parseSvg(svg) {
     let a;
     while ((a = attrRe.exec(m[2])) !== null) attrs[a[1]] = a[2];
     const d = elementToPath(m[1], attrs);
-    if (d) elements.push(d);
+    if (d) elements.push(normalizePathData(d));
   }
   return elements;
 }
@@ -190,6 +254,7 @@ for (const [kotlinName, file] of Object.entries(ICONS)) {
   const svg = readFileSync(join(iconsDir, `${file}.svg`), 'utf8');
   const paths = parseSvg(svg);
   if (paths.length === 0) throw new Error(`No drawable elements in ${file}.svg`);
+  paths.forEach((d) => assertArcsSurviveGreedyTokenizer(kotlinName, d));
   const list = paths.map((d) => `"${d.replace(/"/g, '\\"')}"`).join(', ');
   out.push(`    val ${kotlinName}: ImageVector by lazy { lucide("${kotlinName}", listOf(${list})) }`);
 }
