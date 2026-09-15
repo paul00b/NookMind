@@ -47,6 +47,7 @@ Le projet est structuré pour laisser les deux options ouvertes : la logique n'a
 | Coil | 3.3.0 | Chargement d'images multiplateforme (build compatible Compose 1.8.x). |
 | kotlinx.serialization / datetime / coroutines | 1.11.0 / 0.8.0 / 1.11.0 | |
 | multiplatform-settings | 1.3.0 | Remplace `localStorage`/`sessionStorage`. |
+| Haze | 1.6.10 | Flou d'arrière-plan du dock et du sélecteur de mode (verre dépoli), absent de Compose 1.8. |
 | Firebase Messaging (BoM 34) + Credential Manager 1.5 + googleid | Android uniquement | Push FCM et connexion Google native. |
 
 ## 3. Architecture
@@ -154,7 +155,8 @@ Ce qu'il restera à faire, tout le reste étant déjà partagé :
 
 Écarts volontaires entre la web app et l'app native, tous vérifiés écran par écran :
 
-- **Pas de flou d'arrière-plan** (`backdrop-blur`) derrière les pilules de navigation : Compose n'a pas d'équivalent stable et peu coûteux. Le fond opaque à 85 % est identique au web, le flou en moins.
+- **Le flou d'arrière-plan des pilules de navigation passe par Haze** (`dev.chrisbanes.haze`), Compose n'ayant pas d'équivalent natif en 1.8. Le dock et le sélecteur de mode sont donc du vrai verre dépoli : le contenu derrière est flouté à 32 dp et teinté à 45 %, sans le grain que la bibliothèque peut ajouter. Sous Android 12, faute de `RenderEffect`, Haze retombe sur une teinte opaque proche de l'ancien rendu.
+- **Les voiles des feuilles et des dialogues n'ont pas de flou.** Le web y met un `backdrop-blur-xs`, soit 2 px, invisible à l'œil ; le voile sombre est identique, le flou en moins.
 - **Pas de prompt « Installer l'application » ni de service worker** : ces deux écrans n'ont plus d'objet une fois l'app installée depuis le store. `InstallPromptSheet` n'est donc pas porté ; `NotificationPromptSheet`, lui, l'est.
 - **Le nom d'affichage modifié dans les réglages est persisté** dans les métadonnées Supabase de l'utilisateur. Sur le web il ne l'était pas : la modification disparaissait au rechargement. C'était un bug, il est corrigé ici.
 - **Le trailer YouTube s'affiche dans une WebView**, faute d'iframe. Même lecteur, même comportement, mais le plein écran dépend de la WebView du système.

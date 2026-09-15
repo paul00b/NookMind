@@ -153,6 +153,7 @@ kotlin {
                 implementation(libs.coil.network.ktor)
 
                 implementation(libs.multiplatform.settings)
+                implementation(libs.haze)
             }
         }
 

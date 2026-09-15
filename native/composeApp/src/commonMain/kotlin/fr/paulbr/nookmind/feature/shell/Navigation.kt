@@ -36,6 +36,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.hazeEffect
 import fr.paulbr.nookmind.app.AppContainer
 import fr.paulbr.nookmind.core.data.AuthState
 import fr.paulbr.nookmind.core.designsystem.NookShapes
@@ -82,9 +86,27 @@ fun tabIcon(tab: MainTab): ImageVector = when (tab) {
     MainTab.NEXT_UP -> LucideIcons.Compass
 }
 
-/** Translucent pill background of the floating navigation (`bg-white/85 dark:bg-[#1a1f2e]/85`). */
+/**
+ * Frosted glass of the floating navigation: the content behind is blurred and tinted, instead of
+ * the flat `bg-white/85` of the web app, which has no equivalent in Compose.
+ *
+ * `noiseFactor` is zero on purpose. Haze can sprinkle grain over the blur, and that grain is what
+ * made the ambiance look sandblasted before it was removed.
+ *
+ * `fallbackTint` is what Android below API 31 gets: there is no RenderEffect there, so the pill
+ * falls back to the opaque-ish tint the app used before. Everywhere else it is a real blur.
+ */
 @Composable
-private fun pillBackground(): Color = NookTheme.colors.surface.copy(alpha = 0.85f)
+private fun frostedPill(): HazeStyle {
+    val surface = NookTheme.colors.surface
+    return HazeStyle(
+        backgroundColor = surface,
+        tints = listOf(HazeTint(surface.copy(alpha = if (NookTheme.colors.isDark) 0.42f else 0.45f))),
+        blurRadius = 32.dp,
+        noiseFactor = 0f,
+        fallbackTint = HazeTint(surface.copy(alpha = 0.92f)),
+    )
+}
 
 /** Port of BottomNav.tsx: mode pill on top of the three-tab pill, floating 16 dp above the bottom. */
 @Composable
@@ -93,9 +115,11 @@ fun BottomNav(
     onMode: (MediaMode) -> Unit,
     tab: MainTab,
     onTab: (MainTab) -> Unit,
+    hazeState: HazeState,
     modifier: Modifier = Modifier,
 ) {
     val colors = NookTheme.colors
+    val frosted = frostedPill()
     Column(
         modifier
             .fillMaxWidth()
@@ -109,7 +133,7 @@ fun BottomNav(
             Modifier
                 .shadow(6.dp, NookShapes.full, ambientColor = Palette.Black.copy(alpha = 0.15f), spotColor = Palette.Black.copy(alpha = 0.15f))
                 .clip(NookShapes.full)
-                .background(pillBackground(), NookShapes.full)
+                .hazeEffect(hazeState, frosted)
                 .border(1.dp, colors.border, NookShapes.full)
                 .padding(4.dp),
             horizontalArrangement = Arrangement.spacedBy(2.dp),
@@ -143,7 +167,7 @@ fun BottomNav(
                 .fillMaxWidth()
                 .shadow(10.dp, NookShapes.full, ambientColor = Palette.Black.copy(alpha = 0.2f), spotColor = Palette.Black.copy(alpha = 0.2f))
                 .clip(NookShapes.full)
-                .background(pillBackground(), NookShapes.full)
+                .hazeEffect(hazeState, frosted)
                 .border(1.dp, colors.border, NookShapes.full),
         ) {
             MainTab.entries.forEach { t ->

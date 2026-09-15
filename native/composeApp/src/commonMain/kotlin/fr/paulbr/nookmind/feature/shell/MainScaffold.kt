@@ -36,6 +36,8 @@ import fr.paulbr.nookmind.core.designsystem.components.ModeAmbianceBackground
 import fr.paulbr.nookmind.core.designsystem.components.ToastHost
 import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.core.platform.exitApplication
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import fr.paulbr.nookmind.feature.common.LocalWideLayout
 import androidx.compose.runtime.CompositionLocalProvider
 import fr.paulbr.nookmind.feature.home.BooksHomeScreen
@@ -111,32 +113,41 @@ fun MainScaffold(
 
     BoxWithConstraints(Modifier.fillMaxSize().background(NookTheme.colors.background)) {
         val wide = maxWidth >= TABLET_BREAKPOINT_DP.dp
-        ModeAmbianceBackground(mode)
+        // Everything the floating navigation blurs behind itself is drawn inside this source layer:
+        // the mode halo and the scrolling content. The navigation itself sits outside it, otherwise
+        // it would blur its own reflection.
+        val hazeState = rememberHazeState()
 
         CompositionLocalProvider(LocalWideLayout provides wide) {
-        if (wide) {
-            Row(Modifier.fillMaxSize()) {
-                Sidebar(container = container, tab = tab, onTab = { tab = it }, onOpenSettings = { settingsOpen = true })
-                Box(Modifier.weight(1f)) {
-                    ModeContent(container, mode, tab, bottomPadding = 0.dp)
+        Box(Modifier.fillMaxSize().hazeSource(hazeState)) {
+            ModeAmbianceBackground(mode)
+            if (wide) {
+                Row(Modifier.fillMaxSize()) {
+                    Sidebar(container = container, tab = tab, onTab = { tab = it }, onOpenSettings = { settingsOpen = true })
+                    Box(Modifier.weight(1f)) {
+                        ModeContent(container, mode, tab, bottomPadding = 0.dp)
+                    }
+                }
+            } else {
+                Column(Modifier.fillMaxSize()) {
+                    MobileTopBar(container = container, onOpenSettings = { settingsOpen = true })
+                    SwipeableModeArea(
+                        mode = mode,
+                        onModeChange = { container.prefs.setMediaMode(it) },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        ModeContent(container, mode, tab, bottomPadding = BOTTOM_NAV_CLEARANCE.dp)
+                    }
                 }
             }
-        } else {
-            Column(Modifier.fillMaxSize()) {
-                MobileTopBar(container = container, onOpenSettings = { settingsOpen = true })
-                SwipeableModeArea(
-                    mode = mode,
-                    onModeChange = { container.prefs.setMediaMode(it) },
-                    modifier = Modifier.weight(1f),
-                ) {
-                    ModeContent(container, mode, tab, bottomPadding = BOTTOM_NAV_CLEARANCE.dp)
-                }
-            }
+        }
+        if (!wide) {
             BottomNav(
                 mode = mode,
                 onMode = { container.prefs.setMediaMode(it) },
                 tab = tab,
                 onTab = { tab = it },
+                hazeState = hazeState,
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }

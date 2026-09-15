@@ -15,6 +15,7 @@ ktor = "3.5.2"
 supabase = "3.8.0"
 coil = "3.3.0"
 multiplatform-settings = "1.3.0"
+haze = "1.6.10"
 
 # Android only
 androidx-activity = "1.11.0"
@@ -47,6 +48,7 @@ coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" 
 coil-network-ktor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
 
 multiplatform-settings = { module = "com.russhwolf:multiplatform-settings", version.ref = "multiplatform-settings" }
+haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
 
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "androidx-core-splashscreen" }
