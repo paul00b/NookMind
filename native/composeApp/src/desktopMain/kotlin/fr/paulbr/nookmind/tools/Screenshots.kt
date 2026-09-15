@@ -51,8 +51,13 @@ object Screenshots {
 }
 
 fun main(args: Array<String>) {
-    val outDir = File(args.firstOrNull() ?: "build/screenshots")
-    val only = args.drop(1).toSet()
+    // `--locale=fr` renders the French copy (Compose resources follow the JVM default locale).
+    args.firstOrNull { it.startsWith("--locale=") }?.substringAfter('=')?.let { tag ->
+        java.util.Locale.setDefault(java.util.Locale.forLanguageTag(tag))
+    }
+    val positional = args.filterNot { it.startsWith("--") }
+    val outDir = File(positional.firstOrNull() ?: "build/screenshots")
+    val only = positional.drop(1).toSet()
     val entries = ScreenshotCatalog.entries.filter { only.isEmpty() || it.name in only }
     entries.forEach { entry ->
         val file = File(outDir, "${entry.name}.png")

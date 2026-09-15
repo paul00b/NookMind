@@ -170,4 +170,10 @@ class CollectionRepository<T : CollectionItem>(
     }
 
     private fun rebuild(item: T, ids: List<String>): T = build(item.id, item.userId, item.title, item.createdAt, ids)
+
+    /** Replaces the whole in-memory list without touching the network (previews, screenshots). */
+    fun seedLocal(items: List<T>) {
+        _items.value = items
+        _loading.value = false
+    }
 }

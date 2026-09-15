@@ -6,19 +6,17 @@ import org.jetbrains.skia.ColorAlphaType
 import org.jetbrains.skia.ColorType
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.ImageInfo
-import kotlin.random.Random
 
 actual fun noiseImageBitmap(size: Int, seed: Int): ImageBitmap {
-    val random = Random(seed)
+    val pixels = noisePixels(size, seed)
     val bytes = ByteArray(size * size * 4)
     var i = 0
-    repeat(size * size) {
-        val v = random.nextInt(256).toByte()
-        bytes[i++] = v // B
-        bytes[i++] = v // G
-        bytes[i++] = v // R
-        bytes[i++] = 0xFF.toByte()
+    for (argb in pixels) {
+        bytes[i++] = (argb and 0xFF).toByte() // B
+        bytes[i++] = ((argb shr 8) and 0xFF).toByte() // G
+        bytes[i++] = ((argb shr 16) and 0xFF).toByte() // R
+        bytes[i++] = ((argb ushr 24) and 0xFF).toByte() // A
     }
-    val info = ImageInfo(size, size, ColorType.BGRA_8888, ColorAlphaType.PREMUL)
+    val info = ImageInfo(size, size, ColorType.BGRA_8888, ColorAlphaType.UNPREMUL)
     return Image.makeRaster(info, bytes, size * 4).toComposeImageBitmap()
 }

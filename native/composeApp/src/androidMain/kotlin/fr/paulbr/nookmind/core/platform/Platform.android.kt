@@ -1,6 +1,8 @@
 package fr.paulbr.nookmind.core.platform
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.SharedPreferencesSettings
@@ -23,4 +25,11 @@ actual fun exitApplication() {
 
 actual fun logDebug(tag: String, message: String, throwable: Throwable?) {
     if (throwable != null) Log.d(tag, message, throwable) else Log.d(tag, message)
+}
+
+actual fun openExternalUrl(url: String) {
+    runCatching {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        AndroidContextHolder.appContext.startActivity(intent)
+    }.onFailure { Log.w("platform", "cannot open $url", it) }
 }

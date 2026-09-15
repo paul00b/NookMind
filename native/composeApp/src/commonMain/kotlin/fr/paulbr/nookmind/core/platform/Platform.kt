@@ -41,3 +41,6 @@ expect fun exitApplication()
 
 /** Debug logging that reaches Logcat / the console. */
 expect fun logDebug(tag: String, message: String, throwable: Throwable? = null)
+
+/** Opens [url] in the system browser / the app registered for it (`window.open` / `<a target=_blank>`). */
+expect fun openExternalUrl(url: String)

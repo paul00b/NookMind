@@ -196,13 +196,13 @@ for (const dict of [en, fr]) {
 
 const resName = (key) => key.replace(/\./g, '_');
 
+// Compose Multiplatform resources read the XML text as-is (no aapt-style unescaping of \' and \"),
+// so only the XML entities are escaped.
 function escapeXml(s) {
   return s
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/'/g, "\\'")
-    .replace(/"/g, '\\"');
+    .replace(/>/g, '&gt;');
 }
 
 // Build the parameter order per base key from the English text (fallback: French).

@@ -243,3 +243,20 @@ compose.resources {
     packageOfResClass = "fr.paulbr.nookmind.resources"
     generateResClass = always
 }
+
+/** Renders [fr.paulbr.nookmind.tools.ScreenshotCatalog] to PNG files, headless (design review, CI). */
+val screenshots by tasks.registering(JavaExec::class) {
+    group = "nookmind"
+    description = "Render the ScreenshotCatalog to PNG files (headless): -PoutDir=… -Ponly=a,b -Plocale=fr"
+    val desktopTarget = kotlin.targets.getByName("desktop") as org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
+    val mainCompilation = desktopTarget.compilations.getByName("main")
+    dependsOn(mainCompilation.compileTaskProvider)
+    classpath(mainCompilation.output.allOutputs, mainCompilation.runtimeDependencyFiles)
+    mainClass.set("fr.paulbr.nookmind.tools.ScreenshotsKt")
+    systemProperty("java.awt.headless", "true")
+    args(
+        listOf(project.findProperty("outDir")?.toString() ?: "build/screenshots") +
+            (project.findProperty("only")?.toString()?.split(",") ?: emptyList()) +
+            listOfNotNull(project.findProperty("locale")?.toString()?.let { "--locale=$it" }),
+    )
+}

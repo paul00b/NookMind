@@ -105,7 +105,7 @@ fun PrimaryButton(
             Icon(icon, contentDescription = null, modifier = Modifier.size(iconSize))
             Spacer8()
         }
-        Text(text, style = textStyle, maxLines = 1)
+        Text(text, style = textStyle, maxLines = 2, textAlign = androidx.compose.ui.text.style.TextAlign.Center, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
     }
 }
 
@@ -135,7 +135,7 @@ fun GhostButton(
             Icon(icon, contentDescription = null, modifier = Modifier.size(iconSize))
             Spacer8()
         }
-        Text(text, style = textStyle, maxLines = 1)
+        Text(text, style = textStyle, maxLines = 2, textAlign = androidx.compose.ui.text.style.TextAlign.Center, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
     }
 }
 

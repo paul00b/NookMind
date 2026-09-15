@@ -20,8 +20,34 @@ import fr.paulbr.nookmind.core.designsystem.NookTheme
 import fr.paulbr.nookmind.core.designsystem.Palette
 import fr.paulbr.nookmind.core.model.MediaMode
 
-/** 256 x 256 grayscale fractal-ish noise tile (the SVG `feTurbulence` of `mode-bg-*`). */
+/** 256 x 256 RGBA noise tile (the SVG `feTurbulence type="fractalNoise"` of `mode-bg-*`). */
 expect fun noiseImageBitmap(size: Int = 256, seed: Int = 7): ImageBitmap
+
+/**
+ * Pixels of the noise tile as non-premultiplied ARGB ints. Mirrors `feTurbulence` with
+ * `baseFrequency=0.9 numOctaves=4`: every channel, alpha included, is an independent fractal sum
+ * of four octaves (amplitudes 1, 1/2, 1/4, 1/8) mapped from [-1, 1] to [0, 1]. At 0.9 cycles per
+ * pixel the lattice is finer than a pixel, so each pixel is effectively an independent sample.
+ */
+fun noisePixels(size: Int, seed: Int): IntArray {
+    val random = kotlin.random.Random(seed)
+    fun channel(): Int {
+        var sum = 0f
+        var amplitude = 1f
+        repeat(4) {
+            sum += (random.nextFloat() * 2f - 1f) * amplitude
+            amplitude /= 2f
+        }
+        return (((sum + 1f) / 2f).coerceIn(0f, 1f) * 255f).toInt()
+    }
+    return IntArray(size * size) {
+        val r = channel()
+        val g = channel()
+        val b = channel()
+        val a = channel()
+        (a shl 24) or (r shl 16) or (g shl 8) or b
+    }
+}
 
 fun modeGlowColor(mode: MediaMode): Color = when (mode) {
     MediaMode.BOOKS -> Palette.Amber500
@@ -61,7 +87,7 @@ fun ModeAmbianceBackground(mode: MediaMode, modifier: Modifier = Modifier) {
         }
         drawRect(
             brush = ShaderBrush(ImageShader(noise, TileMode.Repeated, TileMode.Repeated)),
-            alpha = layerAlpha * 0.9f,
+            alpha = layerAlpha,
         )
     }
 }

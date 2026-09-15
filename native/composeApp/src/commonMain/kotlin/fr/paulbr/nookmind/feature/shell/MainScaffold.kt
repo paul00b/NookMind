@@ -36,6 +36,8 @@ import fr.paulbr.nookmind.core.designsystem.components.ModeAmbianceBackground
 import fr.paulbr.nookmind.core.designsystem.components.ToastHost
 import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.core.platform.exitApplication
+import fr.paulbr.nookmind.feature.common.LocalWideLayout
+import androidx.compose.runtime.CompositionLocalProvider
 import fr.paulbr.nookmind.feature.home.BooksHomeScreen
 import fr.paulbr.nookmind.feature.home.MoviesHomeScreen
 import fr.paulbr.nookmind.feature.home.SeriesHomeScreen
@@ -66,9 +68,10 @@ fun MainScaffold(
     container: AppContainer,
     onOpenLegal: (LegalKind) -> Unit,
     onReplayOnboarding: () -> Unit,
+    initialTab: MainTab = MainTab.SEARCH,
 ) {
     val mode by container.prefs.mediaMode.collectAsState()
-    var tab by rememberSaveable { mutableStateOf(MainTab.SEARCH) }
+    var tab by rememberSaveable { mutableStateOf(initialTab) }
     var settingsOpen by rememberSaveable { mutableStateOf(false) }
     var notifPromptOpen by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -110,6 +113,7 @@ fun MainScaffold(
         val wide = maxWidth >= TABLET_BREAKPOINT_DP.dp
         ModeAmbianceBackground(mode)
 
+        CompositionLocalProvider(LocalWideLayout provides wide) {
         if (wide) {
             Row(Modifier.fillMaxSize()) {
                 Sidebar(container = container, tab = tab, onTab = { tab = it }, onOpenSettings = { settingsOpen = true })
@@ -160,6 +164,7 @@ fun MainScaffold(
                     container.prefs.notificationPrompted = true
                 },
             )
+        }
         }
     }
     // Keep the coroutine scope referenced for future shell-level work.

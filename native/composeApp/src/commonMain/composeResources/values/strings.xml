@@ -128,7 +128,7 @@
     <string name="common_back">Back</string>
     <string name="common_cancel">Cancel</string>
     <string name="common_close">Close</string>
-    <string name="common_collectionDeleted">\"%1$s\" deleted</string>
+    <string name="common_collectionDeleted">"%1$s" deleted</string>
     <string name="common_defaultDisplayName">Reader</string>
     <string name="common_episodeNumber">Episode %1$d</string>
     <string name="common_exitApp">Press back again to exit</string>
@@ -158,7 +158,7 @@
     <string name="discover_title">Next Up</string>
     <string name="home_addManually">Add manually</string>
     <string name="home_lastRead">Last read</string>
-    <string name="home_noBooksFound">No books found for \"%1$s\"</string>
+    <string name="home_noBooksFound">No books found for "%1$s"</string>
     <string name="home_or">or</string>
     <string name="home_searchPlaceholder">Search by title, author, or ISBN...</string>
     <string name="home_searchTimeout">Search timed out. Please try again.</string>
@@ -183,9 +183,9 @@
     </plurals>
     <string name="library_cancel">Cancel</string>
     <string name="library_categoryEmpty">This collection is empty.</string>
-    <string name="library_categoryEmptyDesc">Click \"Add books\" to add books from your library.</string>
+    <string name="library_categoryEmptyDesc">Click "Add books" to add books from your library.</string>
     <string name="library_confirmAdd">Add to collection</string>
-    <string name="library_confirmDeleteCategory">Delete \"%1$s\"?</string>
+    <string name="library_confirmDeleteCategory">Delete "%1$s"?</string>
     <string name="library_dateAdded">Date added</string>
     <string name="library_deleteCategory">Delete collection</string>
     <string name="library_emptyReadingList">Your reading list is empty</string>
@@ -251,7 +251,7 @@
     <string name="movieHome_categoryTrending">Trending</string>
     <string name="movieHome_inWatchlist">In watchlist</string>
     <string name="movieHome_lastWatched">Last watched</string>
-    <string name="movieHome_noMoviesFound">No movies found for \"%1$s\"</string>
+    <string name="movieHome_noMoviesFound">No movies found for "%1$s"</string>
     <string name="movieHome_or">or</string>
     <string name="movieHome_searchPlaceholder">Search by title, director...</string>
     <string name="movieHome_searchTimeout">Search timed out. Please try again.</string>
@@ -267,9 +267,9 @@
     <string name="movieLibrary_alreadyInCategory">Already added</string>
     <string name="movieLibrary_cancel">Cancel</string>
     <string name="movieLibrary_categoryEmpty">This collection is empty.</string>
-    <string name="movieLibrary_categoryEmptyDesc">Click \"Add movies\" to add movies from your watchlist.</string>
+    <string name="movieLibrary_categoryEmptyDesc">Click "Add movies" to add movies from your watchlist.</string>
     <string name="movieLibrary_confirmAdd">Add to collection</string>
-    <string name="movieLibrary_confirmDeleteCategory">Delete \"%1$s\"?</string>
+    <string name="movieLibrary_confirmDeleteCategory">Delete "%1$s"?</string>
     <string name="movieLibrary_dateAdded">Date added</string>
     <string name="movieLibrary_directorAZ">Director A→Z</string>
     <plurals name="movieLibrary_moviesCount">
@@ -322,7 +322,7 @@
     <string name="nextUp_noEpisodeOverview">No synopsis is available for this episode yet.</string>
     <string name="nextUp_noMovieOverview">No synopsis is available for this movie yet.</string>
     <string name="nextUp_noReading">No book in progress.</string>
-    <string name="nextUp_noWatching">Mark a series as \'Watching\' to see your next episodes here.</string>
+    <string name="nextUp_noWatching">Mark a series as 'Watching' to see your next episodes here.</string>
     <string name="nextUp_openMovieDetails">Open details for %1$s</string>
     <string name="nextUp_pageOf">Page %1$d / %2$d</string>
     <string name="nextUp_pageOnly">Page %1$d</string>
@@ -437,7 +437,7 @@
     <string name="seriesHome_categoryTrending">Trending</string>
     <string name="seriesHome_inList">In list</string>
     <string name="seriesHome_lastWatched">Recently finished</string>
-    <string name="seriesHome_noSeriesFound">No series found for \"%1$s\"</string>
+    <string name="seriesHome_noSeriesFound">No series found for "%1$s"</string>
     <string name="seriesHome_or">or</string>
     <string name="seriesHome_searchPlaceholder">Search by title, creator...</string>
     <string name="seriesHome_searchTimeout">Search timed out. Please try again.</string>
@@ -455,9 +455,9 @@
     <string name="seriesLibrary_alreadyInCategory">Already added</string>
     <string name="seriesLibrary_cancel">Cancel</string>
     <string name="seriesLibrary_categoryEmpty">This collection is empty.</string>
-    <string name="seriesLibrary_categoryEmptyDesc">Click \"Add series\" to add series from your list.</string>
+    <string name="seriesLibrary_categoryEmptyDesc">Click "Add series" to add series from your list.</string>
     <string name="seriesLibrary_confirmAdd">Add to collection</string>
-    <string name="seriesLibrary_confirmDeleteCategory">Delete \"%1$s\"?</string>
+    <string name="seriesLibrary_confirmDeleteCategory">Delete "%1$s"?</string>
     <string name="seriesLibrary_creatorAZ">Creator A→Z</string>
     <string name="seriesLibrary_dateAdded">Date added</string>
     <string name="seriesLibrary_newCategory">+ New collection</string>

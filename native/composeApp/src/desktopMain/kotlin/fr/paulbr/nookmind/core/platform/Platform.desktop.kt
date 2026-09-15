@@ -17,3 +17,9 @@ actual fun logDebug(tag: String, message: String, throwable: Throwable?) {
     println("[$tag] $message")
     throwable?.printStackTrace()
 }
+
+actual fun openExternalUrl(url: String) {
+    runCatching {
+        if (java.awt.Desktop.isDesktopSupported()) java.awt.Desktop.getDesktop().browse(java.net.URI(url))
+    }.onFailure { println("[platform] cannot open $url: ${it.message}") }
+}

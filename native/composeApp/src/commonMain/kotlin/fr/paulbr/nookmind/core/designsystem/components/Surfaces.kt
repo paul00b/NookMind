@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -214,3 +215,18 @@ enum class BannerTone { ERROR, SUCCESS, WARNING, NEUTRAL }
 fun PosterFrame(width: Dp, modifier: Modifier = Modifier, shape: Shape = NookShapes.xl, content: @Composable BoxScope.() -> Unit) {
     Box(modifier.width(width).aspectRatio(2f / 3f).clip(shape), content = content)
 }
+
+/** `border-dashed` rounded border (used by the "next to read" card). */
+@Composable
+fun Modifier.dashedBorder(color: Color, shape: androidx.compose.foundation.shape.RoundedCornerShape = NookShapes.xl2, width: Dp = 1.dp): Modifier =
+    this.drawBehind {
+        val stroke = width.toPx()
+        val radius = shape.topStart.toPx(size, this)
+        drawRoundRect(
+            color = color,
+            topLeft = androidx.compose.ui.geometry.Offset(stroke / 2f, stroke / 2f),
+            size = androidx.compose.ui.geometry.Size(size.width - stroke, size.height - stroke),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(radius, radius),
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(6f, 4f))),
+        )
+    }

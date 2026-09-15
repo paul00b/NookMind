@@ -139,4 +139,10 @@ class LibraryRepository<T : LibraryItem>(
 
     /** Local-only replacement (used after silent background refreshes). */
     fun replaceLocal(item: T) = _items.update { replaceItemById(it, item) { row -> row.id } }
+
+    /** Replaces the whole in-memory list without touching the network (previews, screenshots). */
+    fun seedLocal(items: List<T>) {
+        _items.value = items
+        _loading.value = false
+    }
 }
