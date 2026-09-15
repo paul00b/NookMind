@@ -45,9 +45,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageShader
-import androidx.compose.ui.graphics.ShaderBrush
-import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -58,7 +55,6 @@ import fr.paulbr.nookmind.core.designsystem.NookTheme
 import fr.paulbr.nookmind.core.designsystem.Palette
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
 import fr.paulbr.nookmind.resources.Res
-import fr.paulbr.nookmind.resources.ambiance_noise
 import fr.paulbr.nookmind.resources.logo
 import fr.paulbr.nookmind.resources.onboarding_getStarted
 import fr.paulbr.nookmind.resources.onboarding_skip
@@ -68,7 +64,6 @@ import fr.paulbr.nookmind.resources.onboarding_slide2Body
 import fr.paulbr.nookmind.resources.onboarding_slide2Title
 import fr.paulbr.nookmind.resources.onboarding_slide3Body
 import fr.paulbr.nookmind.resources.onboarding_slide3Title
-import org.jetbrains.compose.resources.imageResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -142,7 +137,6 @@ fun OnboardingScreen(onFinish: () -> Unit) {
 
 @Composable
 private fun OnboardingSlide(title: String, body: String, gradientColor: Color, illustration: @Composable () -> Unit) {
-    val noise = imageResource(Res.drawable.ambiance_noise)
     Box(Modifier.fillMaxSize().background(Palette.Night)) {
         Canvas(Modifier.fillMaxSize()) {
             val w = size.width
@@ -156,7 +150,6 @@ private fun OnboardingSlide(title: String, body: String, gradientColor: Color, i
                     center = center,
                 )
             }
-            drawRect(ShaderBrush(ImageShader(noise, TileMode.Repeated, TileMode.Repeated)), alpha = 0.08f)
         }
         Column(
             Modifier.fillMaxSize().padding(horizontal = 32.dp),

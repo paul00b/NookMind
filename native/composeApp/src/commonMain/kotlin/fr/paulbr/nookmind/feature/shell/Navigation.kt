@@ -170,9 +170,10 @@ fun MobileTopBar(container: AppContainer, onOpenSettings: () -> Unit, modifier: 
     val user = (authState as? AuthState.SignedIn)?.user
     val name = user?.displayName(stringResource(Res.string.common_defaultDisplayName)) ?: stringResource(Res.string.common_defaultDisplayName)
     Row(
+        // No background: the mode halo drawn behind the whole scaffold shows through the header.
+        // The web app keeps an opaque bar here, this is a deliberate difference.
         modifier
             .fillMaxWidth()
-            .background(pillBackground())
             .windowInsetsPadding(WindowInsets.statusBars)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
