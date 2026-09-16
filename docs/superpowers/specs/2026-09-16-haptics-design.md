@@ -55,24 +55,31 @@ Four facts from reading the branch, each of which changed the design:
 New file, alongside `Toasts.kt` in the same controller layer.
 
 ```kotlin
-enum class NookHaptic { Confirm, Reject, Tick, ToggleOn, ToggleOff }
+enum class HapticCue { CONFIRM, REJECT, TICK, TOGGLE_ON, TOGGLE_OFF }
 
-fun interface NookHaptics { fun perform(haptic: NookHaptic) }
+fun interface NookHaptics { fun perform(cue: HapticCue) }
+
+internal fun nookHaptics(enabled: Boolean, feedback: HapticFeedback): NookHaptics
 ```
 
 Call sites name the *intent*, never the buzz. Retuning the app's entire feel later is a
 single edit to the mapping function.
 
-Mapping to Compose's `HapticFeedbackType` (all verified present in
-`org.jetbrains.compose.ui:ui:1.8.2`):
+`nookHaptics` is split out of the `@Composable` factory deliberately: it is the pure half, so
+a fake `HapticFeedback` can verify what call sites actually depend on — that a disabled
+instance forwards nothing and an enabled one forwards the mapped constant.
 
-| `NookHaptic` | `HapticFeedbackType` | Used for |
+The nominal mapping onto Compose's `HapticFeedbackType` (all verified present in
+`org.jetbrains.compose.ui:ui:1.8.2`) is below. It is **not** the whole story — see
+"Android API levels", where every row degrades on older devices:
+
+| `HapticCue` | `HapticFeedbackType` | Used for |
 |---|---|---|
-| `Confirm` | `Confirm` | successful mutation |
-| `Reject` | `Reject` | failed mutation |
-| `Tick` | `SegmentTick` | one step of a continuous value |
-| `ToggleOn` | `ToggleOn` | switch turned on |
-| `ToggleOff` | `ToggleOff` | switch turned off |
+| `CONFIRM` | `Confirm` | successful mutation |
+| `REJECT` | `Reject` | failed mutation |
+| `TICK` | `SegmentTick` | one step of a continuous value |
+| `TOGGLE_ON` | `ToggleOn` | switch turned on |
+| `TOGGLE_OFF` | `ToggleOff` | switch turned off |
 
 ### Provision
 
@@ -101,15 +108,29 @@ Follows the existing `theme` pattern exactly: a `MutableStateFlow` seeded from
 
 ## Call sites
 
-Five edits, each in a component that exists once:
+Six sites. The first five are each in a component that exists exactly once, so the whole app
+inherits the feel from them:
 
 | Component | Cue | Trigger |
 |---|---|---|
-| `ToastHost` | `Confirm` / `Reject` | a toast is *raised*, by `ToastKind`; `INFO` is silent |
-| `StarRating` | `Tick` | the rounded value changes during tap or drag — once per star, not per pixel |
-| `NookToggle` | `ToggleOn` / `ToggleOff` | checked state changes |
-| `ChoiceChip`, `PillTab` | `Tick` | selection changes; silent when re-tapping the active chip |
-| `OnboardingScreen` | `Tick` | `pagerState.settledPage` changes |
+| `ToastHost` | `CONFIRM` / `REJECT` | a toast is *raised*, by `ToastKind`; `INFO` is silent |
+| `StarRating` | `TICK` | the rounded value changes during tap or drag — once per star, not per pixel, and silent on a tap that changes nothing |
+| `NookToggle` | `TOGGLE_ON` / `TOGGLE_OFF` | checked state changes |
+| `ChoiceChip`, `PillTab` | `TICK` | selection changes; silent when re-tapping the active chip |
+| `OnboardingScreen` | `TICK` | `pagerState.settledPage` changes |
+| `SettingsPanel` | `CONFIRM` | the Vibrations switch is turned **on** |
+
+The sixth is the deliberate exception. `NookToggle` reads `LocalNookHaptics` at composition,
+which still holds the no-op in the frame where vibrations are switched on — so enabling the
+feature was silent, at exactly the moment a user wants proof it works. `SettingsPanel` builds
+an instance directly with `nookHaptics(true, rawHaptics)`. It still goes through `HapticCue`
+rather than reaching for a raw `HapticFeedbackType`, so it picks up the API fallback; a
+direct `HapticFeedbackType.Confirm` is API 30 and would have done nothing on Android 7–10 —
+reinstating the very defect it exists to fix.
+
+Note the asymmetry this creates: switching off gives `TOGGLE_OFF`, switching on gives
+`CONFIRM`. Every other switch in the app gives the toggle pair both ways. That is intended —
+enabling warrants the stronger cue — but it is a decision, not an accident.
 
 The cue is driven by a `SharedFlow` event emitted from `ToastController.show()`, **not** by
 diffing the toast list. Review of the first implementation, which diffed the list, found
@@ -184,10 +205,6 @@ switch turning on), never within a single interaction, and firing something beat
 silence this replaces. One caveat that cannot be settled from code: some OEMs flatten
 several constants onto one waveform regardless, so even the distinct tiers are best-effort.
 
-Taking the level as a parameter rather than reading it inside the function is what keeps the
-mapping testable: the tests pin all three tiers on both platforms, which matters because a
-plain Android unit test reports `SDK_INT` as 0.
-
 ## No new permission
 
 Approach A uses `View.performHapticFeedback`, which needs no permission and respects the
@@ -198,9 +215,13 @@ A `Vibrator`-based approach would have added one, which matters for a Play Store
 
 Unit tests in `commonTest`, alongside the existing 56:
 
-- The mapping from every `NookHaptic` to a `HapticFeedbackType` is total.
-- The disabled instance performs nothing for every enum value.
-- `AppPreferences.hapticsEnabled` defaults to true, round-trips, and emits on change.
+- Every `HapticCue` maps to the right `HapticFeedbackType` at each API tier, and the cues
+  that must stay distinguishable (`TOGGLE_ON`/`TOGGLE_OFF`, `CONFIRM`/`REJECT`) never
+  collapse onto one constant at any tier.
+- A disabled instance forwards nothing to a fake `HapticFeedback`; an enabled one forwards
+  each cue's mapped constant, in order.
+- `AppPreferences.hapticsEnabled` defaults to true, round-trips, and stores the *string*
+  `"false"` — the encoding the web app's `localStorage` depends on.
 
 Verification that cannot be unit-tested, to be done on device:
 
