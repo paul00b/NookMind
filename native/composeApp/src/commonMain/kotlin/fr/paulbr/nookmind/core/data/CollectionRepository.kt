@@ -94,7 +94,8 @@ class CollectionRepository<T : CollectionItem>(
             loadedForUser = userId
         } catch (t: Throwable) {
             logDebug("collections", "fetch $collectionTable failed", t)
-            toasts.error(messages.fetchError)
+            // Automatic load (auth-state init), not a user action — no haptic buzz.
+            toasts.errorSilently(messages.fetchError)
         } finally {
             _loading.value = false
         }

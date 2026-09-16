@@ -101,7 +101,8 @@ class LibraryRepository<T : LibraryItem>(
             _loadedForUser.value = userId
         } catch (t: Throwable) {
             logDebug("library", "fetch $table failed", t)
-            toasts.error(messages.fetchError)
+            // Automatic load (auth-state init / refetch), not a user action — no haptic buzz.
+            toasts.errorSilently(messages.fetchError)
         } finally {
             _loading.value = false
         }

@@ -20,9 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,17 +49,13 @@ fun ToastMessage.resolve(): String = when (this) {
 fun ToastHost(controller: ToastController, modifier: Modifier = Modifier, bottomOffset: Dp = 96.dp) {
     val toasts by controller.toasts.collectAsState()
     val haptics = LocalNookHaptics.current
-    var lastCued by remember { mutableStateOf(-1L) }
-    LaunchedEffect(toasts) {
-        // Ids increase monotonically, so this fires once per toast and never on the
-        // recompositions caused by the 3-second dismissal timer.
-        val newest = toasts.lastOrNull() ?: return@LaunchedEffect
-        if (newest.id <= lastCued) return@LaunchedEffect
-        lastCued = newest.id
-        when (newest.kind) {
-            ToastKind.SUCCESS -> haptics.perform(HapticCue.CONFIRM)
-            ToastKind.ERROR -> haptics.perform(HapticCue.REJECT)
-            ToastKind.INFO -> Unit
+    LaunchedEffect(controller, haptics) {
+        controller.cues.collect { toast ->
+            when (toast.kind) {
+                ToastKind.SUCCESS -> haptics.perform(HapticCue.CONFIRM)
+                ToastKind.ERROR -> haptics.perform(HapticCue.REJECT)
+                ToastKind.INFO -> Unit
+            }
         }
     }
     Box(modifier.fillMaxWidth().padding(bottom = bottomOffset), contentAlignment = Alignment.BottomCenter) {
