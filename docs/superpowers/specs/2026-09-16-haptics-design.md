@@ -162,29 +162,27 @@ as a parameter rather than reading it inside the function is what keeps the mapp
 testable: the tests pin every tier on both platforms, which matters because a plain Android
 unit test reports `SDK_INT` as 0.
 
-Four tiers, and the distinctness they buy:
+Two tiers. Below 34, `TICK` and `TOGGLE_ON` fall back to `ContextClick` (API 23) and
+`TOGGLE_OFF` to `VirtualKey` (API 5), so on/off stay distinct everywhere; below 30,
+`CONFIRM` falls back to `ContextClick` and `REJECT` to `LongPress` (API 3).
 
-| Tier | `TICK` | Distinct cues |
-|---|---|---|
-| 34+ | `SegmentTick` | 5 — full |
-| 30–33 | `TextHandleMove` | **5 — full** |
-| 27–29 | `TextHandleMove` | 4 — `CONFIRM`/`TOGGLE_ON` collide |
-| 24–26 | `ContextClick` | 3 — the hard ceiling |
+**The five cues are not all distinct below API 34, and cannot usefully be made so.** Of the
+vocabulary Compose exposes, only `ContextClick`, `LongPress` and `VirtualKey` predate
+minSdk 24 — three constants for five cues, so the floor is arithmetic, not a design choice.
 
-`TOGGLE_OFF` uses `VirtualKey` (API 5) below 34 and `TOGGLE_ON` uses `ContextClick`
-(API 23), so on/off stay distinct everywhere. Below 30, `CONFIRM` falls back to
-`ContextClick` and `REJECT` to `LongPress` (API 3).
+A third tier routing `TICK` through `TextHandleMove` (API 27) was implemented and then
+**reverted**. It would have bought full distinctness from API 30, but the platform gates
+that constant on `config_enableHapticTextHandle`, which AOSP defaults to `false` — so on
+most devices it produces no vibration at all. That trades a guaranteed-but-colliding buzz
+for a distinct-but-absent one, and neither the Android 16 test device (which uses
+`SegmentTick`) nor a Pixel (which overlays the flag true) would reveal it. `GestureEnd` is
+ungated and API 30, but the platform resolves it and `CONTEXT_CLICK` to the same waveform —
+a green test over an unchanged feel, which is worse than an honest collision.
 
-**Below API 27 the cues cannot all be distinct.** Of the vocabulary Compose exposes, only
-`ContextClick`, `LongPress` and `VirtualKey` predate API 24 — three constants for five cues,
-so the 24–26 ceiling is arithmetic, not a design choice. It is accepted: the collisions fall
-across unrelated contexts (a chip tick versus a switch turning on), never within a single
-interaction, and firing something beats the silence this replaces. Since API 30+ is the bulk
-of the live install base, most users get the full vocabulary.
-
-One caveat that cannot be settled from code: some OEMs flatten several constants onto one
-waveform, so `TextHandleMove` and `ContextClick` may not actually feel different on every
-device. The tiering is best-effort, not a guarantee.
+So the collisions are accepted. They fall across unrelated contexts (a chip tick versus a
+switch turning on), never within a single interaction, and firing something beats the
+silence this replaces. One caveat that cannot be settled from code: some OEMs flatten
+several constants onto one waveform regardless, so even the distinct tiers are best-effort.
 
 Taking the level as a parameter rather than reading it inside the function is what keeps the
 mapping testable: the tests pin all three tiers on both platforms, which matters because a
