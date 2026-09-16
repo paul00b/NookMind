@@ -11,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -106,11 +107,16 @@ fun StarRating(
     }
 
     val haptics = LocalNookHaptics.current
+    // value is a plain lambda parameter, so the tap closure below would otherwise capture a
+    // stale snapshot: the gesture coroutine launches once on first touch and never re-reads
+    // its handler across recompositions (awaitEachGesture never returns). rememberUpdatedState
+    // keeps the read live without tearing down and restarting the gesture detector.
+    val currentValue by rememberUpdatedState(value)
     val gesture = if (readonly || onChange == null) Modifier else Modifier
         .pointerInput(haptics) {
             detectTapGestures(onTap = { offset ->
                 val next = valueFromX(offset.x)
-                if (next != value) haptics.perform(HapticCue.TICK)
+                if (next != currentValue) haptics.perform(HapticCue.TICK)
                 onChange(next)
                 hover = null
             })
