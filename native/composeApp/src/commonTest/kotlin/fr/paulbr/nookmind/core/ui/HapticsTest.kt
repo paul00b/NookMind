@@ -27,12 +27,24 @@ class HapticsTest {
     }
 
     @Test
-    fun degradesToggleAndTickAtApi30() {
+    fun degradesToggleAtApi30ButTickIsFullyDistinctThere() {
         assertEquals(HapticFeedbackType.Confirm, HapticCue.CONFIRM.toFeedbackType(30))
         assertEquals(HapticFeedbackType.Reject, HapticCue.REJECT.toFeedbackType(30))
-        assertEquals(HapticFeedbackType.ContextClick, HapticCue.TICK.toFeedbackType(30))
+        assertEquals(HapticFeedbackType.TextHandleMove, HapticCue.TICK.toFeedbackType(30))
         assertEquals(HapticFeedbackType.ContextClick, HapticCue.TOGGLE_ON.toFeedbackType(30))
         assertEquals(HapticFeedbackType.VirtualKey, HapticCue.TOGGLE_OFF.toFeedbackType(30))
+    }
+
+    @Test
+    fun tickGetsItsOwnConstantAtApi27ButConfirmAndToggleOnStillCollide() {
+        assertEquals(HapticFeedbackType.ContextClick, HapticCue.CONFIRM.toFeedbackType(27))
+        assertEquals(HapticFeedbackType.LongPress, HapticCue.REJECT.toFeedbackType(27))
+        assertEquals(HapticFeedbackType.TextHandleMove, HapticCue.TICK.toFeedbackType(27))
+        assertEquals(HapticFeedbackType.ContextClick, HapticCue.TOGGLE_ON.toFeedbackType(27))
+        assertEquals(HapticFeedbackType.VirtualKey, HapticCue.TOGGLE_OFF.toFeedbackType(27))
+        // Only CONFIRM/TOGGLE_ON collide at this tier: 4 of 5 cues are distinguishable.
+        val types = HapticCue.entries.map { it.toFeedbackType(27) }.toSet()
+        assertEquals(4, types.size)
     }
 
     @Test
@@ -44,14 +56,16 @@ class HapticsTest {
         assertEquals(HapticFeedbackType.VirtualKey, HapticCue.TOGGLE_OFF.toFeedbackType(24))
     }
 
-    // NOTE: full 5-way distinctness genuinely only holds at API 34. Below API 30, CONFIRM,
-    // TICK and TOGGLE_ON all fall back to ContextClick (3-way collision); at 30-33, TICK and
-    // TOGGLE_ON still share ContextClick. This is a direct consequence of the fallback table
-    // given in review — minSdk 24 only has so many "safe" distinct constants to draw from.
+    // NOTE: full 5-way distinctness holds from API 30 up (TextHandleMove(27) gives TICK its own
+    // constant, Confirm/Reject(30) do the rest). Below API 30, CONFIRM and TOGGLE_ON share
+    // ContextClick; below API 27, TICK joins that collision too (3-way at the minSdk=24 floor).
+    // This is a direct consequence of how few "safe" distinct constants exist at each tier.
     @Test
-    fun distinctCuesDoNotCollapseOntoOneTypeAtApi34() {
-        val types = HapticCue.entries.map { it.toFeedbackType(34) }.toSet()
-        assertEquals(HapticCue.entries.size, types.size)
+    fun distinctCuesDoNotCollapseOntoOneTypeFromApi30Up() {
+        listOf(30, 34).forEach { apiLevel ->
+            val types = HapticCue.entries.map { it.toFeedbackType(apiLevel) }.toSet()
+            assertEquals(HapticCue.entries.size, types.size, "collapsed at API $apiLevel")
+        }
     }
 
     @Test
