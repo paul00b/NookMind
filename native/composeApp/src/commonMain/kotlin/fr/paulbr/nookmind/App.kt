@@ -12,6 +12,8 @@ import coil3.request.crossfade
 import fr.paulbr.nookmind.app.AppContainer
 import fr.paulbr.nookmind.app.AppRoot
 import fr.paulbr.nookmind.core.designsystem.NookTheme
+import fr.paulbr.nookmind.core.ui.LocalNookHaptics
+import fr.paulbr.nookmind.core.ui.rememberNookHaptics
 
 val LocalAppContainer = staticCompositionLocalOf<AppContainer> { error("AppContainer not provided") }
 
@@ -26,9 +28,12 @@ fun App(container: AppContainer) {
     }
     val theme by container.prefs.theme.collectAsState()
     val mode by container.prefs.mediaMode.collectAsState()
+    val hapticsEnabled by container.prefs.hapticsEnabled.collectAsState()
     CompositionLocalProvider(LocalAppContainer provides container) {
         NookTheme(themeMode = theme, mediaMode = mode) {
-            AppRoot(container)
+            CompositionLocalProvider(LocalNookHaptics provides rememberNookHaptics(hapticsEnabled)) {
+                AppRoot(container)
+            }
         }
     }
 }
