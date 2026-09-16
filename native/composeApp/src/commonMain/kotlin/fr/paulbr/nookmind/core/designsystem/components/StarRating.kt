@@ -1,7 +1,7 @@
 package fr.paulbr.nookmind.core.designsystem.components
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
@@ -121,13 +121,15 @@ fun StarRating(
                 hover = null
             })
         }
+        // Horizontal-only: detectDragGestures claims slop in every direction and would
+        // swallow a vertical scroll started on the star row inside a scrolling sheet.
         .pointerInput(haptics) {
-            detectDragGestures(
+            detectHorizontalDragGestures(
                 onDragStart = { offset ->
                     hover = valueFromX(offset.x)
                     haptics.perform(HapticCue.TICK)
                 },
-                onDrag = { change, _ ->
+                onHorizontalDrag = { change, _ ->
                     val next = valueFromX(change.position.x)
                     // Only when the half-star value actually changes, not on every pixel.
                     if (next != hover) {
