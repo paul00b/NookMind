@@ -49,6 +49,8 @@ import fr.paulbr.nookmind.core.designsystem.NookShapes
 import fr.paulbr.nookmind.core.designsystem.NookTheme
 import fr.paulbr.nookmind.core.designsystem.Palette
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
+import fr.paulbr.nookmind.core.ui.HapticCue
+import fr.paulbr.nookmind.core.ui.LocalNookHaptics
 
 /**
  * `.input` — white / #1a1f2e field, 12 dp radius, hairline border (12 %), amber focus ring.
@@ -247,6 +249,7 @@ fun NookSelect(
 @Composable
 fun NookToggle(checked: Boolean, onChange: (Boolean) -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val colors = NookTheme.colors
+    val haptics = LocalNookHaptics.current
     val knobOffset by androidx.compose.animation.core.animateDpAsState(if (checked) 22.dp else 4.dp, label = "knob")
     Box(
         modifier
@@ -254,7 +257,10 @@ fun NookToggle(checked: Boolean, onChange: (Boolean) -> Unit, modifier: Modifier
             .clip(NookShapes.full)
             .background(if (checked) Palette.Teal500 else if (colors.isDark) Palette.White.copy(alpha = 0.10f) else Palette.Gray200, NookShapes.full)
             .border(1.dp, if (checked) Palette.Teal500 else colors.border, NookShapes.full)
-            .clickable(enabled = enabled) { onChange(!checked) },
+            .clickable(enabled = enabled) {
+                haptics.perform(if (checked) HapticCue.TOGGLE_OFF else HapticCue.TOGGLE_ON)
+                onChange(!checked)
+            },
     ) {
         Box(
             Modifier
