@@ -46,6 +46,8 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -158,6 +160,7 @@ fun SettingsPanel(
 ) {
     val colors = NookTheme.colors
     val scope = rememberCoroutineScope()
+    val rawHaptics = LocalHapticFeedback.current
     val authState by container.auth.state.collectAsState()
     val user = (authState as? AuthState.SignedIn)?.user
     val fallbackName = stringResource(Res.string.common_defaultDisplayName)
@@ -303,7 +306,15 @@ fun SettingsPanel(
                             icon = null,
                             label = stringResource(Res.string.settings_haptics),
                             checked = hapticsEnabled,
-                            onChange = { container.prefs.setHapticsEnabled(it) },
+                            onChange = { enabled ->
+                                container.prefs.setHapticsEnabled(enabled)
+                                // LocalNookHaptics still holds the no-op this frame (it only picks up
+                                // the new pref on the next composition), so confirm directly via the
+                                // raw platform API — enabling is exactly the moment proof is wanted,
+                                // and this is the one place that should reach past the NookHaptics
+                                // vocabulary to do it.
+                                if (enabled) rawHaptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                            },
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
