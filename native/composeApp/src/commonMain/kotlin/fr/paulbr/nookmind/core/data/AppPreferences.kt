@@ -34,6 +34,7 @@ class AppPreferences(private val settings: Settings) {
         _mediaMode.value = mode
     }
 
+    /** Absent — or anything other than `"false"` — means on, so a fresh install vibrates. */
     private val _hapticsEnabled = MutableStateFlow(settings.getStringOrNull(KEY_HAPTICS) != "false")
     val hapticsEnabled: StateFlow<Boolean> = _hapticsEnabled
 

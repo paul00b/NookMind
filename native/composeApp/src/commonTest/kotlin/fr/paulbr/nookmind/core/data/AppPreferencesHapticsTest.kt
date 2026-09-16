@@ -31,11 +31,27 @@ class AppPreferencesHapticsTest {
     }
 
     @Test
-    fun theFlowEmitsTheNewValue() {
+    fun settingItUpdatesTheLiveFlow() {
         val prefs = AppPreferences(MapSettings())
 
         prefs.setHapticsEnabled(false)
 
-        assertEquals(false, prefs.hapticsEnabled.value)
+        assertFalse(prefs.hapticsEnabled.value)
+    }
+
+    @Test
+    fun readsAValueWrittenByAnotherClient() {
+        val settings = MapSettings(AppPreferences.KEY_HAPTICS to "false")
+
+        assertFalse(AppPreferences(settings).hapticsEnabled.value)
+    }
+
+    @Test
+    fun storesTheValueAsAStringForWebAppCompatibility() {
+        val settings = MapSettings()
+
+        AppPreferences(settings).setHapticsEnabled(false)
+
+        assertEquals("false", settings.getStringOrNull(AppPreferences.KEY_HAPTICS))
     }
 }
