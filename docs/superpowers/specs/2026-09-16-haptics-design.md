@@ -7,8 +7,8 @@ Status: approved, ready for implementation plan
 ## Goal
 
 Make the native app feel alive on device by adding short, intent-named haptic cues to
-the moments that already matter: library mutations, ratings, toggles and sheets. Add a
-tick when an onboarding slide commits, and a user-facing switch to turn all of it off.
+the moments that already matter: library mutations, ratings and toggles. Add a tick when
+an onboarding slide commits, and a user-facing switch to turn all of it off.
 
 ## Scope
 
@@ -16,7 +16,7 @@ In scope:
 
 - `NookHaptics`, a semantic haptic vocabulary in `commonMain`.
 - `AppPreferences.hapticsEnabled` plus a Settings row.
-- Six call sites, all in shared components, so the whole app inherits the feel.
+- Five call sites, all in shared components, so the whole app inherits the feel.
 - A tick on onboarding page change.
 
 Explicitly **not** in scope — deferred to a second spec:
@@ -55,7 +55,7 @@ Four facts from reading the branch, each of which changed the design:
 New file, alongside `Toasts.kt` in the same controller layer.
 
 ```kotlin
-enum class NookHaptic { Confirm, Reject, Tick, ToggleOn, ToggleOff, GestureEnd }
+enum class NookHaptic { Confirm, Reject, Tick, ToggleOn, ToggleOff }
 
 fun interface NookHaptics { fun perform(haptic: NookHaptic) }
 ```
@@ -73,7 +73,6 @@ Mapping to Compose's `HapticFeedbackType` (all verified present in
 | `Tick` | `SegmentTick` | one step of a continuous value |
 | `ToggleOn` | `ToggleOn` | switch turned on |
 | `ToggleOff` | `ToggleOff` | switch turned off |
-| `GestureEnd` | `GestureEnd` | sheet dismissed |
 
 ### Provision
 
@@ -101,7 +100,7 @@ Follows the existing `theme` pattern exactly: a `MutableStateFlow` seeded from
 
 ## Call sites
 
-Six edits, each in a component that exists once:
+Five edits, each in a component that exists once:
 
 | Component | Cue | Trigger |
 |---|---|---|
@@ -109,20 +108,27 @@ Six edits, each in a component that exists once:
 | `StarRating` | `Tick` | the rounded value changes during tap or drag — once per star, not per pixel |
 | `NookToggle` | `ToggleOn` / `ToggleOff` | checked state changes |
 | `ChoiceChip`, `PillTab` | `Tick` | selection changes; silent when re-tapping the active chip |
-| `Sheet` | `GestureEnd` | dismissed, including swipe-to-dismiss |
 | `OnboardingScreen` | `Tick` | `pagerState.currentPage` settles on a new page |
 
 `ToastHost` fires on *new* toast ids only, so the 3-second lifetime and recomposition do
 not retrigger it.
 
-Navigation and tab switching are deliberately excluded: they fire constantly and would
-read as noise.
+Two categories are deliberately excluded. **Navigation and tab switching** fire constantly
+and would read as noise. **Sheet dismissal** was considered and cut: closing a sheet
+already has unmistakable visual feedback, so a cue adds frequency without information.
+Haptics are reserved for moments where the outcome is otherwise ambiguous — did the rating
+register, did the toggle flip, did the save succeed. Genuine gesture haptics arrive with
+the second spec, where long-press activation and the pull-to-refresh threshold do carry
+information the eye cannot yet confirm.
 
 ## Android API levels
 
 `minSdk` is 24, and the expressive constants are newer — `Confirm`/`Reject` require API
 30, `ToggleOn`/`ToggleOff`/`SegmentTick` require API 34. Below those levels the platform
 ignores the constant rather than crashing, so old devices get a subset.
+
+The primary test device runs **Android 16 (API 36)**, so all five cues are live there and
+hand-verification is meaningful. The degradation affects only other users on older phones.
 
 Accepted for now. A fallback ladder is deliberately not built: it costs an `expect`/`actual`
 for the SDK level and the Play Console will show whether meaningful old-API traffic exists.
@@ -144,7 +150,7 @@ Unit tests in `commonTest`, alongside the existing 56:
 
 Verification that cannot be unit-tested, to be done on device:
 
-- Each of the six cues fires, and each is distinguishable from the others.
+- Each of the five cues fires, and each is distinguishable from the others.
 - Turning the Settings switch off silences all of them.
 - Turning the OS haptics setting off silences all of them regardless of the in-app switch.
 - `./gradlew :composeApp:screenshots` still renders, proving the no-op default holds.
