@@ -18,13 +18,17 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '..', '..');
 
 async function loadLocale(name) {
-  const mod = await import(join(repoRoot, 'src', 'i18n', 'locales', `${name}.ts`));
+  // pathToFileURL is required here: dynamic import() rejects bare Windows absolute
+  // paths (e.g. "C:\\...") with ERR_UNSUPPORTED_ESM_URL_SCHEME, since it parses them
+  // as URLs whose scheme is the drive letter. POSIX absolute paths aren't affected,
+  // which is presumably why this went unnoticed until run on native Windows.
+  const mod = await import(pathToFileURL(join(repoRoot, 'src', 'i18n', 'locales', `${name}.ts`)).href);
   return mod.default;
 }
 
@@ -100,6 +104,8 @@ const EXTRA = {
     'settings.notifTestUnavailable': 'Could not send the test notification.',
     'settings.googleSignInUnavailable': 'Google sign-in is not available on this platform.',
     'settings.appleSignInIosOnly': 'Apple sign-in is only available on iOS.',
+    'settings.haptics': 'Vibrations',
+    'settings.hapticsHelp': 'Short vibrations on ratings, switches and saved changes.',
     'legal.privacyTitle': 'Privacy policy',
     'legal.termsTitle': 'Terms of use',
     'legal.lastUpdated': 'Last updated: March 2025',
@@ -168,6 +174,8 @@ const EXTRA = {
     'settings.notifTestUnavailable': "Impossible d'envoyer la notification de test.",
     'settings.googleSignInUnavailable': "La connexion Google n'est pas disponible sur cette plateforme.",
     'settings.appleSignInIosOnly': "La connexion Apple n'est disponible que sur iOS.",
+    'settings.haptics': 'Vibrations',
+    'settings.hapticsHelp': 'De courtes vibrations sur les notes, les interrupteurs et les modifications enregistrées.',
     'legal.privacyTitle': 'Politique de confidentialité',
     'legal.termsTitle': "Conditions d'utilisation",
     'legal.lastUpdated': 'Dernière mise à jour : mars 2025',

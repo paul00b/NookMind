@@ -90,6 +90,8 @@ import fr.paulbr.nookmind.resources.settings_dark
 import fr.paulbr.nookmind.resources.settings_deleteAccount
 import fr.paulbr.nookmind.resources.settings_displayNameSaved
 import fr.paulbr.nookmind.resources.settings_enableNotifications
+import fr.paulbr.nookmind.resources.settings_haptics
+import fr.paulbr.nookmind.resources.settings_hapticsHelp
 import fr.paulbr.nookmind.resources.settings_light
 import fr.paulbr.nookmind.resources.settings_notifActivate
 import fr.paulbr.nookmind.resources.settings_notifActive
@@ -160,6 +162,7 @@ fun SettingsPanel(
     val user = (authState as? AuthState.SignedIn)?.user
     val fallbackName = stringResource(Res.string.common_defaultDisplayName)
     val theme by container.prefs.theme.collectAsState()
+    val hapticsEnabled by container.prefs.hapticsEnabled.collectAsState()
     val currentMode by container.prefs.mediaMode.collectAsState()
 
     var editingName by remember { mutableStateOf(false) }
@@ -295,6 +298,19 @@ fun SettingsPanel(
                                 OptionTile(label, icon, selected = theme == value, onClick = { container.prefs.setTheme(value) }, modifier = Modifier.weight(1f), stacked = true)
                             }
                         }
+                        Spacer(Modifier.height(16.dp))
+                        SettingToggleRow(
+                            icon = null,
+                            label = stringResource(Res.string.settings_haptics),
+                            checked = hapticsEnabled,
+                            onChange = { container.prefs.setHapticsEnabled(it) },
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            stringResource(Res.string.settings_hapticsHelp),
+                            style = NookTheme.type.xs,
+                            color = colors.textSubtle,
+                        )
                     }
                 }
 
@@ -380,13 +396,13 @@ fun SettingsPanel(
                                 }
                                 if (subscribed) {
                                     HairlineDivider()
-                                    NotificationToggle(LucideIcons.Tv, stringResource(Res.string.settings_notifEpisodes), preferences.notifyEpisodes) { value ->
+                                    SettingToggleRow(LucideIcons.Tv, stringResource(Res.string.settings_notifEpisodes), preferences.notifyEpisodes) { value ->
                                         scope.launch { container.push.updatePreferences { it.copy(notifyEpisodes = value) } }
                                     }
-                                    NotificationToggle(LucideIcons.Clapperboard, stringResource(Res.string.settings_notifSeasons), preferences.notifySeasons) { value ->
+                                    SettingToggleRow(LucideIcons.Clapperboard, stringResource(Res.string.settings_notifSeasons), preferences.notifySeasons) { value ->
                                         scope.launch { container.push.updatePreferences { it.copy(notifySeasons = value) } }
                                     }
-                                    NotificationToggle(LucideIcons.Film, stringResource(Res.string.settings_notifMovies), preferences.notifyMovies) { value ->
+                                    SettingToggleRow(LucideIcons.Film, stringResource(Res.string.settings_notifMovies), preferences.notifyMovies) { value ->
                                         scope.launch { container.push.updatePreferences { it.copy(notifyMovies = value) } }
                                     }
                                 }
@@ -543,11 +559,18 @@ private fun OptionTile(label: String, icon: ImageVector, selected: Boolean, onCl
 }
 
 @Composable
-private fun NotificationToggle(icon: ImageVector, label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+private fun SettingToggleRow(
+    icon: ImageVector?,
+    label: String,
+    checked: Boolean,
+    onChange: (Boolean) -> Unit,
+) {
     val colors = NookTheme.colors
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, null, Modifier.size(14.dp), tint = Palette.Teal500)
-        Spacer(Modifier.size(10.dp))
+        if (icon != null) {
+            Icon(icon, null, Modifier.size(14.dp), tint = Palette.Teal500)
+            Spacer(Modifier.size(10.dp))
+        }
         Text(label, style = NookTheme.type.sm, color = colors.textBody2, modifier = Modifier.weight(1f))
         NookToggle(checked, onChange)
     }
