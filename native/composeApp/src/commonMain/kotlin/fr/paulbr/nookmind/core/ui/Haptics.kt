@@ -28,28 +28,22 @@ fun interface NookHaptics {
  * unable to reach it and bypass the semantic vocabulary in [HapticCue].
  *
  * Takes [apiLevel] as a defaulted parameter (rather than reading [hapticApiLevel] directly in
- * each branch) so tests can pin every tier without touching the platform. Four tiers, from the
- * `minSdk = 24` floor up:
- * - **24-26**: only three "safe" constants exist at all (`ContextClick`, `LongPress`,
- *   `VirtualKey`), so `CONFIRM`/`TICK`/`TOGGLE_ON` unavoidably collapse onto `ContextClick`.
- * - **27-29**: `TextHandleMove` becomes available, giving `TICK` its own constant and leaving
- *   only `CONFIRM`/`TOGGLE_ON` sharing `ContextClick`.
- * - **30-33**: `Confirm`(16)/`Reject`(17) become available, so every cue is distinct.
- * - **34+**: `SegmentTick`(26)/`ToggleOn`(21)/`ToggleOff`(22) become available — the "native"
- *   mapping.
+ * each branch) so tests can pin every tier without touching the platform. `SegmentTick`(26),
+ * `ToggleOn`(21) and `ToggleOff`(22) constants exist below API 34 but are silently dropped by
+ * `PlatformHapticFeedback` there; `Confirm`(16)/`Reject`(17) are dropped below API 30. Every
+ * fallback below is safe at `minSdk = 24`.
  *
- * `TextHandleMove` is the closest semantic analogue to `SegmentTick` (a light drag-tick), but
- * this is a best-effort improvement, not a guarantee: some OEMs flatten several constants onto
- * one waveform, so `TextHandleMove` and `ContextClick` may not feel different on every device.
+ * This is a best-effort improvement, not a guarantee: some OEMs flatten several constants onto
+ * one waveform, so distinct `HapticFeedbackType`s may not feel different on every device.
+ *
+ * TextHandleMove (API 27) looks like a better TICK fallback below 34 and would give full
+ * distinctness from API 30 — but it is gated on config_enableHapticTextHandle, which AOSP
+ * defaults to false, so on most devices it would produce no vibration at all.
  */
 internal fun HapticCue.toFeedbackType(apiLevel: Int = hapticApiLevel): HapticFeedbackType = when (this) {
     HapticCue.CONFIRM -> if (apiLevel >= 30) HapticFeedbackType.Confirm else HapticFeedbackType.ContextClick
     HapticCue.REJECT -> if (apiLevel >= 30) HapticFeedbackType.Reject else HapticFeedbackType.LongPress
-    HapticCue.TICK -> when {
-        apiLevel >= 34 -> HapticFeedbackType.SegmentTick
-        apiLevel >= 27 -> HapticFeedbackType.TextHandleMove
-        else -> HapticFeedbackType.ContextClick
-    }
+    HapticCue.TICK -> if (apiLevel >= 34) HapticFeedbackType.SegmentTick else HapticFeedbackType.ContextClick
     HapticCue.TOGGLE_ON -> if (apiLevel >= 34) HapticFeedbackType.ToggleOn else HapticFeedbackType.ContextClick
     HapticCue.TOGGLE_OFF -> if (apiLevel >= 34) HapticFeedbackType.ToggleOff else HapticFeedbackType.VirtualKey
 }
