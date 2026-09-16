@@ -76,9 +76,10 @@ Mapping to Compose's `HapticFeedbackType` (all verified present in
 
 ### Provision
 
-`LocalNookHaptics` is provided in `AppRoot`, not in `NookTheme`. `NookTheme` is a pure
-design-system concern and is used standalone by the screenshot catalog; haptics depend on
-`AppPreferences`, which only `AppRoot` has.
+`LocalNookHaptics` is provided in `App.kt`, inside `NookTheme` but not by it. `App.kt` is
+where the container, the preferences and the theme already meet, and it wraps `AppRoot`.
+`NookTheme` itself stays clean: it is a pure design-system concern used standalone by the
+screenshot catalog, and it has no access to `AppPreferences`.
 
 The provided instance reads `hapticsEnabled`. When off, a no-op instance is provided, so
 **no call site ever branches on the setting**.
