@@ -5,7 +5,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertSame
-import kotlin.test.assertTrue
 
 private class FakeHapticFeedback : HapticFeedback {
     val performed = mutableListOf<HapticFeedbackType>()
@@ -39,7 +38,7 @@ class HapticsTest {
 
         HapticCue.entries.forEach { haptics.perform(it) }
 
-        assertTrue(feedback.performed.isEmpty())
+        assertEquals(emptyList(), feedback.performed)
         assertSame(NookHaptics.None, haptics)
     }
 

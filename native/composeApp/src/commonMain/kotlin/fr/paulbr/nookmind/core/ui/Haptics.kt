@@ -23,7 +23,7 @@ fun interface NookHaptics {
 }
 
 /**
- * `internal` is deliberate: it lets [HapticsTest] pin the mapping while keeping call sites
+ * `internal` is deliberate: it lets `HapticsTest` pin the mapping while keeping call sites
  * unable to reach it and bypass the semantic vocabulary in [HapticCue].
  */
 internal fun HapticCue.toFeedbackType(): HapticFeedbackType = when (this) {
