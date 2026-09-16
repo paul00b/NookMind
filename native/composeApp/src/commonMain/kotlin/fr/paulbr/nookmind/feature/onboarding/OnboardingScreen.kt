@@ -68,7 +68,6 @@ import fr.paulbr.nookmind.resources.onboarding_slide2Body
 import fr.paulbr.nookmind.resources.onboarding_slide2Title
 import fr.paulbr.nookmind.resources.onboarding_slide3Body
 import fr.paulbr.nookmind.resources.onboarding_slide3Title
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -82,10 +81,10 @@ fun OnboardingScreen(onFinish: () -> Unit) {
     val titles = listOf(Res.string.onboarding_slide1Title, Res.string.onboarding_slide2Title, Res.string.onboarding_slide3Title)
     val bodies = listOf(Res.string.onboarding_slide1Body, Res.string.onboarding_slide2Body, Res.string.onboarding_slide3Body)
     val haptics = LocalNookHaptics.current
-    LaunchedEffect(pagerState) {
-        // drop(1) skips the initial emission, so opening the app is silent.
-        snapshotFlow { pagerState.currentPage }
-            .distinctUntilChanged()
+    LaunchedEffect(pagerState, haptics) {
+        // settledPage, not currentPage: currentPage flips mid-drag, so a drag past
+        // halfway and back would tick twice without changing slide.
+        snapshotFlow { pagerState.settledPage }
             .drop(1)
             .collect { haptics.perform(HapticCue.TICK) }
     }
