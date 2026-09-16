@@ -519,7 +519,7 @@
     <string name="settings_enableNotifications">Activer les notifications</string>
     <string name="settings_googleSignInUnavailable">La connexion Google n'est pas disponible sur cette plateforme.</string>
     <string name="settings_haptics">Vibrations</string>
-    <string name="settings_hapticsHelp">De courtes vibrations sur les notes, les interrupteurs et les modifications enregistrées.</string>
+    <string name="settings_hapticsHelp">De courtes vibrations quand vous notez, changez un réglage ou enregistrez.</string>
     <string name="settings_light">Clair</string>
     <string name="settings_notifActivate">Activer</string>
     <string name="settings_notifActive">Notifications actives</string>

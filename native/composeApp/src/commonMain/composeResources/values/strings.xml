@@ -519,7 +519,7 @@
     <string name="settings_enableNotifications">Enable notifications</string>
     <string name="settings_googleSignInUnavailable">Google sign-in is not available on this platform.</string>
     <string name="settings_haptics">Vibrations</string>
-    <string name="settings_hapticsHelp">Short vibrations on ratings, switches and saved changes.</string>
+    <string name="settings_hapticsHelp">Short vibrations when you tap, rate and save.</string>
     <string name="settings_light">Light</string>
     <string name="settings_notifActivate">Enable</string>
     <string name="settings_notifActive">Notifications active</string>

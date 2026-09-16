@@ -301,10 +301,15 @@ fun SettingsPanel(
                                 OptionTile(label, icon, selected = theme == value, onClick = { container.prefs.setTheme(value) }, modifier = Modifier.weight(1f), stacked = true)
                             }
                         }
-                        Spacer(Modifier.height(16.dp))
+                    }
+                }
+
+                // ── Vibrations ───────────────────────────────────────────
+                SettingsSection(stringResource(Res.string.settings_haptics)) {
+                    NookCard(Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
                         SettingToggleRow(
                             icon = null,
-                            label = stringResource(Res.string.settings_haptics),
+                            label = stringResource(Res.string.settings_hapticsHelp),
                             checked = hapticsEnabled,
                             onChange = { enabled ->
                                 container.prefs.setHapticsEnabled(enabled)
@@ -315,12 +320,6 @@ fun SettingsPanel(
                                 // vocabulary to do it.
                                 if (enabled) rawHaptics.performHapticFeedback(HapticFeedbackType.Confirm)
                             },
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            stringResource(Res.string.settings_hapticsHelp),
-                            style = NookTheme.type.xs,
-                            color = colors.textSubtle,
                         )
                     }
                 }
