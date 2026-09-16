@@ -157,19 +157,34 @@ shipping dead to most of the supported range.
 
 So the fallback ladder **is** built. `toFeedbackType(apiLevel)` takes the level as a
 defaulted parameter — `expect val hapticApiLevel` resolves to `Build.VERSION.SDK_INT` on
-Android and `Int.MAX_VALUE` on desktop, where haptics are a no-op anyway. Below 34, `TICK`
-and `TOGGLE_ON` fall back to `ContextClick` (API 23) and `TOGGLE_OFF` to `VirtualKey`
-(API 5), keeping on and off distinct; below 30, `CONFIRM` falls back to `ContextClick` and
-`REJECT` to `LongPress`. Every fallback is safe at minSdk 24.
+Android and `Int.MAX_VALUE` on desktop, where haptics are a no-op anyway. Taking the level
+as a parameter rather than reading it inside the function is what keeps the mapping
+testable: the tests pin every tier on both platforms, which matters because a plain Android
+unit test reports `SDK_INT` as 0.
 
-**The five cues are not all distinct below API 34, and cannot be.** Of the vocabulary
-Compose exposes, only `ContextClick`, `LongPress` and `VirtualKey` are safe at minSdk 24
-(`TextHandleMove` needs 27) — three constants for five cues. So `TICK` and `TOGGLE_ON`
-share `ContextClick` below 34, and `CONFIRM` joins them below 30. This is accepted: the cues
-collide only across unrelated contexts (a chip tick versus a switch turning on), never
-within one interaction, and firing something is far better than the silence this replaces.
-The tests assert full distinctness at 34 and the pairs that must stay distinct
-(`TOGGLE_ON`/`TOGGLE_OFF`, `CONFIRM`/`REJECT`) at every tier.
+Four tiers, and the distinctness they buy:
+
+| Tier | `TICK` | Distinct cues |
+|---|---|---|
+| 34+ | `SegmentTick` | 5 — full |
+| 30–33 | `TextHandleMove` | **5 — full** |
+| 27–29 | `TextHandleMove` | 4 — `CONFIRM`/`TOGGLE_ON` collide |
+| 24–26 | `ContextClick` | 3 — the hard ceiling |
+
+`TOGGLE_OFF` uses `VirtualKey` (API 5) below 34 and `TOGGLE_ON` uses `ContextClick`
+(API 23), so on/off stay distinct everywhere. Below 30, `CONFIRM` falls back to
+`ContextClick` and `REJECT` to `LongPress` (API 3).
+
+**Below API 27 the cues cannot all be distinct.** Of the vocabulary Compose exposes, only
+`ContextClick`, `LongPress` and `VirtualKey` predate API 24 — three constants for five cues,
+so the 24–26 ceiling is arithmetic, not a design choice. It is accepted: the collisions fall
+across unrelated contexts (a chip tick versus a switch turning on), never within a single
+interaction, and firing something beats the silence this replaces. Since API 30+ is the bulk
+of the live install base, most users get the full vocabulary.
+
+One caveat that cannot be settled from code: some OEMs flatten several constants onto one
+waveform, so `TextHandleMove` and `ContextClick` may not actually feel different on every
+device. The tiering is best-effort, not a guarantee.
 
 Taking the level as a parameter rather than reading it inside the function is what keeps the
 mapping testable: the tests pin all three tiers on both platforms, which matters because a
