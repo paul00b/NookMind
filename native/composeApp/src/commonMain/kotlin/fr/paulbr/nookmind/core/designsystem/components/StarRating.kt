@@ -29,6 +29,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import fr.paulbr.nookmind.core.designsystem.NookTheme
 import fr.paulbr.nookmind.core.designsystem.Palette
+import fr.paulbr.nookmind.core.ui.HapticCue
+import fr.paulbr.nookmind.core.ui.LocalNookHaptics
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
@@ -103,14 +105,29 @@ fun StarRating(
         return min(max(index + (if (pos < 0.5f) 0.5 else 1.0), 0.5), 5.0)
     }
 
+    val haptics = LocalNookHaptics.current
     val gesture = if (readonly || onChange == null) Modifier else Modifier
         .pointerInput(Unit) {
-            detectTapGestures(onTap = { offset -> onChange(valueFromX(offset.x)); hover = null })
+            detectTapGestures(onTap = { offset ->
+                haptics.perform(HapticCue.TICK)
+                onChange(valueFromX(offset.x))
+                hover = null
+            })
         }
         .pointerInput(Unit) {
             detectDragGestures(
-                onDragStart = { offset -> hover = valueFromX(offset.x) },
-                onDrag = { change, _ -> hover = valueFromX(change.position.x) },
+                onDragStart = { offset ->
+                    hover = valueFromX(offset.x)
+                    haptics.perform(HapticCue.TICK)
+                },
+                onDrag = { change, _ ->
+                    val next = valueFromX(change.position.x)
+                    // Only when the half-star value actually changes, not on every pixel.
+                    if (next != hover) {
+                        hover = next
+                        haptics.perform(HapticCue.TICK)
+                    }
+                },
                 onDragEnd = { hover?.let(onChange); hover = null },
                 onDragCancel = { hover = null },
             )
