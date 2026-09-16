@@ -34,8 +34,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -54,6 +56,8 @@ import fr.paulbr.nookmind.core.designsystem.NookShapes
 import fr.paulbr.nookmind.core.designsystem.NookTheme
 import fr.paulbr.nookmind.core.designsystem.Palette
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
+import fr.paulbr.nookmind.core.ui.HapticCue
+import fr.paulbr.nookmind.core.ui.LocalNookHaptics
 import fr.paulbr.nookmind.resources.Res
 import fr.paulbr.nookmind.resources.logo
 import fr.paulbr.nookmind.resources.onboarding_getStarted
@@ -64,6 +68,8 @@ import fr.paulbr.nookmind.resources.onboarding_slide2Body
 import fr.paulbr.nookmind.resources.onboarding_slide2Title
 import fr.paulbr.nookmind.resources.onboarding_slide3Body
 import fr.paulbr.nookmind.resources.onboarding_slide3Title
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -75,6 +81,14 @@ fun OnboardingScreen(onFinish: () -> Unit) {
     val pagerState = rememberPagerState(pageCount = { 3 })
     val titles = listOf(Res.string.onboarding_slide1Title, Res.string.onboarding_slide2Title, Res.string.onboarding_slide3Title)
     val bodies = listOf(Res.string.onboarding_slide1Body, Res.string.onboarding_slide2Body, Res.string.onboarding_slide3Body)
+    val haptics = LocalNookHaptics.current
+    LaunchedEffect(pagerState) {
+        // drop(1) skips the initial emission, so opening the app is silent.
+        snapshotFlow { pagerState.currentPage }
+            .distinctUntilChanged()
+            .drop(1)
+            .collect { haptics.perform(HapticCue.TICK) }
+    }
 
     Box(Modifier.fillMaxSize().background(Palette.Night)) {
         HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
