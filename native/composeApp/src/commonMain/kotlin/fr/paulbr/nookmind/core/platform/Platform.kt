@@ -8,6 +8,9 @@ enum class PlatformKind { ANDROID, IOS, DESKTOP }
 /** Which platform the shared code runs on (`Capacitor.getPlatform()` equivalent). */
 expect val platformKind: PlatformKind
 
+/** Device API level, used to pick haptic constants the platform actually understands. */
+expect val hapticApiLevel: Int
+
 val isAndroid: Boolean get() = platformKind == PlatformKind.ANDROID
 val isIos: Boolean get() = platformKind == PlatformKind.IOS
 

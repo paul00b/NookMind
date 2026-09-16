@@ -6,6 +6,9 @@ import java.util.prefs.Preferences
 
 actual val platformKind: PlatformKind = PlatformKind.DESKTOP
 
+/** Desktop haptics are a no-op, so never degrade the mapping there. */
+actual val hapticApiLevel: Int = Int.MAX_VALUE
+
 actual fun createPlatformSettings(name: String): Settings =
     PreferencesSettings(Preferences.userRoot().node("fr.paulbr.nookmind.$name"))
 

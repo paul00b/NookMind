@@ -14,6 +14,8 @@ object AndroidContextHolder {
 
 actual val platformKind: PlatformKind = PlatformKind.ANDROID
 
+actual val hapticApiLevel: Int get() = android.os.Build.VERSION.SDK_INT
+
 actual fun createPlatformSettings(name: String): Settings {
     val prefs = AndroidContextHolder.appContext.getSharedPreferences("nookmind_$name", Context.MODE_PRIVATE)
     return SharedPreferencesSettings(prefs)
