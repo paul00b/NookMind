@@ -46,7 +46,6 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -75,6 +74,8 @@ import fr.paulbr.nookmind.core.designsystem.components.TextLink
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
 import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.core.model.ThemeMode
+import fr.paulbr.nookmind.core.ui.HapticCue
+import fr.paulbr.nookmind.core.ui.nookHaptics
 import fr.paulbr.nookmind.feature.legal.LegalKind
 import fr.paulbr.nookmind.resources.Res
 import fr.paulbr.nookmind.resources.common_defaultDisplayName
@@ -313,12 +314,9 @@ fun SettingsPanel(
                             checked = hapticsEnabled,
                             onChange = { enabled ->
                                 container.prefs.setHapticsEnabled(enabled)
-                                // LocalNookHaptics still holds the no-op this frame (it only picks up
-                                // the new pref on the next composition), so confirm directly via the
-                                // raw platform API — enabling is exactly the moment proof is wanted,
-                                // and this is the one place that should reach past the NookHaptics
-                                // vocabulary to do it.
-                                if (enabled) rawHaptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                                // LocalNookHaptics still holds the no-op this frame, so build
+                                // an instance directly — enabling is when proof is wanted.
+                                if (enabled) nookHaptics(true, rawHaptics).perform(HapticCue.CONFIRM)
                             },
                         )
                     }
