@@ -105,14 +105,25 @@ Five edits, each in a component that exists once:
 
 | Component | Cue | Trigger |
 |---|---|---|
-| `ToastHost` | `Confirm` / `Reject` | a new toast appears, by `ToastKind`; `INFO` is silent |
+| `ToastHost` | `Confirm` / `Reject` | a toast is *raised*, by `ToastKind`; `INFO` is silent |
 | `StarRating` | `Tick` | the rounded value changes during tap or drag — once per star, not per pixel |
 | `NookToggle` | `ToggleOn` / `ToggleOff` | checked state changes |
 | `ChoiceChip`, `PillTab` | `Tick` | selection changes; silent when re-tapping the active chip |
-| `OnboardingScreen` | `Tick` | `pagerState.currentPage` settles on a new page |
+| `OnboardingScreen` | `Tick` | `pagerState.settledPage` changes |
 
-`ToastHost` fires on *new* toast ids only, so the 3-second lifetime and recomposition do
-not retrigger it.
+The cue is driven by a `SharedFlow` event emitted from `ToastController.show()`, **not** by
+diffing the toast list. Review of the first implementation, which diffed the list, found
+three defects that the event model removes outright: two toasts raised in the same frame
+conflated into one cue that took the *newest* kind (so an error followed by a success
+buzzed `Confirm` while an error sat on screen); the de-duplication watermark reset whenever
+`MainScaffold` was replaced by the Legal overlay, re-cueing a live toast; and a list diff
+cannot express which toasts deserve a cue at all — which the next paragraph needs.
+
+**Automatic failures do not buzz.** `LibraryRepository.fetch()` runs from an `init` block on
+auth state, and `AppContainer` builds six such repositories. Opening the app offline
+therefore raised up to six error toasts — and would have buzzed `Reject` six times for
+something the user never did. Those paths use `errorSilently`; every user-initiated toast
+still cues.
 
 Two categories are deliberately excluded. **Navigation and tab switching** fire constantly
 and would read as noise. **Sheet dismissal** was considered and cut: closing a sheet
@@ -124,16 +135,45 @@ information the eye cannot yet confirm.
 
 ## Android API levels
 
-`minSdk` is 24, and the expressive constants are newer — `Confirm`/`Reject` require API
-30, `ToggleOn`/`ToggleOff`/`SegmentTick` require API 34. Below those levels the platform
-ignores the constant rather than crashing, so old devices get a subset.
+**This section originally said old devices "get a subset" and accepted it. That was wrong,
+and code review caught it.** Disassembling `PlatformHapticFeedback` from
+`androidx.compose.ui:ui-android:1.8.2` shows it passes raw platform constants with **no
+`SDK_INT` guard and no compat fallback**. An unrecognised constant is dropped silently — no
+vibration, no crash, no log.
 
-The primary test device runs **Android 16 (API 36)**, so all five cues are live there and
-hand-verification is meaningful. The degradation affects only other users on older phones.
+`minSdk` is 24. `Confirm`(16)/`Reject`(17) are API 30; `SegmentTick`(26), `ToggleOn`(21) and
+`ToggleOff`(22) are API **34**. So without a fallback:
 
-Accepted for now. A fallback ladder is deliberately not built: it costs an `expect`/`actual`
-for the SDK level and the Play Console will show whether meaningful old-API traffic exists.
-Adding it later is one mapping function.
+| Android | Cues that fire |
+|---|---|
+| 7–10 (API 24–29) | none |
+| 11–13 (API 30–33) | toast confirm/reject only — ratings, chips, toggles and onboarding all silent |
+| 14+ (API 34+) | all five |
+
+That is four of the five call sites dead for every user below Android 14, not a minor
+degradation on ancient hardware. And the primary test device runs **Android 16 (API 36)**,
+so hand-verification cannot reveal it: the feature would be signed off as working while
+shipping dead to most of the supported range.
+
+So the fallback ladder **is** built. `toFeedbackType(apiLevel)` takes the level as a
+defaulted parameter — `expect val hapticApiLevel` resolves to `Build.VERSION.SDK_INT` on
+Android and `Int.MAX_VALUE` on desktop, where haptics are a no-op anyway. Below 34, `TICK`
+and `TOGGLE_ON` fall back to `ContextClick` (API 23) and `TOGGLE_OFF` to `VirtualKey`
+(API 5), keeping on and off distinct; below 30, `CONFIRM` falls back to `ContextClick` and
+`REJECT` to `LongPress`. Every fallback is safe at minSdk 24.
+
+**The five cues are not all distinct below API 34, and cannot be.** Of the vocabulary
+Compose exposes, only `ContextClick`, `LongPress` and `VirtualKey` are safe at minSdk 24
+(`TextHandleMove` needs 27) — three constants for five cues. So `TICK` and `TOGGLE_ON`
+share `ContextClick` below 34, and `CONFIRM` joins them below 30. This is accepted: the cues
+collide only across unrelated contexts (a chip tick versus a switch turning on), never
+within one interaction, and firing something is far better than the silence this replaces.
+The tests assert full distinctness at 34 and the pairs that must stay distinct
+(`TOGGLE_ON`/`TOGGLE_OFF`, `CONFIRM`/`REJECT`) at every tier.
+
+Taking the level as a parameter rather than reading it inside the function is what keeps the
+mapping testable: the tests pin all three tiers on both platforms, which matters because a
+plain Android unit test reports `SDK_INT` as 0.
 
 ## No new permission
 
@@ -152,6 +192,10 @@ Unit tests in `commonTest`, alongside the existing 56:
 Verification that cannot be unit-tested, to be done on device:
 
 - Each of the five cues fires, and each is distinguishable from the others.
+- Opening the app in airplane mode is **silent**, despite the error toasts.
+- On a pre-Android-14 device, ratings, chips, toggles and onboarding still vibrate (this
+  cannot be checked on the API 36 primary device, and is the failure mode most likely to
+  ship unnoticed).
 - Turning the Settings switch off silences all of them.
 - Turning the OS haptics setting off silences all of them regardless of the in-app switch.
 - `./gradlew :composeApp:screenshots` still renders, proving the no-op default holds.
