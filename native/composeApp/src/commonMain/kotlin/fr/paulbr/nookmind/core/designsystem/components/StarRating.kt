@@ -107,14 +107,15 @@ fun StarRating(
 
     val haptics = LocalNookHaptics.current
     val gesture = if (readonly || onChange == null) Modifier else Modifier
-        .pointerInput(Unit) {
+        .pointerInput(haptics) {
             detectTapGestures(onTap = { offset ->
-                haptics.perform(HapticCue.TICK)
-                onChange(valueFromX(offset.x))
+                val next = valueFromX(offset.x)
+                if (next != value) haptics.perform(HapticCue.TICK)
+                onChange(next)
                 hover = null
             })
         }
-        .pointerInput(Unit) {
+        .pointerInput(haptics) {
             detectDragGestures(
                 onDragStart = { offset ->
                     hover = valueFromX(offset.x)
