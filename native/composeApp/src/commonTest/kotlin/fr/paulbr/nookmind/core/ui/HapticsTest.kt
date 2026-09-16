@@ -1,39 +1,55 @@
 package fr.paulbr.nookmind.core.ui
 
+import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
+
+private class FakeHapticFeedback : HapticFeedback {
+    val performed = mutableListOf<HapticFeedbackType>()
+
+    override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) {
+        performed += hapticFeedbackType
+    }
+}
 
 class HapticsTest {
 
     @Test
     fun everyCueMapsToItsPlatformType() {
-        assertEquals(HapticFeedbackType.Confirm, NookHaptic.Confirm.toFeedbackType())
-        assertEquals(HapticFeedbackType.Reject, NookHaptic.Reject.toFeedbackType())
-        assertEquals(HapticFeedbackType.SegmentTick, NookHaptic.Tick.toFeedbackType())
-        assertEquals(HapticFeedbackType.ToggleOn, NookHaptic.ToggleOn.toFeedbackType())
-        assertEquals(HapticFeedbackType.ToggleOff, NookHaptic.ToggleOff.toFeedbackType())
+        assertEquals(HapticFeedbackType.Confirm, HapticCue.CONFIRM.toFeedbackType())
+        assertEquals(HapticFeedbackType.Reject, HapticCue.REJECT.toFeedbackType())
+        assertEquals(HapticFeedbackType.SegmentTick, HapticCue.TICK.toFeedbackType())
+        assertEquals(HapticFeedbackType.ToggleOn, HapticCue.TOGGLE_ON.toFeedbackType())
+        assertEquals(HapticFeedbackType.ToggleOff, HapticCue.TOGGLE_OFF.toFeedbackType())
     }
 
     @Test
     fun distinctCuesDoNotCollapseOntoOneType() {
-        val types = NookHaptic.entries.map { it.toFeedbackType() }.toSet()
-        assertEquals(NookHaptic.entries.size, types.size)
+        val types = HapticCue.entries.map { it.toFeedbackType() }.toSet()
+        assertEquals(HapticCue.entries.size, types.size)
     }
 
     @Test
-    fun theNoneInstanceSwallowsEveryCue() {
-        NookHaptic.entries.forEach { NookHaptics.None.perform(it) }
+    fun disabledForwardsNothingToTheFake() {
+        val feedback = FakeHapticFeedback()
+        val haptics = nookHaptics(enabled = false, feedback = feedback)
+
+        HapticCue.entries.forEach { haptics.perform(it) }
+
+        assertTrue(feedback.performed.isEmpty())
+        assertSame(NookHaptics.None, haptics)
     }
 
     @Test
-    fun aRecordingInstanceReceivesWhatItIsGiven() {
-        val received = mutableListOf<NookHaptic>()
-        val haptics = NookHaptics { received += it }
+    fun enabledForwardsEachCuesMappedTypeInOrder() {
+        val feedback = FakeHapticFeedback()
+        val haptics = nookHaptics(enabled = true, feedback = feedback)
 
-        haptics.perform(NookHaptic.Confirm)
-        haptics.perform(NookHaptic.Tick)
+        HapticCue.entries.forEach { haptics.perform(it) }
 
-        assertEquals(listOf(NookHaptic.Confirm, NookHaptic.Tick), received)
+        assertEquals(HapticCue.entries.map { it.toFeedbackType() }, feedback.performed)
     }
 }
