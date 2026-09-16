@@ -34,6 +34,14 @@ class AppPreferences(private val settings: Settings) {
         _mediaMode.value = mode
     }
 
+    private val _hapticsEnabled = MutableStateFlow(settings.getStringOrNull(KEY_HAPTICS) != "false")
+    val hapticsEnabled: StateFlow<Boolean> = _hapticsEnabled
+
+    fun setHapticsEnabled(enabled: Boolean) {
+        settings.putString(KEY_HAPTICS, enabled.toString())
+        _hapticsEnabled.value = enabled
+    }
+
     var onboardingCompleted: Boolean
         get() = settings.getStringOrNull(KEY_ONBOARDING) == "true"
         set(value) = if (value) settings.putString(KEY_ONBOARDING, "true") else settings.remove(KEY_ONBOARDING)
@@ -99,5 +107,6 @@ class AppPreferences(private val settings: Settings) {
         const val KEY_ONBOARDING = "nookmind_onboarding_completed"
         const val KEY_NOTIF_PROMPTED = "bm-notif-prompted"
         const val KEY_SERIES_REFRESH = "nookmind_series_tmdb_refresh"
+        const val KEY_HAPTICS = "nookmind_haptics_enabled"
     }
 }
