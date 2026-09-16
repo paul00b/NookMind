@@ -39,6 +39,8 @@ import androidx.compose.ui.unit.dp
 import fr.paulbr.nookmind.core.designsystem.NookShapes
 import fr.paulbr.nookmind.core.designsystem.NookTheme
 import fr.paulbr.nookmind.core.designsystem.Palette
+import fr.paulbr.nookmind.core.ui.HapticCue
+import fr.paulbr.nookmind.core.ui.LocalNookHaptics
 
 /** A generic tappable surface: shape, background, border, disabled alpha, optional press scale. */
 @Composable
@@ -213,8 +215,12 @@ fun ChoiceChip(
     contentPadding: PaddingValues = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
 ) {
     val colors = NookTheme.colors
+    val haptics = LocalNookHaptics.current
     NookPressable(
-        onClick = onClick,
+        onClick = {
+            if (!selected) haptics.perform(HapticCue.TICK)
+            onClick()
+        },
         modifier = modifier,
         shape = shape,
         background = if (selected) selectedColor else Color.Transparent,
@@ -230,8 +236,12 @@ fun ChoiceChip(
 @Composable
 fun PillTab(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, color: Color = Palette.Amber500) {
     val colors = NookTheme.colors
+    val haptics = LocalNookHaptics.current
     NookPressable(
-        onClick = onClick,
+        onClick = {
+            if (!selected) haptics.perform(HapticCue.TICK)
+            onClick()
+        },
         modifier = modifier,
         background = if (selected) color else colors.surfaceMuted,
         contentColor = if (selected) Palette.White else colors.textSubtle,
