@@ -200,7 +200,7 @@ renseigner une fois dans **Settings → Secrets and variables → Actions**, mê
 | `TMDB_API_KEY` | recherche films et séries, et tout l'onglet À suivre |
 | `GOOGLE_BOOKS_API_KEY` | recherche de livres (marche sans clé, mais fortement limitée) |
 | `GOOGLE_AUTH_WEB_CLIENT_ID` | connexion Google |
-| `GOOGLE_SERVICES_JSON` | notifications push — contenu de `google-services.json` encodé en base64 |
+| `GOOGLE_SERVICES_JSON` | notifications push — contenu de `google-services.json`, collé tel quel ou en base64 |
 | `DEBUG_KEYSTORE_BASE64` | signature stable — sans lui, connexion Google impossible et réinstallation refusée |
 
 Un secret absent ne fait pas échouer le build : il produit une app dont la fonctionnalité
@@ -250,7 +250,10 @@ Console Firebase, projet `nookmind-8f5be` :
 3. Certificat de signature SHA-1 : celui du keystore de debug.
 4. Télécharger le `google-services.json` obtenu. Il contient désormais les deux clients, celui de
    production et celui de debug, et remplace l'ancien.
-5. Pour CI : l'encoder en base64 et le coller dans le secret `GOOGLE_SERVICES_JSON`.
+5. Pour CI : ouvrir le fichier, tout sélectionner, coller dans le secret `GOOGLE_SERVICES_JSON`.
+   Le workflow accepte aussi bien le JSON brut que sa version base64, donc aucune commande
+   d'encodage à trouver. Un contenu qui n'est ni l'un ni l'autre est écarté avec un message
+   dans le résumé du run, plutôt que de faire échouer le build.
 
 ### Le SDK Android est requis même pour l'aperçu desktop
 

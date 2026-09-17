@@ -83,17 +83,37 @@ jobs:
       # Firebase Cloud Messaging only. Optional: without it the build succeeds and push
       # notifications are the one feature that stays off.
       #
+      # The secret holds either the file's JSON or its base64, whichever was easier to produce.
+      # Demanding one of the two only creates a way to get it wrong, so both are accepted.
+      #
       # The debug variant carries the .debug applicationId suffix, and the google-services
       # plugin fails the build outright on a variant it has no client for. A file without
       # that client is therefore worse than no file at all, so it is dropped rather than used.
       - name: google-services.json, when the secret is set
         if: env.GOOGLE_SERVICES_JSON != ''
         run: |
-          printf '%s' "$GOOGLE_SERVICES_JSON" | base64 -d > native/composeApp/google-services.json
+          dest=native/composeApp/google-services.json
+          if [ "$(printf '%s' "$GOOGLE_SERVICES_JSON" | tr -d '[:space:]' | cut -c1)" = '{' ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > "$dest"
+          else
+            printf '%s' "$GOOGLE_SERVICES_JSON" | base64 -d > "$dest" 2>/dev/null || true
+          fi
+
+          if ! jq -e . "$dest" > /dev/null 2>&1; then
+            rm -f "$dest"
+            {
+              echo "### google-services.json ignored"
+              echo
+              echo "The secret is neither the file's JSON nor its base64, so it was dropped and"
+              echo "the build continued without push notifications. Paste the whole contents of"
+              echo "the file downloaded from the Firebase console, opening brace included."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
           if ! jq -e '.client[].client_info.android_client_info.package_name
-                      | select(. == "fr.paulbr.nookmind.debug")' \
-                 native/composeApp/google-services.json > /dev/null; then
-            rm native/composeApp/google-services.json
+                      | select(. == "fr.paulbr.nookmind.debug")' "$dest" > /dev/null; then
+            rm "$dest"
             {
               echo "### google-services.json ignored"
               echo
