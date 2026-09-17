@@ -191,6 +191,20 @@ kotlin {
     }
 }
 
+// A debug APK is signed with a throwaway key that AGP generates per machine, so an APK from CI
+// and one from a laptop have different signatures and refuse to replace each other. Worse, Google
+// Sign-In keys off that signature: the Credential Manager needs an Android OAuth client registered
+// for this exact (applicationId, SHA-1) pair, which a key regenerated on every CI run can never
+// satisfy. `composeApp/debug.keystore` (git-ignored, written from a repository secret on CI) pins
+// it. Without the file the build still works, with the two consequences above.
+val debugKeystoreFile = file("debug.keystore")
+if (!debugKeystoreFile.exists()) {
+    logger.warn(
+        "composeApp/debug.keystore not found - this APK gets a per-machine signature, so it " +
+            "cannot replace an install signed elsewhere and Google Sign-In will refuse it."
+    )
+}
+
 android {
     namespace = "fr.paulbr.nookmind"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -210,6 +224,16 @@ android {
     }
 
     signingConfigs {
+        if (debugKeystoreFile.exists()) {
+            getByName("debug") {
+                storeFile = debugKeystoreFile
+                // The conventional Android debug password. What keeps the key private is the
+                // file being git-ignored, not the password.
+                storePassword = "android"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
+            }
+        }
         if (keystorePropertiesFile.exists()) {
             create("release") {
                 storeFile = file(keystoreProperties.getProperty("storeFile"))

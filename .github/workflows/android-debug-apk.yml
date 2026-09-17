@@ -39,6 +39,7 @@ jobs:
       TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
       GOOGLE_AUTH_WEB_CLIENT_ID: ${{ secrets.GOOGLE_AUTH_WEB_CLIENT_ID }}
       GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+      DEBUG_KEYSTORE_BASE64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
 
     steps:
       - uses: actions/checkout@v4
@@ -55,6 +56,29 @@ jobs:
           packages: 'platform-tools platforms;android-36'
 
       - uses: gradle/actions/setup-gradle@v4
+
+      # Without this the APK is signed with a key AGP generates fresh on every runner, so
+      # each build refuses to replace the previous install and Google Sign-In rejects the app
+      # (the Credential Manager needs an Android OAuth client registered for this exact
+      # applicationId and SHA-1). The secret pins one key for every build.
+      - name: debug.keystore, when the secret is set
+        if: env.DEBUG_KEYSTORE_BASE64 != ''
+        run: |
+          printf '%s' "$DEBUG_KEYSTORE_BASE64" | base64 -d > native/composeApp/debug.keystore
+          sha1=$(keytool -list -v -keystore native/composeApp/debug.keystore \
+                   -storepass android -alias androiddebugkey 2>/dev/null \
+                 | sed -n 's/.*SHA1: //p')
+          if [ -z "$sha1" ]; then
+            echo "The secret did not decode to a readable keystore."
+            exit 1
+          fi
+          {
+            echo "### Signed with the pinned debug key"
+            echo
+            echo "SHA-1: \`$sha1\`"
+            echo
+            echo "This is the fingerprint to register in Firebase for \`fr.paulbr.nookmind.debug\`."
+          } >> "$GITHUB_STEP_SUMMARY"
 
       # Firebase Cloud Messaging only. Optional: without it the build succeeds and push
       # notifications are the one feature that stays off.
@@ -99,6 +123,7 @@ jobs:
           report GOOGLE_BOOKS_API_KEY      "$GOOGLE_BOOKS_API_KEY"      "book search (works unauthenticated, but rate limited)"
           report TMDB_API_KEY              "$TMDB_API_KEY"              "movie and series search, and the whole Next Up tab"
           report GOOGLE_AUTH_WEB_CLIENT_ID "$GOOGLE_AUTH_WEB_CLIENT_ID" "Google sign-in"
+          report DEBUG_KEYSTORE_BASE64      "$DEBUG_KEYSTORE_BASE64"      "a stable signature: this APK cannot replace an install signed elsewhere, and Google sign-in refuses it"
           if [ -s /tmp/missing.md ]; then
             {
               echo "### Repository secrets missing"

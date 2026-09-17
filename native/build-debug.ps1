@@ -89,6 +89,20 @@ google-services plugin fails on a variant it has no client for. Pick one:
     Write-Host 'google-services.json: debug client present.' -ForegroundColor DarkGray
 }
 
+# Same signing key as the CI build. Without it AGP invents one per machine, so this APK
+# could not replace an install coming from GitHub Actions, and Google Sign-In would refuse
+# it because its SHA-1 is not the one registered for fr.paulbr.nookmind.debug.
+if (-not (Test-Path 'composeApp/debug.keystore')) {
+    Write-Host 'composeApp/debug.keystore is missing: this APK will not be able to replace one built by CI, and Google sign-in will not work. See README section 3.' -ForegroundColor Yellow
+} else {
+    $sha1 = (& "$env:JAVA_HOME\bin\keytool.exe" -list -v -keystore 'composeApp/debug.keystore' `
+        -storepass android -alias androiddebugkey 2>$null |
+        Select-String -Pattern 'SHA1:\s*(.+)$' |
+        ForEach-Object { $_.Matches[0].Groups[1].Value.Trim() } |
+        Select-Object -First 1)
+    if ($sha1) { Write-Host "Signing SHA-1: $sha1" -ForegroundColor DarkGray }
+}
+
 # ── Build ────────────────────────────────────────────────────────────────────
 Write-Host 'Building the debug APK...' -ForegroundColor Cyan
 & .\gradlew.bat :composeApp:assembleDebug

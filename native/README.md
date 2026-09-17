@@ -201,6 +201,7 @@ renseigner une fois dans **Settings → Secrets and variables → Actions**, mê
 | `GOOGLE_BOOKS_API_KEY` | recherche de livres (marche sans clé, mais fortement limitée) |
 | `GOOGLE_AUTH_WEB_CLIENT_ID` | connexion Google |
 | `GOOGLE_SERVICES_JSON` | notifications push — contenu de `google-services.json` encodé en base64 |
+| `DEBUG_KEYSTORE_BASE64` | signature stable — sans lui, connexion Google impossible et réinstallation refusée |
 
 Un secret absent ne fait pas échouer le build : il produit une app dont la fonctionnalité
 correspondante est morte, et le résumé du run liste ce qui manque.
@@ -210,9 +211,46 @@ niveau d'exposition : toutes ces clés sont déjà dans le bundle JavaScript du 
 anon Supabase est publique par conception (c'est le RLS qui protège les données). Le keystore de
 release, lui, n'est jamais utilisé par ce workflow.
 
-Dernier point : chaque machine a son propre keystore de debug. Un APK venu d'Actions n'a donc pas
-la même signature qu'un APK compilé sur le PC. Si Android refuse l'installation en parlant de
-signature, désinstaller `fr.paulbr.nookmind.debug` d'abord.
+### La signature de debug, et pourquoi elle doit être figée
+
+Par défaut, AGP fabrique un keystore de debug jetable sur chaque machine qui compile. Trois
+conséquences, toutes visibles à l'usage :
+
+- un APK venu d'Actions et un APK compilé sur le PC refusent de se remplacer l'un l'autre ;
+- chaque run GitHub repart d'un runner neuf, donc même deux APK d'Actions sont incompatibles ;
+- la connexion Google échoue. Le Credential Manager exige un client OAuth Android enregistré
+  pour le couple exact (nom de package, SHA-1), et un SHA-1 qui change à chaque build ne peut
+  pas être enregistré.
+
+D'où `native/composeApp/debug.keystore`, ignoré par git, avec le mot de passe conventionnel
+`android` et l'alias `androiddebugkey`. Quand le fichier est là, `signingConfigs.debug` l'utilise ;
+quand il manque, le build marche toujours et prévient. Sur CI il est écrit depuis le secret
+`DEBUG_KEYSTORE_BASE64`. En local il suffit de déposer le même fichier au même endroit, et les
+deux builds deviennent interchangeables.
+
+Pour retrouver son empreinte :
+
+```bash
+keytool -list -v -keystore composeApp/debug.keystore -storepass android -alias androiddebugkey
+```
+
+Le run GitHub l'affiche aussi dans son résumé, à chaque build.
+
+### Connexion Google et notifications sur un build debug
+
+Les deux demandent que `fr.paulbr.nookmind.debug` existe comme application Android à part entière
+dans le projet Firebase, avec le SHA-1 du keystore ci-dessus. Firebase et Google Cloud partagent le
+même projet : enregistrer l'empreinte dans Firebase crée le client OAuth Android dont le Credential
+Manager a besoin. Une seule manipulation couvre donc les deux fonctionnalités.
+
+Console Firebase, projet `nookmind-8f5be` :
+
+1. Paramètres du projet, **Ajouter une application** → Android.
+2. Nom du package : `fr.paulbr.nookmind.debug`.
+3. Certificat de signature SHA-1 : celui du keystore de debug.
+4. Télécharger le `google-services.json` obtenu. Il contient désormais les deux clients, celui de
+   production et celui de debug, et remplace l'ancien.
+5. Pour CI : l'encoder en base64 et le coller dans le secret `GOOGLE_SERVICES_JSON`.
 
 ### Le SDK Android est requis même pour l'aperçu desktop
 
