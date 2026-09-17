@@ -72,6 +72,9 @@ jobs:
             echo "The secret did not decode to a readable keystore."
             exit 1
           fi
+          # Printed to the log too, not only the job summary: the summary is a rendered page,
+          # so a fingerprint that lives only there cannot be read back from the build output.
+          echo "Signing key SHA-1: $sha1"
           {
             echo "### Signed with the pinned debug key"
             echo
@@ -173,6 +176,7 @@ jobs:
             fp=$("$signer" verify --print-certs out/NookMind-debug.apk 2>/dev/null \
                  | sed -n 's/.*certificate SHA-1 digest: *//p' | head -1 \
                  | tr 'a-z' 'A-Z' | sed 's/../&:/g; s/:$//')
+            [ -n "$fp" ] && echo "APK signature SHA-1: $fp"
             [ -n "$fp" ] && {
               echo "### Signature carried by this APK"
               echo
