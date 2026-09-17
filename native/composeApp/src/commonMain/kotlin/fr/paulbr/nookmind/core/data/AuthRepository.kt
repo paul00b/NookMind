@@ -98,10 +98,11 @@ class AuthRepository(
     }
 
     suspend fun signInWithGoogle(): Result<Unit> = runCatching {
-        val idToken = googleSignIn.signIn()
+        val result = googleSignIn.signIn()
         client.auth.signInWith(IDToken) {
-            this.idToken = idToken
+            idToken = result.idToken
             provider = Google
+            nonce = result.nonce
         }
     }
 

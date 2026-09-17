@@ -1,11 +1,17 @@
 package fr.paulbr.nookmind.core.platform
 
+/**
+ * What Supabase needs to accept a Google sign-in: the ID token, and the *raw* nonce whose
+ * SHA-256 the provider embedded in it. Supplying one without the other is rejected.
+ */
+class GoogleSignInResult(val idToken: String, val nonce: String)
+
 /** Native Google Sign-In (Credential Manager on Android, GoogleSignIn SDK on iOS). */
 interface GoogleSignInProvider {
     val isAvailable: Boolean
 
-    /** Returns a Google ID token to hand to Supabase (`signInWithIdToken`). */
-    suspend fun signIn(): String
+    /** Returns what `signInWithIdToken` needs. */
+    suspend fun signIn(): GoogleSignInResult
 
     suspend fun signOut()
 }
@@ -28,7 +34,8 @@ interface PushPlatform {
 
 object UnavailableGoogleSignIn : GoogleSignInProvider {
     override val isAvailable: Boolean = false
-    override suspend fun signIn(): String = throw IllegalStateException("Google sign-in is not available on this platform.")
+    override suspend fun signIn(): GoogleSignInResult =
+        throw IllegalStateException("Google sign-in is not available on this platform.")
     override suspend fun signOut() = Unit
 }
 
