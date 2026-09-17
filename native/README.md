@@ -160,6 +160,15 @@ qui ne rend rien non plus quand les deux listes sont vides. Ce n'est pas un écr
 ./gradlew :composeApp:bundleRelease     # AAB signé pour le Play Store
 ```
 
+Sur la machine Windows, `build-debug.ps1` fait tout en une commande : il pose le JDK d'Android
+Studio et le magasin de certificats qui contourne Avast, vérifie que `secrets.properties` existe,
+compile, dépose l'APK dans `native/NookMind-debug.apk`, et l'installe si un téléphone est branché.
+
+```powershell
+cd native
+.\build-debug.ps1
+```
+
 Le build debug porte le suffixe `.debug` sur l'`applicationId`, il cohabite donc avec la version du
 Play Store sur le même appareil. Attention : ce suffixe change l'empreinte attendue par Google
 Sign-In, il faut déclarer le SHA-1 du keystore de debug (`~/.android/debug.keystore`, mot de passe

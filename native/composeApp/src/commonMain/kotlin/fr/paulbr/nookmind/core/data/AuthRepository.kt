@@ -94,7 +94,7 @@ class AuthRepository(
         runCatching { googleSignIn.signOut() }
         runCatching { appleSignIn.signOut() }
         runCatching { client.auth.signOut() }.onFailure { logDebug("auth", "signOut failed", it) }
-        prefs.onboardingCompleted = false
+        prefs.setOnboardingCompleted(false)
     }
 
     suspend fun signInWithGoogle(): Result<Unit> = runCatching {

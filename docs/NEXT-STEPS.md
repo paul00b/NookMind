@@ -49,7 +49,9 @@ values in `.env`. If it is missing, regenerate it from `.env` — the mapping is
 `fr.paulbr.nookmind.debug`, or the Gradle plugin fails the debug build outright. The current
 copy has both.
 
-**3. Build environment (Windows machine specifically).** Java 8 is on `PATH` and cannot
+**3. Build environment (Windows machine specifically).** `native/build-debug.ps1` now does
+all of this for you; what follows is what it sets, for reference.
+ Java 8 is on `PATH` and cannot
 configure the build, and Avast's Web/Mail Shield intercepts TLS with a root CA the JVM does
 not trust — which breaks every Gradle download. Every Gradle invocation needs:
 

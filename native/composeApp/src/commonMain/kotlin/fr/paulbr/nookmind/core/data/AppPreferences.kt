@@ -43,9 +43,22 @@ class AppPreferences(private val settings: Settings) {
         _hapticsEnabled.value = enabled
     }
 
-    var onboardingCompleted: Boolean
-        get() = settings.getStringOrNull(KEY_ONBOARDING) == "true"
-        set(value) = if (value) settings.putString(KEY_ONBOARDING, "true") else settings.remove(KEY_ONBOARDING)
+    /**
+     * Whether the onboarding carousel has been finished.
+     *
+     * A StateFlow rather than a plain property because the signed-out screen switches on it:
+     * signing out clears it, finishing the carousel sets it again, and neither is visible to
+     * Compose unless the value is observable. It used to be a plain getter over the settings, so
+     * finishing the carousel after a sign-out changed nothing Compose could see and the last slide
+     * simply sat there.
+     */
+    private val _onboardingCompleted = MutableStateFlow(settings.getStringOrNull(KEY_ONBOARDING) == "true")
+    val onboardingCompleted: StateFlow<Boolean> = _onboardingCompleted
+
+    fun setOnboardingCompleted(completed: Boolean) {
+        if (completed) settings.putString(KEY_ONBOARDING, "true") else settings.remove(KEY_ONBOARDING)
+        _onboardingCompleted.value = completed
+    }
 
     var notificationPrompted: Boolean
         get() = settings.hasKey(KEY_NOTIF_PROMPTED)

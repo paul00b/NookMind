@@ -44,12 +44,11 @@ sealed interface RootOverlay {
 @Composable
 fun AppRoot(container: AppContainer) {
     val authState by container.auth.state.collectAsState()
-    var onboardingDone by remember { mutableStateOf(container.prefs.onboardingCompleted) }
+    val onboardingDone by container.prefs.onboardingCompleted.collectAsState()
     var overlay by remember { mutableStateOf<RootOverlay?>(null) }
 
     fun completeOnboarding() {
-        container.prefs.onboardingCompleted = true
-        onboardingDone = true
+        container.prefs.setOnboardingCompleted(true)
         overlay = null
     }
 
@@ -60,8 +59,7 @@ fun AppRoot(container: AppContainer) {
             AuthState.Loading -> LoadingScreen()
             AuthState.SignedOut -> {
                 // signOut() resets the flag, exactly like the web app.
-                val done = onboardingDone && container.prefs.onboardingCompleted
-                if (!done) {
+                if (!onboardingDone) {
                     OnboardingScreen(onFinish = ::completeOnboarding)
                 } else {
                     LoginScreen(container)
@@ -71,8 +69,7 @@ fun AppRoot(container: AppContainer) {
                 container = container,
                 onOpenLegal = { overlay = RootOverlay.Legal(it) },
                 onReplayOnboarding = {
-                    container.prefs.onboardingCompleted = false
-                    onboardingDone = false
+                    container.prefs.setOnboardingCompleted(false)
                     overlay = RootOverlay.Onboarding
                 },
             )
