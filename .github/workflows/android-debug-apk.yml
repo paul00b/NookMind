@@ -163,6 +163,26 @@ jobs:
           if [ -z "$apk" ]; then echo "The build reported success but produced no APK."; exit 1; fi
           mkdir -p out
           cp "$apk" out/NookMind-debug.apk
+
+          # The fingerprint of the certificate that actually signed this file, read back from the
+          # file itself. The keystore step prints what it *intends* to sign with; this proves the
+          # signing config was applied. It is the value Google matches against the Android OAuth
+          # client, so a Google sign-in that fails on identity is checked against this, not a guess.
+          signer=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f 2>/dev/null | sort -V | tail -1)
+          if [ -n "$signer" ]; then
+            fp=$("$signer" verify --print-certs out/NookMind-debug.apk 2>/dev/null \
+                 | sed -n 's/.*certificate SHA-1 digest: *//p' | head -1 \
+                 | tr 'a-z' 'A-Z' | sed 's/../&:/g; s/:$//')
+            [ -n "$fp" ] && {
+              echo "### Signature carried by this APK"
+              echo
+              echo "SHA-1: \`$fp\`"
+              echo
+              echo "This exact value must be registered in Firebase for \`fr.paulbr.nookmind.debug\`,"
+              echo "which is what provisions the Android OAuth client that Google sign-in checks."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
           {
             echo "### APK ready"
             echo
