@@ -28,12 +28,65 @@ if (Test-Path $trustStore) {
     Write-Host "Truststore: $trustStore" -ForegroundColor DarkGray
 }
 
+# -- Android SDK ---------------------------------------------------------------
+# AGP finds the SDK through local.properties or ANDROID_HOME. Neither exists on a machine
+# where the project was never opened in Android Studio, and the failure then reads
+# "SDK location not found", which says nothing about how to fix it.
+$sdk = $null
+foreach ($candidate in @($env:ANDROID_HOME, $env:ANDROID_SDK_ROOT, (Join-Path $env:LOCALAPPDATA 'Android\Sdk'))) {
+    if ($candidate -and (Test-Path (Join-Path $candidate 'platform-tools'))) { $sdk = $candidate; break }
+}
+if (-not $sdk) {
+    throw @"
+The Android SDK was not found.
+
+Open Android Studio -> More Actions -> SDK Manager, install "Android SDK Platform 36"
+and "Android SDK Platform-Tools", then run this script again. The SDK normally lands in
+$env:LOCALAPPDATA\Android\Sdk.
+
+Without it only the desktop preview can be built: .\gradlew.bat :composeApp:run
+"@
+}
+$env:ANDROID_HOME = $sdk
+Write-Host "Android SDK: $sdk" -ForegroundColor DarkGray
+
+if (-not (Test-Path 'local.properties')) {
+    # Forward slashes: a .properties file treats a backslash as an escape, and sdk.dir
+    # accepts either form on Windows.
+    "sdk.dir=" + ($sdk -replace '\\', '/') | Set-Content -Path 'local.properties' -Encoding ASCII
+    Write-Host 'Wrote native/local.properties (git-ignored).' -ForegroundColor DarkGray
+}
+
 # ── The three files that must exist ──────────────────────────────────────────
 if (-not (Test-Path 'secrets.properties')) {
     throw "native/secrets.properties is missing. Copy secrets.properties.example and fill it in (README section 2)."
 }
 if (-not (Test-Path 'composeApp/google-services.json')) {
     Write-Host 'composeApp/google-services.json is missing: the build will work, push notifications will not.' -ForegroundColor Yellow
+} else {
+    # The debug variant carries the .debug applicationId suffix. The google-services plugin
+    # refuses to configure a variant whose applicationId matches no client in the file, and
+    # fails mid-build with "No matching client found for package name". Catch it up front,
+    # because the message does not say what to do about it.
+    $clients = (Get-Content 'composeApp/google-services.json' -Raw | ConvertFrom-Json).client
+    $packages = @($clients | ForEach-Object { $_.client_info.android_client_info.package_name })
+    if ($packages -notcontains 'fr.paulbr.nookmind.debug') {
+        throw @"
+composeApp/google-services.json has no client for fr.paulbr.nookmind.debug.
+
+It declares: $($packages -join ', ')
+
+The debug build appends the .debug suffix so it can sit next to the Play Store app, and the
+google-services plugin fails on a variant it has no client for. Pick one:
+
+  1. Firebase console, project nookmind-8f5be -> add an Android app with the package name
+     fr.paulbr.nookmind.debug, download google-services.json again (it will hold both
+     clients) and replace the file. Needed anyway to test push on a debug build.
+  2. Just to get an APK now: rename composeApp/google-services.json out of the way. The
+     build then succeeds and push notifications are the one feature that stays off.
+"@
+    }
+    Write-Host 'google-services.json: debug client present.' -ForegroundColor DarkGray
 }
 
 # ── Build ────────────────────────────────────────────────────────────────────

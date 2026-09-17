@@ -174,6 +174,46 @@ Play Store sur le même appareil. Attention : ce suffixe change l'empreinte atte
 Sign-In, il faut déclarer le SHA-1 du keystore de debug (`~/.android/debug.keystore`, mot de passe
 `android`) dans la console Google Cloud pour tester la connexion Google en debug.
 
+### APK construit par GitHub Actions, quand la machine locale résiste
+
+Le workflow `.github/workflows/android-debug-apk.yml` compile l'APK debug sur un runner GitHub.
+Ce runner a déjà le SDK Android, un JDK 17 et un accès direct au dépôt Maven de Google, donc il
+ne dépend ni du SDK local, ni de la version de Java sur le PATH, ni de l'interception TLS d'un
+antivirus. C'est la voie de secours quand `assembleDebug` échoue en local.
+
+Il se déclenche à chaque push sur `main` ou sur une branche `claude/**` qui touche `native/`, et
+manuellement depuis l'onglet Actions une fois le fichier présent sur `main` (GitHub n'affiche le
+bouton « Run workflow » que pour les workflows de la branche par défaut).
+
+Récupérer l'APK : dépôt → **Actions** → le run → section **Artifacts** → `nookmind-debug-apk`.
+C'est un `.zip` qui contient `NookMind-debug.apk`.
+
+Les clés viennent des secrets du dépôt, pas de `secrets.properties` qui n'est pas versionné. À
+renseigner une fois dans **Settings → Secrets and variables → Actions**, mêmes noms que dans
+`secrets.properties` :
+
+| Secret | Ce qui casse sans lui |
+| --- | --- |
+| `SUPABASE_URL` | la connexion et toute la bibliothèque |
+| `SUPABASE_ANON_KEY` | la connexion et toute la bibliothèque |
+| `API_BASE_URL` | notes IMDb, plateformes de streaming, suppression de compte |
+| `TMDB_API_KEY` | recherche films et séries, et tout l'onglet À suivre |
+| `GOOGLE_BOOKS_API_KEY` | recherche de livres (marche sans clé, mais fortement limitée) |
+| `GOOGLE_AUTH_WEB_CLIENT_ID` | connexion Google |
+| `GOOGLE_SERVICES_JSON` | notifications push — contenu de `google-services.json` encodé en base64 |
+
+Un secret absent ne fait pas échouer le build : il produit une app dont la fonctionnalité
+correspondante est morte, et le résumé du run liste ce qui manque.
+
+Le dépôt est public, donc l'artefact est téléchargeable par n'importe qui. Ça ne change rien au
+niveau d'exposition : toutes ces clés sont déjà dans le bundle JavaScript du site web, et la clé
+anon Supabase est publique par conception (c'est le RLS qui protège les données). Le keystore de
+release, lui, n'est jamais utilisé par ce workflow.
+
+Dernier point : chaque machine a son propre keystore de debug. Un APK venu d'Actions n'a donc pas
+la même signature qu'un APK compilé sur le PC. Si Android refuse l'installation en parlant de
+signature, désinstaller `fr.paulbr.nookmind.debug` d'abord.
+
 ### Le SDK Android est requis même pour l'aperçu desktop
 
 Le module `composeApp` déclare la cible Android, donc le plugin Android est configuré à chaque
