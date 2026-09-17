@@ -173,26 +173,18 @@ qui ne rend rien non plus quand les deux listes sont vides. Ce n'est pas un écr
 ./gradlew :composeApp:bundleRelease     # AAB signé pour le Play Store
 ```
 
-Sur la machine Windows, `build-debug.ps1` fait tout en une commande : il pose le JDK d'Android
-Studio et le magasin de certificats qui contourne Avast, vérifie que `secrets.properties` existe,
-compile, dépose l'APK dans `native/NookMind-debug.apk`, et l'installe si un téléphone est branché.
-
-```powershell
-cd native
-.\build-debug.ps1
-```
-
 Le build debug porte le suffixe `.debug` sur l'`applicationId`, il cohabite donc avec la version du
-Play Store sur le même appareil. Attention : ce suffixe change l'empreinte attendue par Google
-Sign-In, il faut déclarer le SHA-1 du keystore de debug (`~/.android/debug.keystore`, mot de passe
-`android`) dans la console Google Cloud pour tester la connexion Google en debug.
+Play Store sur le même appareil. Ce suffixe fait de lui une application distincte aux yeux de
+Google, qui a donc besoin de son propre client OAuth Android : package `fr.paulbr.nookmind.debug`
+et SHA-1 du keystore qui signe l'APK. Voir la section sur la signature de debug plus bas.
 
 ### APK construit par GitHub Actions, quand la machine locale résiste
 
 Le workflow `.github/workflows/android-debug-apk.yml` compile l'APK debug sur un runner GitHub.
 Ce runner a déjà le SDK Android, un JDK 17 et un accès direct au dépôt Maven de Google, donc il
 ne dépend ni du SDK local, ni de la version de Java sur le PATH, ni de l'interception TLS d'un
-antivirus. C'est la voie de secours quand `assembleDebug` échoue en local.
+antivirus. C'est la façon la plus simple d'obtenir un APK installable, et elle ne dépend d'aucune
+machine en particulier.
 
 Il se déclenche à chaque push sur `main` ou sur une branche `claude/**` qui touche `native/`, et
 manuellement depuis l'onglet Actions une fois le fichier présent sur `main` (GitHub n'affiche le
@@ -226,44 +218,58 @@ release, lui, n'est jamais utilisé par ce workflow.
 
 ### La signature de debug, et pourquoi elle doit être figée
 
-Par défaut, AGP fabrique un keystore de debug jetable sur chaque machine qui compile. Trois
-conséquences, toutes visibles à l'usage :
+Google Sign-In s'appuie sur le certificat qui signe l'APK : le Credential Manager exige un client
+OAuth Android déclaré pour le couple exact (nom de package, SHA-1). Une même clé doit donc signer
+tous les builds debug, où qu'ils soient produits, et ce doit être celle déclarée chez Google. Deux
+APK signés différemment refusent par ailleurs de se remplacer l'un l'autre sur l'appareil.
 
-- un APK venu d'Actions et un APK compilé sur le PC refusent de se remplacer l'un l'autre ;
-- chaque run GitHub repart d'un runner neuf, donc même deux APK d'Actions sont incompatibles ;
-- la connexion Google échoue. Le Credential Manager exige un client OAuth Android enregistré
-  pour le couple exact (nom de package, SHA-1), et un SHA-1 qui change à chaque build ne peut
-  pas être enregistré.
+Sans indication, AGP signe avec le `~/.android/debug.keystore` de la machine, en en fabriquant un
+s'il n'y en a pas. C'est juste sur la machine de développement dont l'empreinte est enregistrée, et
+faux partout ailleurs, à commencer par un runner GitHub qui démarre vierge.
 
-D'où `native/composeApp/debug.keystore`, ignoré par git, avec le mot de passe conventionnel
-`android` et l'alias `androiddebugkey`. Quand le fichier est là, `signingConfigs.debug` l'utilise ;
-quand il manque, le build marche toujours et prévient. Sur CI il est écrit depuis le secret
-`DEBUG_KEYSTORE_BASE64`. En local il suffit de déposer le même fichier au même endroit, et les
-deux builds deviennent interchangeables.
-
-Pour retrouver son empreinte :
+**La clé de référence est donc le `~/.android/debug.keystore` de la machine de développement**, dont
+le SHA-1 est déclaré dans le client OAuth Android « Android Debug » du projet Google Cloud de la web
+app. Conséquence pratique : sur cette machine il n'y a rien à faire, AGP la trouve tout seul.
+Ailleurs, et sur CI, `native/composeApp/debug.keystore` porte la même clé. Le fichier est ignoré par
+git, et sur CI il est écrit depuis le secret `DEBUG_KEYSTORE_BASE64` :
 
 ```bash
-keytool -list -v -keystore composeApp/debug.keystore -storepass android -alias androiddebugkey
+base64 -i ~/.android/debug.keystore -o keystore.txt   # macOS
+base64 -w 0 ~/.android/debug.keystore > keystore.txt  # Linux
 ```
 
-Le run GitHub l'affiche aussi dans son résumé, à chaque build.
+Chaque run GitHub relit l'empreinte dans l'APK produit avec `apksigner` et l'affiche dans son
+résumé. C'est cette valeur, et pas celle du keystore, qui doit correspondre à ce qui est déclaré
+chez Google : elle prouve que la configuration de signature a bien été appliquée.
 
-### Connexion Google et notifications sur un build debug
+### Connexion Google sur un build debug
 
-Les deux demandent que `fr.paulbr.nookmind.debug` existe comme application Android à part entière
-dans le projet Firebase, avec le SHA-1 du keystore ci-dessus. Firebase et Google Cloud partagent le
-même projet : enregistrer l'empreinte dans Firebase crée le client OAuth Android dont le Credential
-Manager a besoin. Une seule manipulation couvre donc les deux fonctionnalités.
+Le suffixe `.debug` fait du build de test une application distincte aux yeux de Google. Il lui faut
+donc son propre client OAuth Android, dans **le projet Google Cloud qui possède le client web passé
+en `GOOGLE_AUTH_WEB_CLIENT_ID`** — pas ailleurs, et notamment pas dans le projet Firebase si les
+deux diffèrent. C'est le client nommé « Android Debug », avec le package `fr.paulbr.nookmind.debug`
+et le SHA-1 de la clé ci-dessus.
+
+Un client OAuth Android ne porte qu'un seul couple package plus empreinte, et Google impose son
+unicité entre projets. Changer de clé de signature veut donc dire modifier ce client, pas en
+ajouter un second.
+
+### Notifications push sur un build debug
+
+Celles-ci passent par Firebase, qui peut être un autre projet. Il faut que
+`fr.paulbr.nookmind.debug` y existe comme application Android, pour que `google-services.json`
+contienne un client à son nom : sans quoi le plugin `google-services` fait échouer le build.
+
+Aucune empreinte SHA-1 n'est nécessaire pour les notifications. Firebase n'en demande une que pour
+la connexion Google, les Dynamic Links et l'authentification par téléphone.
 
 Console Firebase, projet `nookmind-8f5be` :
 
 1. Paramètres du projet, **Ajouter une application** → Android.
-2. Nom du package : `fr.paulbr.nookmind.debug`.
-3. Certificat de signature SHA-1 : celui du keystore de debug.
-4. Télécharger le `google-services.json` obtenu. Il contient désormais les deux clients, celui de
+2. Nom du package : `fr.paulbr.nookmind.debug`. Laisser le champ SHA-1 vide.
+3. Télécharger le `google-services.json` obtenu. Il contient désormais les deux clients, celui de
    production et celui de debug, et remplace l'ancien.
-5. Pour CI : ouvrir le fichier, tout sélectionner, coller dans le secret `GOOGLE_SERVICES_JSON`.
+4. Pour CI : ouvrir le fichier, tout sélectionner, coller dans le secret `GOOGLE_SERVICES_JSON`.
    Le workflow accepte aussi bien le JSON brut que sa version base64, donc aucune commande
    d'encodage à trouver. Un contenu qui n'est ni l'un ni l'autre est écarté avec un message
    dans le résumé du run, plutôt que de faire échouer le build.

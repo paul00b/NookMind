@@ -191,17 +191,22 @@ kotlin {
     }
 }
 
-// A debug APK is signed with a throwaway key that AGP generates per machine, so an APK from CI
-// and one from a laptop have different signatures and refuse to replace each other. Worse, Google
-// Sign-In keys off that signature: the Credential Manager needs an Android OAuth client registered
-// for this exact (applicationId, SHA-1) pair, which a key regenerated on every CI run can never
-// satisfy. `composeApp/debug.keystore` (git-ignored, written from a repository secret on CI) pins
-// it. Without the file the build still works, with the two consequences above.
+// Google Sign-In keys off the signing certificate: the Credential Manager needs an Android OAuth
+// client registered for this exact (applicationId, SHA-1) pair. So one key has to sign every debug
+// build, wherever it is produced, and it has to be the one registered with Google. Two APKs signed
+// differently also refuse to replace each other on the device.
+//
+// AGP would otherwise sign with whatever `~/.android/debug.keystore` the machine happens to have,
+// generating one on the spot if there is none. That is correct on the developer machine whose
+// fingerprint is the registered one, and wrong everywhere else, a CI runner most of all since it
+// starts empty. `composeApp/debug.keystore` (git-ignored, written from a repository secret on CI)
+// removes the guesswork by carrying that same key.
 val debugKeystoreFile = file("debug.keystore")
 if (!debugKeystoreFile.exists()) {
-    logger.warn(
-        "composeApp/debug.keystore not found - this APK gets a per-machine signature, so it " +
-            "cannot replace an install signed elsewhere and Google Sign-In will refuse it."
+    logger.lifecycle(
+        "composeApp/debug.keystore not found - signing with this machine's ~/.android/debug.keystore. " +
+            "Fine if its SHA-1 is the one registered for fr.paulbr.nookmind.debug, otherwise Google " +
+            "sign-in fails with \"Account reauth failed\" and the APK cannot replace an install signed elsewhere."
     )
 }
 
