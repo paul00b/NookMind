@@ -33,10 +33,16 @@ Three things live outside git and must exist before anything builds.
 values in `.env`. If it is missing, regenerate it from `.env` — the mapping is in
 `native/README.md` §2.
 
-> **The `GOOGLE_BOOKS_API_KEY` currently in the local file is newer than the one in `.env`.**
-> The `.env` value returns **503** from Google. If you rebuild from `.env` without carrying
-> the newer key across, book search breaks again. Keep a copy somewhere safe — it exists
-> only on the Windows machine.
+> **The `GOOGLE_BOOKS_API_KEY` in `.env` is stale** and returns **503** from Google. A newer key
+> replaced it; rebuilding `secrets.properties` from `.env` without carrying the newer one across
+> breaks book search again. It is not lost if the local file disappears: Google Cloud Console
+> shows API keys in full, so the canonical copy is *APIs & Services → Credentials* in the project
+> that owns it. Worth also updating `.env` and the Vercel environment so the web app and the
+> native app stop diverging.
+>
+> This key is not a password. It is compiled into the APK and served inside the web bundle, so
+> anyone can read it either way. What actually protects it is the restriction set on it in Google
+> Cloud: limit it to the Books API, and to the platforms that should be calling it.
 
 **2. `native/composeApp/google-services.json`** (git-ignored). From Firebase project
 `nookmind-8f5be`. It must declare **both** `fr.paulbr.nookmind` and

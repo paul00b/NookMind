@@ -37,6 +37,13 @@ object CheckApis {
             } else {
                 val body = res.bodyAsText().take(200).replace(Regex("\\s+"), " ")
                 println("$KO $label responded $code: $body")
+                // Google Books refuses requests it cannot geolocate. That is the VPN, the proxy or
+                // the datacenter the check is running from, never the API key.
+                if (body.contains("Cannot determine user location")) {
+                    println("         This one is the network, not the key: Google Books needs to")
+                    println("         geolocate the caller. Run the check off the VPN, or add")
+                    println("         &country=FR to this URL by hand to confirm the key works.")
+                }
             }
         } catch (t: Throwable) {
             println("$KO $label threw ${t::class.simpleName}: ${t.message}")
