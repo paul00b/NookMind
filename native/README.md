@@ -64,6 +64,19 @@ pratique en CI. Le build génère à partir de là un objet Kotlin `fr.paulbr.no
 `GOOGLE_AUTH_WEB_CLIENT_ID` est bien le client **web**, pas le client Android : le Credential Manager
 demande un jeton d'identité destiné au backend Supabase, qui ne reconnaît que ce client-là.
 
+**Et ce client web doit appartenir au projet Google Cloud où sont enregistrées les empreintes SHA-1
+de l'application.** Un identifiant client OAuth commence par le numéro de son projet, et celui du
+projet Firebase est le `project_number` de `google-services.json`. Si les deux nombres diffèrent, la
+connexion Google échoue avec `{16} Account reauth failed` : le jeton est demandé à un projet qui
+n'a aucun client Android déclaré pour ce package, donc rien n'y autorise l'application. Le message
+ne dit rien de tout ça, d'où la valeur de cette comparaison de préfixes.
+
+Le cas se produit facilement quand la web app et Firebase vivent dans deux projets différents.
+Deux issues : déclarer le client Android dans le projet du client web, ou basculer l'application sur
+le client web du projet Firebase et ajouter celui-ci à la liste des « Client IDs » du fournisseur
+Google de Supabase, qui en accepte plusieurs séparés par des virgules, le client web principal en
+premier. La seconde évite d'avoir à gérer les clients Android à la main à chaque nouvelle empreinte.
+
 ### `native/composeApp/google-services.json`
 
 À télécharger depuis la console Firebase (projet `nookmind-8f5be`, application Android
