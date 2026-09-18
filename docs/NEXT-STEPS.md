@@ -1,165 +1,188 @@
-# Where this branch stands, and what is left
+# Où en est cette branche, et ce qu'il reste
 
-Branch: `claude/optimistic-albattani-rj2h54`
-Last worked: 2026-09-16
+Branche : `claude/optimistic-albattani-rj2h54`
+Dernière mise à jour : 2026-09-18
 
-## Done
+## Fait
 
-The haptics feature is complete, reviewed and verified as far as automation allows:
+### La réécriture native
 
-- 5 intent-named cues (`HapticCue`) with an API-level fallback, a Settings switch, and
-  automatic background failures deliberately silent
-- **140 tests, 0 failures** (70 desktop + 70 Android), 35 screenshots, debug APK builds
-- Design: `docs/superpowers/specs/2026-09-16-haptics-design.md`
-- Plan and review history: `docs/superpowers/plans/2026-09-16-haptics.md`
+- 113 fichiers Kotlin, l'essentiel dans `commonMain` et donc réutilisable par iOS
+- 140 tests, 0 échec (70 desktop + 70 Android), 35 captures d'écran
+- Le retour haptique : 5 signaux nommés par intention (`HapticCue`) avec repli par niveau d'API,
+  un interrupteur dans les réglages, échecs silencieux en arrière-plan.
+  Design : `docs/superpowers/specs/2026-09-16-haptics-design.md`.
+  Plan et historique de revue : `docs/superpowers/plans/2026-09-16-haptics.md`.
+  Vérifié sur appareil, les cinq signaux sont justes.
 
-Confirmed working on device: all five cues feel right.
+### Le build Android sur GitHub Actions
 
-Backend status as of the last check — all green:
+`.github/workflows/android-debug-apk.yml` compile un APK debug installable à chaque push touchant
+`native/`, sans dépendre d'aucune machine locale. Récupération : dépôt → **Actions** → le run →
+**Artifacts** → `nookmind-debug-apk`.
 
-| | |
-|---|---|
-| Google Books | 200 (after replacing a key that was returning 503) |
-| TMDB | 200 |
-| Vercel routes | 200 |
-| Supabase | 200 |
-| Firebase / push | wired into the debug APK |
+Les 8 secrets du dépôt sont renseignés, l'étape « What is missing » ne signale plus rien, et les
+derniers runs sont verts. L'empreinte de la clé qui signe réellement l'APK, relue par `apksigner`
+dans le fichier produit :
 
-## Machine setup — read this first on any machine
-
-Three things live outside git and must exist before anything builds.
-
-**1. `native/secrets.properties`** (git-ignored). Six keys, mirroring the web app's `VITE_*`
-values in `.env`. If it is missing, regenerate it from `.env` — the mapping is in
-`native/README.md` §2.
-
-> **The `GOOGLE_BOOKS_API_KEY` in `.env` is stale** and returns **503** from Google. A newer key
-> replaced it; rebuilding `secrets.properties` from `.env` without carrying the newer one across
-> breaks book search again. It is not lost if the local file disappears: Google Cloud Console
-> shows API keys in full, so the canonical copy is *APIs & Services → Credentials* in the project
-> that owns it. Worth also updating `.env` and the Vercel environment so the web app and the
-> native app stop diverging.
->
-> This key is not a password. It is compiled into the APK and served inside the web bundle, so
-> anyone can read it either way. What actually protects it is the restriction set on it in Google
-> Cloud: limit it to the Books API, and to the platforms that should be calling it.
-
-**2. `native/composeApp/google-services.json`** (git-ignored). From Firebase project
-`nookmind-8f5be`. It must declare **both** `fr.paulbr.nookmind` and
-`fr.paulbr.nookmind.debug`, or the Gradle plugin fails the debug build outright. The current
-copy has both.
-
-**3. Build environment (Windows machine specifically).** `native/build-debug.ps1` now does
-all of this for you; what follows is what it sets, for reference.
- Java 8 is on `PATH` and cannot
-configure the build, and Avast's Web/Mail Shield intercepts TLS with a root CA the JVM does
-not trust — which breaks every Gradle download. Every Gradle invocation needs:
-
-```powershell
-$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
-$env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
-$env:JAVA_TOOL_OPTIONS = "-Djavax.net.ssl.trustStore=C:/Users/brous/.gradle/cacerts-avast -Djavax.net.ssl.trustStorePassword=changeit"
-cd native
+```
+00:88:4A:0C:2F:67:77:0F:F9:AC:7E:45:89:1B:AD:3D:5B:80:C0:8C
 ```
 
-`~/.gradle/cacerts-avast` is a copy of the JBR truststore plus the Avast root CA;
-`~/.gradle/gradle.properties` points the Gradle daemon at it. Both are user-level, not in the
-repo. Removing Avast's HTTPS scanning would make all of this unnecessary.
+### La connexion Google sur Android
 
-Verify everything at once with `./gradlew.bat :composeApp:checkApis` — it reports each secret
-and calls every backend with the real HTTP status.
+Confirmée fonctionnelle sur appareil. Elle a demandé trois corrections enchaînées, documentées dans
+les commits `84bcd09`, `7460e68` et `6b89924` :
 
-## Remaining steps, in order
+1. `GetGoogleIdOption` est l'API du bandeau One Tap passif, qui ne propose que les comptes ayant
+   déjà autorisé l'app. Remplacée par `GetSignInWithGoogleOption`, qui ouvre toujours le sélecteur.
+2. Supabase compare la revendication `nonce` du jeton au SHA-256 de la valeur brute qu'on lui
+   passe. Le code hachait le nonce mais perdait la valeur brute.
+3. Le client web OAuth passé en `GOOGLE_AUTH_WEB_CLIENT_ID` doit appartenir au **même projet Google
+   Cloud** que celui où sont déclarées les empreintes SHA-1. Sinon : `{16} Account reauth failed`,
+   dont le message ne dit rien de la cause.
 
-### 1. Test the debug build on the phone — *not yet done*
+### L'historique git
 
-`NookMind-debug.apk` was built with Firebase included. Install it (same package, so data
-survives) and check:
+La branche partait d'un commit racine sans aucun ancêtre commun avec `main`, ce qui la rendait
+impossible à merger. Les 50 commits ont été rejoués sur `main` ; l'arbre résultant est identique au
+bit près à ce qu'il était avant. La branche est maintenant un descendant linéaire de `main`,
+50 commits d'avance, 0 de retard.
 
-- [ ] Search in all three tabs — Livres especially, that was the 503
-- [ ] Google sign-in. If it fails: the `google-services.json` lists **zero Android OAuth
-      clients** for either package. That is normal when Google Sign-In is not a Firebase Auth
-      provider (this app authenticates through Supabase), but it is the first place to look.
-      The debug SHA-1 is `09:19:27:C2:25:15:6B:2C:4D:B7:C8:2C:C0:76:79:2C:56:47:15:DF` and
-      needs an OAuth **Android** client in Google Cloud for `fr.paulbr.nookmind.debug`.
-- [ ] Notifications: Paramètres → enable → grant the permission → *Tester les notifications*
-      → receive it → **tap it** and confirm it opens the right screen, not just home
+## Configuration machine
 
-### 2. Find the release keystore — the one real blocker
+La machine de développement est un **Mac**. Trois fichiers vivent hors de git et doivent exister
+avant tout build. Le détail complet est dans `native/README.md` §2 ; en résumé :
 
-`nookmind-release.jks` and its passwords are **not on the Windows machine** (searched). Without
-it there is no way to ship an update existing users can install — Android refuses a
-differently-signed APK over an installed one.
+1. **`native/secrets.properties`** — six clés, les mêmes que les `VITE_*` du `.env` du site.
+2. **`native/composeApp/google-services.json`** — projet Firebase `nookmind-8f5be`. Doit déclarer
+   `fr.paulbr.nookmind` **et** `fr.paulbr.nookmind.debug`, sinon le plugin Gradle fait échouer le
+   build debug.
+3. **`native/keystore.properties`** — uniquement pour les builds de release. Voir plus bas.
 
-If it is genuinely lost, check Play Console → *Setup → App signing*. If **Play App Signing** is
-enabled, Google holds the real signing key and the upload key can be reset — recoverable. If it
-is not enabled, that listing can never be updated and the app would have to be republished
-under a new package name.
+Sur le Mac, la clé de signature debug est le `~/.android/debug.keystore` habituel et AGP la trouve
+seul : il n'y a rien à faire. C'est ailleurs, et sur CI, qu'il faut `native/composeApp/debug.keystore`,
+écrit depuis le secret `DEBUG_KEYSTORE_BASE64`.
 
-Once found, create `native/keystore.properties`:
+> **La `GOOGLE_BOOKS_API_KEY` du `.env` est périmée** et renvoie 503. Une clé plus récente l'a
+> remplacée ; reconstruire `secrets.properties` depuis `.env` sans reporter la nouvelle casse à
+> nouveau la recherche de livres. La copie de référence est dans Google Cloud Console,
+> *APIs & Services → Credentials*. Ça vaut le coup de mettre aussi `.env` et l'environnement Vercel
+> à jour pour que le site et l'app native cessent de diverger.
+>
+> Cette clé n'est pas un mot de passe : elle est compilée dans l'APK et servie dans le bundle du
+> site, donc lisible dans les deux cas. Ce qui la protège, c'est la restriction posée dessus dans
+> Google Cloud (la limiter à l'API Books et aux plateformes censées l'appeler).
+
+Tout vérifier d'un coup : `./gradlew :composeApp:checkApis`, qui relit les secrets et appelle chaque
+backend en affichant le vrai code HTTP.
+
+## Ce qu'il reste, dans l'ordre
+
+### 1. Le keystore de release
+
+C'est le blocage pour publier. **Première chose à faire : regarder `~/nookmind-release.jks` sur le
+Mac.** `RELEASE.md` l'y situe explicitement, avec l'alias `nookmind` et le mot de passe dans un
+`android/keystore.properties` non versionné.
+
+Une version précédente de ce document concluait « introuvable, cherché » : la recherche avait été
+faite sur une machine Windows qui n'est pas la machine de développement. Cette conclusion ne vaut
+rien, le keystore n'a jamais été cherché au bon endroit.
+
+S'il est réellement perdu, aller voir Play Console → *Setup → App signing*. Si **Play App Signing**
+est actif, Google détient la vraie clé et la clé d'upload peut être réinitialisée, donc c'est
+récupérable. Sinon la fiche ne peut plus jamais être mise à jour et il faudrait republier sous un
+autre nom de package.
+
+Une fois trouvé, créer `native/keystore.properties` :
 
 ```properties
-storeFile=/absolute/path/to/nookmind-release.jks
+storeFile=/chemin/absolu/vers/nookmind-release.jks
 storePassword=…
 keyAlias=nookmind
 keyPassword=…
 ```
 
-### 3. Build and test a signed release
+### 2. Compiler et tester une release signée
 
-```powershell
-.\gradlew.bat :composeApp:assembleRelease   # APK
-.\gradlew.bat :composeApp:bundleRelease     # AAB for Play
+```bash
+cd native
+./gradlew :composeApp:assembleRelease   # APK
+./gradlew :composeApp:bundleRelease     # AAB pour le Play Store
 ```
 
-Release uses applicationId `fr.paulbr.nookmind` — the published package — so the SHA-1 already
-registered with Google works and no console changes are needed.
+La release utilise l'`applicationId` `fr.paulbr.nookmind`, celui déjà publié, donc les SHA-1
+enregistrés chez Google valent déjà et il n'y a rien à changer côté console.
 
-**Re-test on the release build specifically.** R8 shrinking can break exactly three things,
-and nothing else catches them:
+**Retester sur le build de release en particulier.** R8 peut casser exactement trois choses, et rien
+d'autre ne les rattrape :
 
-- [ ] Google sign-in
-- [ ] Receiving a notification
-- [ ] External links (streaming platforms) opening
+- [ ] connexion Google (elle marche en debug, ça ne prouve rien pour la release)
+- [ ] réception d'une notification
+- [ ] ouverture des liens externes (plateformes de streaming)
 
-Also bump `versionCode` / `versionName` in `composeApp/build.gradle.kts` (currently 2 / `2.0.0`;
-the Capacitor build stopped at 1 / `1.0`).
+Penser à incrémenter `versionCode` / `versionName` dans `composeApp/build.gradle.kts` (actuellement
+2 / `2.0.0` ; le paquet Capacitor s'était arrêté à 1 / `1.0`).
 
-### 4. What existing users will experience on upgrade
+### 3. Le reste de la check-list appareil
 
-The Capacitor app stored its session in the WebView's `localStorage`; the native app uses
-Android preferences. Same keys, different backing store — **nothing migrates automatically**.
+La liste complète est dans `native/README.md` §7. Ce qui n'est pas encore coché :
+
+- [ ] notifications : activer, envoyer le test depuis les réglages, recevoir, **toucher** la
+      notification et vérifier qu'elle ouvre le bon écran et pas seulement l'accueil
+- [ ] installer par-dessus l'ancienne app et vérifier que la reconnexion ramène toute la
+      bibliothèque
+- [ ] trailer YouTube, lecture et plein écran
+- [ ] bouton retour Android depuis chaque feuille et chaque écran
+- [ ] rotation, clavier qui ne masque pas les champs
+
+### 4. Ce que les utilisateurs déjà installés vont vivre
+
+L'app Capacitor rangeait sa session dans le `localStorage` de la WebView, l'app native utilise les
+préférences Android. Mêmes clés, support différent : **rien ne migre automatiquement**.
 
 | | |
 |---|---|
-| Books, films, series, collections, notes, progress | Intact — they live in Supabase |
-| Session | Lost, one re-login |
-| Onboarding | Shown once more |
-| Theme, display mode, section order | Reset to defaults |
-| Notifications | Must be re-enabled (the FCM token changes) |
+| Livres, films, séries, collections, notes, avancement | Intacts, ils vivent dans Supabase |
+| Session | Perdue, une reconnexion |
+| Onboarding | Réaffiché une fois |
+| Thème, mode d'affichage, ordre des sections | Remis par défaut |
+| Notifications | À réactiver (le jeton FCM change) |
 
-Worth testing deliberately: install the native build over the old one and confirm re-login
-brings the whole library back.
+### 5. Supprimer Capacitor
 
-## Deferred work
+Une fois l'app native publiée et validée en production, et pas avant : `android/`, `ios/`,
+`capacitor.config.ts`, `scripts/fix-spm-paths.cjs`, `resources/`, les dépendances `@capacitor/*` et
+les scripts `cap:*` du `package.json`.
 
-**Spec 2, agreed but not written:** long-press quick-action menu on library cards, and
-pull-to-refresh on every main screen. Both inherit the haptic vocabulary for free —
-long-press activation and the pull threshold are exactly the ambiguous moments haptics serve.
+Tant que le Play Store sert la version Capacitor, ce dossier est le seul moyen de livrer un
+correctif aux personnes qui l'ont déjà installée.
 
-**Pre-existing issues found during review, none introduced by this work:**
+### 6. iOS
 
-- `NookToggle` is invisible to TalkBack — a `Box` with `.clickable`, no `Modifier.toggleable`,
-  no `Role.Switch`, no `stateDescription`. Affects all four switches.
-- Tapping an already-selected star still issues a network PATCH and a success toast for a
-  no-op. The haptic is correctly silent there; the write is not.
-- `CollectionChip` looks like a chip, sits directly under a chip row that ticks, and is
-  entirely silent — no haptic, and its success path raises no toast either. The most visible
-  seam in the current scoping.
-- `gen-strings.mjs` had never run on Windows (bare absolute path passed to ESM `import()`).
-  Fixed in passing; anyone who regenerated strings before did it elsewhere.
+Rien n'est commencé. Les cibles `iosArm64` et `iosSimulatorArm64` sont déclarées dans
+`composeApp/build.gradle.kts` mais uniquement sous condition d'un hôte macOS, et il n'existe ni
+source set `iosMain` ni projet Xcode. Le détail de ce qu'il faudra écrire est en section 8 de
+`docs/native-rewrite-plan.md`.
 
-**Untested tier:** the API fallback cannot be verified on the Android 16 phone, which sits on
-the top tier where everything works natively. An API 29 or 31 emulator would confirm that
-chips, ratings, toggles and onboarding actually vibrate on older devices. Worth doing before a
-store release; the system image is a ~1 GB download and no such AVD exists yet.
+## Travaux reportés
+
+**Spec 2, actée mais pas écrite :** menu d'actions rapides en appui long sur les cartes de la
+bibliothèque, et tirer pour rafraîchir sur tous les écrans principaux. Les deux héritent gratuitement
+du vocabulaire haptique : l'activation de l'appui long et le seuil du tirage sont exactement les
+moments ambigus que les haptiques servent à lever.
+
+**Problèmes préexistants trouvés pendant la revue, aucun introduit par ce travail :**
+
+- `NookToggle` est invisible pour TalkBack : une `Box` avec `.clickable`, sans `Modifier.toggleable`,
+  sans `Role.Switch`, sans `stateDescription`. Concerne les quatre interrupteurs.
+- Toucher une étoile déjà sélectionnée déclenche quand même un PATCH réseau et un toast de succès
+  pour une opération nulle. L'haptique est correctement silencieuse là ; l'écriture ne l'est pas.
+- `CollectionChip` ressemble à une puce, se trouve juste sous une rangée de puces qui réagissent, et
+  est entièrement muet : pas d'haptique, et son chemin de succès ne lève pas de toast non plus.
+
+**Niveau non testé :** le repli par version d'API n'est pas vérifiable sur le téléphone Android 16,
+qui est sur le niveau le plus haut où tout marche nativement. Un émulateur API 29 ou 31 confirmerait
+que les puces, notes, interrupteurs et l'onboarding vibrent bien sur les appareils plus anciens. À
+faire avant une publication sur le store ; l'image système est un téléchargement d'environ 1 Go et
+aucun AVD de ce type n'existe encore.
