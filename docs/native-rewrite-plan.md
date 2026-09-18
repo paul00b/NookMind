@@ -145,7 +145,7 @@ Principes :
 
 ## 8. Phase iOS (en cours)
 
-**Fait, vérifiable sur GitHub Actions (`ios-simulator-build.yml`, runner macOS 26) :**
+**Fait et vérifié sur GitHub Actions (`ios-simulator-build.yml`, runner macOS 26, Xcode 26.6, premier run vert le 2026-09-18) :**
 
 - les neuf `actual` iOS dans `iosMain/` : plateforme, niveau d'API haptique (jamais dégradé, la table est celle d'Android), langue de l'appareil, formatage des dates (`NSDateFormatter`, mêmes motifs TR35 que java.time), préférences (`NSUserDefaults`, une suite par magasin), sortie de l'app (sans effet, Apple l'interdit), journaux, ouverture d'URL, trailer (`WKWebView` dans `UIKitView`). Le bitmap de bruit prévu ici n'existe plus, `Ambiance.kt` est du Compose pur ;
 - les trois interfaces de pont vers Swift (`IosAppleSignInBridge`, `IosGoogleSignInBridge`, `IosPushBridge`) et leur adaptation vers les providers `suspend` du code commun, nonces SHA-256 compris ;

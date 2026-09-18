@@ -168,8 +168,9 @@ sur un runner macOS 26. Le détail, et ce que le simulateur ne peut pas couvrir,
 
 Ce qu'il reste, dans l'ordre :
 
-- [ ] lire le premier run du workflow : le point de fragilité est la version de Xcode du runner,
-      Kotlin 2.4.20 étant validé contre Xcode 26.4
+- [x] premier run vert le 2026-09-18 : Xcode 26.6 accepté par Kotlin 2.4.20 sans avertissement,
+      tests partagés verts sur iPhone 17 Pro / iOS 26.5, app lancée et vivante, captures produites.
+      18 minutes à froid, 10 avec les caches
 - [ ] sur le Mac : `brew install xcodegen`, `cd native/iosApp && xcodegen generate`, ouvrir le
       projet, `Local.xcconfig` avec la team, lancer sur simulateur puis sur l'iPhone
 - [ ] compte Apple Developer payant, puis Sign in with Apple (capacité + entitlement + le flag

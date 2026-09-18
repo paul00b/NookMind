@@ -16,6 +16,7 @@ on:
     branches: [main, 'claude/**']
     paths:
       - 'native/**'
+      - '!native/**/*.md'
       - '.github/workflows/ios-simulator-build.yml'
 
 permissions:

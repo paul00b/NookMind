@@ -27,7 +27,7 @@ qui continue de vivre à côté.
 | JDK | 17 | Requis par AGP 8.13 ; le wrapper Gradle utilise le JDK du `JAVA_HOME`. |
 | Android Studio | Ladybug ou plus récent | Facultatif : tout marche aussi en ligne de commande. |
 | Android SDK | compileSdk 36, build-tools correspondants | `minSdk` 24 (Android 7.0), comme le paquet Capacitor. |
-| Xcode | 26.4 ou plus récent | iOS uniquement, donc macOS uniquement. C'est la version que Kotlin 2.4.20 valide. |
+| Xcode | 26.4 ou plus récent | iOS uniquement, donc macOS uniquement. C'est la version que Kotlin 2.4.20 valide ; la CI compile avec 26.6 sans un avertissement. |
 | XcodeGen | dernière | iOS uniquement : `brew install xcodegen`. Génère le projet Xcode depuis `iosApp/project.yml`. |
 | Node.js | 18+ | Uniquement pour les générateurs de la section 5. |
 
@@ -308,9 +308,12 @@ lancé depuis le Finder n'hérite pas du `JAVA_HOME` du shell : le script le ret
 **Ce que le simulateur couvre :** tout le code partagé, la connexion e-mail, la bibliothèque, les
 recherches, les fiches, les collections, les réglages, le trailer YouTube (WKWebView). C'est
 exactement ce que le workflow `.github/workflows/ios-simulator-build.yml` vérifie à chaque push
-touchant `native/` : il compile, fait tourner les tests partagés sur cible iOS, construit l'app,
-la lance, vérifie qu'elle tourne encore 25 secondes plus tard et dépose des captures (clair,
-sombre, français) dans les artefacts du run.
+touchant `native/` (hors fichiers Markdown) : il compile, fait tourner les tests partagés sur cible
+iOS, construit l'app, la lance, vérifie qu'elle tourne encore 25 secondes plus tard et dépose des
+captures (clair, sombre, français) dans les artefacts du run. Compter 18 minutes à froid, 10 avec
+les caches. Les captures sont aussi écrites en vignettes base64 dans le log du job, entre des
+marqueurs `BEGIN THUMB` / `END THUMB`, pour qui ne peut pas télécharger l'artefact ; l'en-tête de
+l'étape donne la commande de décodage.
 
 **Ce que le simulateur ne couvre pas, et rien d'automatique ne le fera :**
 
