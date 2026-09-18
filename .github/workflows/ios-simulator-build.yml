@@ -1,0 +1,253 @@
+name: iOS simulator build
+
+# Compiles the shared Kotlin for iOS, runs the shared tests on a simulator, builds the SwiftUI host
+# app, launches it and takes screenshots. This is the only place the iOS target gets compiled at all
+# when no Mac is at hand: Kotlin/Native for Apple platforms needs Xcode, and Xcode only runs on macOS.
+#
+# What it proves: the shared code compiles and runs on iOS, the app boots, the screens render.
+# What it cannot prove: Sign in with Apple, Google sign-in, push notifications and haptics. Those
+# need a real iPhone, a paid Apple developer team, and console registrations that do not exist yet.
+#
+# Artifacts of a run: screenshots, the app's own log, the .app bundle, the test reports.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, 'claude/**']
+    paths:
+      - 'native/**'
+      - '.github/workflows/ios-simulator-build.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-simulator-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # Kotlin 2.4.20 is validated against Xcode 26.4, and only the macOS 26 image carries Xcode 26.
+    runs-on: macos-26
+    timeout-minutes: 90
+
+    # Same six keys as the Android workflow: read by the Gradle build from the environment when
+    # native/secrets.properties is absent. Push and signing secrets do not apply to a simulator build.
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      API_BASE_URL: ${{ secrets.API_BASE_URL }}
+      GOOGLE_BOOKS_API_KEY: ${{ secrets.GOOGLE_BOOKS_API_KEY }}
+      TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+      GOOGLE_AUTH_WEB_CLIENT_ID: ${{ secrets.GOOGLE_AUTH_WEB_CLIENT_ID }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # The default is read-only on every branch but main, which would re-download the Kotlin/Native
+      # toolchain (about 1 GB) on every run of this branch.
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
+      # The Kotlin/Native compiler and its LLVM live outside the Gradle cache.
+      - name: Kotlin/Native toolchain cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('native/gradle/libs.versions.toml') }}
+          restore-keys: konan-${{ runner.os }}-
+
+      # Kotlin/Native pins the Xcode versions it was validated with. Newer is usually fine with a
+      # warning, older can fail on a missing SDK symbol; a beta is neither. So pick the newest stable
+      # one present and print exactly what that is, since this is the first thing to compare against
+      # the Kotlin compatibility table if the build fails in the toolchain.
+      - name: Xcode
+        run: |
+          newest=$(ls -d /Applications/Xcode*.app | grep -vi beta | sort -V | tail -1)
+          sudo xcode-select -s "$newest"
+          echo "Selected: $newest"
+          xcodebuild -version
+          echo
+          echo "Simulator runtimes:"
+          xcrun simctl list runtimes | grep -i ios || true
+          {
+            echo "### Toolchain"
+            echo
+            echo "- $(xcodebuild -version | tr '\n' ' ')"
+            echo "- Kotlin $(grep '^kotlin = ' native/gradle/libs.versions.toml | cut -d'"' -f2)"
+            echo "- $(java -version 2>&1 | head -1)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: XcodeGen
+        run: |
+          brew install xcodegen
+          xcodegen --version
+
+      # A mistake in project.yml surfaces here in seconds, not fifteen minutes later inside xcodebuild.
+      - name: Generate the Xcode project
+        working-directory: native/iosApp
+        run: xcodegen generate
+
+      # The newest iOS runtime installed, and the first iPhone in it. Hard-coding a model name
+      # breaks a few months after every Xcode release, when that model disappears from the image.
+      - name: Pick a simulator
+        id: sim
+        run: |
+          devices=$(xcrun simctl list devices available -j)
+          udid=$(echo "$devices" | jq -r '
+            .devices | to_entries
+            | map(select(.key | test("SimRuntime.iOS")))
+            | sort_by(.key) | reverse
+            | map(.value | map(select(.name | test("^iPhone"))) | .[0])
+            | map(select(. != null)) | .[0].udid')
+          name=$(echo "$devices" | jq -r --arg u "$udid" '.devices[][] | select(.udid == $u) | .name')
+          runtime=$(echo "$devices" | jq -r --arg u "$udid" '.devices | to_entries[] | select(.value[] .udid == $u) | .key' | head -1)
+          if [ -z "$udid" ] || [ "$udid" = "null" ]; then
+            echo "No iPhone simulator available on this runner."
+            xcrun simctl list devices available
+            exit 1
+          fi
+          echo "Using $name ($udid) on $runtime"
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "- Simulator: $name, ${runtime##*.}" >> "$GITHUB_STEP_SUMMARY"
+
+      # The 70 shared tests, compiled for and executed on the iOS simulator. The first proof that the
+      # shared code holds on this platform: dates, preferences, series logic, haptics mapping.
+      - name: Shared tests on the iOS simulator
+        working-directory: native
+        env:
+          IOS_SIMULATOR_DEVICE: ${{ steps.sim.outputs.udid }}
+        run: ./gradlew :composeApp:iosSimulatorArm64Test --no-daemon --stacktrace
+
+      - name: Test summary
+        if: always()
+        run: |
+          dir=native/composeApp/build/test-results/iosSimulatorArm64Test
+          if ls "$dir"/*.xml > /dev/null 2>&1; then
+            tests=$(grep -ho 'tests="[0-9]*"' "$dir"/*.xml | grep -o '[0-9]*' | paste -sd+ - | bc)
+            failures=$(grep -ho 'failures="[0-9]*"' "$dir"/*.xml | grep -o '[0-9]*' | paste -sd+ - | bc)
+            errors=$(grep -ho 'errors="[0-9]*"' "$dir"/*.xml | grep -o '[0-9]*' | paste -sd+ - | bc)
+            echo "- Shared tests on iOS: $tests run, $failures failed, $errors errored" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- Shared tests on iOS: no report produced (the build failed before the tests ran)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # Unsigned: a simulator app needs no certificate, and the runner has none. The "Compile Kotlin
+      # framework" phase of the project runs Gradle again, this time for the framework binary; the
+      # klibs from the test step are reused.
+      - name: Build the app for the simulator
+        run: |
+          mkdir -p out
+          set -o pipefail
+          xcodebuild \
+            -project native/iosApp/NookMind.xcodeproj \
+            -scheme NookMind \
+            -configuration Debug \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath native/iosApp/build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build 2>&1 | tee out/xcodebuild.log | grep -E '^\*\* BUILD|error:|warning: .*(Kotlin|deprecated in iOS)' || true
+          grep -q '^\*\* BUILD SUCCEEDED' out/xcodebuild.log
+
+      - name: Why the Xcode build failed
+        if: failure()
+        run: |
+          if [ -f out/xcodebuild.log ]; then
+            {
+              echo "### xcodebuild errors"
+              echo
+              echo '```'
+              grep -E 'error:|Error:|FAILED|failed' out/xcodebuild.log | grep -v 'warning' | head -40
+              echo '```'
+              echo
+              echo "Full log in the artifacts."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # Boot the simulator, install, launch, and check the process is still alive afterwards: a
+      # crash at startup would otherwise produce a perfectly green step and a screenshot of the
+      # home screen. The app's own stdout is captured, which is where the shared code's logDebug
+      # lines end up, including the "missing secrets" report.
+      - name: Launch and screenshot
+        env:
+          UDID: ${{ steps.sim.outputs.udid }}
+        run: |
+          app=$(find native/iosApp/build/DerivedData/Build/Products/Debug-iphonesimulator -maxdepth 1 -name 'NookMind.app' | head -1)
+          if [ -z "$app" ]; then echo "The build reported success but produced no .app"; exit 1; fi
+          mkdir -p out/shots
+
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3
+          xcrun simctl ui "$UDID" appearance light
+          xcrun simctl install "$UDID" "$app"
+
+          launch() {  # $1 = name of the shot, then launch arguments
+            local shot=$1; shift
+            xcrun simctl terminate "$UDID" fr.paulbr.nookmind 2>/dev/null || true
+            xcrun simctl launch --stdout="$PWD/out/app-$shot.log" --stderr="$PWD/out/app-$shot.err.log" "$UDID" fr.paulbr.nookmind "$@"
+            sleep 25
+            if ! pgrep -f "NookMind.app/NookMind" > /dev/null; then
+              echo "The app is no longer running 25 s after launch ($shot). Its output:"
+              cat "out/app-$shot.log" "out/app-$shot.err.log" 2>/dev/null | tail -60
+              cp ~/Library/Logs/DiagnosticReports/NookMind* out/ 2>/dev/null || true
+              exit 1
+            fi
+            xcrun simctl io "$UDID" screenshot "out/shots/$shot.png"
+          }
+
+          launch 01-first-launch-en-light
+          xcrun simctl ui "$UDID" appearance dark
+          sleep 3
+          xcrun simctl io "$UDID" screenshot out/shots/02-first-launch-en-dark.png
+          xcrun simctl ui "$UDID" appearance light
+          launch 03-first-launch-fr-light -AppleLanguages "(fr)" -AppleLocale fr_FR
+
+          echo "App output (first launch):"
+          cat out/app-01-first-launch-en-light.log
+
+          ditto -c -k --keepParent "$app" out/NookMind-simulator.app.zip
+          {
+            echo "### App"
+            echo
+            echo "Booted on the simulator and still running 25 s later, three times (en light, en dark, fr)."
+            echo "Screenshots and the app's own log are in the artifacts. The .app installs on any"
+            echo "Apple-silicon Mac's simulator with \`xcrun simctl install booted NookMind.app\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: What is missing
+        if: always()
+        run: |
+          report() { if [ -z "$2" ]; then echo "- \`$1\` -> $3" >> /tmp/missing.md; fi; }
+          : > /tmp/missing.md
+          report SUPABASE_URL              "$SUPABASE_URL"              "sign-in and the whole library"
+          report SUPABASE_ANON_KEY         "$SUPABASE_ANON_KEY"         "sign-in and the whole library"
+          report API_BASE_URL              "$API_BASE_URL"              "IMDb ratings, watch providers, account deletion"
+          report GOOGLE_BOOKS_API_KEY      "$GOOGLE_BOOKS_API_KEY"      "book search (works unauthenticated, but rate limited)"
+          report TMDB_API_KEY              "$TMDB_API_KEY"              "movie and series search, and the whole Next Up tab"
+          report GOOGLE_AUTH_WEB_CLIENT_ID "$GOOGLE_AUTH_WEB_CLIENT_ID" "Google sign-in (once the iOS bridge exists)"
+          if [ -s /tmp/missing.md ]; then
+            {
+              echo "### Repository secrets missing"
+              echo
+              cat /tmp/missing.md
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nookmind-ios-simulator
+          path: |
+            out/
+            native/composeApp/build/test-results/iosSimulatorArm64Test/
+            native/composeApp/build/reports/tests/iosSimulatorArm64Test/
+          if-no-files-found: warn
+          retention-days: 30
