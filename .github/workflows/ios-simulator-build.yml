@@ -121,11 +121,11 @@ jobs:
 
       # The 70 shared tests, compiled for and executed on the iOS simulator. The first proof that the
       # shared code holds on this platform: dates, preferences, series logic, haptics mapping.
+      # `--device` is the Kotlin plugin's own option on the simulator test task, so the device
+      # chosen above is passed without touching the Gradle script.
       - name: Shared tests on the iOS simulator
         working-directory: native
-        env:
-          IOS_SIMULATOR_DEVICE: ${{ steps.sim.outputs.udid }}
-        run: ./gradlew :composeApp:iosSimulatorArm64Test --no-daemon --stacktrace
+        run: ./gradlew :composeApp:iosSimulatorArm64Test --device="${{ steps.sim.outputs.udid }}" --no-daemon --stacktrace
 
       - name: Test summary
         if: always()

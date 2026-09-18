@@ -421,9 +421,9 @@ les deux apps ont exactement la même silhouette d'icônes.
 ./gradlew :composeApp:checkApis          # vérifie les secrets et appelle chaque backend
 ```
 
-Sur macOS, `IOS_SIMULATOR_DEVICE` (nom ou UDID d'un simulateur) choisit l'appareil des tests iOS ;
-sans lui, c'est le modèle par défaut du plugin Kotlin, qui n'existe pas toujours dans le Xcode
-installé. C'est ce que fait la CI, qui lit la liste des simulateurs du runner.
+Sur macOS, `--device="iPhone 17"` (nom ou UDID, `xcrun simctl list devices` pour la liste) choisit
+le simulateur des tests iOS ; sans lui, c'est le modèle par défaut du plugin Kotlin, qui n'existe
+pas toujours dans le Xcode installé. C'est ce que fait la CI, qui lit la liste du runner.
 
 Le catalogue de captures (`desktopMain/tools/ScreenshotCatalog.kt`) rend 35 écrans sur des données
 fictives, en clair et en sombre, pour comparer pixel à pixel avec la web app. Options :
