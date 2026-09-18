@@ -9,6 +9,10 @@ import platform.Foundation.NSDateFormatter
 import platform.Foundation.NSLocale
 import platform.Foundation.NSURL
 import platform.Foundation.NSUserDefaults
+// Declared in the NSLocaleGeneralInfo category of NSLocale, which Kotlin/Native exposes as
+// extension members: they resolve only when imported by name, unlike the class's own members.
+import platform.Foundation.languageCode
+import platform.Foundation.preferredLanguages
 import platform.UIKit.UIApplication
 
 actual val platformKind: PlatformKind = PlatformKind.IOS
