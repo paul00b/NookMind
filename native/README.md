@@ -309,8 +309,10 @@ lancé depuis le Finder n'hérite pas du `JAVA_HOME` du shell : le script le ret
 recherches, les fiches, les collections, les réglages, le trailer YouTube (WKWebView). C'est
 exactement ce que le workflow `.github/workflows/ios-simulator-build.yml` vérifie à chaque push
 touchant `native/` (hors fichiers Markdown) : il compile, fait tourner les tests partagés sur cible
-iOS, construit l'app, la lance, vérifie qu'elle tourne encore 25 secondes plus tard et dépose des
-captures (clair, sombre, français) dans les artefacts du run. Compter 18 minutes à froid, 10 avec
+iOS, construit l'app, la lance, vérifie qu'elle tourne encore 25 secondes plus tard et dépose
+quatre captures dans les artefacts du run : l'onboarding, puis l'écran de connexion en clair, en
+sombre et en français (l'onboarding étant sombre par conception, la CI le marque terminé dans les
+NSUserDefaults de l'app pour atteindre un écran qui suit le thème). Compter 18 minutes à froid, 10 avec
 les caches. Les captures sont aussi écrites en vignettes base64 dans le log du job, entre des
 marqueurs `BEGIN THUMB` / `END THUMB`, pour qui ne peut pas télécharger l'artefact ; l'en-tête de
 l'étape donne la commande de décodage.
