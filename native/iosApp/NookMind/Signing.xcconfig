@@ -1,0 +1,10 @@
+// Signing is a per-machine matter, so it lives outside git. Create Local.xcconfig next to this
+// file with your team, and Xcode signs automatically:
+//
+//     DEVELOPMENT_TEAM = SJ42PK8VK6
+//
+// Without it the project still builds for the simulator, which is all CI needs.
+CODE_SIGN_STYLE = Automatic
+DEVELOPMENT_TEAM =
+
+#include? "Local.xcconfig"

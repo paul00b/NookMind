@@ -1,0 +1,68 @@
+# The Xcode project is generated from this file: `xcodegen generate` in this directory.
+# The .xcodeproj is git-ignored on purpose. Forty readable lines beat six hundred lines of UUIDs
+# nobody reviews, and adding a Swift package is one entry here instead of a hand edit in three places.
+
+name: NookMind
+
+options:
+  bundleIdPrefix: fr.paulbr
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "2.0.0"
+    CURRENT_PROJECT_VERSION: "2"
+    # The Gradle phase below writes into composeApp/build. Xcode 15+ sandboxes run scripts by
+    # default, which turns that write into a permission error deep inside the Kotlin build.
+    ENABLE_USER_SCRIPT_SANDBOXING: "NO"
+  configs:
+    Debug:
+      KOTLIN_FRAMEWORK_BUILD_TYPE: debug
+    Release:
+      KOTLIN_FRAMEWORK_BUILD_TYPE: release
+
+targets:
+  NookMind:
+    type: application
+    platform: iOS
+    sources:
+      - path: NookMind
+        excludes:
+          - "*.xcconfig"
+    configFiles:
+      Debug: NookMind/Signing.xcconfig
+      Release: NookMind/Signing.xcconfig
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: fr.paulbr.nookmind
+        PRODUCT_NAME: NookMind
+        INFOPLIST_FILE: NookMind/Info.plist
+        GENERATE_INFOPLIST_FILE: "NO"
+        CODE_SIGN_ENTITLEMENTS: NookMind/NookMind.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        TARGETED_DEVICE_FAMILY: "1,2"
+        # Where embedAndSignAppleFrameworkForXcode leaves the Kotlin framework.
+        FRAMEWORK_SEARCH_PATHS:
+          - "$(inherited)"
+          - "$(SRCROOT)/../composeApp/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)"
+        OTHER_LDFLAGS:
+          - "$(inherited)"
+          - "-framework"
+          - "ComposeApp"
+    preBuildScripts:
+      - name: Compile Kotlin framework
+        basedOnDependencyAnalysis: false
+        script: |
+          # Xcode launched from the Finder does not inherit the shell's JAVA_HOME, and the Gradle
+          # wrapper needs a JDK 17 (a requirement of the Android Gradle plugin, not a choice).
+          if [ -z "$JAVA_HOME" ]; then
+            export JAVA_HOME="$(/usr/libexec/java_home -v 17 2>/dev/null \
+              || /usr/libexec/java_home 2>/dev/null \
+              || echo '/Applications/Android Studio.app/Contents/jbr/Contents/Home')"
+          fi
+          cd "$SRCROOT/.."
+          ./gradlew :composeApp:embedAndSignAppleFrameworkForXcode
+    scheme: {}
