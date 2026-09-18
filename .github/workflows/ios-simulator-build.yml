@@ -135,9 +135,9 @@ jobs:
             tests=$(grep -ho 'tests="[0-9]*"' "$dir"/*.xml | grep -o '[0-9]*' | paste -sd+ - | bc)
             failures=$(grep -ho 'failures="[0-9]*"' "$dir"/*.xml | grep -o '[0-9]*' | paste -sd+ - | bc)
             errors=$(grep -ho 'errors="[0-9]*"' "$dir"/*.xml | grep -o '[0-9]*' | paste -sd+ - | bc)
-            echo "- Shared tests on iOS: $tests run, $failures failed, $errors errored" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Shared tests on iOS: $tests run, $failures failed, $errors errored" | tee -a "$GITHUB_STEP_SUMMARY"
           else
-            echo "- Shared tests on iOS: no report produced (the build failed before the tests ran)" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Shared tests on iOS: no report produced (the build failed before the tests ran)" | tee -a "$GITHUB_STEP_SUMMARY"
           fi
 
       # Unsigned: a simulator app needs no certificate, and the runner has none. The "Compile Kotlin
@@ -221,6 +221,22 @@ jobs:
             echo "Screenshots and the app's own log are in the artifacts. The .app installs on any"
             echo "Apple-silicon Mac's simulator with \`xcrun simctl install booted NookMind.app\`."
           } >> "$GITHUB_STEP_SUMMARY"
+
+      # The artifact zip is served from Azure blob storage, which not every reader of this repository
+      # can reach; the job log is served by the GitHub API. So a small JPEG of each screenshot is also
+      # written to the log, base64-encoded between markers, and a run can be judged from the log alone:
+      #   sed -n '/BEGIN THUMB 01-first-launch-en-light/,/END THUMB/p' job.log | grep -v THUMB | base64 -d > 01.jpg
+      - name: Screenshot thumbnails in the log
+        if: always()
+        run: |
+          shopt -s nullglob
+          for png in out/shots/*.png; do
+            name=$(basename "$png" .png)
+            sips -Z 640 "$png" --out "out/shots/$name.thumb.jpg" -s format jpeg -s formatOptions 70 > /dev/null
+            echo "-----BEGIN THUMB $name-----"
+            base64 -b 76 -i "out/shots/$name.thumb.jpg"
+            echo "-----END THUMB $name-----"
+          done
 
       - name: What is missing
         if: always()
