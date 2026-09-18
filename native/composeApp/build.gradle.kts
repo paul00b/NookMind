@@ -113,16 +113,6 @@ kotlin {
                 isStatic = true
             }
         }
-        // The simulator the shared tests run on. KGP's built-in default is an iPhone model name
-        // that goes stale a few months after every Xcode release, so CI reads the runner's
-        // simulator list and passes one that exists. Unset locally, the default applies.
-        iosSimulatorArm64 {
-            testRuns.configureEach {
-                executionTask.configure {
-                    System.getenv("IOS_SIMULATOR_DEVICE")?.takeIf { it.isNotBlank() }?.let { device.set(it) }
-                }
-            }
-        }
     }
 
     @OptIn(ExperimentalKotlinGradlePluginApi::class)
