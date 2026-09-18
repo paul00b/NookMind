@@ -9,7 +9,7 @@ même base de données et les mêmes textes.
 |---|---|---|
 | racine (`src/`, `index.html`, `vite.config.ts`) | le site React 19 + Vite, qui est aussi la PWA | Vercel |
 | `api/` | 9 fonctions serverless TypeScript | Vercel |
-| `native/` | l'app mobile native, Kotlin Multiplatform + Compose | Play Store (Android), App Store à venir |
+| `native/` | l'app mobile native, Kotlin Multiplatform + Compose ; l'hôte iOS est dans `native/iosApp/` | Play Store (Android), App Store (iOS, en cours) |
 | `android/`, `ios/`, `capacitor.config.ts` | l'ancien paquet Capacitor, le site emballé dans une WebView | Play Store, jusqu'à la bascule vers `native/` |
 | `supabase-*.sql` | le schéma Postgres, migrations dans l'ordre | Supabase |
 | `docs/` | plan de réécriture native, état d'avancement, specs |  |
@@ -87,8 +87,8 @@ l'ont déjà installé.
 Il part quand l'app native est publiée et validée en production, pas avant. La suppression est
 l'étape 5 de `docs/native-rewrite-plan.md`.
 
-Attention en attendant : il y a deux dossiers `ios/`, celui de la racine qui est le wrapper
-Capacitor, et le futur `native/iosApp/` de l'app native. Ils n'ont rien à voir.
+Attention en attendant : il y a deux projets iOS, `ios/` à la racine qui est le wrapper
+Capacitor, et `native/iosApp/` qui est l'hôte de l'app native. Ils n'ont rien à voir.
 
 ## Outils
 

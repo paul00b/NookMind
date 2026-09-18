@@ -1,8 +1,9 @@
 # NookMind — application native (Kotlin Multiplatform + Compose)
 
-Réécriture native de la web app NookMind. Android en premier, iOS ensuite : la quasi-totalité
-du code (logique, réseau, écrans) vit dans `commonMain` et sera réutilisée telle quelle par la
-cible iOS.
+Réécriture native de la web app NookMind. La quasi-totalité du code (logique, réseau, écrans) vit
+dans `commonMain` et sert tel quel aux deux cibles : Android est livrable, iOS a son hôte SwiftUI
+dans `iosApp/` et se construit sur GitHub Actions, il lui reste les services natifs (voir la
+section iOS plus bas).
 
 Cette app remplace le paquet Capacitor (`android/`, `ios/` à la racine du dépôt), pas la web app,
 qui continue de vivre à côté.
@@ -26,6 +27,8 @@ qui continue de vivre à côté.
 | JDK | 17 | Requis par AGP 8.13 ; le wrapper Gradle utilise le JDK du `JAVA_HOME`. |
 | Android Studio | Ladybug ou plus récent | Facultatif : tout marche aussi en ligne de commande. |
 | Android SDK | compileSdk 36, build-tools correspondants | `minSdk` 24 (Android 7.0), comme le paquet Capacitor. |
+| Xcode | 26.4 ou plus récent | iOS uniquement, donc macOS uniquement. C'est la version que Kotlin 2.4.20 valide. |
+| XcodeGen | dernière | iOS uniquement : `brew install xcodegen`. Génère le projet Xcode depuis `iosApp/project.yml`. |
 | Node.js | 18+ | Uniquement pour les générateurs de la section 5. |
 
 Gradle est fourni par le wrapper (8.14.3), rien à installer.
@@ -274,6 +277,58 @@ Console Firebase, projet `nookmind-8f5be` :
    d'encodage à trouver. Un contenu qui n'est ni l'un ni l'autre est écarté avec un message
    dans le résumé du run, plutôt que de faire échouer le build.
 
+### iOS
+
+Tout se passe sur un Mac, et rien d'autre ne peut compiler cette cible : Kotlin/Native pour Apple
+a besoin de Xcode. Le `build.gradle.kts` ne déclare d'ailleurs les cibles `iosArm64` et
+`iosSimulatorArm64` que sur un hôte macOS, ce qui fait que `src/iosMain/` est simplement ignoré
+partout ailleurs et que le build Android sous Linux n'en sait rien.
+
+```bash
+brew install xcodegen                 # une fois
+cd native/iosApp
+xcodegen generate                     # produit NookMind.xcodeproj, ignoré par git
+open NookMind.xcodeproj               # puis Cmd+R sur un simulateur
+```
+
+Le projet Xcode est **généré** depuis `iosApp/project.yml` et n'est pas versionné : un réglage
+changé dans l'interface de Xcode est perdu au prochain `xcodegen generate`, il faut le faire dans
+le `project.yml`. Ce qui est propre à ta machine va dans `iosApp/NookMind/Local.xcconfig` (ignoré
+par git), typiquement ta team de signature :
+
+```
+DEVELOPMENT_TEAM = SJ42PK8VK6
+```
+
+Une phase de build du projet appelle `./gradlew :composeApp:embedAndSignAppleFrameworkForXcode`,
+qui compile le framework Kotlin `ComposeApp` et copie les ressources Compose dans le bundle. Xcode
+lancé depuis le Finder n'hérite pas du `JAVA_HOME` du shell : le script le retrouve avec
+`/usr/libexec/java_home -v 17`, à défaut prend le JDK d'Android Studio.
+
+**Ce que le simulateur couvre :** tout le code partagé, la connexion e-mail, la bibliothèque, les
+recherches, les fiches, les collections, les réglages, le trailer YouTube (WKWebView). C'est
+exactement ce que le workflow `.github/workflows/ios-simulator-build.yml` vérifie à chaque push
+touchant `native/` : il compile, fait tourner les tests partagés sur cible iOS, construit l'app,
+la lance, vérifie qu'elle tourne encore 25 secondes plus tard et dépose des captures (clair,
+sombre, français) dans les artefacts du run.
+
+**Ce que le simulateur ne couvre pas, et rien d'automatique ne le fera :**
+
+| Fonctionnalité | Ce qu'il lui manque | Où ça se branche |
+|---|---|---|
+| Sign in with Apple | la capacité sur l'App ID (équipe Apple Developer payante), puis passer `NookMindAppleSignInEnabled` à `true` dans `Info.plist` et ajouter `com.apple.developer.applesignin` aux entitlements | `AppleSignInBridge.swift`, déjà écrit |
+| Connexion Google | le paquet SPM `GoogleSignIn-iOS`, un client OAuth **iOS** dans le projet Google Cloud du client web (comme sur Android), et le schéma d'URL inversé dans `Info.plist` | implémenter `IosGoogleSignInBridge` en Swift |
+| Notifications push | le paquet SPM `firebase-ios-sdk` (FirebaseMessaging), `GoogleService-Info.plist` dans `iosApp/NookMind/`, la clé APNs téléversée dans Firebase, `aps-environment` aux entitlements | implémenter `IosPushBridge` en Swift, brancher l'AppDelegate |
+| Haptiques | un vrai iPhone : le simulateur n'a pas de moteur haptique | rien à écrire a priori, Compose mappe `HapticFeedbackType` vers UIKit ; à vérifier signal par signal |
+
+Les trois interfaces de pont (`IosAppleSignInBridge`, `IosGoogleSignInBridge`, `IosPushBridge`)
+sont définies côté Kotlin dans `iosMain/.../ios/Bridges.kt`. Elles prennent des callbacks et pas
+des `suspend`, parce que Kotlin ne sait pas appeler en suspension une méthode implémentée en
+Swift ; l'adaptation vers les `suspend` des providers communs est faite là aussi. Les nonces
+(SHA-256 donné au fournisseur, valeur brute donnée à Supabase) y sont générés, Swift ne fait que
+présenter les écrans système. Un pont laissé à `nil` dans `AppDelegate.swift` donne au code
+partagé l'implémentation « indisponible » du desktop : le bouton disparaît, rien ne casse.
+
 ### Le SDK Android est requis même pour l'aperçu desktop
 
 Le module `composeApp` déclare la cible Android, donc le plugin Android est configuré à chaque
@@ -311,16 +366,22 @@ native/
       commonTest/      56 tests unitaires de la logique métier
       jvmSharedMain/   actuals partagés Android + desktop (java.time, java.util.Locale)
       androidMain/     Application, MainActivity, Google Sign-In, service FCM, WebView,
-                       bitmap de bruit, manifeste, ressources et icônes Android
+                       manifeste, ressources et icônes Android
       desktopMain/     point d'entrée desktop + outils de capture d'écran
+      iosMain/         actuals iOS (NSDateFormatter, NSUserDefaults, WKWebView), ponts vers Swift,
+                       IosApp (racine de composition) et MainViewController
+  iosApp/              hôte SwiftUI : project.yml (XcodeGen), AppDelegate, ComposeView,
+                       AppleSignInBridge, Info.plist, entitlements, PrivacyInfo, assets
   tools/               générateurs Node (chaînes, icônes)
   gradle/libs.versions.toml   catalogue de versions
 ```
 
-Le code partagé ne connaît aucune API de plateforme. Les sept points de contact sont des
+Le code partagé ne connaît aucune API de plateforme. Les huit points de contact sont des
 déclarations `expect` (`core/platform/Platform.kt`) pour la langue de l'appareil, le formatage des
-dates, le stockage des préférences, la sortie de l'app, les journaux, l'ouverture d'une URL externe
-et le type de plateforme, plus deux `expect` d'UI (le bruit d'ambiance et l'intégration YouTube).
+dates, le stockage des préférences, la sortie de l'app, les journaux, l'ouverture d'une URL externe,
+le type de plateforme et le niveau d'API pour les haptiques, plus un `expect` d'UI (l'intégration
+YouTube). C'est tout ce qu'une nouvelle plateforme a à fournir : les neuf `actual` iOS tiennent
+dans deux fichiers.
 
 La connexion Google, la connexion Apple et les notifications passent par des interfaces
 (`core/platform/NativeServices.kt`) injectées dans `AppContainer` au démarrage. Sur desktop elles
@@ -355,9 +416,14 @@ les deux apps ont exactement la même silhouette d'icônes.
 
 ```bash
 ./gradlew :composeApp:desktopTest        # 56 tests de la logique partagée
+./gradlew :composeApp:iosSimulatorArm64Test  # les mêmes, sur un simulateur iOS (macOS uniquement)
 ./gradlew :composeApp:screenshots        # rend le catalogue en PNG, sans écran
 ./gradlew :composeApp:checkApis          # vérifie les secrets et appelle chaque backend
 ```
+
+Sur macOS, `IOS_SIMULATOR_DEVICE` (nom ou UDID d'un simulateur) choisit l'appareil des tests iOS ;
+sans lui, c'est le modèle par défaut du plugin Kotlin, qui n'existe pas toujours dans le Xcode
+installé. C'est ce que fait la CI, qui lit la liste des simulateurs du runner.
 
 Le catalogue de captures (`desktopMain/tools/ScreenshotCatalog.kt`) rend 35 écrans sur des données
 fictives, en clair et en sombre, pour comparer pixel à pixel avec la web app. Options :

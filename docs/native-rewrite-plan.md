@@ -143,13 +143,23 @@ Principes :
 4. Ouvrir `native/` dans Android Studio (ou `./gradlew :composeApp:assembleDebug`) ; release : `./gradlew :composeApp:bundleRelease`.
 5. Aperçu desktop : `./gradlew :composeApp:run` ; captures headless : `./gradlew :composeApp:screenshots`.
 
-## 8. Phase iOS (à venir)
+## 8. Phase iOS (en cours)
 
-Ce qu'il restera à faire, tout le reste étant déjà partagé :
+**Fait, vérifiable sur GitHub Actions (`ios-simulator-build.yml`, runner macOS 26) :**
 
-- projet Xcode `iosApp/` (SwiftUI `App` hébergeant `ComposeUIViewController`), cibles `iosArm64` / `iosSimulatorArm64` déjà déclarées dans le Gradle (activées automatiquement sur macOS) ;
-- `actual` iOS : formatage de dates (`NSDateFormatter`), bitmap de bruit (Skia), lecteur de trailer (`WKWebView`), Google Sign-In (SDK Google), Apple Sign-In (`ASAuthorizationController` → ID token + nonce, déjà prévu côté `AuthRepository`), push (APNs → FCM), stockage (`NSUserDefaults` via multiplatform-settings) ;
-- `PrivacyInfo.xcprivacy`, corriger le bundle id (`fr.paulbr.bookmind` → `fr.paulbr.nookmind` dans l'ancien projet), signature et TestFlight.
+- les neuf `actual` iOS dans `iosMain/` : plateforme, niveau d'API haptique (jamais dégradé, la table est celle d'Android), langue de l'appareil, formatage des dates (`NSDateFormatter`, mêmes motifs TR35 que java.time), préférences (`NSUserDefaults`, une suite par magasin), sortie de l'app (sans effet, Apple l'interdit), journaux, ouverture d'URL, trailer (`WKWebView` dans `UIKitView`). Le bitmap de bruit prévu ici n'existe plus, `Ambiance.kt` est du Compose pur ;
+- les trois interfaces de pont vers Swift (`IosAppleSignInBridge`, `IosGoogleSignInBridge`, `IosPushBridge`) et leur adaptation vers les providers `suspend` du code commun, nonces SHA-256 compris ;
+- `IosApp`, racine de composition (pendant de `NookMindApplication`), et `MainViewController()` ;
+- l'hôte `native/iosApp/` : `project.yml` XcodeGen, SwiftUI `App` + `AppDelegate`, `ComposeView`, `AppleSignInBridge.swift` (`ASAuthorizationController`), `Info.plist`, entitlements, `PrivacyInfo.xcprivacy`, icône et écran de lancement repris de l'ancien projet ;
+- le bundle id est `fr.paulbr.nookmind`, sans suffixe debug : aucune app iOS n'a jamais été publiée, il n'y a rien avec quoi cohabiter.
+
+**Reste, et demande un iPhone plus une équipe Apple Developer payante :**
+
+- Sign in with Apple : la capacité sur l'App ID, l'entitlement, et `NookMindAppleSignInEnabled` à `true`. Le code est écrit ;
+- Google : paquet SPM `GoogleSignIn-iOS`, client OAuth iOS dans le projet Google Cloud du client web, implémentation Swift de `IosGoogleSignInBridge` ;
+- push : paquet SPM `firebase-ios-sdk`, `GoogleService-Info.plist`, clé APNs dans Firebase, implémentation Swift de `IosPushBridge`, réception et routage d'un tap dans l'AppDelegate (`IosApp.openRoute`) ;
+- vérifier les cinq signaux haptiques sur l'appareil ;
+- signature, TestFlight, captures App Store.
 
 ## 9. Différences assumées
 

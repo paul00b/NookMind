@@ -160,10 +160,24 @@ correctif aux personnes qui l'ont déjà installée.
 
 ### 6. iOS
 
-Rien n'est commencé. Les cibles `iosArm64` et `iosSimulatorArm64` sont déclarées dans
-`composeApp/build.gradle.kts` mais uniquement sous condition d'un hôte macOS, et il n'existe ni
-source set `iosMain` ni projet Xcode. Le détail de ce qu'il faudra écrire est en section 8 de
-`docs/native-rewrite-plan.md`.
+La phase A est écrite : les neuf `actual` dans `iosMain/`, les ponts vers Swift, la racine de
+composition `IosApp`, l'hôte SwiftUI dans `native/iosApp/` (projet généré par XcodeGen), et le
+workflow `ios-simulator-build.yml` qui compile, teste, lance sur simulateur et prend des captures
+sur un runner macOS 26. Le détail, et ce que le simulateur ne peut pas couvrir, est dans
+`native/README.md`, section iOS.
+
+Ce qu'il reste, dans l'ordre :
+
+- [ ] lire le premier run du workflow : le point de fragilité est la version de Xcode du runner,
+      Kotlin 2.4.20 étant validé contre Xcode 26.4
+- [ ] sur le Mac : `brew install xcodegen`, `cd native/iosApp && xcodegen generate`, ouvrir le
+      projet, `Local.xcconfig` avec la team, lancer sur simulateur puis sur l'iPhone
+- [ ] compte Apple Developer payant, puis Sign in with Apple (capacité + entitlement + le flag
+      `NookMindAppleSignInEnabled`)
+- [ ] connexion Google iOS (`GoogleSignIn-iOS`, client OAuth iOS dans le bon projet Google Cloud)
+- [ ] notifications (`firebase-ios-sdk`, `GoogleService-Info.plist`, clé APNs)
+- [ ] vérifier les cinq signaux haptiques sur l'appareil
+- [ ] TestFlight
 
 ## Travaux reportés
 
