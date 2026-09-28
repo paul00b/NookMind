@@ -3,12 +3,16 @@ import { Search, Library, Compass, BookOpen, Film, Tv } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useMediaMode } from '../context/MediaModeContext';
 
+// Pages outside the app shell: no tabs to navigate between, and /privacy is read by
+// store reviewers who are not signed in.
+const HIDDEN_ON = new Set(['/login', '/onboarding', '/auth/callback', '/privacy', '/terms']);
+
 export default function BottomNav() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { mode, setMode } = useMediaMode();
-  if (pathname === '/login' || pathname === '/onboarding') return null;
+  if (HIDDEN_ON.has(pathname)) return null;
 
   const TABS = [
     { to: '/', label: t('nav.home'), icon: Search, end: true },
