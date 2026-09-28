@@ -65,6 +65,7 @@ export default function App() {
           <Route path="/login" element={<OnboardingGate />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/delete-account" element={<Privacy section="delete-account" />} />
           <Route path="/terms" element={<Terms />} />
           <Route
             path="/"

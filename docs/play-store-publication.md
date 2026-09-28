@@ -235,9 +235,10 @@ Google.
 Google demande **une URL publique** où un utilisateur peut demander la suppression de son compte
 **sans réinstaller l'app**. La suppression dans l'app ne suffit pas.
 
-URL à déclarer : `https://nookmind.paulbr.fr/privacy#delete-account`. La section explique la
-suppression dans l'app (Paramètres → Supprimer le compte), la demande par e-mail à
-broussolle.paul@gmail.com, et ce qui est supprimé.
+URL à déclarer : `https://nookmind.paulbr.fr/delete-account`. Elle ouvre la politique de
+confidentialité directement sur la section de suppression, qui explique la suppression dans l'app
+(Paramètres → Supprimer le compte), propose un bouton « Demander la suppression de mon compte »
+(e-mail prérempli à broussolle.paul@gmail.com), et liste ce qui est supprimé.
 
 Questions du formulaire :
 

@@ -8,6 +8,18 @@ type Lang = 'fr' | 'en';
 const link = 'text-amber-600 hover:underline';
 const mail = <a href={`mailto:${CONTACT_EMAIL}`} className={link}>{CONTACT_EMAIL}</a>;
 
+function DeleteRequestButton({ label, subject, body }: { label: string; subject: string; body: string }) {
+  const href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  return (
+    <a
+      href={href}
+      className="inline-block mt-3 px-4 py-2 rounded-full bg-red-600 hover:bg-red-700 text-white text-sm font-semibold"
+    >
+      {label}
+    </a>
+  );
+}
+
 function Section({ id, title, children }: { id?: string; title: string; children: ReactNode }) {
   return (
     <section id={id} className="scroll-mt-8">
@@ -67,6 +79,11 @@ function French() {
       <Section id="delete-account" title="5. Supprimer votre compte">
         <p><strong>Depuis l'application NookMind :</strong> ouvrez les Paramètres, touchez « Supprimer le compte », puis confirmez avec « Oui, supprimer mon compte ». La suppression est immédiate.</p>
         <p className="mt-2"><strong>Sans l'application :</strong> écrivez à {mail} depuis l'adresse e-mail de votre compte, avec pour objet « Suppression de compte NookMind ». Nous supprimons le compte sous 30 jours au plus et vous le confirmons par e-mail.</p>
+        <DeleteRequestButton
+          label="Demander la suppression de mon compte"
+          subject="Suppression de compte NookMind"
+          body={"Bonjour,\n\nJe souhaite la suppression de mon compte NookMind et de toutes les données associées.\n\nAdresse e-mail du compte : \n\nMerci."}
+        />
         <p className="mt-2">Dans les deux cas, sont supprimés : votre compte, vos livres, films, séries, collections, notes, évaluations et abonnements aux notifications. Aucune donnée n'est conservée après la suppression.</p>
       </Section>
 
@@ -123,6 +140,11 @@ function English() {
       <Section id="delete-account" title="5. Delete your account">
         <p><strong>From the NookMind app:</strong> open Settings, tap “Delete account”, then confirm with “Yes, delete my account”. Deletion is immediate.</p>
         <p className="mt-2"><strong>Without the app:</strong> email {mail} from your account's email address, with the subject “NookMind account deletion”. We delete the account within 30 days at most and confirm by email.</p>
+        <DeleteRequestButton
+          label="Request account deletion"
+          subject="NookMind account deletion"
+          body={"Hello,\n\nI would like my NookMind account and all associated data to be deleted.\n\nAccount email address: \n\nThank you."}
+        />
         <p className="mt-2">Either way, we delete your account, books, movies, series, collections, notes, ratings and notification subscriptions. No data is kept after deletion.</p>
       </Section>
 
@@ -137,16 +159,17 @@ function English() {
   );
 }
 
-export default function Privacy() {
+/** `section` scrolls to that section on load, for URLs like /delete-account that store listings link to. */
+export default function Privacy({ section }: { section?: string }) {
   const { i18n } = useTranslation();
   const [lang, setLang] = useState<Lang>(i18n.language?.startsWith('fr') ? 'fr' : 'en');
   const fr = lang === 'fr';
 
   // The page renders client-side, so the browser cannot jump to #delete-account on load by itself.
   useEffect(() => {
-    const id = window.location.hash.slice(1);
+    const id = section ?? window.location.hash.slice(1);
     if (id) document.getElementById(id)?.scrollIntoView();
-  }, []);
+  }, [section]);
 
   return (
     <div className="min-h-screen bg-[#f8f6f1] dark:bg-[#0f1117] py-12 px-4">

@@ -5,7 +5,7 @@ import { useMediaMode } from '../context/MediaModeContext';
 
 // Pages outside the app shell: no tabs to navigate between, and /privacy is read by
 // store reviewers who are not signed in.
-const HIDDEN_ON = new Set(['/login', '/onboarding', '/auth/callback', '/privacy', '/terms']);
+const HIDDEN_ON = new Set(['/login', '/onboarding', '/auth/callback', '/privacy', '/delete-account', '/terms']);
 
 export default function BottomNav() {
   const { pathname } = useLocation();
