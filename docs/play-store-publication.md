@@ -16,13 +16,13 @@ directement à l'étape 2, puis 6.
 | Keystore `~/nookmind-release.jks`, alias `nookmind` | ✅ présent sur le Mac |
 | `android/keystore.properties` (ancien paquet) | ✅ présent, pointe vers le bon `.jks` |
 | `native/keystore.properties` | ✅ copié depuis `android/` le 2026-09-28 |
-| `native/composeApp/google-services.json` | ❌ **absent** : sans lui, pas de notifications dans le build |
+| `native/composeApp/google-services.json` | ✅ en place le 2026-09-28 (projet `nookmind-8f5be`, déclare `fr.paulbr.nookmind` et `.debug`) |
 | `native/secrets.properties` | ✅ présent |
 | `native/local.properties` (chemin du SDK Android) | ✅ créé le 2026-09-28 |
 | `targetSdk` 36 | ✅ conforme aux exigences Play actuelles |
 | Suppression de compte dans l'app | ✅ existe |
 | Politique de confidentialité `https://nookmind.paulbr.fr/privacy` | ✅ complétée le 2026-09-28 (FR/EN, contact, suppression) : à déployer |
-| Build de release | ✅ compilé le 2026-09-28 (APK + AAB), signé avec la clé `nookmind` (SHA-1 `6E:F9:BE:07:50:1A:CC:74:82:54:69:4B:48:90:36:C7:84:1D:CA:A5`). ⚠️ Pas encore testé sur appareil, et compilé **sans** `google-services.json` : à recompiler une fois le fichier en place |
+| Build de release | ✅ compilé le 2026-09-28 (APK + AAB), signé avec la clé `nookmind` (SHA-1 `6E:F9:BE:07:50:1A:CC:74:82:54:69:4B:48:90:36:C7:84:1D:CA:A5`). Recompilé avec `google-services.json`. ⚠️ Pas encore testé sur appareil |
 | Permissions du build | `INTERNET`, `POST_NOTIFICATIONS`, `ACCESS_NETWORK_STATE`, `WAKE_LOCK`, réception FCM, `USE_BIOMETRIC`/`USE_FINGERPRINT` (ajoutées par Credential Manager). Pas d'`AD_ID` : répondre « Non » à l'identifiant publicitaire |
 
 ---
