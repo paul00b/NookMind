@@ -17,6 +17,7 @@ on:
     paths:
       - 'native/**'
       - '!native/**/*.md'
+      - '!native/distribution/**'
       - '.github/workflows/ios-simulator-build.yml'
 
 permissions:

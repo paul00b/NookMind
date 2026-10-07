@@ -1,133 +1,154 @@
-# NookMind — Release Status
+# Publier NookMind
 
-## Android : l'app native remplace le paquet Capacitor
+Cette page concerne l'app Android native (`native/`). Le site et les fonctions `api/` sont sur
+Vercel. La publication complète sur le Play Store (fiche, déclarations, test
+fermé de 14 jours) est dans [`docs/play-store-publication.md`](docs/play-store-publication.md).
 
-Depuis la version 2.0.0, l'app Android n'est plus une WebView Capacitor mais une app native
-Kotlin + Compose, dans `native/`. Tout ce qui suit sur cette page (build `npm run cap:sync`,
-`android/gradlew bundleRelease`) concerne l'ancien paquet et ne sert plus que de repli tant que
-l'app native n'a pas été validée sur appareil.
+## Sortir une version Android
 
-Build de release natif :
+Le build se fait sur GitHub, pas sur le Mac : rien à installer, rien à compiler en local.
+
+1. **Notes de version.** Modifier `native/distribution/whatsnew/whatsnew-fr-FR` et
+   `whatsnew-en-US` (500 caractères maximum chacune), commit, push sur `main`.
+2. **Lancer.** GitHub → **Actions** → **Android release** → **Run workflow**, branche `main` :
+   - *Version* : laisser vide pour prendre la dernière version sortie et ajouter 1 au dernier
+     chiffre (2.0.3 donne 2.0.4). Écrire `2.1.0` pour changer de palier.
+   - *Track* : `internal` (test interne, disponible en quelques minutes, sans relecture) ou `alpha`
+     (test fermé, relu par Google).
+   - *Status* : `completed` pour que les testeurs l'aient tout de suite, `draft` pour la valider
+     soi-même dans Play Console avant.
+3. **Attendre une dizaine de minutes.** À la fin du run :
+   - la version est dans Play Console, sur la piste choisie ;
+   - le commit porte le tag `android-vX.Y.Z` ;
+   - l'AAB, un APK installable et le fichier de mapping R8 sont dans les **Artifacts** du run.
+
+Le résumé du run donne la version, l'empreinte de la clé qui a signé, le nombre d'erreurs R8 et la
+liste des permissions demandées par l'app.
+
+### Le numéro de version
+
+Il n'y a qu'un numéro à choisir, `X.Y.Z`. Le `versionCode` qu'exige Google en est déduit :
+`X × 10000 + Y × 100 + Z`, donc 2.0.1 donne 20001. Conséquences :
+
+- `Y` et `Z` vont de 0 à 99 ;
+- plus rien à incrémenter à la main dans `build.gradle.kts` ;
+- un build local sans paramètre sort en `2.0.0` (20000). Pour en forcer un autre :
+  `./gradlew :composeApp:bundleRelease -PappVersionName=2.0.4`.
+
+Le workflow refuse une version déjà sortie (le tag existe) ou inférieure à la dernière : Play la
+rejetterait de toute façon, mais après dix minutes de build.
+
+### Ce qui arrête une release
+
+Plutôt qu'une app qui part avec une fonction morte, le workflow s'arrête si :
+
+- un des six secrets du backend manque (Supabase, TMDB, Google Books, API Vercel, client Google) ;
+- `GOOGLE_SERVICES_JSON` ne déclare pas `fr.paulbr.nookmind` (plus de notifications) ;
+- le keystore ne s'ouvre pas avec le mot de passe donné, ou l'AAB sort non signé ;
+- l'app demande l'identifiant publicitaire (`AD_ID`) alors que Play Console déclare que non.
+
+### Le contrôle à chaque push
+
+Le même workflow tourne aussi, sans rien envoyer, à chaque push qui modifie un fichier Gradle ou
+`proguard-rules.pro`. Le build debug ne passe pas par R8 : c'est le seul endroit où une règle de
+conservation cassée se voit avant qu'une release ne parte avec.
+
+## Mise en place, une seule fois
+
+### 1. La clé de signature dans GitHub
+
+Dépôt → **Settings** → **Secrets and variables** → **Actions** → **New repository secret** :
+
+| Secret | Valeur |
+|---|---|
+| `RELEASE_KEYSTORE_BASE64` | Sur le Mac : `base64 -i ~/nookmind-release.jks \| pbcopy`, puis coller |
+| `RELEASE_KEYSTORE_PASSWORD` | Le `storePassword` de `native/keystore.properties` |
+| `RELEASE_KEY_PASSWORD` | Le `keyPassword`. Facultatif s'il est identique au précédent |
+| `RELEASE_KEY_ALIAS` | Facultatif, `nookmind` par défaut |
+
+Les six secrets du backend et `GOOGLE_SERVICES_JSON` existent déjà, le workflow debug s'en sert.
+
+Un secret GitHub ne se relit pas : ce n'est **pas** une sauvegarde du keystore. Le `.jks` et ses mots
+de passe doivent rester dans un gestionnaire de mots de passe, en plus du Mac.
+
+### 2. Le premier envoi, à la main
+
+L'API de Google ne connaît une app qu'une fois qu'un premier bundle a été envoyé à la main dans
+Play Console. Donc, la première fois :
+
+1. Lancer **Android release** (sans le secret `PLAY_SERVICE_ACCOUNT_JSON`, le workflow construit et
+   signe, mais n'envoie rien).
+2. Télécharger l'artefact du run, en sortir `NookMind-2.0.0.aab`.
+3. Play Console → **Tester et publier** → **Tests** → **Tests internes** → **Créer une release** →
+   envoyer l'AAB. Suite dans `docs/play-store-publication.md` §6.1.
+
+### 3. Le compte de service Play, pour que les envois suivants se fassent seuls
+
+1. **Google Cloud Console**, dans le projet Firebase `nookmind-8f5be` (n'importe quel projet
+   convient, autant ne pas en créer un) → **APIs & Services** → **Library** → activer
+   **Google Play Android Developer API**.
+2. **IAM & Admin** → **Service Accounts** → **Create service account**, par exemple
+   `play-release`. Aucun rôle Google Cloud n'est nécessaire. Puis **Keys** → **Add key** →
+   **JSON** : un fichier se télécharge.
+3. **Play Console** → **Utilisateurs et autorisations** → **Inviter de nouveaux utilisateurs** →
+   l'adresse e-mail du compte de service (`play-release@nookmind-8f5be.iam.gserviceaccount.com`).
+   Onglet **Autorisations des applications** → ajouter NookMind → cocher seulement **Publier des
+   applications sur les canaux de test**. Inviter.
+4. Secret GitHub `PLAY_SERVICE_ACCOUNT_JSON` : tout le contenu du fichier JSON. Supprimer ensuite le
+   fichier du Mac.
+
+Les autorisations Play peuvent mettre un moment à s'appliquer. Si le premier envoi automatique
+répond `The caller does not have permission`, réessayer plus tard avant de chercher plus loin.
+
+Si l'envoi répond `Only releases with status draft may be created on draft app`, c'est que l'app
+n'a encore jamais été publiée sur aucune piste : relancer avec *Status* `draft`, puis déployer la
+release depuis Play Console.
+
+## Tester une release
+
+Tester la version installée **depuis le Play Store** (lien d'inscription au test interne), pas
+seulement l'APK : c'est elle que Google a re-signée, et c'est sur elle que la connexion Google peut
+casser (`docs/play-store-publication.md` §6.2).
+
+R8 minifie la release et peut casser ce qui marche en debug. À vérifier à chaque release qui touche
+aux dépendances ou aux règles ProGuard :
+
+- [ ] connexion Google et connexion e-mail
+- [ ] notification : activer, envoyer le test depuis les réglages, la recevoir, la toucher
+- [ ] ouverture d'un lien vers une plateforme de streaming
+- [ ] trailer YouTube
+- [ ] suppression de compte, avec un compte jetable
+
+Les plantages remontent dans Play Console (**Surveiller et améliorer** → **Plantages et ANR**),
+avec les vrais noms de classes : le workflow envoie le mapping R8 avec chaque bundle.
+
+## iOS
+
+Pas encore publiable : il faut un compte Apple Developer payant. Le build simulateur tourne sur CI
+(`ios-simulator-build.yml`), le reste est dans `docs/NEXT-STEPS.md` §6.
+
+## L'ancien paquet Capacitor
+
+`android/` reste le seul moyen de corriger l'app Capacitor tant qu'elle est sur le Play Store. Son
+build, sur le Mac :
 
 ```bash
-cd native
-./gradlew :composeApp:bundleRelease
-# composeApp/build/outputs/bundle/release/composeApp-release.aab
-```
-
-Même `applicationId` (`fr.paulbr.nookmind`), même keystore (`~/nookmind-release.jks`, alias
-`nookmind`) : c'est une mise à jour de l'app déjà publiée, pas une nouvelle fiche. Le
-`keystore.properties` va dans `native/` au lieu de `android/`. Prérequis et configuration complets
-dans `native/README.md` ; ce qui a été vérifié et ce qui reste à valider sur appareil dans
-`docs/native-rewrite-plan.md`.
-
-À faire avant le premier envoi de l'AAB natif :
-
-- [ ] Compiler une première fois dans Android Studio (`native/`) et corriger ce que la compilation
-      Android remonte : elle n'a jamais pu être lancée pendant la réécriture.
-- [ ] Vérifier sur appareil la connexion Google, la réception d'une notification et l'ouverture des
-      liens externes, sur un build **de release** (R8 peut casser ces trois chemins).
-- [ ] Une fois l'app native validée en production : supprimer `android/`, `ios/`,
-      `capacitor.config.ts` et les dépendances `@capacitor/*` du `package.json`.
-
----
-
-## État actuel (2026-05-21)
-
-### ✅ Ce qui est fait
-
-#### Android
-- Keystore de signature généré : `~/nookmind-release.jks` (sur le Mac de dev principal)
-  - Alias : `nookmind`
-  - Mot de passe : stocké dans `android/keystore.properties` (non versionné)
-- `android/app/build.gradle` configuré avec `signingConfigs.release`
-- AAB signé généré avec succès : `android/app/build/outputs/bundle/release/app-release.aab`
-  - Ce fichier n'est pas versionné (`.gitignore`), il faut le regénérer ou le transférer manuellement
-
-#### Corrections UI (mergées sur main)
-- Fix sliders qui débordaient à gauche sur petits écrans (cause : wrapper `SearchSectionStack` sans `w-full` dans un container `flex items-center`)
-- Fix modales qui sortaient de l'écran en haut sur mobile (`max-h-[90dvh]` sur tous les detail modals)
-
----
-
-## 🚀 Prochaine étape : Uploader sur le Play Store
-
-### Option A — Depuis un autre ordi (sans rebuilder)
-1. Transférer le fichier `app-release.aab` depuis le Mac de dev vers l'autre ordi
-2. Aller sur [Play Console](https://play.google.com/console)
-3. Créer une nouvelle app → Production → Créer une release
-4. Uploader le `.aab`
-5. Remplir : description courte, description longue, catégorie, screenshots
-6. Soumettre pour review
-
-### Option B — Rebuilder le AAB sur un nouvel ordi
-Prérequis sur le nouvel ordi :
-- Node.js + npm
-- Java 21 (JDK) : `brew install --cask temurin@21`
-- Android SDK (Android Studio)
-
-Étapes :
-```bash
-# 1. Cloner le repo
-git clone https://github.com/paul00b/NookMind.git
-cd NookMind
-
-# 2. Installer les dépendances
-npm install
-
-# 3. Copier le keystore (depuis le Mac de dev ou depuis un stockage sécurisé)
-cp /path/to/nookmind-release.jks ~/nookmind-release.jks
-
-# 4. Recréer keystore.properties
-cat > android/keystore.properties << 'EOF'
-storePassword=LE_MOT_DE_PASSE
-keyPassword=LE_MOT_DE_PASSE
-keyAlias=nookmind
-storeFile=/Users/TON_USER/nookmind-release.jks
-EOF
-
-# 5. Sync et build
+npm install --legacy-peer-deps
 npm run cap:sync
 cd android && JAVA_HOME=$(/usr/libexec/java_home -v 21) ./gradlew bundleRelease
-
-# AAB généré dans :
 # android/app/build/outputs/bundle/release/app-release.aab
 ```
 
----
-
-## ⏳ Reste à faire avant publication
-
-### Android (Play Store)
-- [ ] Uploader le `.aab` sur Play Console
-- [ ] Remplir la fiche store :
-  - Description courte (80 chars max)
-  - Description longue
-  - Catégorie (Lifestyle ou Divertissement)
-  - Screenshots téléphone Android (min 2, format 16:9)
-  - Icône hi-res 512×512 PNG (disponible dans `resources/icon.png`)
-- [ ] URL politique de confidentialité (la page `/privacy` de l'app web ou une URL publique)
-- [ ] Soumettre pour review Google (~3 jours)
-
-### iOS (App Store) — pour plus tard
-- [ ] Compte Apple Developer ($99/an) — **bloquant**
-- [ ] Créer `PrivacyInfo.xcprivacy` (requis iOS 17+)
-- [ ] Corriger Bundle ID dans Xcode : `fr.paulbr.bookmind` → `fr.paulbr.nookmind`
-- [ ] Build signé via Xcode sur un Mac avec compte Apple Developer
-- [ ] Screenshots iPhone (6.9", 6.5") + iPad si ciblé
-
----
+Il utilise `android/keystore.properties`, même keystore et même alias que l'app native.
 
 ## Infos techniques
 
 | Élément | Valeur |
-|---------|--------|
-| App ID Android | `fr.paulbr.nookmind` |
-| App ID iOS | `fr.paulbr.nookmind` |
-| Version | 2.0.0 (versionCode 2) — native ; 1.0 (versionCode 1) était le paquet Capacitor |
-| Min Android SDK | 24 (Android 7.0) |
-| Target Android SDK | 36 (Android 15) |
-| Source Android | `native/` (Kotlin Multiplatform + Compose) |
-| Keystore alias | `nookmind` |
-| Keystore location | `~/nookmind-release.jks` (hors repo) |
-| Firebase project | `nookmind-8f5be` |
+|---|---|
+| App ID | `fr.paulbr.nookmind` (Android et iOS) |
+| Version | `X.Y.Z`, versionCode `X×10000 + Y×100 + Z`. Le paquet Capacitor s'était arrêté à 1 / `1.0` |
+| Min / target Android SDK | 24 (Android 7.0) / 36 |
+| Clé d'upload | `~/nookmind-release.jks`, alias `nookmind`, SHA-1 `6E:F9:BE:07:50:1A:CC:74:82:54:69:4B:48:90:36:C7:84:1D:CA:A5` |
+| Projet Firebase | `nookmind-8f5be` |
+| Workflow de release | `.github/workflows/android-release.yml` |
+| Notes de version | `native/distribution/whatsnew/` |

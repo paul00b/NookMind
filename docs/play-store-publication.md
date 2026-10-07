@@ -1,7 +1,7 @@
 # Publier NookMind sur le Play Store
 
 Date : 2026-09-28
-Build concerné : l'app native `native/` (versionCode 2, `2.0.0`, `fr.paulbr.nookmind`).
+Build concerné : l'app native `native/` (`2.0.0`, versionCode 20000, `fr.paulbr.nookmind`).
 
 Ce guide suppose une **première publication** : la fiche n'existe pas encore dans Play Console.
 Si elle existe déjà, avec le paquet Capacitor en versionCode 1, sauter les étapes 1 et 3 et aller
@@ -77,6 +77,9 @@ Google, mais c'est lent. Mieux vaut ne pas la perdre.
 
 ### 2.3 Compiler
 
+Le plus simple : GitHub → Actions → **Android release** → Run workflow. Il produit l'AAB signé et un
+APK de release dans les artefacts du run, sans rien compiler sur le Mac (`RELEASE.md`). En local :
+
 ```bash
 cd native
 ./gradlew :composeApp:assembleRelease   # APK, pour tester sur ton téléphone
@@ -97,14 +100,14 @@ keytool -printcert -jarfile composeApp/build/outputs/bundle/release/composeApp-r
 Si la commande répond « Not a signed jar file », c'est que `native/keystore.properties` n'a pas
 été lu.
 
-### 2.3 bis Avertissement R8 à surveiller
+### 2.3 bis Avertissement R8, corrigé
 
-Le build affiche des dizaines de fois : `R8: An error occurred when parsing kotlin metadata`. La
-version de R8 livrée avec AGP 8.13 ne connaît pas les métadonnées de Kotlin 2.4. Le build réussit,
-mais R8 peut alors mal traiter ce qui repose sur la réflexion Kotlin (supabase-kt tire
-`kotlin-reflect`). Si l'app plante ou si des écrans restent vides en release alors qu'ils marchent
-en debug, c'est le premier suspect. Le correctif consiste à épingler une version de R8 plus récente
-dans le `buildscript`, ou à monter AGP.
+Le build affichait des dizaines de fois : `R8: An error occurred when parsing kotlin metadata`. La
+version de R8 livrée avec AGP 8.13 ne connaît pas les métadonnées de Kotlin 2.4, qui demande R8
+9.1.29 ou plus récent. `native/settings.gradle.kts` épingle désormais cette version. Le résumé de
+chaque run du workflow **Android release** affiche le nombre de ces erreurs : il doit rester à 0.
+S'il remonte (après une montée de Kotlin par exemple), c'est le premier suspect d'un écran vide ou
+d'un plantage en release seulement.
 
 ### 2.4 Tester la release sur ton téléphone
 
@@ -284,8 +287,11 @@ anglaise : même structure, captures en anglais si tu en as.
 **Tester et publier → Tests → Tests internes → Créer une release**
 
 1. Play App Signing : accepter la gestion par Google (option par défaut).
-2. Envoyer `composeApp-release.aab`.
-3. Nom de la release : `2.0.0 (2)`. Notes de version en fr-FR et en-US.
+2. Envoyer `NookMind-2.0.0.aab`, tiré des artefacts du workflow **Android release**. C'est le seul
+   envoi à faire à la main : ensuite le workflow envoie lui-même, une fois le compte de service
+   configuré (`RELEASE.md`, mise en place §3).
+3. Nom de la release : `2.0.0 (20000)`. Notes de version : le contenu de
+   `native/distribution/whatsnew/`, en fr-FR et en-US.
 4. Onglet **Testeurs** : créer une liste avec ton adresse, copier le **lien d'inscription**, l'ouvrir
    sur ton téléphone, accepter, installer depuis le Play Store.
 
@@ -346,8 +352,8 @@ sur le déroulé du test (comment tu as recruté, quels retours, ce que tu as co
 
 1. **Pays et régions** : ajouter les pays visés (France + francophonie, ou tous les pays puisque
    l'app est aussi en anglais).
-2. **Créer une release** → promouvoir la release testée, ou renvoyer un AAB avec un versionCode
-   supérieur.
+2. **Créer une release** → promouvoir la release testée, ou en envoyer une nouvelle par le workflow
+   (le versionCode suit la version, il est forcément supérieur).
 3. Notes de version fr-FR et en-US.
 4. **Déploiement progressif** : commencer à 20 %, surveiller les plantages dans Android vitals
    pendant 1 ou 2 jours, puis monter à 100 %.
@@ -360,8 +366,8 @@ c'est toi qui cliques pour mettre en ligne, au lieu d'une mise en ligne automati
 
 ## 8. Après la mise en ligne
 
-- **Chaque mise à jour** : incrémenter `versionCode` (strictement supérieur au précédent, jamais
-  réutilisé) et `versionName` dans `native/composeApp/build.gradle.kts`, puis `bundleRelease`.
+- **Chaque mise à jour** : notes de version dans `native/distribution/whatsnew/`, puis
+  Actions → **Android release** → Run workflow. Détail dans `RELEASE.md`.
 - **Android vitals** (Surveiller et améliorer) : taux de plantage et d'ANR. Google pénalise la
   visibilité au-delà de 1,09 % de plantages et 0,47 % d'ANR.
 - **Avis** : y répondre depuis Play Console.

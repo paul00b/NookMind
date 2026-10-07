@@ -121,8 +121,8 @@ d'autre ne les rattrape :
 - [ ] réception d'une notification
 - [ ] ouverture des liens externes (plateformes de streaming)
 
-Penser à incrémenter `versionCode` / `versionName` dans `composeApp/build.gradle.kts` (actuellement
-2 / `2.0.0` ; le paquet Capacitor s'était arrêté à 1 / `1.0`).
+Le numéro de version se choisit au lancement du workflow `android-release.yml`, qui en déduit le
+`versionCode` (2.0.0 donne 20000). Procédure dans `RELEASE.md`.
 
 ### 3. Le reste de la check-list appareil
 
