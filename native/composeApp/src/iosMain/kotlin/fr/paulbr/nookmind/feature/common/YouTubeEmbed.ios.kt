@@ -10,6 +10,7 @@ import platform.CoreGraphics.CGRectZero
 import platform.Foundation.NSBundle
 import platform.Foundation.NSMutableURLRequest
 import platform.Foundation.NSURL
+import platform.Foundation.setValue
 import platform.UIKit.UIColor
 import platform.WebKit.WKAudiovisualMediaTypeNone
 import platform.WebKit.WKWebView
@@ -45,8 +46,9 @@ actual fun YouTubeEmbed(videoKey: String, modifier: Modifier) {
                     val referer = "https://${(NSBundle.mainBundle.bundleIdentifier ?: "fr.paulbr.nookmind").lowercase()}"
                     NSURL.URLWithString("https://www.youtube.com/embed/$videoKey?autoplay=1&rel=0&playsinline=1")
                         ?.let { url ->
-                            // Kotlin/Native types this factory as returning NSURLRequest, the class that
-                            // declares it; called on NSMutableURLRequest it returns a mutable one.
+                            // setValue(forHTTPHeaderField:) belongs to the NSMutableHTTPURLRequest category,
+                            // which Kotlin/Native turns into an extension: it only resolves when imported by
+                            // name (same trap as NSLocale in Platform.ios.kt), and only on the mutable type.
                             val request = NSMutableURLRequest.requestWithURL(url) as NSMutableURLRequest
                             request.setValue(referer, forHTTPHeaderField = "Referer")
                             loadRequest(request)
