@@ -295,7 +295,12 @@ anglaise : même structure, captures en anglais si tu en as.
 4. Onglet **Testeurs** : créer une liste avec ton adresse, copier le **lien d'inscription**, l'ouvrir
    sur ton téléphone, accepter, installer depuis le Play Store.
 
-Le test interne est disponible en quelques minutes, sans relecture.
+Le test interne n'est pas relu par Google. Mais pour la **toute première release** d'une app, le
+lien d'inscription peut répondre « Élément introuvable » pendant plusieurs heures, jusqu'à 48 h
+d'après l'aide Play Console : c'est ce qui s'est passé le 2026-10-07, et ça s'est réglé tout seul.
+Les releases suivantes arrivent en quelques minutes. Si ça dure, vérifier que la liste de
+testeurs est cochée et enregistrée, et ouvrir le lien en navigation privée avec le seul compte
+testeur (avec plusieurs comptes connectés, Play prend celui par défaut).
 
 ### 6.2 ⚠️ La connexion Google va casser, et c'est normal
 
@@ -303,19 +308,24 @@ Avec Play App Signing, **Google re-signe l'app avec sa propre clé**. L'app inst
 Play Store n'a donc pas la même empreinte SHA-1 que celle que tu as compilée, et Google Sign-In la
 refuse (`DEVELOPER_ERROR` ou `{16} Account reauth failed`).
 
-Correction :
+Correction, faite et vérifiée le 2026-10-07 :
 
-1. Play Console → **Tester et publier → Configuration → Intégrité de l'application → Signature
-   d'application** : copier le SHA-1 **et** le SHA-256 du « certificat de la clé de signature
-   d'application ».
-2. **Google Cloud Console** (le même projet que le client web `GOOGLE_AUTH_WEB_CLIENT_ID`, voir
-   `docs/NEXT-STEPS.md`) → APIs & Services → Credentials → créer un **nouveau client OAuth
-   Android** pour `fr.paulbr.nookmind` avec ce SHA-1. Garder celui de la clé d'upload, pour tes
-   builds locaux.
-3. **Firebase Console** → Paramètres du projet → l'app Android → Ajouter une empreinte → coller le
-   SHA-1 et le SHA-256.
+1. Play Console → **Protégé avec Play** → bloc **Protection Play Store**, le déplier →
+   **Accéder à la signature d'application Play**. Copier le SHA-1 du « Certificat de la clé de
+   signature d'application » (pas celui de la clé d'importation, qui est `6E:F9:…`). L'ancien
+   chemin « Tester et publier → Intégrité des applis » ne mène plus qu'à un renvoi vers cette page.
+2. **Google Cloud Console**, dans le projet qui possède le client web `GOOGLE_AUTH_WEB_CLIENT_ID`
+   (le nombre avant le tiret de cet identifiant est le numéro du projet ; c'est aussi là que vit le
+   client « Android Debug ») → APIs & Services → Identifiants → Créer des identifiants → ID client
+   OAuth → type **Android**, package `fr.paulbr.nookmind`, ce SHA-1. Un client ne porte qu'une
+   empreinte : c'est un client **de plus**, celui de la clé d'upload reste pour les APK installés à
+   la main.
+3. **Ne pas** ajouter cette empreinte dans Firebase. Firebase crée alors son propre client OAuth
+   Android dans son projet, et Google interdit qu'un couple package + SHA-1 existe dans deux
+   projets : si Firebase n'est pas le projet du client web, ce client automatique bloque celui de
+   l'étape 2. Les notifications n'ont besoin d'aucune empreinte.
 4. Pas besoin de renvoyer un build : le changement est côté serveur. Attendre quelques minutes,
-   réessayer la connexion Google sur l'app du Play Store.
+   fermer complètement l'app, réessayer.
 
 ### 6.3 Rapport de pré-lancement
 
@@ -380,8 +390,8 @@ c'est toi qui cliques pour mettre en ligne, au lieu d'une mise en ligne automati
 
 ## Check-list express
 
-- [ ] Compte Play Console créé, identité vérifiée
-- [ ] 12 à 20 testeurs recrutés (compte personnel)
+- [x] Compte Play Console créé, identité vérifiée
+- [ ] 12 à 20 testeurs recrutés (compte personnel) : 8 dans la liste du test fermé au 2026-10-07
 - [ ] Keystore sauvegardé hors du Mac
 - [ ] `native/keystore.properties` et `native/composeApp/google-services.json` en place
 - [ ] APK de release testé sur téléphone (Google, e-mail, notifications, liens, suppression)
@@ -389,8 +399,8 @@ c'est toi qui cliques pour mettre en ligne, au lieu d'une mise en ligne automati
 - [ ] Politique de confidentialité déployée sur `nookmind.paulbr.fr`
 - [ ] Compte de démo e-mail créé et rempli
 - [ ] Contenu de l'application : les 9 déclarations remplies
-- [ ] Fiche fr-FR + en-US, icône 512, image 1024 × 500, 4 captures ou plus
-- [ ] AAB en test interne, installé depuis le Play Store
-- [ ] SHA-1 de la clé de signature Play ajouté à Google Cloud et Firebase, connexion Google OK
-- [ ] Test fermé 14 jours, puis accès production demandé
+- [x] Fiche fr-FR + en-US, icône 512, image 1024 × 500, 4 captures ou plus
+- [x] AAB en test interne (2.0.0, 20000), installé depuis le Play Store
+- [x] SHA-1 de la clé de signature Play ajouté à Google Cloud (pas Firebase), connexion Google OK
+- [ ] Test fermé 14 jours, puis accès production demandé (envoyé en examen le 2026-10-07)
 - [ ] Production : pays, déploiement progressif, envoi pour examen
