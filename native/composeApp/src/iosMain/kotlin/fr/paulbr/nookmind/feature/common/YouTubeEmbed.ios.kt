@@ -45,7 +45,9 @@ actual fun YouTubeEmbed(videoKey: String, modifier: Modifier) {
                     val referer = "https://${(NSBundle.mainBundle.bundleIdentifier ?: "fr.paulbr.nookmind").lowercase()}"
                     NSURL.URLWithString("https://www.youtube.com/embed/$videoKey?autoplay=1&rel=0&playsinline=1")
                         ?.let { url ->
-                            val request = NSMutableURLRequest.requestWithURL(url)
+                            // Kotlin/Native types this factory as returning NSURLRequest, the class that
+                            // declares it; called on NSMutableURLRequest it returns a mutable one.
+                            val request = NSMutableURLRequest.requestWithURL(url) as NSMutableURLRequest
                             request.setValue(referer, forHTTPHeaderField = "Referer")
                             loadRequest(request)
                         }
