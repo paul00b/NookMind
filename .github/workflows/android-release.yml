@@ -281,6 +281,12 @@ jobs:
             fi
           } >> "$GITHUB_STEP_SUMMARY"
           echo "Upload key SHA-1: ${sha1:-none}. R8 Kotlin metadata errors: $r8"
+          # In the log as well: the summary is a rendered page that cannot be read back from the build output.
+          if [ -n "$perms" ]; then
+            echo "Permissions requested:"; printf '  %s\n' $perms
+          else
+            echo "::warning::Permissions not read (aapt2 or APK not found): the AD_ID check did not run."
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
