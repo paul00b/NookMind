@@ -24,7 +24,13 @@ actual fun YouTubeEmbed(videoKey: String, modifier: Modifier) {
                 webChromeClient = WebChromeClient()
                 webViewClient = WebViewClient()
                 setBackgroundColor(android.graphics.Color.BLACK)
-                loadUrl("https://www.youtube.com/embed/$videoKey?autoplay=1&rel=0&playsinline=1")
+                // Since July 2025 YouTube refuses an embed whose request carries no Referer: error 153,
+                // "video player configuration error". A WebView loading the URL directly sends none,
+                // so the app identifies itself the way YouTube documents for apps: https://<application id>.
+                loadUrl(
+                    "https://www.youtube.com/embed/$videoKey?autoplay=1&rel=0&playsinline=1",
+                    mapOf("Referer" to "https://${context.packageName.lowercase()}"),
+                )
                 webView = this
             }
         },
