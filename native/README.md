@@ -494,8 +494,10 @@ sont pas couverts par les tests.
 
 ## 8. Publication Play Store
 
-`versionCode` et `versionName` sont dans `composeApp/build.gradle.kts` et valent 2 / `2.0.0` ; le
-paquet Capacitor s'arrêtait à 1 / `1.0`. Les deux sont à incrémenter à chaque livraison.
+Les releases se font sur GitHub Actions, workflow `android-release.yml` : procédure et mise en place
+dans [`RELEASE.md`](../RELEASE.md). Le numéro de version est choisi au lancement (`X.Y.Z`) et le
+`versionCode` en est déduit (`X×10000 + Y×100 + Z`), il n'y a donc plus rien à incrémenter dans
+`composeApp/build.gradle.kts`. Le paquet Capacitor s'arrêtait à 1 / `1.0`.
 
 Le build de release active R8 et le rétrécissement des ressources. Les règles de conservation sont
 dans `composeApp/proguard-rules.pro` : sérialiseurs kotlinx, Supabase, ressources Compose,

@@ -210,6 +210,20 @@ if (!debugKeystoreFile.exists()) {
     )
 }
 
+// One version number, chosen at release time: the Android release workflow passes
+// -PappVersionName=X.Y.Z. The versionCode is derived from it (2.0.1 -> 20001), so it grows with
+// the version without a second number to keep in sync, and a local build of the same version gets
+// the same code. Play refuses a versionCode it has already seen, which turns a forgotten bump into
+// an upload error rather than a silent overwrite. The Capacitor build shipped as 1 / "1.0".
+val appVersionName = providers.gradleProperty("appVersionName").orNull ?: "2.0.0"
+val appVersionCode = run {
+    val parts = appVersionName.split(".").map { it.toIntOrNull() }
+    require(parts.size == 3 && parts.all { it != null && it >= 0 } && parts[1]!! <= 99 && parts[2]!! <= 99) {
+        "appVersionName must be X.Y.Z with Y and Z between 0 and 99, got \"$appVersionName\""
+    }
+    parts[0]!! * 10_000 + parts[1]!! * 100 + parts[2]!!
+}
+
 android {
     namespace = "fr.paulbr.nookmind"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -218,9 +232,8 @@ android {
         applicationId = "fr.paulbr.nookmind"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        // Bump both for every Play Store release. The Capacitor build shipped as 1 / "1.0".
-        versionCode = 2
-        versionName = "2.0.0"
+        versionCode = appVersionCode
+        versionName = appVersionName
     }
 
     val keystorePropertiesFile = rootProject.file("keystore.properties")
@@ -286,7 +299,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "NookMind"
-            packageVersion = "2.0.0"
+            packageVersion = appVersionName
         }
     }
 }
