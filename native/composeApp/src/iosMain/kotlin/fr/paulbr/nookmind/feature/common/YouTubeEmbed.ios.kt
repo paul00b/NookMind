@@ -7,8 +7,9 @@ import androidx.compose.ui.viewinterop.UIKitView
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.readValue
 import platform.CoreGraphics.CGRectZero
+import platform.Foundation.NSBundle
+import platform.Foundation.NSMutableURLRequest
 import platform.Foundation.NSURL
-import platform.Foundation.NSURLRequest
 import platform.UIKit.UIColor
 import platform.WebKit.WKAudiovisualMediaTypeNone
 import platform.WebKit.WKWebView
@@ -38,8 +39,16 @@ actual fun YouTubeEmbed(videoKey: String, modifier: Modifier) {
                     backgroundColor = UIColor.blackColor
                     scrollView.scrollEnabled = false
                     scrollView.bounces = false
+                    // YouTube refuses an embed whose request carries no Referer (error 153), and a
+                    // WKWebView loading the URL directly sends none: same fix as on Android, the
+                    // identity YouTube documents for apps, https://<bundle id>.
+                    val referer = "https://${(NSBundle.mainBundle.bundleIdentifier ?: "fr.paulbr.nookmind").lowercase()}"
                     NSURL.URLWithString("https://www.youtube.com/embed/$videoKey?autoplay=1&rel=0&playsinline=1")
-                        ?.let { loadRequest(NSURLRequest.requestWithURL(it)) }
+                        ?.let { url ->
+                            val request = NSMutableURLRequest.requestWithURL(url)
+                            request.setValue(referer, forHTTPHeaderField = "Referer")
+                            loadRequest(request)
+                        }
                 }
             },
             modifier = modifier,
