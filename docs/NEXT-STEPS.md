@@ -173,12 +173,15 @@ Ce qu'il reste, dans l'ordre :
       18 minutes à froid, 10 avec les caches
 - [ ] sur le Mac : `brew install xcodegen`, `cd native/iosApp && xcodegen generate`, ouvrir le
       projet, `Local.xcconfig` avec la team, lancer sur simulateur puis sur l'iPhone
-- [ ] compte Apple Developer payant, puis Sign in with Apple (capacité + entitlement + le flag
-      `NookMindAppleSignInEnabled`)
-- [ ] connexion Google iOS (`GoogleSignIn-iOS`, client OAuth iOS dans le bon projet Google Cloud)
-- [ ] notifications (`firebase-ios-sdk`, `GoogleService-Info.plist`, clé APNs)
+- [x] code des trois services natifs (2026-10-08) : Sign in with Apple, connexion Google
+      (GoogleSignIn 9.2), notifications (Firebase Messaging 12), et `NOOKMIND_PAID_TEAM` pour
+      choisir les entitlements
+- [x] workflow `ios-release.yml` : archive Release pour iPhone, signature par clé d'API, envoi
+      TestFlight, tag `ios-vX.Y.Z`
+- [ ] tester sur l'iPhone avec un Apple ID gratuit (`docs/ios-test-plan.md`)
+- [ ] compte Apple Developer payant, puis la configuration de `docs/app-store-publication.md`
 - [ ] vérifier les cinq signaux haptiques sur l'appareil
-- [ ] TestFlight
+- [ ] première release TestFlight, puis l'App Store
 
 ## Travaux reportés
 
