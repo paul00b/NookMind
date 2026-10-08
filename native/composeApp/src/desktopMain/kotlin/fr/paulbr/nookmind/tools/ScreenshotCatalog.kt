@@ -49,7 +49,7 @@ object ScreenshotCatalog {
     /** Tall enough for a whole detail sheet to show without scrolling. */
     private const val SHEET_HEIGHT_DP = 1500
 
-    private val container by lazy { AppContainer().also(::seed) }
+    internal val container by lazy { AppContainer().also(::seed) }
 
     /** Re-applied at render time: the repositories reset when the (absent) session resolves to signed-out. */
     private fun seed(c: AppContainer) {
@@ -150,18 +150,31 @@ object ScreenshotCatalog {
         ScreenshotEntry("series-detail-dark", heightDp = SHEET_HEIGHT_DP, content = shell(MediaMode.SERIES, MainTab.LIBRARY, dark = true) { SeriesDetailSheet(container, FakeData.series[0], onClose = {}) }),
         ScreenshotEntry("settings-full-dark", heightDp = 2300, content = shell(MediaMode.BOOKS, MainTab.SEARCH, dark = true) { SettingsPanel(container, onClose = {}, onOpenLegal = {}, onReplayOnboarding = {}) }),
         ScreenshotEntry("series-add-dark", heightDp = SHEET_HEIGHT_DP, content = shell(MediaMode.SERIES, MainTab.SEARCH, dark = true) { AddSeriesSheet(container, FakeData.newSeries, onClose = {}) }),
+        // Dark versions of every main screen, the mode the app is mostly used in.
+        ScreenshotEntry("books-nextup-dark", content = shell(MediaMode.BOOKS, MainTab.NEXT_UP, dark = true)),
+        ScreenshotEntry("books-library-list-dark", content = shellWithView(MediaMode.BOOKS, MainTab.LIBRARY, list = true, dark = true)),
+        ScreenshotEntry("movies-library-dark", content = shell(MediaMode.MOVIES, MainTab.LIBRARY, dark = true)),
+        ScreenshotEntry("movies-nextup-dark", content = shell(MediaMode.MOVIES, MainTab.NEXT_UP, dark = true)),
+        ScreenshotEntry("series-nextup-dark", content = shell(MediaMode.SERIES, MainTab.NEXT_UP, dark = true)),
+        ScreenshotEntry("series-stats-dark", heightDp = SHEET_HEIGHT_DP, content = shell(MediaMode.SERIES, MainTab.LIBRARY, dark = true) { SeriesStatsSheet(container, FakeData.series, onClose = {}) }),
+        ScreenshotEntry("notif-prompt-dark", content = shell(MediaMode.SERIES, MainTab.SEARCH, dark = true) { NotificationPromptSheet(container, onDismiss = {}) }),
+        ScreenshotEntry("onboarding-dark") { NookTheme(ThemeMode.DARK, MediaMode.SERIES) { OnboardingScreen(onFinish = {}) } },
+        // The library scrolled out: how the grid reads past the first screen.
+        ScreenshotEntry("books-library-tall-dark", heightDp = 1600, content = shell(MediaMode.BOOKS, MainTab.LIBRARY, dark = true)),
+        ScreenshotEntry("movies-library-tall-dark", heightDp = 1600, content = shell(MediaMode.MOVIES, MainTab.LIBRARY, dark = true)),
+        ScreenshotEntry("series-library-tall-dark", heightDp = 1600, content = shell(MediaMode.SERIES, MainTab.LIBRARY, dark = true)),
         ScreenshotEntry("tablet-books-library", widthDp = 1024, heightDp = 768, content = shell(MediaMode.BOOKS, MainTab.LIBRARY)),
         ScreenshotEntry("tablet-series-home", widthDp = 1024, heightDp = 768, content = shell(MediaMode.SERIES, MainTab.SEARCH)),
     )
 
     /** Same as [shell] but forces the list view mode of the library. */
-    private fun shellWithView(mode: MediaMode, tab: MainTab, list: Boolean): @Composable () -> Unit = {
+    private fun shellWithView(mode: MediaMode, tab: MainTab, list: Boolean, dark: Boolean = false): @Composable () -> Unit = {
         remember {
             container.prefs.setMediaMode(mode)
             container.prefs.setViewMode(mode, if (list) fr.paulbr.nookmind.core.data.ViewMode.LIST else fr.paulbr.nookmind.core.data.ViewMode.GRID)
             seed(container)
         }
-        NookTheme(ThemeMode.LIGHT, mode) {
+        NookTheme(if (dark) ThemeMode.DARK else ThemeMode.LIGHT, mode) {
             MainScaffold(container, onOpenLegal = {}, onReplayOnboarding = {}, initialTab = tab)
         }
     }

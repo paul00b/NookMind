@@ -13,6 +13,7 @@ import kotlin.time.Duration.Companion.milliseconds
  * Headless renderer used to snapshot screens to PNG without a window (design review, CI).
  *
  * Usage (desktop): `./gradlew :composeApp:screenshots -PoutDir=build/screenshots`
+ * (`-Pcovers -PsettleMs=3000` fetches real covers first and waits for them to load)
  * Every entry of [ScreenshotCatalog.entries] is rendered at phone size (390x844 @ 3x).
  */
 object Screenshots {
@@ -26,6 +27,7 @@ object Screenshots {
         heightDp: Int = HEIGHT_DP,
         scale: Float = 2f,
         settleFrames: Int = 30,
+        settleMs: Long = 500,
         content: @Composable () -> Unit,
     ) {
         val density = Density(scale)
@@ -37,10 +39,13 @@ object Screenshots {
         ).use { scene ->
             // Let LaunchedEffects, async image loads and animations settle.
             var time = 0L
+            // Animations follow the frame clock (half a second of it); remote images follow the
+            // wall clock, hence the longer sleeps when [settleMs] asks for more time.
+            val sleep = maxOf(16L, settleMs / settleFrames)
             repeat(settleFrames) {
                 time += 16_666_667L
                 scene.render(time)
-                Thread.sleep(16)
+                Thread.sleep(sleep)
             }
             val image = scene.render(time + 16_666_667L)
             val data = image.encodeToData(EncodedImageFormat.PNG) ?: error("PNG encoding failed")
@@ -55,13 +60,17 @@ fun main(args: Array<String>) {
     args.firstOrNull { it.startsWith("--locale=") }?.substringAfter('=')?.let { tag ->
         java.util.Locale.setDefault(java.util.Locale.forLanguageTag(tag))
     }
+    val settleMs = args.firstOrNull { it.startsWith("--settle-ms=") }?.substringAfter('=')?.toLongOrNull() ?: 500L
+    if (args.contains("--covers")) {
+        kotlinx.coroutines.runBlocking { FakeCovers.fill(ScreenshotCatalog.container) }
+    }
     val positional = args.filterNot { it.startsWith("--") }
     val outDir = File(positional.firstOrNull() ?: "build/screenshots")
     val only = positional.drop(1).toSet()
     val entries = ScreenshotCatalog.entries.filter { only.isEmpty() || it.name in only }
     entries.forEach { entry ->
         val file = File(outDir, "${entry.name}.png")
-        Screenshots.render(file, widthDp = entry.widthDp, heightDp = entry.heightDp, content = entry.content)
+        Screenshots.render(file, widthDp = entry.widthDp, heightDp = entry.heightDp, settleMs = settleMs, content = entry.content)
         println("wrote ${file.path}")
     }
     println("done: ${entries.size} screenshot(s) in ${outDir.path}")
