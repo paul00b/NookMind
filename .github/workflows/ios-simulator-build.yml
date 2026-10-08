@@ -5,8 +5,10 @@ name: iOS simulator build
 # when no Mac is at hand: Kotlin/Native for Apple platforms needs Xcode, and Xcode only runs on macOS.
 #
 # What it proves: the shared code compiles and runs on iOS, the app boots, the screens render.
-# What it cannot prove: Sign in with Apple, Google sign-in, push notifications and haptics. Those
-# need a real iPhone, a paid Apple developer team, and console registrations that do not exist yet.
+# What it cannot prove: Sign in with Apple, Google sign-in, push notifications and haptics. Their
+# Swift code and packages are compiled here, but running them needs a real iPhone, the console
+# registrations and, for Apple and push, a paid developer team. The Release build for a device is
+# ios-release.yml.
 #
 # Artifacts of a run: screenshots, the app's own log, the .app bundle, the test reports.
 
@@ -87,6 +89,14 @@ jobs:
             echo "- $(java -version 2>&1 | head -1)"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      # The Swift packages (GoogleSignIn, Firebase) are cloned once and reused across runs.
+      - name: Swift package cache
+        uses: actions/cache@v4
+        with:
+          path: native/iosApp/build/SourcePackages
+          key: spm-${{ runner.os }}-${{ hashFiles('native/iosApp/project.yml') }}
+          restore-keys: spm-${{ runner.os }}-
+
       - name: XcodeGen
         run: |
           brew install xcodegen
@@ -155,6 +165,8 @@ jobs:
             -configuration Debug \
             -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
             -derivedDataPath native/iosApp/build/DerivedData \
+            -clonedSourcePackagesDirPath native/iosApp/build/SourcePackages \
+            -skipPackagePluginValidation -skipMacroValidation \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
             build 2>&1 | tee out/xcodebuild.log | grep -E '^\*\* BUILD|error:|warning: .*(Kotlin|deprecated in iOS)' || true
           grep -q '^\*\* BUILD SUCCEEDED' out/xcodebuild.log
@@ -261,7 +273,7 @@ jobs:
           report API_BASE_URL              "$API_BASE_URL"              "IMDb ratings, watch providers, account deletion"
           report GOOGLE_BOOKS_API_KEY      "$GOOGLE_BOOKS_API_KEY"      "book search (works unauthenticated, but rate limited)"
           report TMDB_API_KEY              "$TMDB_API_KEY"              "movie and series search, and the whole Next Up tab"
-          report GOOGLE_AUTH_WEB_CLIENT_ID "$GOOGLE_AUTH_WEB_CLIENT_ID" "Google sign-in (once the iOS bridge exists)"
+          report GOOGLE_AUTH_WEB_CLIENT_ID "$GOOGLE_AUTH_WEB_CLIENT_ID" "Google sign-in"
           if [ -s /tmp/missing.md ]; then
             {
               echo "### Repository secrets missing"

@@ -47,10 +47,19 @@ interface IosAppleSignInBridge {
     )
 }
 
-/** Google Sign-In, implemented in Swift with the GoogleSignIn-iOS SDK. */
+/** Google Sign-In, implemented in Swift with the GoogleSignIn-iOS SDK (9.0 or later, for the nonce). */
 interface IosGoogleSignInBridge {
-    /** [hashedNonce] is the `nonce` parameter of `GIDSignIn.signIn`; the SDK's server client id must be the web client. */
-    fun signIn(hashedNonce: String, onSuccess: (idToken: String) -> Unit, onFailure: (message: String) -> Unit)
+    /**
+     * [hashedNonce] is the `nonce` parameter of `GIDSignIn.signIn`. [serverClientId] is the web
+     * client, the same one Android passes to the Credential Manager: it comes from the shared
+     * secrets so that Swift does not need a second copy of it.
+     */
+    fun signIn(
+        hashedNonce: String,
+        serverClientId: String,
+        onSuccess: (idToken: String) -> Unit,
+        onFailure: (message: String) -> Unit,
+    )
     fun signOut()
 }
 
@@ -110,10 +119,12 @@ internal class IosGoogleSignIn(private val bridge: IosGoogleSignInBridge) : Goog
     override val isAvailable: Boolean get() = AppConfig.googleWebClientId != null
 
     override suspend fun signIn(): GoogleSignInResult {
+        val serverClientId = AppConfig.googleWebClientId ?: error("GOOGLE_AUTH_WEB_CLIENT_ID is missing from this build.")
         val nonce = Nonce.generate()
         return suspendCancellableCoroutine { continuation ->
             bridge.signIn(
                 hashedNonce = nonce.hashed,
+                serverClientId = serverClientId,
                 onSuccess = { idToken -> if (continuation.isActive) continuation.resume(GoogleSignInResult(idToken, nonce.raw)) },
                 onFailure = { message -> if (continuation.isActive) continuation.resumeWithException(IllegalStateException(message)) },
             )

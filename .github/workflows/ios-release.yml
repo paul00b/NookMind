@@ -1,0 +1,337 @@
+name: iOS release
+
+# Builds the App Store version of the iOS app on a macOS runner, signs it and sends it to App Store
+# Connect, where it lands in TestFlight. Releasing is: Actions -> iOS release -> Run workflow.
+# Setup and procedure: docs/app-store-publication.md.
+#
+# Two modes, like the Android release:
+# - Run by hand: a real release. Picks the version, archives with the paid-team entitlements (Sign in
+#   with Apple, push), signs through the App Store Connect API key, uploads, then tags the commit
+#   ios-vX.Y.Z.
+# - On a push touching the iOS host: a check. The same Release archive for a real device (arm64), not
+#   signed, nothing uploaded. The simulator workflow never builds for a device nor in Release, so this
+#   is the only place the device build of the Kotlin framework and the Swift packages gets compiled.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version X.Y.Z. Leave empty to take the last iOS release and add 1 to its last number'
+        required: false
+        default: ''
+  push:
+    branches: [main, 'claude/**']
+    paths:
+      - 'native/iosApp/**'
+      - '!native/iosApp/**/*.md'
+      - '.github/workflows/ios-release.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    # Same image as the simulator workflow: the App Store has required Xcode 26 since April 2026.
+    runs-on: macos-26
+    timeout-minutes: 120
+
+    defaults:
+      run:
+        shell: bash
+
+    outputs:
+      version: ${{ steps.version.outputs.name }}
+
+    # The six keys the Kotlin build reads (see composeApp/build.gradle.kts). The Gradle phase of the
+    # Xcode project inherits them from xcodebuild's environment.
+    env:
+      IS_RELEASE: ${{ github.event_name == 'workflow_dispatch' }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      API_BASE_URL: ${{ secrets.API_BASE_URL }}
+      GOOGLE_BOOKS_API_KEY: ${{ secrets.GOOGLE_BOOKS_API_KEY }}
+      TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+      GOOGLE_AUTH_WEB_CLIENT_ID: ${{ secrets.GOOGLE_AUTH_WEB_CLIENT_ID }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Same rules as the Android release, with its own ios-v tags: the two apps are released
+      # separately, so each keeps its own sequence. The build number Apple requires is derived the
+      # same way, X*10000 + Y*100 + Z.
+      - name: Version
+        id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          fail() { echo "::error::$1"; { echo "### Release stopped"; echo "$1"; } >> "$GITHUB_STEP_SUMMARY"; exit 1; }
+
+          default=$(sed -n 's/^ *MARKETING_VERSION: *"\([^"]*\)".*/\1/p' native/iosApp/project.yml)
+          last=$(git tag --list 'ios-v*' --sort=-v:refname | head -1)
+          last=${last#ios-v}
+
+          if [ "$IS_RELEASE" != "true" ]; then
+            v=$default
+          elif [ -n "$INPUT_VERSION" ]; then
+            v=${INPUT_VERSION#v}
+          elif [ -n "$last" ]; then
+            IFS=. read -r a b c <<< "$last"
+            v="$a.$b.$((c + 1))"
+          else
+            v=$default
+          fi
+
+          [[ "$v" =~ ^([0-9]+)\.([0-9]{1,2})\.([0-9]{1,2})$ ]] \
+            || fail "Version \"$v\" is not X.Y.Z with Y and Z between 0 and 99."
+          code=$(( 10#${BASH_REMATCH[1]} * 10000 + 10#${BASH_REMATCH[2]} * 100 + 10#${BASH_REMATCH[3]} ))
+
+          if [ "$IS_RELEASE" = "true" ]; then
+            if git rev-parse -q --verify "refs/tags/ios-v$v" > /dev/null; then
+              fail "ios-v$v already exists: that version has been released. Leave the version empty to get the next one."
+            fi
+            if [ -n "$last" ] && [ "$(printf '%s\n%s\n' "$last" "$v" | sort -V | tail -1)" != "$v" ]; then
+              fail "$v is lower than the last iOS release, $last."
+            fi
+          fi
+
+          echo "Version $v, build $code"
+          echo "name=$v" >> "$GITHUB_OUTPUT"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
+      - name: JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
+      - name: Kotlin/Native toolchain cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('native/gradle/libs.versions.toml') }}
+          restore-keys: konan-${{ runner.os }}-
+
+      # The Swift packages (GoogleSignIn, Firebase) are cloned once and reused: Firebase alone is a
+      # large repository.
+      - name: Swift package cache
+        uses: actions/cache@v4
+        with:
+          path: native/iosApp/build/SourcePackages
+          key: spm-${{ runner.os }}-${{ hashFiles('native/iosApp/project.yml') }}
+          restore-keys: spm-${{ runner.os }}-
+
+      - name: Xcode
+        run: |
+          newest=$(ls -d /Applications/Xcode*.app | grep -vi beta | sort -V | tail -1)
+          sudo xcode-select -s "$newest"
+          xcodebuild -version
+          echo "- $(xcodebuild -version | tr '\n' ' ')" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: XcodeGen
+        run: brew install xcodegen
+
+      - name: Backend keys
+        run: |
+          : > "$RUNNER_TEMP/missing.md"
+          for k in SUPABASE_URL SUPABASE_ANON_KEY API_BASE_URL GOOGLE_BOOKS_API_KEY TMDB_API_KEY GOOGLE_AUTH_WEB_CLIENT_ID; do
+            if [ -z "${!k}" ]; then echo "- \`$k\`" >> "$RUNNER_TEMP/missing.md"; fi
+          done
+          if [ -s "$RUNNER_TEMP/missing.md" ]; then
+            { echo "### Repository secrets missing"; echo; cat "$RUNNER_TEMP/missing.md"; } >> "$GITHUB_STEP_SUMMARY"
+            if [ "$IS_RELEASE" = "true" ]; then
+              echo "::error::Backend keys missing, see the run summary."
+              exit 1
+            fi
+          fi
+
+      # Push notifications. Optional, unlike on Android: without the file the build ships with the
+      # notification section hidden, which lets TestFlight start before Firebase is set up for iOS.
+      # The secret holds the file's XML or its base64.
+      - name: GoogleService-Info.plist
+        env:
+          GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
+        run: |
+          dest=native/iosApp/NookMind/GoogleService-Info.plist
+          if [ -z "$GOOGLE_SERVICE_INFO_PLIST" ]; then
+            { echo "### No push notifications in this build"; echo; echo "The GOOGLE_SERVICE_INFO_PLIST secret is not set."; } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if printf '%s' "$GOOGLE_SERVICE_INFO_PLIST" | head -c 200 | grep -Eq '<\?xml|<plist'; then
+            printf '%s' "$GOOGLE_SERVICE_INFO_PLIST" > "$dest"
+          else
+            printf '%s' "$GOOGLE_SERVICE_INFO_PLIST" | base64 -D > "$dest" 2>/dev/null || true
+          fi
+          bundle=$(/usr/libexec/PlistBuddy -c 'Print :BUNDLE_ID' "$dest" 2>/dev/null || true)
+          if [ "$bundle" != "fr.paulbr.nookmind" ]; then
+            rm -f "$dest"
+            problem="GoogleService-Info.plist is unreadable or not for fr.paulbr.nookmind (BUNDLE_ID: ${bundle:-none})."
+            { echo "### No push notifications in this build"; echo; echo "$problem"; } >> "$GITHUB_STEP_SUMMARY"
+            if [ "$IS_RELEASE" = "true" ]; then echo "::error::$problem"; exit 1; fi
+          fi
+
+      # The project is generated after the plist is in place: XcodeGen only bundles files it sees.
+      - name: Generate the Xcode project
+        working-directory: native/iosApp
+        run: xcodegen generate
+
+      - name: App Store Connect key
+        if: env.IS_RELEASE == 'true'
+        env:
+          ASC_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          for k in ASC_KEY ASC_KEY_ID ASC_ISSUER_ID TEAM_ID; do
+            if [ -z "${!k}" ]; then
+              echo "::error::APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_KEY_ID, APP_STORE_CONNECT_API_ISSUER_ID and APPLE_TEAM_ID are required to release. See docs/app-store-publication.md."
+              exit 1
+            fi
+          done
+          # The secret holds the .p8 file as downloaded, PEM armour included.
+          printf '%s\n' "$ASC_KEY" > "$RUNNER_TEMP/AuthKey.p8"
+          if ! grep -q 'BEGIN PRIVATE KEY' "$RUNNER_TEMP/AuthKey.p8"; then
+            echo "::error::APP_STORE_CONNECT_API_KEY does not look like a .p8 key: paste the whole file, BEGIN and END lines included."
+            exit 1
+          fi
+
+      # Release configuration, for a real device, with the paid-team entitlements. In a check build
+      # nothing is signed: the point is that it compiles and links for arm64 in Release.
+      - name: Archive
+        env:
+          VERSION: ${{ steps.version.outputs.name }}
+          CODE: ${{ steps.version.outputs.code }}
+          GOOGLE_IOS_CLIENT_ID: ${{ secrets.GOOGLE_AUTH_IOS_CLIENT_ID }}
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          mkdir -p out
+          args=(
+            -project native/iosApp/NookMind.xcodeproj
+            -scheme NookMind
+            -configuration Release
+            -destination 'generic/platform=iOS'
+            -archivePath "$RUNNER_TEMP/NookMind.xcarchive"
+            -clonedSourcePackagesDirPath native/iosApp/build/SourcePackages
+            -skipPackagePluginValidation -skipMacroValidation
+            MARKETING_VERSION="$VERSION"
+            CURRENT_PROJECT_VERSION="$CODE"
+            NOOKMIND_PAID_TEAM=YES
+          )
+          # Google sign-in on iOS: the client id, and the reversed form Info.plist registers as a URL
+          # scheme. Derived here so that the secret is the one value Google Cloud shows.
+          if [ -n "$GOOGLE_IOS_CLIENT_ID" ]; then
+            args+=(GOOGLE_AUTH_IOS_CLIENT_ID="$GOOGLE_IOS_CLIENT_ID"
+                   GOOGLE_AUTH_IOS_REVERSED_CLIENT_ID="com.googleusercontent.apps.${GOOGLE_IOS_CLIENT_ID%.apps.googleusercontent.com}")
+          else
+            echo "- No GOOGLE_AUTH_IOS_CLIENT_ID: the Google button is hidden in this build." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ "$IS_RELEASE" = "true" ]; then
+            args+=(DEVELOPMENT_TEAM="$TEAM_ID" -allowProvisioningUpdates
+                   -authenticationKeyPath "$RUNNER_TEMP/AuthKey.p8"
+                   -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+          else
+            args+=(CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="")
+          fi
+          xcodebuild archive "${args[@]}" 2>&1 | tee out/archive.log | grep -E '^\*\* ARCHIVE|error:' || true
+          grep -q '^\*\* ARCHIVE SUCCEEDED' out/archive.log
+
+      - name: Why the archive failed
+        if: failure()
+        run: |
+          if [ -f out/archive.log ]; then
+            { echo "### xcodebuild errors"; echo; echo '```'; grep -E 'error:|Error:' out/archive.log | head -40; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            grep -E 'error:|Error:' out/archive.log | head -40
+          fi
+
+      # What actually went into the archive, read back from it.
+      - name: Inspect the archive
+        run: |
+          app="$RUNNER_TEMP/NookMind.xcarchive/Products/Applications/NookMind.app"
+          plist="$app/Info.plist"
+          read_key() { /usr/libexec/PlistBuddy -c "Print :$1" "$plist" 2>/dev/null || echo "?"; }
+          {
+            echo "### NookMind iOS $(read_key CFBundleShortVersionString) ($(read_key CFBundleVersion))"
+            echo
+            echo "- Sign in with Apple: $(read_key NookMindAppleSignInEnabled), push: $(read_key NookMindPushEnabled)"
+            if [ -f "$app/GoogleService-Info.plist" ]; then echo "- Firebase configuration bundled"; else echo "- No Firebase configuration: notifications hidden"; fi
+            if [ -n "$(read_key NookMindGoogleClientID | grep apps.googleusercontent.com)" ]; then echo "- Google sign-in configured"; else echo "- Google sign-in not configured: button hidden"; fi
+            if [ "$IS_RELEASE" = "true" ]; then
+              echo
+              echo '```'
+              codesign -d --entitlements - --xml "$app" 2>/dev/null | plutil -convert xml1 -o - - 2>/dev/null | grep -E -A2 'applesignin|aps-environment' || echo "entitlements unreadable"
+              echo '```'
+            fi
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # Signs for distribution with a cloud-managed certificate and uploads straight to App Store
+      # Connect (destination upload). The build appears in TestFlight once Apple has processed it.
+      - name: Upload to App Store Connect
+        if: env.IS_RELEASE == 'true'
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict>
+          </plist>
+          EOF
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/NookMind.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/AuthKey.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" 2>&1 | tee out/export.log
+          {
+            echo "### Sent to App Store Connect"
+            echo
+            echo "Apple processes the build for 5 to 30 minutes, then it shows in TestFlight. Internal"
+            echo "testers get it as soon as it is processed; external testers after Beta App Review."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nookmind-ios-release-logs
+          path: out/
+          if-no-files-found: ignore
+          retention-days: 30
+
+  tag:
+    needs: release
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tag ios-v${{ needs.release.outputs.version }}
+        env:
+          VERSION: ${{ needs.release.outputs.version }}
+        run: |
+          git tag "ios-v$VERSION" "$GITHUB_SHA"
+          git push origin "ios-v$VERSION"

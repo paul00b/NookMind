@@ -1,10 +1,29 @@
 // Signing is a per-machine matter, so it lives outside git. Create Local.xcconfig next to this
-// file with your team, and Xcode signs automatically:
+// file and override what applies to you, for example:
 //
 //     DEVELOPMENT_TEAM = SJ42PK8VK6
+//     NOOKMIND_PAID_TEAM = YES
+//     GOOGLE_AUTH_IOS_CLIENT_ID = 1234567890-abcdef.apps.googleusercontent.com
+//     GOOGLE_AUTH_IOS_REVERSED_CLIENT_ID = com.googleusercontent.apps.1234567890-abcdef
 //
-// Without it the project still builds for the simulator, which is all CI needs.
+// Without any of it the project still builds for the simulator, which is all the simulator CI needs.
 CODE_SIGN_STYLE = Automatic
 DEVELOPMENT_TEAM =
+
+// NO, the default: a free Apple ID ("Personal Team"). The app installs on your iPhone for 7 days,
+// without Sign in with Apple or push notifications. Apple grants those two entitlements to paid teams
+// only, and an entitlement the team cannot sign makes the whole build fail, so they stay out.
+// YES: a paid Apple Developer Program team. Both entitlements go in and both features turn on, through
+// the YES/NO strings Info.plist hands to AppDelegate. The release workflow always builds with YES.
+NOOKMIND_PAID_TEAM = NO
+NOOKMIND_ENTITLEMENTS_NO = NookMind/NookMind.entitlements
+NOOKMIND_ENTITLEMENTS_YES = NookMind/NookMind.Paid.entitlements
+CODE_SIGN_ENTITLEMENTS = $(NOOKMIND_ENTITLEMENTS_$(NOOKMIND_PAID_TEAM))
+
+// Google sign-in: the iOS OAuth client of the Google Cloud project that owns the web client (the
+// GOOGLE_AUTH_WEB_CLIENT_ID of secrets.properties), and its reversed form, the URL scheme Google's
+// page returns through. Works with a free team too. Left empty, the Google button is hidden.
+GOOGLE_AUTH_IOS_CLIENT_ID =
+GOOGLE_AUTH_IOS_REVERSED_CLIENT_ID = nookmind-google-not-configured
 
 #include? "Local.xcconfig"
