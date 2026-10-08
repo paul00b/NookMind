@@ -75,7 +75,6 @@ import fr.paulbr.nookmind.resources.seriesLibrary_noSeriesWatched
 import fr.paulbr.nookmind.resources.seriesLibrary_ratingDesc
 import fr.paulbr.nookmind.resources.seriesLibrary_search
 import fr.paulbr.nookmind.resources.seriesLibrary_searchSeries
-import fr.paulbr.nookmind.resources.seriesLibrary_seriesCount
 import fr.paulbr.nookmind.resources.seriesLibrary_title
 import fr.paulbr.nookmind.resources.seriesLibrary_titleAZ
 import fr.paulbr.nookmind.resources.seriesLibrary_waitingNextSeason
@@ -174,7 +173,7 @@ fun SeriesLibraryScreen(container: AppContainer, contentPadding: PaddingValues) 
                         LibraryHeader(
                             title = stringResource(Res.string.seriesLibrary_title),
                             titleColor = NookTheme.colors.tealText,
-                            subtitle = pluralStringResource(Res.plurals.seriesLibrary_seriesCount, series.size, series.size),
+                            subtitle = pluralStringResource(Res.plurals.common_itemsCountSeries, series.size, series.size),
                             viewMode = viewMode,
                             onViewMode = { viewMode = it; container.prefs.setViewMode(MediaMode.SERIES, it) },
                             actions = {

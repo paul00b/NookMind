@@ -56,7 +56,6 @@ import fr.paulbr.nookmind.resources.library_allGenres
 import fr.paulbr.nookmind.resources.library_alreadyInCategory
 import fr.paulbr.nookmind.resources.library_author
 import fr.paulbr.nookmind.resources.library_authorAZ
-import fr.paulbr.nookmind.resources.library_booksCount
 import fr.paulbr.nookmind.resources.library_cancel
 import fr.paulbr.nookmind.resources.library_categoryEmpty
 import fr.paulbr.nookmind.resources.library_categoryEmptyDesc
@@ -174,7 +173,7 @@ fun BooksLibraryScreen(container: AppContainer, contentPadding: PaddingValues, i
                         LibraryHeader(
                             title = stringResource(Res.string.library_title),
                             titleColor = NookTheme.colors.amberText,
-                            subtitle = pluralStringResource(Res.plurals.library_booksCount, books.size, books.size),
+                            subtitle = pluralStringResource(Res.plurals.common_itemsCountBooks, books.size, books.size),
                             viewMode = viewMode,
                             onViewMode = { viewMode = it; container.prefs.setViewMode(MediaMode.BOOKS, it) },
                             actions = {

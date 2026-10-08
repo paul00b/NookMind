@@ -177,10 +177,6 @@
     <string name="library_alreadyInCategory">Déjà ajouté</string>
     <string name="library_author">Auteur</string>
     <string name="library_authorAZ">Auteur A→Z</string>
-    <plurals name="library_booksCount">
-        <item quantity="one">%1$d livre dans votre collection</item>
-        <item quantity="other">%1$d livres dans votre collection</item>
-    </plurals>
     <string name="library_cancel">Annuler</string>
     <string name="library_categoryEmpty">Cette collection est vide.</string>
     <string name="library_categoryEmptyDesc">Cliquez sur "Ajouter des livres" pour en ajouter depuis votre bibliothèque.</string>
@@ -274,10 +270,6 @@
     <string name="movieLibrary_dateAdded">Date d'ajout</string>
     <string name="movieLibrary_director">Réalisateur</string>
     <string name="movieLibrary_directorAZ">Réalisateur A→Z</string>
-    <plurals name="movieLibrary_moviesCount">
-        <item quantity="one">%1$d film dans votre collection</item>
-        <item quantity="other">%1$d films dans votre collection</item>
-    </plurals>
     <string name="movieLibrary_newCategory">Nouvelle collection</string>
     <string name="movieLibrary_newCategoryPlaceholder">Nom de la collection...</string>
     <string name="movieLibrary_noDateGroup">Sans date</string>
@@ -471,10 +463,6 @@
     <string name="seriesLibrary_removeFromCategory">Retirer de la collection</string>
     <string name="seriesLibrary_search">Rechercher dans mes séries</string>
     <string name="seriesLibrary_searchSeries">Rechercher...</string>
-    <plurals name="seriesLibrary_seriesCount">
-        <item quantity="one">%1$d série dans votre collection</item>
-        <item quantity="other">%1$d séries dans votre collection</item>
-    </plurals>
     <string name="seriesLibrary_title">Mes séries</string>
     <string name="seriesLibrary_titleAZ">Titre A→Z</string>
     <string name="seriesLibrary_waitingNextSeason">En attente</string>

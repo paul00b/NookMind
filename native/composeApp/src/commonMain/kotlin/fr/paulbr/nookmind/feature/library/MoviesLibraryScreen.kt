@@ -71,7 +71,6 @@ import fr.paulbr.nookmind.resources.movieLibrary_confirmDeleteCategory
 import fr.paulbr.nookmind.resources.movieLibrary_dateAdded
 import fr.paulbr.nookmind.resources.movieLibrary_director
 import fr.paulbr.nookmind.resources.movieLibrary_directorAZ
-import fr.paulbr.nookmind.resources.movieLibrary_moviesCount
 import fr.paulbr.nookmind.resources.movieLibrary_newCategory
 import fr.paulbr.nookmind.resources.movieLibrary_newCategoryPlaceholder
 import fr.paulbr.nookmind.resources.movieLibrary_noDateGroup
@@ -173,7 +172,7 @@ fun MoviesLibraryScreen(container: AppContainer, contentPadding: PaddingValues, 
                         LibraryHeader(
                             title = stringResource(Res.string.movieLibrary_title),
                             titleColor = NookTheme.colors.indigoText,
-                            subtitle = pluralStringResource(Res.plurals.movieLibrary_moviesCount, movies.size, movies.size),
+                            subtitle = pluralStringResource(Res.plurals.common_itemsCountMovies, movies.size, movies.size),
                             viewMode = viewMode,
                             onViewMode = { viewMode = it; container.prefs.setViewMode(MediaMode.MOVIES, it) },
                             actions = {

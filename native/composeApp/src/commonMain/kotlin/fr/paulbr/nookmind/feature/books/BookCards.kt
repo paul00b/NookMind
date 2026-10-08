@@ -112,7 +112,7 @@ private fun BookCardFooter(book: Book) {
     val total = book.pageCount
     when {
         book.status == BookStatus.READ && book.rating != null -> StarRating(book.rating, size = 13.dp)
-        book.status == BookStatus.READING && current != null && total != null && total > 0 -> ProgressBar(current.toFloat() / total, color = Palette.Blue600, height = 4.dp)
+        book.status == BookStatus.READING && current != null && total != null && total > 0 -> ProgressBar(current.toFloat() / total, height = 4.dp)
         else -> bookMeta(book)?.let { Text(it, style = NookTheme.type.xs, color = NookTheme.colors.textSubtle, maxLines = 1) }
     }
 }
@@ -144,7 +144,7 @@ fun BookReadingCard(book: Book, onClick: () -> Unit, onSavePage: (Int?) -> Unit,
                 Text(book.author, style = NookTheme.type.xs, color = colors.textSubtle, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 if (current != null && total != null && total > 0) {
                     Spacer(Modifier.height(12.dp))
-                    ProgressBar(current.toFloat() / total, color = Palette.Blue600)
+                    ProgressBar(current.toFloat() / total)
                 }
                 Spacer(Modifier.height(6.dp))
                 Text(
