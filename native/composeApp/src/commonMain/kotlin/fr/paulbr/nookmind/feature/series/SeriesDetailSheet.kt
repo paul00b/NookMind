@@ -68,7 +68,6 @@ import fr.paulbr.nookmind.resources.seriesDetail_collections
 import fr.paulbr.nookmind.resources.seriesDetail_delete
 import fr.paulbr.nookmind.resources.seriesDetail_episodesSection
 import fr.paulbr.nookmind.resources.seriesDetail_imdbRatings
-import fr.paulbr.nookmind.resources.seriesDetail_noNotes
 import fr.paulbr.nookmind.resources.seriesDetail_notePlaceholder
 import fr.paulbr.nookmind.resources.seriesDetail_noteSaved
 import fr.paulbr.nookmind.resources.seriesDetail_personalNote
@@ -315,7 +314,6 @@ fun SeriesDetailSheet(container: AppContainer, series: Series, onClose: () -> Un
                         placeholderText = stringResource(Res.string.seriesDetail_notePlaceholder),
                         saveText = stringResource(Res.string.seriesDetail_save),
                         cancelText = stringResource(Res.string.seriesDetail_cancel),
-                        noNotesText = stringResource(Res.string.seriesDetail_noNotes),
                         onSave = { note -> apply(mapOf("personal_note" to note), local.copy(personalNote = note)) { container.toasts.success(Res.string.seriesDetail_noteSaved) } },
                     )
                     if (categories.isNotEmpty()) {

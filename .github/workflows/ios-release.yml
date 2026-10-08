@@ -276,9 +276,13 @@ jobs:
           app="$RUNNER_TEMP/NookMind.xcarchive/Products/Applications/NookMind.app"
           plist="$app/Info.plist"
           read_key() { /usr/libexec/PlistBuddy -c "Print :$1" "$plist" 2>/dev/null || echo "?"; }
+          # UIDeviceFamily comes from TARGETED_DEVICE_FAMILY: 1 is iPhone, 2 is iPad. Worth seeing on
+          # every release, since App Store Connect never lets a version drop a device once published.
+          devices=$(read_key UIDeviceFamily | grep -Eo '[0-9]+' | sed -e 's/^1$/iPhone/' -e 's/^2$/iPad/' | paste -s -d, - | sed 's/,/, /g') || true
           {
             echo "### NookMind iOS $(read_key CFBundleShortVersionString) ($(read_key CFBundleVersion))"
             echo
+            echo "- Devices: ${devices:-?}"
             echo "- Sign in with Apple: $(read_key NookMindAppleSignInEnabled), push: $(read_key NookMindPushEnabled)"
             if [ -f "$app/GoogleService-Info.plist" ]; then echo "- Firebase configuration bundled"; else echo "- No Firebase configuration: notifications hidden"; fi
             if [ -n "$(read_key NookMindGoogleClientID | grep apps.googleusercontent.com)" ]; then echo "- Google sign-in configured"; else echo "- Google sign-in not configured: button hidden"; fi

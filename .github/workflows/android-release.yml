@@ -19,10 +19,10 @@ on:
         required: false
         default: ''
       track:
-        description: 'Play track: internal = internal testing, alpha = closed testing'
+        description: 'Play track: alpha = closed testing, reviewed by Google; internal = internal testing, to try a build yourself first'
         type: choice
-        options: [internal, alpha]
-        default: internal
+        options: [alpha, internal]
+        default: alpha
       status:
         description: 'completed = testers get it right away; draft = it waits in Play Console for you to roll it out'
         type: choice
@@ -320,7 +320,7 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: fr.paulbr.nookmind
           releaseFiles: out/NookMind-${{ steps.version.outputs.name }}.aab
-          track: ${{ inputs.track }}
+          tracks: ${{ inputs.track }}
           status: ${{ inputs.status }}
           releaseName: ${{ steps.version.outputs.name }} (${{ steps.version.outputs.code }})
           whatsNewDirectory: native/distribution/whatsnew

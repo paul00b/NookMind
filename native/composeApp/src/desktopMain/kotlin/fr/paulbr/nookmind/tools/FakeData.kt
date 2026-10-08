@@ -27,6 +27,23 @@ object FakeData {
         Book("b7", USER, "g7", "Kafka sur le rivage", "Haruki Murakami", null, null, "2002-09-12", 640, "Roman", BookStatus.WANT_TO_READ, null, null, null, "2026-09-04T10:00:00+00:00"),
     )
 
+    /** Search results that are not in the library yet, for the add sheets (no duplicate warning). */
+    val newBook = Book(
+        "", USER, "g9", "La Croisée des chemins", "Franck Thilliez",
+        "La Croisée des chemins est une nouvelle de Franck Thilliez issue du recueil Au-delà de l'horizon et autres nouvelles. Martin, un jeune garçon, est retenu prisonnier par Claude, un homme taiseux qui vit seul dans les bois.",
+        null, "2021-03-04", 14, "Fiction", BookStatus.WANT_TO_READ, null, null, null, "",
+    )
+    val newMovie = Movie(
+        "", USER, 157336, "Interstellar", "Christopher Nolan",
+        "The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.",
+        null, "2014-11-05", 169, "Science Fiction", MovieStatus.WANT_TO_WATCH, null, null, null, "",
+    )
+    val newSeries = Series(
+        "", USER, 95396, "Severance", "Dan Erickson",
+        "Mark leads a team of office workers whose memories have been surgically divided between their work and personal lives.",
+        null, "2022-02-17", 2, emptyList(), emptyMap(), "Drama", SeriesStatus.WANT_TO_WATCH, null, null, null, null, null, "",
+    )
+
     val bookCategories: List<BookCategory> = listOf(
         BookCategory("c1", USER, "Été 2026", "2026-06-01T10:00:00+00:00", listOf("b1", "b4")),
         BookCategory("c2", USER, "Classiques", "2026-06-02T10:00:00+00:00", emptyList()),

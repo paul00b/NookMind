@@ -140,7 +140,7 @@ Chaque ligne : ce que tu fais, puis ce que tu dois voir.
 - [ ] Geste retour (swipe depuis le bord gauche) sur chaque fiche et chaque feuille : ferme le bon
       niveau, jamais deux.
 - [ ] Clavier : aucun champ masqué pendant la saisie, le clavier se ferme au tap ailleurs.
-- [ ] Simulateur iPad, paysage : barre latérale à partir de 768 pt, rien de coupé. Facultatif.
+- [ ] (iPad : hors périmètre, l'app est iPhone seul pour la première version.)
 
 ## 3. iPhone
 

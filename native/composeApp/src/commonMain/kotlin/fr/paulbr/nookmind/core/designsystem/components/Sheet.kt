@@ -39,7 +39,7 @@ class SheetController(private val state: SheetState, private val scope: kotlinx.
 /**
  * Port of SheetModal.tsx on top of Material 3's ModalBottomSheet: card background, 24 dp top
  * corners, drag handle (`h-1.5 w-12 rounded-full bg-gray-300 dark:bg-gray-600`), dark scrim,
- * swipe-to-dismiss, back to dismiss. [header] stays fixed while [content] scrolls.
+ * swipe-to-dismiss, back to dismiss. [header] and [footer] stay fixed while [content] scrolls.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,6 +52,7 @@ fun NookSheet(
     maxWidth: Dp = 640.dp,
     shape: Shape = NookShapes.sheetTop,
     header: (@Composable (SheetController) -> Unit)? = null,
+    footer: (@Composable (SheetController) -> Unit)? = null,
     content: @Composable ColumnScope.(SheetController) -> Unit,
 ) {
     val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -89,6 +90,7 @@ fun NookSheet(
             } else {
                 Column(Modifier.fillMaxWidth().weight(1f, fill = false)) { content(controller) }
             }
+            footer?.invoke(controller)
         }
     }
 }

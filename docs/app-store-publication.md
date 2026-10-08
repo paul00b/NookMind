@@ -15,17 +15,18 @@ Google Cloud, Firebase, Supabase) est pour toi ; le code et la CI sont déjà en
 | Build simulateur (`ios-simulator-build.yml`) | Vert : compilation, tests partagés, lancement, captures |
 | Build Release pour iPhone (`ios-release.yml`, contrôle) | Compile le framework Kotlin et les paquets Swift en arm64, sans signer |
 | Sign in with Apple | Pont Swift écrit, activé quand `NOOKMIND_PAID_TEAM = YES` |
-| Connexion Google | GoogleSignIn 9.2, même contrat qu'Android (client web, nonce) |
+| Connexion Google | GoogleSignIn 9.2, même contrat qu'Android (client web, nonce). **Vérifiée sur iPhone** le 2026-10-08 |
 | Notifications | Firebase Messaging 12 : permission, jeton, affichage au premier plan, ouverture au tap |
 | Manifeste de confidentialité | `PrivacyInfo.xcprivacy`, NSUserDefaults déclaré (raison `CA92.1`) |
 | Déclaration de chiffrement | `ITSAppUsesNonExemptEncryption = NO` dans `Info.plist` : pas de question à chaque envoi |
 | Xcode 26 | Exigé par l'App Store depuis le 28 avril 2026 ([Apple](https://developer.apple.com/news/upcoming-requirements/)), la CI l'utilise |
 | Suppression de compte dans l'app | Existe, Apple l'exige aussi |
-| iPad | Déclaré (`TARGETED_DEVICE_FAMILY: "1,2"`), mise en page iPad présente. Voir §12 |
+| iPad | Non : iPhone seul pour la première version (`TARGETED_DEVICE_FAMILY: "1"`). Voir §12 |
 
-**Rien n'a encore tourné sur un vrai iPhone**, et aucun des trois flux natifs (Google, Apple,
-notifications) n'a été exécuté de bout en bout. La CI prouve que le code compile et que l'app
-démarre, pas que la connexion aboutit.
+**Vérifié sur iPhone le 2026-10-08**, avec un Apple ID gratuit et le build `fr.paulbr.nookmind.dev` :
+l'app, la bande-annonce YouTube (correctif de l'erreur 153), les cinq retours haptiques, et la
+connexion Google de bout en bout, nonce vérifié par Supabase. **Pas encore exécutés** : Sign in with
+Apple et les notifications, qui demandent le compte payant, et la signature pour l'App Store.
 
 ---
 
@@ -131,8 +132,12 @@ Fonctionne aussi avec un compte gratuit, donc faisable dès l'étape 1.
 
    Laisser **Skip nonce check** désactivé. La doc Supabase conseille de l'activer pour iOS, parce
    que GoogleSignIn ne savait pas transmettre de nonce avant la version 9. L'app utilise la 9.2 et
-   envoie un nonce exactement comme sur Android. Si la connexion échoue avec une erreur qui parle de
-   `nonce`, c'est l'endroit à regarder.
+   envoie un nonce exactement comme sur Android : vérifié sur iPhone le 2026-10-08, la connexion
+   aboutit avec la vérification active.
+
+   Le build de test signe sous `fr.paulbr.nookmind.dev` (voir `docs/ios-test-plan.md`) et a son
+   propre client iOS, « iOS Dev », déclaré lui aussi dans Supabase. La version App Store aura besoin
+   d'un second client pour `fr.paulbr.nookmind`, à ajouter de la même façon.
 
 3. **Secret GitHub** `GOOGLE_AUTH_IOS_CLIENT_ID` : l'ID client complet. Le workflow en déduit
    la forme inversée.
@@ -258,7 +263,7 @@ App Store Connect → l'app → la version 2.0.0 :
 | Élément | Contrainte |
 |---|---|
 | Captures iPhone | 6,9 pouces : **1320 × 2868** px en portrait, 10 max ; App Store Connect en dérive les autres tailles ([guide](https://studio.adalo.com/blog/app-store-screenshot-sizes-2026)) |
-| Captures iPad | 13 pouces : **2064 × 2752** px, seulement si l'iPad reste supporté (§12) |
+| Captures iPad | Aucune : l'app est iPhone seul (§12) |
 | Texte promotionnel | 170 caractères, modifiable sans nouvelle version |
 | Description | 4 000 caractères |
 | Mots-clés | 100 caractères au total, séparés par des virgules |
@@ -282,16 +287,16 @@ Relecture : en général 24 à 48 heures.
 
 ---
 
-## 12. À décider avant le premier envoi : l'iPad
+## 12. L'iPad : iPhone seul pour la première version
 
-Le projet déclare l'app compatible iPhone **et** iPad. Conséquences : captures iPad obligatoires, et
-le relecteur teste aussi sur iPad, où la mise en page en barre latérale n'a jamais été vérifiée sur
-un vrai appareil. Surtout, une fois une version publiée avec le support iPad, une mise à jour ne peut
-plus le retirer : App Store Connect refuse un envoi qui tourne sur moins d'appareils que la version
-en vente ([Apple, QA1623](https://developer.apple.com/library/archive/qa/qa1623/_index.html)).
+Décidé le 2026-10-08 : `TARGETED_DEVICE_FAMILY: "1"` dans `native/iosApp/project.yml`. Pas de
+captures iPad à fournir, et la mise en page en barre latérale, jamais vérifiée sur un vrai iPad, n'est
+pas exposée à la relecture.
 
-Pour une première version iPhone seulement : `TARGETED_DEVICE_FAMILY: "1"` dans
-`native/iosApp/project.yml`. L'iPad pourra être ajouté plus tard ; l'inverse n'est pas possible.
+L'iPad pourra être ajouté dans une mise à jour (`"1,2"`). L'inverse est impossible : une fois une
+version publiée avec le support iPad, App Store Connect refuse un envoi qui tourne sur moins
+d'appareils que la version en vente ([Apple, QA1623](https://developer.apple.com/library/archive/qa/qa1623/_index.html)).
+
 Une app iPhone reste installable sur iPad, agrandie en mode compatibilité, et le relecteur peut
 l'y essayer ([forum Apple](https://developer.apple.com/forums/thread/781735)) : il faut seulement
 qu'elle y fonctionne, pas qu'elle y soit belle.
@@ -300,8 +305,8 @@ qu'elle y fonctionne, pas qu'elle y soit belle.
 
 ## Check-list express
 
-- [ ] App testée sur ton iPhone avec le compte gratuit (`docs/ios-test-plan.md`)
-- [ ] Décision iPad (§12)
+- [x] App testée sur ton iPhone avec le compte gratuit (`docs/ios-test-plan.md`), Google compris
+- [x] Décision iPad : iPhone seul (§12)
 - [ ] Compte Apple Developer validé, Team ID noté
 - [ ] App ID `fr.paulbr.nookmind` avec Sign in with Apple et Push Notifications
 - [ ] App créée dans App Store Connect
