@@ -106,21 +106,31 @@ fun EditableNote(
                 GhostButton(cancelText, onClick = { editing = false }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 6.dp))
             }
         } else {
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(NookShapes.xl)
-                    .background(colors.surface, NookShapes.xl)
-                    .border(1.dp, colors.borderStrong, NookShapes.xl)
-                    .clickable { draft = note ?: ""; editing = true }
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-            ) {
-                if (note.isNullOrBlank()) {
-                    Text(placeholderText, style = NookTheme.type.sm, color = colors.textFaint)
-                } else {
-                    Text(note, style = NookTheme.type.sans(14, lineHeight = 22), color = colors.textBody2)
-                }
-            }
+            EditableValueBox(note, placeholderText, onClick = { draft = note ?: ""; editing = true }, Modifier.fillMaxWidth())
+        }
+    }
+}
+
+/**
+ * A saved value shown in a box drawn like the field that edits it (the note, the current page, the
+ * date watched): tapping it opens the editor. Replaces the pencil icons, which read as one more
+ * button next to the sheet's real ones. [text] null or blank shows [placeholder] instead.
+ */
+@Composable
+fun EditableValueBox(text: String?, placeholder: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val colors = NookTheme.colors
+    Box(
+        modifier
+            .clip(NookShapes.xl)
+            .background(colors.surface, NookShapes.xl)
+            .border(1.dp, colors.borderStrong, NookShapes.xl)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+    ) {
+        if (text.isNullOrBlank()) {
+            Text(placeholder, style = NookTheme.type.sm, color = colors.textFaint)
+        } else {
+            Text(text, style = NookTheme.type.sans(14, lineHeight = 22), color = colors.textBody2)
         }
     }
 }

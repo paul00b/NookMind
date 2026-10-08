@@ -25,7 +25,7 @@ jobs:
     timeout-minutes: 30
     env:
       # Catalog entries to render, see composeApp/src/desktopMain/.../tools/ScreenshotCatalog.kt.
-      ONLY: books-detail-dark,books-add-dark,movies-detail-dark,movies-add-dark,series-detail-dark,series-add-dark,settings-dark
+      ONLY: books-detail-dark,books-add-dark,movies-detail-dark,movies-add-dark,series-detail-dark,series-add-dark,settings-full-dark
 
     steps:
       - uses: actions/checkout@v4

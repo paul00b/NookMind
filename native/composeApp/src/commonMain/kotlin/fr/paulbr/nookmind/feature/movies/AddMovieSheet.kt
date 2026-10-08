@@ -232,6 +232,15 @@ fun AddMovieSheet(container: AppContainer, prefill: Movie?, onClose: () -> Unit)
                                     formatIsoDate(form.releaseDate, DateStyle.DAY_MONTH_LONG_YEAR)?.let { MetaPill(it) }
                                     form.runtime?.let { MetaPill(stringResource(Res.string.movieDetail_runtime, it)) }
                                 }
+                                LabeledBlock(stringResource(Res.string.addMovie_statusLabel)) {
+                                    StatusSegmentedControl(
+                                        options = movieStatusOptions(),
+                                        selected = form.status.key,
+                                        colorOf = { movieStatusColor(MovieStatus.fromKey(it)) },
+                                        onSelect = ::selectStatus,
+                                    )
+                                }
+                                watchedFields()
                                 form.description?.takeIf { it.isNotBlank() }?.let {
                                     ExpandableDescription(it, label = stringResource(Res.string.movieDetail_description), seeMoreText = stringResource(Res.string.movieDetail_seeMore), seeLessText = stringResource(Res.string.movieDetail_seeLess))
                                 }
@@ -243,15 +252,6 @@ fun AddMovieSheet(container: AppContainer, prefill: Movie?, onClose: () -> Unit)
                             Column(horizontalAlignment = Alignment.CenterHorizontally) { poster(); Spacer(Modifier.height(24.dp)); details() }
                         }
                     }
-                    LabeledBlock(stringResource(Res.string.addMovie_statusLabel)) {
-                        StatusSegmentedControl(
-                            options = movieStatusOptions(),
-                            selected = form.status.key,
-                            colorOf = { movieStatusColor(MovieStatus.fromKey(it)) },
-                            onSelect = ::selectStatus,
-                        )
-                    }
-                    watchedFields()
                     form.tmdbId?.let { TrailerButton(container, "movie", it) }
                     CastAccordion(cast, stringResource(Res.string.movieDetail_cast), onSelect = { selectedActorId = it })
                     // The note reads and edits like on MovieDetailSheet; the form keeps its plain text area.

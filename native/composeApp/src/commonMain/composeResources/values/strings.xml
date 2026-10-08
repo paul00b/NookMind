@@ -111,7 +111,7 @@
     <string name="bookDetail_movedToReading">Moved to Reading</string>
     <string name="bookDetail_movedToWantToRead">Moved to Want to read</string>
     <string name="bookDetail_noCollections">No collections yet — create one in the Library.</string>
-    <string name="bookDetail_noPageYet">No page set yet. Click the pencil to add one.</string>
+    <string name="bookDetail_noPageYet">Add the page you're on</string>
     <string name="bookDetail_notePlaceholder">Add your thoughts about this book...</string>
     <string name="bookDetail_noteSaved">Note saved</string>
     <string name="bookDetail_pages">%1$d pages</string>
@@ -226,7 +226,7 @@
     <string name="movieDetail_description">Description</string>
     <string name="movieDetail_movedToWantToWatch">Moved to Want to watch</string>
     <string name="movieDetail_movedToWatched">Moved to Watched</string>
-    <string name="movieDetail_noDate">No date</string>
+    <string name="movieDetail_noDate">Add the date</string>
     <string name="movieDetail_notePlaceholder">Add your thoughts about this movie...</string>
     <string name="movieDetail_noteSaved">Note saved</string>
     <string name="movieDetail_personalNote">Personal note</string>

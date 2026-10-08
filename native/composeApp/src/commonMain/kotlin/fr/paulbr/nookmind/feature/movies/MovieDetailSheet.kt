@@ -23,17 +23,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import fr.paulbr.nookmind.app.AppContainer
 import fr.paulbr.nookmind.core.data.patchOf
 import fr.paulbr.nookmind.core.designsystem.NookTheme
 import fr.paulbr.nookmind.core.designsystem.components.EditableNote
+import fr.paulbr.nookmind.core.designsystem.components.EditableValueBox
 import fr.paulbr.nookmind.core.designsystem.components.ExpandableDescription
 import fr.paulbr.nookmind.core.designsystem.components.GenrePill
 import fr.paulbr.nookmind.core.designsystem.components.GhostButton
-import fr.paulbr.nookmind.core.designsystem.components.IconGhostButton
 import fr.paulbr.nookmind.core.designsystem.components.LabeledBlock
 import fr.paulbr.nookmind.core.designsystem.components.MediaImage
 import fr.paulbr.nookmind.core.designsystem.components.MetaPill
@@ -151,6 +150,64 @@ fun MovieDetailSheet(container: AppContainer, movie: Movie, onClose: () -> Unit)
                                 formatIsoDate(local.releaseDate, DateStyle.DAY_MONTH_LONG_YEAR)?.let { MetaPill(it) }
                                 local.runtime?.let { MetaPill(stringResource(Res.string.movieDetail_runtime, it)) }
                             }
+                            LabeledBlock(stringResource(Res.string.addMovie_statusLabel)) {
+                                StatusSegmentedControl(
+                                    options = movieStatusOptions(),
+                                    selected = local.status.key,
+                                    colorOf = { movieStatusColor(MovieStatus.fromKey(it)) },
+                                    onSelect = { key ->
+                                        val next = MovieStatus.fromKey(key)
+                                        val patch = mutableMapOf<String, Any?>("status" to next.key)
+                                        var optimistic = local.copy(status = next)
+                                        if (next == MovieStatus.WANT_TO_WATCH) {
+                                            patch["rating"] = null; patch["watched_date"] = null
+                                            optimistic = optimistic.copy(rating = null, watchedDate = null)
+                                        } else if (local.watchedDate == null) {
+                                            val today = todayIso()
+                                            patch["watched_date"] = today
+                                            optimistic = optimistic.copy(watchedDate = today)
+                                        }
+                                        apply(patch, optimistic) { container.toasts.success(if (next == MovieStatus.WATCHED) movedToWatched else movedToWant) }
+                                    },
+                                )
+                            }
+
+                            if (local.status == MovieStatus.WATCHED) {
+                                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                    LabeledBlock(stringResource(Res.string.movieDetail_yourRating)) {
+                                        StarRating(local.rating, onChange = { rating ->
+                                            apply(mapOf("rating" to rating), local.copy(rating = rating)) { container.toasts.success(Res.string.movieDetail_ratingUpdated) }
+                                        }, size = 26.dp)
+                                    }
+                                    Column {
+                                        Text(stringResource(Res.string.movieDetail_watchedOnLabel), style = NookTheme.type.sm, color = colors.textSubtle)
+                                        Spacer(Modifier.height(8.dp))
+                                        if (editingDate) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                DateField(dateDraft, onChange = { dateDraft = it }, compact = true)
+                                                PrimaryButton(
+                                                    stringResource(Res.string.movieDetail_save),
+                                                    onClick = {
+                                                        val value = dateDraft
+                                                        apply(mapOf("watched_date" to value), local.copy(watchedDate = value)) { container.toasts.success(Res.string.movieDetail_dateSaved) }
+                                                        editingDate = false
+                                                    },
+                                                    icon = LucideIcons.Check, iconSize = 14.dp,
+                                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                                )
+                                                GhostButton(stringResource(Res.string.movieDetail_cancel), onClick = { dateDraft = local.watchedDate; editingDate = false }, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp))
+                                            }
+                                        } else {
+                                            EditableValueBox(
+                                                text = formatIsoDate(local.watchedDate, DateStyle.NUMERIC),
+                                                placeholder = stringResource(Res.string.movieDetail_noDate),
+                                                onClick = { dateDraft = local.watchedDate; editingDate = true },
+                                                modifier = Modifier.fillMaxWidth(),
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                             local.description?.takeIf { it.isNotBlank() }?.let {
                                 ExpandableDescription(it, label = stringResource(Res.string.movieDetail_description), seeMoreText = stringResource(Res.string.movieDetail_seeMore), seeLessText = stringResource(Res.string.movieDetail_seeLess))
                             }
@@ -160,70 +217,6 @@ fun MovieDetailSheet(container: AppContainer, movie: Movie, onClose: () -> Unit)
                         Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) { poster(); Box(Modifier.weight(1f)) { details() } }
                     } else {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) { poster(); Spacer(Modifier.height(24.dp)); details() }
-                    }
-                }
-
-                LabeledBlock(stringResource(Res.string.addMovie_statusLabel)) {
-                    StatusSegmentedControl(
-                        options = movieStatusOptions(),
-                        selected = local.status.key,
-                        colorOf = { movieStatusColor(MovieStatus.fromKey(it)) },
-                        onSelect = { key ->
-                            val next = MovieStatus.fromKey(key)
-                            val patch = mutableMapOf<String, Any?>("status" to next.key)
-                            var optimistic = local.copy(status = next)
-                            if (next == MovieStatus.WANT_TO_WATCH) {
-                                patch["rating"] = null; patch["watched_date"] = null
-                                optimistic = optimistic.copy(rating = null, watchedDate = null)
-                            } else if (local.watchedDate == null) {
-                                val today = todayIso()
-                                patch["watched_date"] = today
-                                optimistic = optimistic.copy(watchedDate = today)
-                            }
-                            apply(patch, optimistic) { container.toasts.success(if (next == MovieStatus.WATCHED) movedToWatched else movedToWant) }
-                        },
-                    )
-                }
-
-                if (local.status == MovieStatus.WATCHED) {
-                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        LabeledBlock(stringResource(Res.string.movieDetail_yourRating)) {
-                            StarRating(local.rating, onChange = { rating ->
-                                apply(mapOf("rating" to rating), local.copy(rating = rating)) { container.toasts.success(Res.string.movieDetail_ratingUpdated) }
-                            }, size = 26.dp)
-                        }
-                        Column {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text(stringResource(Res.string.movieDetail_watchedOnLabel), style = NookTheme.type.sm, color = colors.textSubtle)
-                                if (!editingDate) {
-                                    IconGhostButton(LucideIcons.Pencil, null, onClick = { dateDraft = local.watchedDate; editingDate = true }, size = 13.dp, padding = 2.dp, tint = colors.textFaint)
-                                }
-                            }
-                            Spacer(Modifier.height(4.dp))
-                            if (editingDate) {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    DateField(dateDraft, onChange = { dateDraft = it }, compact = true)
-                                    PrimaryButton(
-                                        stringResource(Res.string.movieDetail_save),
-                                        onClick = {
-                                            val value = dateDraft
-                                            apply(mapOf("watched_date" to value), local.copy(watchedDate = value)) { container.toasts.success(Res.string.movieDetail_dateSaved) }
-                                            editingDate = false
-                                        },
-                                        icon = LucideIcons.Check, iconSize = 14.dp,
-                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                                    )
-                                    GhostButton(stringResource(Res.string.movieDetail_cancel), onClick = { dateDraft = local.watchedDate; editingDate = false }, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp))
-                                }
-                            } else {
-                                val formatted = formatIsoDate(local.watchedDate, DateStyle.NUMERIC)
-                                if (formatted != null) {
-                                    Text(formatted, style = NookTheme.type.sm, color = colors.textBody2)
-                                } else {
-                                    Text(stringResource(Res.string.movieDetail_noDate), style = NookTheme.type.sm.copy(fontStyle = FontStyle.Italic), color = colors.textFaint)
-                                }
-                            }
-                        }
                     }
                 }
 

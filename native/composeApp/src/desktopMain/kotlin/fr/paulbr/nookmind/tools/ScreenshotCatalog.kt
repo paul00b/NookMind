@@ -148,6 +148,7 @@ object ScreenshotCatalog {
         ScreenshotEntry("movies-detail-dark", heightDp = SHEET_HEIGHT_DP, content = shell(MediaMode.MOVIES, MainTab.LIBRARY, dark = true) { MovieDetailSheet(container, FakeData.movies[0], onClose = {}) }),
         ScreenshotEntry("movies-add-dark", heightDp = SHEET_HEIGHT_DP, content = shell(MediaMode.MOVIES, MainTab.SEARCH, dark = true) { AddMovieSheet(container, FakeData.newMovie, onClose = {}) }),
         ScreenshotEntry("series-detail-dark", heightDp = SHEET_HEIGHT_DP, content = shell(MediaMode.SERIES, MainTab.LIBRARY, dark = true) { SeriesDetailSheet(container, FakeData.series[0], onClose = {}) }),
+        ScreenshotEntry("settings-full-dark", heightDp = 2300, content = shell(MediaMode.BOOKS, MainTab.SEARCH, dark = true) { SettingsPanel(container, onClose = {}, onOpenLegal = {}, onReplayOnboarding = {}) }),
         ScreenshotEntry("series-add-dark", heightDp = SHEET_HEIGHT_DP, content = shell(MediaMode.SERIES, MainTab.SEARCH, dark = true) { AddSeriesSheet(container, FakeData.newSeries, onClose = {}) }),
         ScreenshotEntry("tablet-books-library", widthDp = 1024, heightDp = 768, content = shell(MediaMode.BOOKS, MainTab.LIBRARY)),
         ScreenshotEntry("tablet-series-home", widthDp = 1024, heightDp = 768, content = shell(MediaMode.SERIES, MainTab.SEARCH)),

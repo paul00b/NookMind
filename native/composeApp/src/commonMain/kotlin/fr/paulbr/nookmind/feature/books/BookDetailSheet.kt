@@ -23,7 +23,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -34,10 +33,10 @@ import fr.paulbr.nookmind.core.designsystem.NookTheme
 import fr.paulbr.nookmind.core.designsystem.Palette
 import fr.paulbr.nookmind.core.designsystem.alpha
 import fr.paulbr.nookmind.core.designsystem.components.EditableNote
+import fr.paulbr.nookmind.core.designsystem.components.EditableValueBox
 import fr.paulbr.nookmind.core.designsystem.components.ExpandableDescription
 import fr.paulbr.nookmind.core.designsystem.components.GenrePill
 import fr.paulbr.nookmind.core.designsystem.components.GhostButton
-import fr.paulbr.nookmind.core.designsystem.components.IconGhostButton
 import fr.paulbr.nookmind.core.designsystem.components.LabeledBlock
 import fr.paulbr.nookmind.core.designsystem.components.MediaImage
 import fr.paulbr.nookmind.core.designsystem.components.MetaPill
@@ -161,13 +160,8 @@ fun BookDetailSheet(container: AppContainer, book: Book, onClose: () -> Unit) {
 
                         if (local.status == BookStatus.READING) {
                             Column {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text(stringResource(Res.string.bookDetail_currentPage), style = NookTheme.type.sm, color = colors.textSubtle)
-                                    if (!editingPage) {
-                                        IconGhostButton(LucideIcons.Pencil, null, onClick = { pageInput = local.currentPage?.toString() ?: ""; editingPage = true }, size = 13.dp, padding = 2.dp, tint = colors.textFaint)
-                                    }
-                                }
-                                Spacer(Modifier.height(4.dp))
+                                Text(stringResource(Res.string.bookDetail_currentPage), style = NookTheme.type.sm, color = colors.textSubtle)
+                                Spacer(Modifier.height(8.dp))
                                 if (editingPage) {
                                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                         NookTextField(
@@ -193,15 +187,17 @@ fun BookDetailSheet(container: AppContainer, book: Book, onClose: () -> Unit) {
                                     }
                                 } else {
                                     val current = local.currentPage
-                                    if (current != null) {
-                                        val total = local.pageCount
-                                        Text(
-                                            if (total != null) stringResource(Res.string.common_pageOf, current, total) else stringResource(Res.string.common_pageOnly, current),
-                                            style = NookTheme.type.sm, color = colors.textBody2,
-                                        )
-                                    } else {
-                                        Text(stringResource(Res.string.bookDetail_noPageYet), style = NookTheme.type.sm.copy(fontStyle = FontStyle.Italic), color = colors.textFaint)
-                                    }
+                                    val total = local.pageCount
+                                    EditableValueBox(
+                                        text = when {
+                                            current == null -> null
+                                            total != null -> stringResource(Res.string.common_pageOf, current, total)
+                                            else -> stringResource(Res.string.common_pageOnly, current)
+                                        },
+                                        placeholder = stringResource(Res.string.bookDetail_noPageYet),
+                                        onClick = { pageInput = local.currentPage?.toString() ?: ""; editingPage = true },
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
                                 }
                                 val current = local.currentPage
                                 val total = local.pageCount

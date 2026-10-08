@@ -111,7 +111,7 @@
     <string name="bookDetail_movedToReading">Déplacé vers En cours</string>
     <string name="bookDetail_movedToWantToRead">Déplacé vers À lire</string>
     <string name="bookDetail_noCollections">Aucune collection — créez-en une dans la bibliothèque.</string>
-    <string name="bookDetail_noPageYet">Aucune page définie. Cliquez sur le crayon pour en ajouter une.</string>
+    <string name="bookDetail_noPageYet">Indiquez la page où vous en êtes</string>
     <string name="bookDetail_notePlaceholder">Ajoutez vos impressions sur ce livre...</string>
     <string name="bookDetail_noteSaved">Note enregistrée</string>
     <string name="bookDetail_pages">%1$d pages</string>
@@ -226,7 +226,7 @@
     <string name="movieDetail_description">Description</string>
     <string name="movieDetail_movedToWantToWatch">Déplacé vers À voir</string>
     <string name="movieDetail_movedToWatched">Déplacé vers Vu</string>
-    <string name="movieDetail_noDate">Aucune date</string>
+    <string name="movieDetail_noDate">Ajouter la date</string>
     <string name="movieDetail_notePlaceholder">Ajoutez vos impressions sur ce film...</string>
     <string name="movieDetail_noteSaved">Note enregistrée</string>
     <string name="movieDetail_personalNote">Note personnelle</string>
