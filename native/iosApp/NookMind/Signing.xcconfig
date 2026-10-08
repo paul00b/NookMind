@@ -1,7 +1,8 @@
 // Signing is a per-machine matter, so it lives outside git. Create Local.xcconfig next to this
 // file and override what applies to you, for example:
 //
-//     DEVELOPMENT_TEAM = SJ42PK8VK6
+//     DEVELOPMENT_TEAM = 73QPJZQA92
+//     NOOKMIND_BUNDLE_ID_SUFFIX = .dev
 //     NOOKMIND_PAID_TEAM = YES
 //     GOOGLE_AUTH_IOS_CLIENT_ID = 1234567890-abcdef.apps.googleusercontent.com
 //     GOOGLE_AUTH_IOS_REVERSED_CLIENT_ID = com.googleusercontent.apps.1234567890-abcdef
@@ -9,6 +10,14 @@
 // Without any of it the project still builds for the simulator, which is all the simulator CI needs.
 CODE_SIGN_STYLE = Automatic
 DEVELOPMENT_TEAM =
+
+// A bundle ID belongs to exactly one Apple team, the first one that signs with it, and a free team
+// cannot release one. So a free team testing on a phone signs as fr.paulbr.nookmind.dev, like the
+// .debug suffix on Android, and fr.paulbr.nookmind stays free for the paid team that publishes.
+// fr.paulbr.nookmind is already taken, most likely by team SJ42PK8VK6, the one the Capacitor project
+// in ios/ signs with, so any other free team needs the suffix to sign at all. Empty by default: CI and
+// releases use the real identifier.
+NOOKMIND_BUNDLE_ID_SUFFIX =
 
 // NO, the default: a free Apple ID ("Personal Team"). The app installs on your iPhone for 7 days,
 // without Sign in with Apple or push notifications. Apple grants those two entitlements to paid teams

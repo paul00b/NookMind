@@ -40,22 +40,35 @@ Build sans compte Apple Developer payant. Ce que ça implique, une fois pour tou
    cd native/iosApp
    xcodegen generate
    ```
-7. **Ta team.** Xcode → Settings → Accounts → ton Apple ID → « Personal Team », copier l'identifiant
-   à 10 caractères. Créer `native/iosApp/NookMind/Local.xcconfig` :
+7. **Ta team, et l'identifiant de test.** Ton Team ID gratuit (10 caractères) se lit dans le
+   certificat que Xcode a créé :
+   ```bash
+   security find-certificate -a -c "Apple Development" -p | openssl crl2pkcs7 -nocrl -certfile /dev/stdin | openssl pkcs7 -print_certs -noout | grep subject
+   ```
+   C'est la valeur de `OU=`. Créer `native/iosApp/NookMind/Local.xcconfig` :
    ```
    DEVELOPMENT_TEAM = XXXXXXXXXX
+   NOOKMIND_BUNDLE_ID_SUFFIX = .dev
    ```
+   La seconde ligne fait signer l'app sous `fr.paulbr.nookmind.dev`, comme le build debug Android
+   porte `.debug`. Un identifiant appartient à la première équipe qui signe avec, et une équipe
+   gratuite ne peut pas le libérer : sans le suffixe, Xcode répond « Failed Registering Bundle
+   Identifier … not available », parce que `fr.paulbr.nookmind` est déjà pris (par l'équipe du projet
+   Capacitor, `SJ42PK8VK6`, selon toute vraisemblance). Le vrai identifiant reste ainsi libre pour
+   le compte payant qui publiera.
+
    Ne rien régler dans l'onglet Signing de Xcode : perdu au prochain `xcodegen generate`.
 
    Pour tester aussi la connexion Google, ajouter les deux lignes du client OAuth **iOS** (Google
-   Cloud Console, dans le projet du client web ; voir `docs/app-store-publication.md` §5) :
+   Cloud Console, dans le projet du client web ; voir `docs/app-store-publication.md` §5). Avec le
+   suffixe, ce client doit être déclaré pour le bundle ID `fr.paulbr.nookmind.dev` : c'est un client
+   à part, comme le client « Android Debug ».
    ```
    GOOGLE_AUTH_IOS_CLIENT_ID = 1234567890-abcdef.apps.googleusercontent.com
    GOOGLE_AUTH_IOS_REVERSED_CLIENT_ID = com.googleusercontent.apps.1234567890-abcdef
    ```
-   Le `.env` du site contient peut-être déjà ces valeurs (`VITE_GOOGLE_AUTH_IOS_*`, de l'époque
-   Capacitor). Vérifier que le nombre au début est le même que celui du client web : c'est le
-   numéro du projet Google Cloud, et les deux doivent être dans le même projet.
+   Penser à l'ajouter aussi aux Client IDs Google de Supabase.
+
 8. **Premier build**
    ```bash
    open NookMind.xcodeproj

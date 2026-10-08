@@ -77,6 +77,22 @@ App :
 | Bundle ID | Explicit, `fr.paulbr.nookmind` |
 | Capabilities | **Sign in with Apple** et **Push Notifications** |
 
+**Si Apple répond que `fr.paulbr.nookmind` n'est pas disponible** : il appartient déjà à une autre
+équipe. Le projet Capacitor (`ios/App`) signe avec `fr.paulbr.nookmind` et l'équipe `SJ42PK8VK6`,
+qui l'a très probablement réservé lors des essais de mai. Trois issues, dans l'ordre de préférence :
+
+1. Si `SJ42PK8VK6` est un compte à toi (un autre Apple ID), publier depuis ce compte, ou supprimer
+   l'identifiant dans son portail s'il est payant.
+2. Si c'était une équipe gratuite, attendre : ses enregistrements expirent au bout de quelques jours
+   sans utilisation, d'après un ingénieur Apple ([forum Apple](https://developer.apple.com/forums/thread/80294)),
+   sans délai garanti.
+3. Sinon, publier l'app iOS sous un autre identifiant, par exemple `fr.paulbr.nookmind.app`. Rien
+   n'oblige l'identifiant iOS à être celui d'Android ; il faut alors le changer dans
+   `native/iosApp/project.yml`, dans l'app iOS Firebase et dans le client OAuth iOS.
+
+Les builds de test sur ton iPhone ne sont pas concernés : ils signent sous `fr.paulbr.nookmind.dev`
+(`NOOKMIND_BUNDLE_ID_SUFFIX` dans `Local.xcconfig`, voir `docs/ios-test-plan.md`).
+
 ---
 
 ## 4. Créer l'app dans App Store Connect
