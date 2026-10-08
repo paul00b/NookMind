@@ -8,7 +8,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 /**
  * Gives [FakeData] real posters and covers, looked up on TMDB (by id) and Google Books (by title and
  * author), so library grids can be judged with real artwork. Needs the build's TMDB and Google Books
- * keys and a network, which CI has; anything that fails keeps its placeholder.
+ * keys and a network, which CI has; any lookup that fails or throws keeps its placeholder.
  */
 object FakeCovers {
     private const val TIMEOUT_MS = 15_000L
@@ -27,17 +27,19 @@ object FakeCovers {
 
     private suspend fun moviePoster(container: AppContainer, tmdbId: Int?): String? {
         val id = tmdbId ?: return null
-        return withTimeoutOrNull(TIMEOUT_MS) { TmdbApi.posterUrl(container.tmdb.fetchMovieDetails(id)?.posterPath, "w342") }
+        return runCatching { withTimeoutOrNull(TIMEOUT_MS) { TmdbApi.posterUrl(container.tmdb.fetchMovieDetails(id)?.posterPath, "w342") } }.getOrNull()
     }
 
     private suspend fun seriesPoster(container: AppContainer, tmdbId: Int?): String? {
         val id = tmdbId ?: return null
-        return withTimeoutOrNull(TIMEOUT_MS) { TmdbApi.posterUrl(container.tmdb.fetchSeriesDetails(id)?.posterPath, "w342") }
+        return runCatching { withTimeoutOrNull(TIMEOUT_MS) { TmdbApi.posterUrl(container.tmdb.fetchSeriesDetails(id)?.posterPath, "w342") } }.getOrNull()
     }
 
-    private suspend fun bookCover(container: AppContainer, title: String, author: String): String? =
+    // searchBooks throws on an HTTP error (Google Books rate-limits unauthenticated bursts).
+    private suspend fun bookCover(container: AppContainer, title: String, author: String): String? = runCatching {
         withTimeoutOrNull(TIMEOUT_MS) {
             container.googleBooks.searchBooks("$title $author", maxResults = 3)
                 .firstNotNullOfOrNull { GoogleBooksApi.extractBookData(it).coverUrl }
         }
+    }.getOrNull()
 }
