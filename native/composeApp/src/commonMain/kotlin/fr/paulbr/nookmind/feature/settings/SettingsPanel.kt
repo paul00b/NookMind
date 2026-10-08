@@ -94,7 +94,6 @@ import fr.paulbr.nookmind.resources.settings_deleteAccount
 import fr.paulbr.nookmind.resources.settings_displayNameSaved
 import fr.paulbr.nookmind.resources.settings_enableNotifications
 import fr.paulbr.nookmind.resources.settings_haptics
-import fr.paulbr.nookmind.resources.settings_hapticsHelp
 import fr.paulbr.nookmind.resources.settings_light
 import fr.paulbr.nookmind.resources.settings_notifActivate
 import fr.paulbr.nookmind.resources.settings_notifActive
@@ -117,7 +116,6 @@ import fr.paulbr.nookmind.resources.settings_profile
 import fr.paulbr.nookmind.resources.settings_replayOnboarding
 import fr.paulbr.nookmind.resources.settings_save
 import fr.paulbr.nookmind.resources.settings_searchSections
-import fr.paulbr.nookmind.resources.settings_searchSectionsHelp
 import fr.paulbr.nookmind.resources.settings_searchSectionsReset
 import fr.paulbr.nookmind.resources.settings_searchSectionsTitle
 import fr.paulbr.nookmind.resources.settings_sections_books_lastRead
@@ -277,13 +275,6 @@ fun SettingsPanel(
                                 modifier = Modifier.fillMaxWidth(),
                                 color = Palette.Red500,
                             )
-                            GhostButton(
-                                stringResource(Res.string.settings_deleteAccount),
-                                onClick = { deleteOpen = true },
-                                modifier = Modifier.fillMaxWidth(),
-                                color = colors.redText,
-                                borderColor = Palette.Red500.alpha(0.3f),
-                            )
                         }
                     }
                 }
@@ -302,23 +293,19 @@ fun SettingsPanel(
                                 OptionTile(label, icon, selected = theme == value, onClick = { container.prefs.setTheme(value) }, modifier = Modifier.weight(1f), stacked = true)
                             }
                         }
-                    }
-                }
-
-                // ── Vibrations ───────────────────────────────────────────
-                SettingsSection(stringResource(Res.string.settings_haptics)) {
-                    NookCard(Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
-                        SettingToggleRow(
-                            icon = null,
-                            label = stringResource(Res.string.settings_hapticsHelp),
-                            checked = hapticsEnabled,
-                            onChange = { enabled ->
-                                container.prefs.setHapticsEnabled(enabled)
-                                // LocalNookHaptics still holds the no-op this frame, so build
-                                // an instance directly — enabling is when proof is wanted.
-                                if (enabled) nookHaptics(true, rawHaptics).perform(HapticCue.CONFIRM)
-                            },
-                        )
+                        HairlineDivider(Modifier.padding(vertical = 16.dp))
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text(stringResource(Res.string.settings_haptics), style = NookTheme.type.sans(14, FontWeight.Medium, 20), color = colors.textBody2, modifier = Modifier.weight(1f))
+                            NookToggle(
+                                hapticsEnabled,
+                                onChange = { enabled ->
+                                    container.prefs.setHapticsEnabled(enabled)
+                                    // LocalNookHaptics still holds the no-op this frame, so build
+                                    // an instance directly — enabling is when proof is wanted.
+                                    if (enabled) nookHaptics(true, rawHaptics).perform(HapticCue.CONFIRM)
+                                },
+                            )
+                        }
                     }
                 }
 
@@ -326,11 +313,7 @@ fun SettingsPanel(
                 SettingsSection(stringResource(Res.string.settings_searchSections)) {
                     NookCard(Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
                         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                            Column {
-                                Text(stringResource(Res.string.settings_searchSectionsTitle), style = NookTheme.type.sans(14, FontWeight.Medium, 20), color = colors.textBody2)
-                                Spacer(Modifier.height(4.dp))
-                                Text(stringResource(Res.string.settings_searchSectionsHelp), style = NookTheme.type.xs, color = colors.textSubtle)
-                            }
+                            Text(stringResource(Res.string.settings_searchSectionsTitle), style = NookTheme.type.sans(14, FontWeight.Medium, 20), color = colors.textBody2)
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 listOf(
                                     Triple(MediaMode.BOOKS, stringResource(Res.string.nav_books), LucideIcons.BookOpen),
@@ -505,6 +488,15 @@ fun SettingsPanel(
                         TextLink(stringResource(Res.string.settings_terms), onClick = { onOpenLegal(LegalKind.TERMS) }, color = colors.textFaint)
                     }
                 }
+
+                // ── Account deletion: last, away from everyday settings ──
+                GhostButton(
+                    stringResource(Res.string.settings_deleteAccount),
+                    onClick = { deleteOpen = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    color = colors.redText,
+                    borderColor = Palette.Red500.alpha(0.3f),
+                )
             }
         }
     }

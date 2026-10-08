@@ -43,7 +43,6 @@ import fr.paulbr.nookmind.core.designsystem.components.NookTextField
 import fr.paulbr.nookmind.core.designsystem.components.PrimaryButton
 import fr.paulbr.nookmind.core.designsystem.components.SheetCloseButton
 import fr.paulbr.nookmind.core.designsystem.components.SheetController
-import fr.paulbr.nookmind.core.designsystem.components.SolidPill
 import fr.paulbr.nookmind.core.designsystem.components.StarRating
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
 import fr.paulbr.nookmind.core.domain.normalizeTitle
@@ -51,8 +50,10 @@ import fr.paulbr.nookmind.core.domain.yearOf
 import fr.paulbr.nookmind.core.model.Book
 import fr.paulbr.nookmind.core.model.BookStatus
 import fr.paulbr.nookmind.core.model.MediaMode
+import fr.paulbr.nookmind.feature.common.AddSheetFooter
 import fr.paulbr.nookmind.feature.common.SheetHeader
 import fr.paulbr.nookmind.feature.common.StatusChipRow
+import fr.paulbr.nookmind.feature.common.StatusSegmentedControl
 import fr.paulbr.nookmind.resources.Res
 import fr.paulbr.nookmind.resources.addBook_addAnyway
 import fr.paulbr.nookmind.resources.addBook_addToLibrary
@@ -83,17 +84,13 @@ import fr.paulbr.nookmind.resources.addBook_titlePlaceholder
 import fr.paulbr.nookmind.resources.bookDetail_cancel
 import fr.paulbr.nookmind.resources.bookDetail_currentPage
 import fr.paulbr.nookmind.resources.bookDetail_description
-import fr.paulbr.nookmind.resources.bookDetail_noNotes
 import fr.paulbr.nookmind.resources.bookDetail_notePlaceholder
 import fr.paulbr.nookmind.resources.bookDetail_pages
 import fr.paulbr.nookmind.resources.bookDetail_personalNote
-import fr.paulbr.nookmind.resources.bookDetail_read
 import fr.paulbr.nookmind.resources.bookDetail_save
 import fr.paulbr.nookmind.resources.bookDetail_seeLess
 import fr.paulbr.nookmind.resources.bookDetail_seeMore
-import fr.paulbr.nookmind.resources.bookDetail_wantToRead
 import fr.paulbr.nookmind.resources.bookDetail_yourRating
-import fr.paulbr.nookmind.resources.library_reading
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
@@ -154,7 +151,18 @@ fun AddBookSheet(container: AppContainer, prefill: Book?, onClose: () -> Unit) {
     }
 
     if (fromSearch && !editing) {
-        NookSheet(onClose = onClose, maxWidth = 672.dp) { controller ->
+        val duplicateText = stringResource(Res.string.addBook_alreadyInLibrary)
+        NookSheet(
+            onClose = onClose,
+            maxWidth = 672.dp,
+            footer = { controller ->
+                AddSheetFooter(
+                    duplicateWarning = if (isDuplicate) duplicateText else null,
+                    editText = stringResource(Res.string.addBook_edit),
+                    onEdit = { editing = true },
+                ) { modifier -> addButton(controller, modifier) }
+            },
+        ) { controller ->
             val colors = NookTheme.colors
             Box(Modifier.fillMaxWidth()) {
                 BoxWithConstraints(Modifier.fillMaxWidth().padding(24.dp)) {
@@ -174,19 +182,18 @@ fun AddBookSheet(container: AppContainer, prefill: Book?, onClose: () -> Unit) {
 
                             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 form.genre?.takeIf { it.isNotBlank() }?.let { GenrePill(it) }
-                                SolidPill(
-                                    when (form.status) {
-                                        BookStatus.READ -> stringResource(Res.string.bookDetail_read)
-                                        BookStatus.READING -> stringResource(Res.string.library_reading)
-                                        BookStatus.WANT_TO_READ -> stringResource(Res.string.bookDetail_wantToRead)
-                                    },
-                                    bookStatusColor(form.status),
-                                )
                                 yearOf(form.publishedDate)?.let { MetaPill(it) }
                                 form.pageCount?.let { MetaPill(stringResource(Res.string.bookDetail_pages, it)) }
                             }
 
-                            StatusChipRow(options = bookStatusOptions(), selected = form.status.key, compact = false, onSelect = ::selectStatus)
+                            LabeledBlock(stringResource(Res.string.addBook_statusLabel)) {
+                                StatusSegmentedControl(
+                                    options = bookStatusOptions(),
+                                    selected = form.status.key,
+                                    colorOf = { bookStatusColor(BookStatus.fromKey(it)) },
+                                    onSelect = ::selectStatus,
+                                )
+                            }
 
                             if (form.status == BookStatus.READING) {
                                 LabeledBlock(stringResource(Res.string.bookDetail_currentPage)) {
@@ -226,16 +233,8 @@ fun AddBookSheet(container: AppContainer, prefill: Book?, onClose: () -> Unit) {
                                 placeholderText = stringResource(Res.string.bookDetail_notePlaceholder),
                                 saveText = stringResource(Res.string.bookDetail_save),
                                 cancelText = stringResource(Res.string.bookDetail_cancel),
-                                noNotesText = stringResource(Res.string.bookDetail_noNotes),
                                 onSave = { form = form.copy(personalNote = it.ifBlank { null }) },
                             )
-
-                            duplicateWarning()
-
-                            Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                GhostButton(stringResource(Res.string.addBook_edit), onClick = { editing = true }, modifier = Modifier.weight(1f), icon = LucideIcons.Pencil)
-                                addButton(controller, Modifier.weight(1f))
-                            }
                         }
                     }
                     if (sideBySide) {

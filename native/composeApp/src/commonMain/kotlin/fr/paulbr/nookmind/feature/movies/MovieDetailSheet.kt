@@ -40,7 +40,6 @@ import fr.paulbr.nookmind.core.designsystem.components.MetaPill
 import fr.paulbr.nookmind.core.designsystem.components.NookSheet
 import fr.paulbr.nookmind.core.designsystem.components.PrimaryButton
 import fr.paulbr.nookmind.core.designsystem.components.SheetCloseButton
-import fr.paulbr.nookmind.core.designsystem.components.SolidPill
 import fr.paulbr.nookmind.core.designsystem.components.StarRating
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
 import fr.paulbr.nookmind.core.domain.todayIso
@@ -57,10 +56,12 @@ import fr.paulbr.nookmind.feature.common.ConfirmDeleteRow
 import fr.paulbr.nookmind.feature.common.DateField
 import fr.paulbr.nookmind.feature.common.DeleteButton
 import fr.paulbr.nookmind.feature.common.ImdbRatingPill
+import fr.paulbr.nookmind.feature.common.StatusSegmentedControl
 import fr.paulbr.nookmind.feature.common.TrailerButton
 import fr.paulbr.nookmind.feature.common.WatchProvidersRow
 import fr.paulbr.nookmind.feature.common.formatIsoDate
 import fr.paulbr.nookmind.resources.Res
+import fr.paulbr.nookmind.resources.addMovie_statusLabel
 import fr.paulbr.nookmind.resources.movieDetail_areYouSure
 import fr.paulbr.nookmind.resources.movieDetail_cancel
 import fr.paulbr.nookmind.resources.movieDetail_cast
@@ -68,12 +69,9 @@ import fr.paulbr.nookmind.resources.movieDetail_collections
 import fr.paulbr.nookmind.resources.movieDetail_dateSaved
 import fr.paulbr.nookmind.resources.movieDetail_delete
 import fr.paulbr.nookmind.resources.movieDetail_description
-import fr.paulbr.nookmind.resources.movieDetail_moveToWantToWatch
-import fr.paulbr.nookmind.resources.movieDetail_moveToWatched
 import fr.paulbr.nookmind.resources.movieDetail_movedToWantToWatch
 import fr.paulbr.nookmind.resources.movieDetail_movedToWatched
 import fr.paulbr.nookmind.resources.movieDetail_noDate
-import fr.paulbr.nookmind.resources.movieDetail_noNotes
 import fr.paulbr.nookmind.resources.movieDetail_notePlaceholder
 import fr.paulbr.nookmind.resources.movieDetail_noteSaved
 import fr.paulbr.nookmind.resources.movieDetail_personalNote
@@ -82,8 +80,6 @@ import fr.paulbr.nookmind.resources.movieDetail_runtime
 import fr.paulbr.nookmind.resources.movieDetail_save
 import fr.paulbr.nookmind.resources.movieDetail_seeLess
 import fr.paulbr.nookmind.resources.movieDetail_seeMore
-import fr.paulbr.nookmind.resources.movieDetail_wantToWatch
-import fr.paulbr.nookmind.resources.movieDetail_watched
 import fr.paulbr.nookmind.resources.movieDetail_watchedOnLabel
 import fr.paulbr.nookmind.resources.movieDetail_yesDelete
 import fr.paulbr.nookmind.resources.movieDetail_yourRating
@@ -151,10 +147,6 @@ fun MovieDetailSheet(container: AppContainer, movie: Movie, onClose: () -> Unit)
                             }
                             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 local.genre?.takeIf { it.isNotBlank() }?.let { GenrePill(it) }
-                                SolidPill(
-                                    if (local.status == MovieStatus.WATCHED) stringResource(Res.string.movieDetail_watched) else stringResource(Res.string.movieDetail_wantToWatch),
-                                    movieStatusColor(local.status),
-                                )
                                 ImdbRatingPill(imdbRating, imdbId, imdbLoading)
                                 formatIsoDate(local.releaseDate, DateStyle.DAY_MONTH_LONG_YEAR)?.let { MetaPill(it) }
                                 local.runtime?.let { MetaPill(stringResource(Res.string.movieDetail_runtime, it)) }
@@ -171,9 +163,27 @@ fun MovieDetailSheet(container: AppContainer, movie: Movie, onClose: () -> Unit)
                     }
                 }
 
-                WatchProvidersRow(container, providers, local.title, loading = loadingProviders)
-
-                movie.tmdbId?.let { TrailerButton(container, "movie", it) }
+                LabeledBlock(stringResource(Res.string.addMovie_statusLabel)) {
+                    StatusSegmentedControl(
+                        options = movieStatusOptions(),
+                        selected = local.status.key,
+                        colorOf = { movieStatusColor(MovieStatus.fromKey(it)) },
+                        onSelect = { key ->
+                            val next = MovieStatus.fromKey(key)
+                            val patch = mutableMapOf<String, Any?>("status" to next.key)
+                            var optimistic = local.copy(status = next)
+                            if (next == MovieStatus.WANT_TO_WATCH) {
+                                patch["rating"] = null; patch["watched_date"] = null
+                                optimistic = optimistic.copy(rating = null, watchedDate = null)
+                            } else if (local.watchedDate == null) {
+                                val today = todayIso()
+                                patch["watched_date"] = today
+                                optimistic = optimistic.copy(watchedDate = today)
+                            }
+                            apply(patch, optimistic) { container.toasts.success(if (next == MovieStatus.WATCHED) movedToWatched else movedToWant) }
+                        },
+                    )
+                }
 
                 if (local.status == MovieStatus.WATCHED) {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -217,6 +227,10 @@ fun MovieDetailSheet(container: AppContainer, movie: Movie, onClose: () -> Unit)
                     }
                 }
 
+                WatchProvidersRow(container, providers, local.title, loading = loadingProviders)
+
+                movie.tmdbId?.let { TrailerButton(container, "movie", it) }
+
                 CastAccordion(cast, stringResource(Res.string.movieDetail_cast), onSelect = { selectedActorId = it })
 
                 EditableNote(
@@ -225,7 +239,6 @@ fun MovieDetailSheet(container: AppContainer, movie: Movie, onClose: () -> Unit)
                     placeholderText = stringResource(Res.string.movieDetail_notePlaceholder),
                     saveText = stringResource(Res.string.movieDetail_save),
                     cancelText = stringResource(Res.string.movieDetail_cancel),
-                    noNotesText = stringResource(Res.string.movieDetail_noNotes),
                     onSave = { note -> apply(mapOf("personal_note" to note), local.copy(personalNote = note)) { container.toasts.success(Res.string.movieDetail_noteSaved) } },
                 )
 
@@ -247,26 +260,7 @@ fun MovieDetailSheet(container: AppContainer, movie: Movie, onClose: () -> Unit)
                     }
                 }
 
-                FlowRow(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    GhostButton(
-                        if (local.status == MovieStatus.WATCHED) stringResource(Res.string.movieDetail_moveToWantToWatch) else stringResource(Res.string.movieDetail_moveToWatched),
-                        onClick = {
-                            val next = if (local.status == MovieStatus.WATCHED) MovieStatus.WANT_TO_WATCH else MovieStatus.WATCHED
-                            val patch = mutableMapOf<String, Any?>("status" to next.key)
-                            var optimistic = local.copy(status = next)
-                            if (next == MovieStatus.WANT_TO_WATCH) {
-                                patch["rating"] = null; patch["watched_date"] = null
-                                optimistic = optimistic.copy(rating = null, watchedDate = null)
-                            } else if (local.watchedDate == null) {
-                                val today = todayIso()
-                                patch["watched_date"] = today
-                                optimistic = optimistic.copy(watchedDate = today)
-                            }
-                            apply(patch, optimistic) { container.toasts.success(if (next == MovieStatus.WATCHED) movedToWatched else movedToWant) }
-                        },
-                        icon = LucideIcons.ArrowLeftRight,
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    )
+                Box(Modifier.padding(top = 8.dp)) {
                     if (!confirmDelete) {
                         DeleteButton(stringResource(Res.string.movieDetail_delete), onClick = { confirmDelete = true })
                     } else {

@@ -52,6 +52,7 @@ import fr.paulbr.nookmind.core.domain.yearOf
 import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.core.model.Series
 import fr.paulbr.nookmind.core.model.SeriesStatus
+import fr.paulbr.nookmind.feature.common.AddSheetFooter
 import fr.paulbr.nookmind.feature.common.SheetHeader
 import fr.paulbr.nookmind.feature.common.TrailerButton
 import fr.paulbr.nookmind.resources.Res
@@ -81,7 +82,6 @@ import fr.paulbr.nookmind.resources.addSeries_titlePlaceholder
 import fr.paulbr.nookmind.resources.addSeries_watchedSeasonsLabel
 import fr.paulbr.nookmind.resources.seriesDetail_cancel
 import fr.paulbr.nookmind.resources.seriesDetail_episodesSection
-import fr.paulbr.nookmind.resources.seriesDetail_noNotes
 import fr.paulbr.nookmind.resources.seriesDetail_notePlaceholder
 import fr.paulbr.nookmind.resources.seriesDetail_personalNote
 import fr.paulbr.nookmind.resources.seriesDetail_save
@@ -179,7 +179,18 @@ fun AddSeriesSheet(container: AppContainer, prefill: Series?, onClose: () -> Uni
     }
 
     if (fromSearch && !editing) {
-        NookSheet(onClose = onClose, maxWidth = 672.dp) { controller ->
+        val duplicateText = stringResource(Res.string.addSeries_alreadyInList)
+        NookSheet(
+            onClose = onClose,
+            maxWidth = 672.dp,
+            footer = { controller ->
+                AddSheetFooter(
+                    duplicateWarning = if (isDuplicate) duplicateText else null,
+                    editText = stringResource(Res.string.addSeries_edit),
+                    onEdit = { editing = true },
+                ) { modifier -> addButton(controller, modifier) }
+            },
+        ) { controller ->
             val colors = NookTheme.colors
             Box(Modifier.fillMaxWidth()) {
                 Column(Modifier.fillMaxWidth()) {
@@ -250,14 +261,8 @@ fun AddSeriesSheet(container: AppContainer, prefill: Series?, onClose: () -> Uni
                             placeholderText = stringResource(Res.string.seriesDetail_notePlaceholder),
                             saveText = stringResource(Res.string.seriesDetail_save),
                             cancelText = stringResource(Res.string.seriesDetail_cancel),
-                            noNotesText = stringResource(Res.string.seriesDetail_noNotes),
                             onSave = { form = form.copy(personalNote = it.ifBlank { null }) },
                         )
-                        duplicateWarning()
-                        Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            GhostButton(stringResource(Res.string.addSeries_edit), onClick = { editing = true }, modifier = Modifier.weight(1f), icon = LucideIcons.Pencil)
-                            addButton(controller, Modifier.weight(1f))
-                        }
                     }
                 }
                 SheetCloseButton(controller, Modifier.align(Alignment.TopEnd).padding(16.dp))

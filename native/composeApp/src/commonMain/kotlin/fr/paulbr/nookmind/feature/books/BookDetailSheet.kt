@@ -46,7 +46,6 @@ import fr.paulbr.nookmind.core.designsystem.components.NookSheet
 import fr.paulbr.nookmind.core.designsystem.components.NookTextField
 import fr.paulbr.nookmind.core.designsystem.components.PrimaryButton
 import fr.paulbr.nookmind.core.designsystem.components.SheetCloseButton
-import fr.paulbr.nookmind.core.designsystem.components.SolidPill
 import fr.paulbr.nookmind.core.designsystem.components.StarRating
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
 import fr.paulbr.nookmind.core.domain.yearOf
@@ -56,8 +55,9 @@ import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.feature.common.ConfirmDeleteRow
 import fr.paulbr.nookmind.feature.common.DeleteButton
 import fr.paulbr.nookmind.feature.common.ProgressBar
-import fr.paulbr.nookmind.feature.common.StatusChipRow
+import fr.paulbr.nookmind.feature.common.StatusSegmentedControl
 import fr.paulbr.nookmind.resources.Res
+import fr.paulbr.nookmind.resources.addBook_statusLabel
 import fr.paulbr.nookmind.resources.bookDetail_areYouSure
 import fr.paulbr.nookmind.resources.bookDetail_cancel
 import fr.paulbr.nookmind.resources.bookDetail_collections
@@ -67,23 +67,19 @@ import fr.paulbr.nookmind.resources.bookDetail_description
 import fr.paulbr.nookmind.resources.bookDetail_movedToRead
 import fr.paulbr.nookmind.resources.bookDetail_movedToReading
 import fr.paulbr.nookmind.resources.bookDetail_movedToWantToRead
-import fr.paulbr.nookmind.resources.bookDetail_noNotes
 import fr.paulbr.nookmind.resources.bookDetail_noPageYet
 import fr.paulbr.nookmind.resources.bookDetail_notePlaceholder
 import fr.paulbr.nookmind.resources.bookDetail_noteSaved
 import fr.paulbr.nookmind.resources.bookDetail_pages
 import fr.paulbr.nookmind.resources.bookDetail_personalNote
 import fr.paulbr.nookmind.resources.bookDetail_ratingUpdated
-import fr.paulbr.nookmind.resources.bookDetail_read
 import fr.paulbr.nookmind.resources.bookDetail_save
 import fr.paulbr.nookmind.resources.bookDetail_seeLess
 import fr.paulbr.nookmind.resources.bookDetail_seeMore
-import fr.paulbr.nookmind.resources.bookDetail_wantToRead
 import fr.paulbr.nookmind.resources.bookDetail_yesDelete
 import fr.paulbr.nookmind.resources.bookDetail_yourRating
 import fr.paulbr.nookmind.resources.common_pageOf
 import fr.paulbr.nookmind.resources.common_pageOnly
-import fr.paulbr.nookmind.resources.library_reading
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
@@ -128,46 +124,40 @@ fun BookDetailSheet(container: AppContainer, book: Book, onClose: () -> Unit) {
 
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (!local.genre.isNullOrBlank()) GenrePill(local.genre!!)
-                            SolidPill(
-                                when (local.status) {
-                                    BookStatus.READ -> stringResource(Res.string.bookDetail_read)
-                                    BookStatus.READING -> stringResource(Res.string.library_reading)
-                                    BookStatus.WANT_TO_READ -> stringResource(Res.string.bookDetail_wantToRead)
-                                },
-                                bookStatusColor(local.status),
-                            )
                             yearOf(local.publishedDate)?.let { MetaPill(it) }
                             local.pageCount?.let { MetaPill(stringResource(Res.string.bookDetail_pages, it)) }
                         }
 
-                        StatusChipRow(
-                            options = bookStatusOptions(),
-                            selected = local.status.key,
-                            compact = false,
-                            onSelect = { key ->
-                                val status = BookStatus.fromKey(key)
-                                if (status == local.status) return@StatusChipRow
-                                val patch = mutableMapOf<String, Any?>("status" to status.key)
-                                if (status == BookStatus.WANT_TO_READ) { patch["rating"] = null; patch["current_page"] = null }
-                                if (status != BookStatus.READING) patch["current_page"] = null
-                                apply(
-                                    patch,
-                                    local.copy(
-                                        status = status,
-                                        rating = if (status == BookStatus.WANT_TO_READ) null else local.rating,
-                                        currentPage = if (status != BookStatus.READING) null else local.currentPage,
-                                    ),
-                                ) {
-                                    container.toasts.success(
-                                        when (status) {
-                                            BookStatus.READ -> movedToRead
-                                            BookStatus.READING -> movedToReading
-                                            BookStatus.WANT_TO_READ -> movedToWant
-                                        },
-                                    )
-                                }
-                            },
-                        )
+                        LabeledBlock(stringResource(Res.string.addBook_statusLabel)) {
+                            StatusSegmentedControl(
+                                options = bookStatusOptions(),
+                                selected = local.status.key,
+                                colorOf = { bookStatusColor(BookStatus.fromKey(it)) },
+                                onSelect = { key ->
+                                    val status = BookStatus.fromKey(key)
+                                    if (status == local.status) return@StatusSegmentedControl
+                                    val patch = mutableMapOf<String, Any?>("status" to status.key)
+                                    if (status == BookStatus.WANT_TO_READ) { patch["rating"] = null; patch["current_page"] = null }
+                                    if (status != BookStatus.READING) patch["current_page"] = null
+                                    apply(
+                                        patch,
+                                        local.copy(
+                                            status = status,
+                                            rating = if (status == BookStatus.WANT_TO_READ) null else local.rating,
+                                            currentPage = if (status != BookStatus.READING) null else local.currentPage,
+                                        ),
+                                    ) {
+                                        container.toasts.success(
+                                            when (status) {
+                                                BookStatus.READ -> movedToRead
+                                                BookStatus.READING -> movedToReading
+                                                BookStatus.WANT_TO_READ -> movedToWant
+                                            },
+                                        )
+                                    }
+                                },
+                            )
+                        }
 
                         if (local.status == BookStatus.READING) {
                             Column {
@@ -245,7 +235,6 @@ fun BookDetailSheet(container: AppContainer, book: Book, onClose: () -> Unit) {
                             placeholderText = stringResource(Res.string.bookDetail_notePlaceholder),
                             saveText = stringResource(Res.string.bookDetail_save),
                             cancelText = stringResource(Res.string.bookDetail_cancel),
-                            noNotesText = stringResource(Res.string.bookDetail_noNotes),
                             onSave = { note -> apply(mapOf("personal_note" to note), local.copy(personalNote = note)) { container.toasts.success(Res.string.bookDetail_noteSaved) } },
                         )
 

@@ -17,7 +17,7 @@
     <string name="addBook_currentPageLabel">Page actuelle</string>
     <string name="addBook_currentPagePlaceholder">ex. 42</string>
     <string name="addBook_descriptionLabel">Description</string>
-    <string name="addBook_edit">Modifier</string>
+    <string name="addBook_edit">Modifier les informations</string>
     <string name="addBook_genreLabel">Genre</string>
     <string name="addBook_genrePlaceholder">ex. Fiction</string>
     <string name="addBook_inLibrary">Déjà ajouté</string>
@@ -46,7 +46,7 @@
     <string name="addMovie_descriptionPlaceholder">Description du film...</string>
     <string name="addMovie_directorLabel">Réalisateur</string>
     <string name="addMovie_directorPlaceholder">Nom du réalisateur</string>
-    <string name="addMovie_edit">Modifier</string>
+    <string name="addMovie_edit">Modifier les informations</string>
     <string name="addMovie_genreLabel">Genre</string>
     <string name="addMovie_genrePlaceholder">ex. Action</string>
     <string name="addMovie_inWatchlist">Déjà ajouté</string>
@@ -74,7 +74,7 @@
     <string name="addSeries_creatorLabel">Créateur</string>
     <string name="addSeries_creatorPlaceholder">Nom du créateur</string>
     <string name="addSeries_descriptionLabel">Description</string>
-    <string name="addSeries_edit">Modifier</string>
+    <string name="addSeries_edit">Modifier les informations</string>
     <string name="addSeries_firstAirDateLabel">Première diffusion</string>
     <string name="addSeries_firstAirDatePlaceholder">Année</string>
     <string name="addSeries_genreLabel">Genre</string>
@@ -111,19 +111,16 @@
     <string name="bookDetail_movedToReading">Déplacé vers En cours</string>
     <string name="bookDetail_movedToWantToRead">Déplacé vers À lire</string>
     <string name="bookDetail_noCollections">Aucune collection — créez-en une dans la bibliothèque.</string>
-    <string name="bookDetail_noNotes">Aucune note pour l'instant. Cliquez sur le crayon pour en ajouter une.</string>
     <string name="bookDetail_noPageYet">Aucune page définie. Cliquez sur le crayon pour en ajouter une.</string>
     <string name="bookDetail_notePlaceholder">Ajoutez vos impressions sur ce livre...</string>
     <string name="bookDetail_noteSaved">Note enregistrée</string>
     <string name="bookDetail_pages">%1$d pages</string>
     <string name="bookDetail_personalNote">Note personnelle</string>
     <string name="bookDetail_ratingUpdated">Note mise à jour</string>
-    <string name="bookDetail_read">Lu</string>
     <string name="bookDetail_removeFromCollection">Retirer de la collection</string>
     <string name="bookDetail_save">Enregistrer</string>
     <string name="bookDetail_seeLess">Voir moins</string>
     <string name="bookDetail_seeMore">Voir plus</string>
-    <string name="bookDetail_wantToRead">À lire</string>
     <string name="bookDetail_yesDelete">Oui, supprimer</string>
     <string name="bookDetail_yourRating">Votre note</string>
     <string name="common_appName">NookMind</string>
@@ -227,12 +224,9 @@
     <string name="movieDetail_dateSaved">Date enregistrée</string>
     <string name="movieDetail_delete">Supprimer</string>
     <string name="movieDetail_description">Description</string>
-    <string name="movieDetail_moveToWantToWatch">Déplacer vers À voir</string>
-    <string name="movieDetail_moveToWatched">Déplacer vers Vu</string>
     <string name="movieDetail_movedToWantToWatch">Déplacé vers À voir</string>
     <string name="movieDetail_movedToWatched">Déplacé vers Vu</string>
     <string name="movieDetail_noDate">Aucune date</string>
-    <string name="movieDetail_noNotes">Aucune note pour l'instant. Cliquez sur le crayon pour en ajouter une.</string>
     <string name="movieDetail_notePlaceholder">Ajoutez vos impressions sur ce film...</string>
     <string name="movieDetail_noteSaved">Note enregistrée</string>
     <string name="movieDetail_personalNote">Note personnelle</string>
@@ -241,8 +235,6 @@
     <string name="movieDetail_save">Enregistrer</string>
     <string name="movieDetail_seeLess">Voir moins</string>
     <string name="movieDetail_seeMore">Voir plus</string>
-    <string name="movieDetail_wantToWatch">À voir</string>
-    <string name="movieDetail_watched">Vu</string>
     <string name="movieDetail_watchedOn">Vu le %1$s</string>
     <string name="movieDetail_watchedOnLabel">Date de visionnage</string>
     <string name="movieDetail_yesDelete">Oui, supprimer</string>
@@ -402,7 +394,6 @@
     <string name="seriesDetail_movedToWatched">Déplacé vers Terminées</string>
     <string name="seriesDetail_no">Non</string>
     <string name="seriesDetail_noEpisodeData">Données d'épisodes indisponibles</string>
-    <string name="seriesDetail_noNotes">Aucune note pour l'instant. Cliquez sur le crayon pour en ajouter une.</string>
     <string name="seriesDetail_notePlaceholder">Ajoutez vos impressions sur cette série...</string>
     <string name="seriesDetail_noteSaved">Note enregistrée</string>
     <string name="seriesDetail_personalNote">Note personnelle</string>
@@ -521,7 +512,6 @@
     <string name="settings_enableNotifications">Activer les notifications</string>
     <string name="settings_googleSignInUnavailable">La connexion Google n'est pas disponible sur cette plateforme.</string>
     <string name="settings_haptics">Vibrations</string>
-    <string name="settings_hapticsHelp">De courtes vibrations quand vous notez, changez un réglage ou enregistrez.</string>
     <string name="settings_light">Clair</string>
     <string name="settings_notifActivate">Activer</string>
     <string name="settings_notifActive">Notifications actives</string>
@@ -546,7 +536,6 @@
     <string name="settings_replayOnboarding">Revoir la présentation</string>
     <string name="settings_save">Enregistrer</string>
     <string name="settings_searchSections">Sections de recherche</string>
-    <string name="settings_searchSectionsHelp">Choisissez quelles sections apparaissent en premier pour chaque mode. Les changements sont appliqués immédiatement sur cet appareil.</string>
     <string name="settings_searchSectionsReset">Réinitialiser l’ordre</string>
     <string name="settings_searchSectionsTitle">Réorganiser les sections de la page Recherche</string>
     <string name="settings_sections_books_lastRead">Derniers lus</string>

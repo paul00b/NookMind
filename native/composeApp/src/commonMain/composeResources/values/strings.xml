@@ -17,7 +17,7 @@
     <string name="addBook_currentPageLabel">Current page</string>
     <string name="addBook_currentPagePlaceholder">e.g. 42</string>
     <string name="addBook_descriptionLabel">Description</string>
-    <string name="addBook_edit">Edit</string>
+    <string name="addBook_edit">Edit details</string>
     <string name="addBook_genreLabel">Genre</string>
     <string name="addBook_genrePlaceholder">e.g. Fiction</string>
     <string name="addBook_inLibrary">In library</string>
@@ -46,7 +46,7 @@
     <string name="addMovie_descriptionPlaceholder">Movie description...</string>
     <string name="addMovie_directorLabel">Director</string>
     <string name="addMovie_directorPlaceholder">Director name</string>
-    <string name="addMovie_edit">Edit</string>
+    <string name="addMovie_edit">Edit details</string>
     <string name="addMovie_genreLabel">Genre</string>
     <string name="addMovie_genrePlaceholder">e.g. Action</string>
     <string name="addMovie_inWatchlist">In watchlist</string>
@@ -74,7 +74,7 @@
     <string name="addSeries_creatorLabel">Creator</string>
     <string name="addSeries_creatorPlaceholder">Creator name</string>
     <string name="addSeries_descriptionLabel">Description</string>
-    <string name="addSeries_edit">Edit</string>
+    <string name="addSeries_edit">Edit details</string>
     <string name="addSeries_firstAirDateLabel">First aired</string>
     <string name="addSeries_firstAirDatePlaceholder">Year</string>
     <string name="addSeries_genreLabel">Genre</string>
@@ -111,19 +111,16 @@
     <string name="bookDetail_movedToReading">Moved to Reading</string>
     <string name="bookDetail_movedToWantToRead">Moved to Want to read</string>
     <string name="bookDetail_noCollections">No collections yet — create one in the Library.</string>
-    <string name="bookDetail_noNotes">No notes yet. Click the pencil to add one.</string>
     <string name="bookDetail_noPageYet">No page set yet. Click the pencil to add one.</string>
     <string name="bookDetail_notePlaceholder">Add your thoughts about this book...</string>
     <string name="bookDetail_noteSaved">Note saved</string>
     <string name="bookDetail_pages">%1$d pages</string>
     <string name="bookDetail_personalNote">Personal note</string>
     <string name="bookDetail_ratingUpdated">Rating updated</string>
-    <string name="bookDetail_read">Read</string>
     <string name="bookDetail_removeFromCollection">Remove from collection</string>
     <string name="bookDetail_save">Save</string>
     <string name="bookDetail_seeLess">See less</string>
     <string name="bookDetail_seeMore">See more</string>
-    <string name="bookDetail_wantToRead">Want to read</string>
     <string name="bookDetail_yesDelete">Yes, delete</string>
     <string name="bookDetail_yourRating">Your rating</string>
     <string name="common_appName">NookMind</string>
@@ -227,12 +224,9 @@
     <string name="movieDetail_dateSaved">Date saved</string>
     <string name="movieDetail_delete">Delete</string>
     <string name="movieDetail_description">Description</string>
-    <string name="movieDetail_moveToWantToWatch">Move to Want to watch</string>
-    <string name="movieDetail_moveToWatched">Move to Watched</string>
     <string name="movieDetail_movedToWantToWatch">Moved to Want to watch</string>
     <string name="movieDetail_movedToWatched">Moved to Watched</string>
     <string name="movieDetail_noDate">No date</string>
-    <string name="movieDetail_noNotes">No notes yet. Click the pencil to add one.</string>
     <string name="movieDetail_notePlaceholder">Add your thoughts about this movie...</string>
     <string name="movieDetail_noteSaved">Note saved</string>
     <string name="movieDetail_personalNote">Personal note</string>
@@ -241,8 +235,6 @@
     <string name="movieDetail_save">Save</string>
     <string name="movieDetail_seeLess">See less</string>
     <string name="movieDetail_seeMore">See more</string>
-    <string name="movieDetail_wantToWatch">Want to watch</string>
-    <string name="movieDetail_watched">Watched</string>
     <string name="movieDetail_watchedOn">Watched on %1$s</string>
     <string name="movieDetail_watchedOnLabel">Watched on</string>
     <string name="movieDetail_yesDelete">Yes, delete</string>
@@ -402,7 +394,6 @@
     <string name="seriesDetail_movedToWatched">Moved to Finished</string>
     <string name="seriesDetail_no">No</string>
     <string name="seriesDetail_noEpisodeData">No episode data available</string>
-    <string name="seriesDetail_noNotes">No notes yet. Click the pencil to add one.</string>
     <string name="seriesDetail_notePlaceholder">Add your thoughts about this series...</string>
     <string name="seriesDetail_noteSaved">Note saved</string>
     <string name="seriesDetail_personalNote">Personal note</string>
@@ -521,7 +512,6 @@
     <string name="settings_enableNotifications">Enable notifications</string>
     <string name="settings_googleSignInUnavailable">Google sign-in is not available on this platform.</string>
     <string name="settings_haptics">Vibrations</string>
-    <string name="settings_hapticsHelp">Short vibrations when you tap, rate and save.</string>
     <string name="settings_light">Light</string>
     <string name="settings_notifActivate">Enable</string>
     <string name="settings_notifActive">Notifications active</string>
@@ -546,7 +536,6 @@
     <string name="settings_replayOnboarding">Replay onboarding</string>
     <string name="settings_save">Save</string>
     <string name="settings_searchSections">Search sections</string>
-    <string name="settings_searchSectionsHelp">Choose which sections appear first for each mode. Changes are applied instantly on this device.</string>
     <string name="settings_searchSectionsReset">Reset order</string>
     <string name="settings_searchSectionsTitle">Reorder sections on the Search page</string>
     <string name="settings_sections_books_lastRead">Last read</string>

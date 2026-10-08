@@ -33,6 +33,7 @@ import fr.paulbr.nookmind.core.designsystem.components.ExpandableDescription
 import fr.paulbr.nookmind.core.designsystem.components.GenrePill
 import fr.paulbr.nookmind.core.designsystem.components.GhostButton
 import fr.paulbr.nookmind.core.designsystem.components.InlineBanner
+import fr.paulbr.nookmind.core.designsystem.components.LabeledBlock
 import fr.paulbr.nookmind.core.designsystem.components.LabeledField
 import fr.paulbr.nookmind.core.designsystem.components.MediaImage
 import fr.paulbr.nookmind.core.designsystem.components.MetaPill
@@ -41,7 +42,6 @@ import fr.paulbr.nookmind.core.designsystem.components.NookTextArea
 import fr.paulbr.nookmind.core.designsystem.components.NookTextField
 import fr.paulbr.nookmind.core.designsystem.components.PrimaryButton
 import fr.paulbr.nookmind.core.designsystem.components.SheetCloseButton
-import fr.paulbr.nookmind.core.designsystem.components.SolidPill
 import fr.paulbr.nookmind.core.designsystem.components.StarRating
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
 import fr.paulbr.nookmind.core.domain.normalizeTitle
@@ -52,11 +52,13 @@ import fr.paulbr.nookmind.core.model.Movie
 import fr.paulbr.nookmind.core.model.MovieStatus
 import fr.paulbr.nookmind.core.model.TmdbMovie
 import fr.paulbr.nookmind.core.platform.DateStyle
+import fr.paulbr.nookmind.feature.common.AddSheetFooter
 import fr.paulbr.nookmind.feature.common.CastAccordion
 import fr.paulbr.nookmind.feature.common.DateField
 import fr.paulbr.nookmind.feature.common.ImdbRatingPill
 import fr.paulbr.nookmind.feature.common.PillStatusRow
 import fr.paulbr.nookmind.feature.common.SheetHeader
+import fr.paulbr.nookmind.feature.common.StatusSegmentedControl
 import fr.paulbr.nookmind.feature.common.TrailerButton
 import fr.paulbr.nookmind.feature.common.formatIsoDate
 import fr.paulbr.nookmind.resources.Res
@@ -89,15 +91,12 @@ import fr.paulbr.nookmind.resources.addMovie_watchedDateLabel
 import fr.paulbr.nookmind.resources.movieDetail_cancel
 import fr.paulbr.nookmind.resources.movieDetail_cast
 import fr.paulbr.nookmind.resources.movieDetail_description
-import fr.paulbr.nookmind.resources.movieDetail_noNotes
 import fr.paulbr.nookmind.resources.movieDetail_notePlaceholder
 import fr.paulbr.nookmind.resources.movieDetail_personalNote
 import fr.paulbr.nookmind.resources.movieDetail_runtime
 import fr.paulbr.nookmind.resources.movieDetail_save
 import fr.paulbr.nookmind.resources.movieDetail_seeLess
 import fr.paulbr.nookmind.resources.movieDetail_seeMore
-import fr.paulbr.nookmind.resources.movieDetail_wantToWatch
-import fr.paulbr.nookmind.resources.movieDetail_watched
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
@@ -200,7 +199,19 @@ fun AddMovieSheet(container: AppContainer, prefill: Movie?, onClose: () -> Unit)
     }
 
     if (fromSearch && !editing) {
-        NookSheet(onClose = onClose, maxWidth = 672.dp) { controller ->
+        val duplicateText = stringResource(Res.string.addMovie_alreadyInWatchlist)
+        NookSheet(
+            onClose = onClose,
+            maxWidth = 672.dp,
+            footer = {
+                AddSheetFooter(
+                    duplicateWarning = if (isDuplicate) duplicateText else null,
+                    editText = stringResource(Res.string.addMovie_edit),
+                    onEdit = { editing = true },
+                    addButton = addButton,
+                )
+            },
+        ) { controller ->
             Box(Modifier.fillMaxWidth()) {
                 Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
                     BoxWithConstraints(Modifier.fillMaxWidth()) {
@@ -217,10 +228,6 @@ fun AddMovieSheet(container: AppContainer, prefill: Movie?, onClose: () -> Unit)
                                 }
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     form.genre?.takeIf { it.isNotBlank() }?.let { GenrePill(it) }
-                                    SolidPill(
-                                        if (form.status == MovieStatus.WATCHED) stringResource(Res.string.movieDetail_watched) else stringResource(Res.string.movieDetail_wantToWatch),
-                                        movieStatusColor(form.status),
-                                    )
                                     ImdbRatingPill(imdbRating, imdbId, imdbLoading)
                                     formatIsoDate(form.releaseDate, DateStyle.DAY_MONTH_LONG_YEAR)?.let { MetaPill(it) }
                                     form.runtime?.let { MetaPill(stringResource(Res.string.movieDetail_runtime, it)) }
@@ -236,10 +243,17 @@ fun AddMovieSheet(container: AppContainer, prefill: Movie?, onClose: () -> Unit)
                             Column(horizontalAlignment = Alignment.CenterHorizontally) { poster(); Spacer(Modifier.height(24.dp)); details() }
                         }
                     }
+                    LabeledBlock(stringResource(Res.string.addMovie_statusLabel)) {
+                        StatusSegmentedControl(
+                            options = movieStatusOptions(),
+                            selected = form.status.key,
+                            colorOf = { movieStatusColor(MovieStatus.fromKey(it)) },
+                            onSelect = ::selectStatus,
+                        )
+                    }
+                    watchedFields()
                     form.tmdbId?.let { TrailerButton(container, "movie", it) }
                     CastAccordion(cast, stringResource(Res.string.movieDetail_cast), onSelect = { selectedActorId = it })
-                    statusSelector()
-                    watchedFields()
                     // The note reads and edits like on MovieDetailSheet; the form keeps its plain text area.
                     EditableNote(
                         note = form.personalNote,
@@ -247,14 +261,8 @@ fun AddMovieSheet(container: AppContainer, prefill: Movie?, onClose: () -> Unit)
                         placeholderText = stringResource(Res.string.movieDetail_notePlaceholder),
                         saveText = stringResource(Res.string.movieDetail_save),
                         cancelText = stringResource(Res.string.movieDetail_cancel),
-                        noNotesText = stringResource(Res.string.movieDetail_noNotes),
                         onSave = { form = form.copy(personalNote = it.ifBlank { null }) },
                     )
-                    duplicateWarning()
-                    Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        GhostButton(stringResource(Res.string.addMovie_edit), onClick = { editing = true }, modifier = Modifier.weight(1f), icon = LucideIcons.Pencil)
-                        addButton(Modifier.weight(1f))
-                    }
                 }
                 SheetCloseButton(controller, Modifier.align(Alignment.TopEnd).padding(16.dp))
             }
