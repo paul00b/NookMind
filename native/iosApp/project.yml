@@ -10,15 +10,17 @@ options:
     iOS: "15.0"
   createIntermediateGroups: true
 
-# GoogleSignIn 9 is the first version that takes a custom nonce, which Supabase needs. Firebase 13
-# needs Xcode 26.2, which the App Store requires anyway since April 2026.
+# GoogleSignIn 9 is the first version that takes a custom nonce, which Supabase needs. Firebase stays
+# on 12: Firebase 13 requires app-check 12 and gtm-session-fetcher 4 or later, GoogleSignIn 9.2 pins
+# both one major version lower, and Swift Package Manager then cannot resolve the graph at all. Move
+# to Firebase 13 once a GoogleSignIn release accepts those versions.
 packages:
   GoogleSignIn:
     url: https://github.com/google/GoogleSignIn-iOS
     from: 9.2.0
   Firebase:
     url: https://github.com/firebase/firebase-ios-sdk
-    from: 13.0.1
+    from: 12.19.2
 
 settings:
   base:

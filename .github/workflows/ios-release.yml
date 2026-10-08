@@ -244,15 +244,15 @@ jobs:
           else
             args+=(CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="")
           fi
-          xcodebuild archive "${args[@]}" 2>&1 | tee out/archive.log | grep -E '^\*\* ARCHIVE|error:' || true
+          xcodebuild archive "${args[@]}" 2>&1 | tee out/archive.log | grep -E -A12 '^\*\* ARCHIVE|error:' || true
           grep -q '^\*\* ARCHIVE SUCCEEDED' out/archive.log
 
       - name: Why the archive failed
         if: failure()
         run: |
           if [ -f out/archive.log ]; then
-            { echo "### xcodebuild errors"; echo; echo '```'; grep -E 'error:|Error:' out/archive.log | head -40; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-            grep -E 'error:|Error:' out/archive.log | head -40
+            { echo "### xcodebuild errors"; echo; echo '```'; grep -E -A12 'error:|Error:' out/archive.log | head -60; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            grep -E -A12 'error:|Error:' out/archive.log | head -60
           fi
 
       # What actually went into the archive, read back from it.
