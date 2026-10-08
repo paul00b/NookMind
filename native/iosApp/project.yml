@@ -49,7 +49,8 @@ targets:
       Release: NookMind/Signing.xcconfig
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: fr.paulbr.nookmind
+        # The suffix is empty except in a Local.xcconfig that sets it: see Signing.xcconfig.
+        PRODUCT_BUNDLE_IDENTIFIER: fr.paulbr.nookmind$(NOOKMIND_BUNDLE_ID_SUFFIX)
         PRODUCT_NAME: NookMind
         INFOPLIST_FILE: NookMind/Info.plist
         GENERATE_INFOPLIST_FILE: "NO"
