@@ -15,7 +15,7 @@ Google Cloud, Firebase, Supabase) est pour toi ; le code et la CI sont déjà en
 | Build simulateur (`ios-simulator-build.yml`) | Vert : compilation, tests partagés, lancement, captures |
 | Build Release pour iPhone (`ios-release.yml`, contrôle) | Compile le framework Kotlin et les paquets Swift en arm64, sans signer |
 | Sign in with Apple | Pont Swift écrit, activé quand `NOOKMIND_PAID_TEAM = YES` |
-| Connexion Google | GoogleSignIn 9.2, même contrat qu'Android (client web, nonce) |
+| Connexion Google | GoogleSignIn 9.2, même contrat qu'Android (client web, nonce). **Vérifiée sur iPhone** le 2026-10-08 |
 | Notifications | Firebase Messaging 12 : permission, jeton, affichage au premier plan, ouverture au tap |
 | Manifeste de confidentialité | `PrivacyInfo.xcprivacy`, NSUserDefaults déclaré (raison `CA92.1`) |
 | Déclaration de chiffrement | `ITSAppUsesNonExemptEncryption = NO` dans `Info.plist` : pas de question à chaque envoi |
@@ -23,9 +23,10 @@ Google Cloud, Firebase, Supabase) est pour toi ; le code et la CI sont déjà en
 | Suppression de compte dans l'app | Existe, Apple l'exige aussi |
 | iPad | Déclaré (`TARGETED_DEVICE_FAMILY: "1,2"`), mise en page iPad présente. Voir §12 |
 
-**Rien n'a encore tourné sur un vrai iPhone**, et aucun des trois flux natifs (Google, Apple,
-notifications) n'a été exécuté de bout en bout. La CI prouve que le code compile et que l'app
-démarre, pas que la connexion aboutit.
+**Vérifié sur iPhone le 2026-10-08**, avec un Apple ID gratuit et le build `fr.paulbr.nookmind.dev` :
+l'app, la bande-annonce YouTube (correctif de l'erreur 153), les cinq retours haptiques, et la
+connexion Google de bout en bout, nonce vérifié par Supabase. **Pas encore exécutés** : Sign in with
+Apple et les notifications, qui demandent le compte payant, et la signature pour l'App Store.
 
 ---
 
@@ -131,8 +132,12 @@ Fonctionne aussi avec un compte gratuit, donc faisable dès l'étape 1.
 
    Laisser **Skip nonce check** désactivé. La doc Supabase conseille de l'activer pour iOS, parce
    que GoogleSignIn ne savait pas transmettre de nonce avant la version 9. L'app utilise la 9.2 et
-   envoie un nonce exactement comme sur Android. Si la connexion échoue avec une erreur qui parle de
-   `nonce`, c'est l'endroit à regarder.
+   envoie un nonce exactement comme sur Android : vérifié sur iPhone le 2026-10-08, la connexion
+   aboutit avec la vérification active.
+
+   Le build de test signe sous `fr.paulbr.nookmind.dev` (voir `docs/ios-test-plan.md`) et a son
+   propre client iOS, « iOS Dev », déclaré lui aussi dans Supabase. La version App Store aura besoin
+   d'un second client pour `fr.paulbr.nookmind`, à ajouter de la même façon.
 
 3. **Secret GitHub** `GOOGLE_AUTH_IOS_CLIENT_ID` : l'ID client complet. Le workflow en déduit
    la forme inversée.
@@ -300,7 +305,7 @@ qu'elle y fonctionne, pas qu'elle y soit belle.
 
 ## Check-list express
 
-- [ ] App testée sur ton iPhone avec le compte gratuit (`docs/ios-test-plan.md`)
+- [x] App testée sur ton iPhone avec le compte gratuit (`docs/ios-test-plan.md`), Google compris
 - [ ] Décision iPad (§12)
 - [ ] Compte Apple Developer validé, Team ID noté
 - [ ] App ID `fr.paulbr.nookmind` avec Sign in with Apple et Push Notifications

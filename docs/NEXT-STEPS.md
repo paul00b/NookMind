@@ -178,9 +178,10 @@ Ce qu'il reste, dans l'ordre :
       choisir les entitlements
 - [x] workflow `ios-release.yml` : archive Release pour iPhone, signature par clé d'API, envoi
       TestFlight, tag `ios-vX.Y.Z`
-- [ ] tester sur l'iPhone avec un Apple ID gratuit (`docs/ios-test-plan.md`)
+- [x] testé sur l'iPhone avec un Apple ID gratuit (2026-10-08) : app, bande-annonce, connexion
+      Google de bout en bout, build `fr.paulbr.nookmind.dev`
 - [ ] compte Apple Developer payant, puis la configuration de `docs/app-store-publication.md`
-- [ ] vérifier les cinq signaux haptiques sur l'appareil
+- [x] les cinq signaux haptiques, vérifiés sur l'iPhone (2026-10-08)
 - [ ] première release TestFlight, puis l'App Store
 
 ## Travaux reportés
