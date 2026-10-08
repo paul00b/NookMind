@@ -21,7 +21,7 @@ Google Cloud, Firebase, Supabase) est pour toi ; le code et la CI sont déjà en
 | Déclaration de chiffrement | `ITSAppUsesNonExemptEncryption = NO` dans `Info.plist` : pas de question à chaque envoi |
 | Xcode 26 | Exigé par l'App Store depuis le 28 avril 2026 ([Apple](https://developer.apple.com/news/upcoming-requirements/)), la CI l'utilise |
 | Suppression de compte dans l'app | Existe, Apple l'exige aussi |
-| iPad | Déclaré (`TARGETED_DEVICE_FAMILY: "1,2"`), mise en page iPad présente. Voir §12 |
+| iPad | Non : iPhone seul pour la première version (`TARGETED_DEVICE_FAMILY: "1"`). Voir §12 |
 
 **Vérifié sur iPhone le 2026-10-08**, avec un Apple ID gratuit et le build `fr.paulbr.nookmind.dev` :
 l'app, la bande-annonce YouTube (correctif de l'erreur 153), les cinq retours haptiques, et la
@@ -263,7 +263,7 @@ App Store Connect → l'app → la version 2.0.0 :
 | Élément | Contrainte |
 |---|---|
 | Captures iPhone | 6,9 pouces : **1320 × 2868** px en portrait, 10 max ; App Store Connect en dérive les autres tailles ([guide](https://studio.adalo.com/blog/app-store-screenshot-sizes-2026)) |
-| Captures iPad | 13 pouces : **2064 × 2752** px, seulement si l'iPad reste supporté (§12) |
+| Captures iPad | Aucune : l'app est iPhone seul (§12) |
 | Texte promotionnel | 170 caractères, modifiable sans nouvelle version |
 | Description | 4 000 caractères |
 | Mots-clés | 100 caractères au total, séparés par des virgules |
@@ -287,16 +287,16 @@ Relecture : en général 24 à 48 heures.
 
 ---
 
-## 12. À décider avant le premier envoi : l'iPad
+## 12. L'iPad : iPhone seul pour la première version
 
-Le projet déclare l'app compatible iPhone **et** iPad. Conséquences : captures iPad obligatoires, et
-le relecteur teste aussi sur iPad, où la mise en page en barre latérale n'a jamais été vérifiée sur
-un vrai appareil. Surtout, une fois une version publiée avec le support iPad, une mise à jour ne peut
-plus le retirer : App Store Connect refuse un envoi qui tourne sur moins d'appareils que la version
-en vente ([Apple, QA1623](https://developer.apple.com/library/archive/qa/qa1623/_index.html)).
+Décidé le 2026-10-08 : `TARGETED_DEVICE_FAMILY: "1"` dans `native/iosApp/project.yml`. Pas de
+captures iPad à fournir, et la mise en page en barre latérale, jamais vérifiée sur un vrai iPad, n'est
+pas exposée à la relecture.
 
-Pour une première version iPhone seulement : `TARGETED_DEVICE_FAMILY: "1"` dans
-`native/iosApp/project.yml`. L'iPad pourra être ajouté plus tard ; l'inverse n'est pas possible.
+L'iPad pourra être ajouté dans une mise à jour (`"1,2"`). L'inverse est impossible : une fois une
+version publiée avec le support iPad, App Store Connect refuse un envoi qui tourne sur moins
+d'appareils que la version en vente ([Apple, QA1623](https://developer.apple.com/library/archive/qa/qa1623/_index.html)).
+
 Une app iPhone reste installable sur iPad, agrandie en mode compatibilité, et le relecteur peut
 l'y essayer ([forum Apple](https://developer.apple.com/forums/thread/781735)) : il faut seulement
 qu'elle y fonctionne, pas qu'elle y soit belle.
@@ -306,7 +306,7 @@ qu'elle y fonctionne, pas qu'elle y soit belle.
 ## Check-list express
 
 - [x] App testée sur ton iPhone avec le compte gratuit (`docs/ios-test-plan.md`), Google compris
-- [ ] Décision iPad (§12)
+- [x] Décision iPad : iPhone seul (§12)
 - [ ] Compte Apple Developer validé, Team ID noté
 - [ ] App ID `fr.paulbr.nookmind` avec Sign in with Apple et Push Notifications
 - [ ] App créée dans App Store Connect
