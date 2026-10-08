@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import fr.paulbr.nookmind.app.AppContainer
 import fr.paulbr.nookmind.core.designsystem.NookTheme
 import fr.paulbr.nookmind.core.designsystem.components.BannerTone
+import fr.paulbr.nookmind.core.designsystem.components.EditableNote
 import fr.paulbr.nookmind.core.designsystem.components.ExpandableDescription
 import fr.paulbr.nookmind.core.designsystem.components.GenrePill
 import fr.paulbr.nookmind.core.designsystem.components.GhostButton
@@ -56,6 +57,7 @@ import fr.paulbr.nookmind.feature.common.DateField
 import fr.paulbr.nookmind.feature.common.ImdbRatingPill
 import fr.paulbr.nookmind.feature.common.PillStatusRow
 import fr.paulbr.nookmind.feature.common.SheetHeader
+import fr.paulbr.nookmind.feature.common.TrailerButton
 import fr.paulbr.nookmind.feature.common.formatIsoDate
 import fr.paulbr.nookmind.resources.Res
 import fr.paulbr.nookmind.resources.addMovie_addAnyway
@@ -84,9 +86,14 @@ import fr.paulbr.nookmind.resources.addMovie_title
 import fr.paulbr.nookmind.resources.addMovie_titleLabel
 import fr.paulbr.nookmind.resources.addMovie_titlePlaceholder
 import fr.paulbr.nookmind.resources.addMovie_watchedDateLabel
+import fr.paulbr.nookmind.resources.movieDetail_cancel
 import fr.paulbr.nookmind.resources.movieDetail_cast
 import fr.paulbr.nookmind.resources.movieDetail_description
+import fr.paulbr.nookmind.resources.movieDetail_noNotes
+import fr.paulbr.nookmind.resources.movieDetail_notePlaceholder
+import fr.paulbr.nookmind.resources.movieDetail_personalNote
 import fr.paulbr.nookmind.resources.movieDetail_runtime
+import fr.paulbr.nookmind.resources.movieDetail_save
 import fr.paulbr.nookmind.resources.movieDetail_seeLess
 import fr.paulbr.nookmind.resources.movieDetail_seeMore
 import fr.paulbr.nookmind.resources.movieDetail_wantToWatch
@@ -96,8 +103,8 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * Port of AddMovieModal.tsx: preview mode when [prefill] comes from TMDB (poster, meta pills,
- * IMDb rating, cast, status, date, rating, note), switchable to the full form with "Edit";
- * form mode directly for a manual add.
+ * IMDb rating, trailer, cast, status, date, rating, note), laid out like [MovieDetailSheet] and
+ * switchable to the full form with "Edit"; form mode directly for a manual add.
  */
 @Composable
 fun AddMovieSheet(container: AppContainer, prefill: Movie?, onClose: () -> Unit) {
@@ -229,10 +236,20 @@ fun AddMovieSheet(container: AppContainer, prefill: Movie?, onClose: () -> Unit)
                             Column(horizontalAlignment = Alignment.CenterHorizontally) { poster(); Spacer(Modifier.height(24.dp)); details() }
                         }
                     }
+                    form.tmdbId?.let { TrailerButton(container, "movie", it) }
                     CastAccordion(cast, stringResource(Res.string.movieDetail_cast), onSelect = { selectedActorId = it })
                     statusSelector()
                     watchedFields()
-                    noteField()
+                    // The note reads and edits like on MovieDetailSheet; the form keeps its plain text area.
+                    EditableNote(
+                        note = form.personalNote,
+                        labelText = stringResource(Res.string.movieDetail_personalNote),
+                        placeholderText = stringResource(Res.string.movieDetail_notePlaceholder),
+                        saveText = stringResource(Res.string.movieDetail_save),
+                        cancelText = stringResource(Res.string.movieDetail_cancel),
+                        noNotesText = stringResource(Res.string.movieDetail_noNotes),
+                        onSave = { form = form.copy(personalNote = it.ifBlank { null }) },
+                    )
                     duplicateWarning()
                     Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         GhostButton(stringResource(Res.string.addMovie_edit), onClick = { editing = true }, modifier = Modifier.weight(1f), icon = LucideIcons.Pencil)

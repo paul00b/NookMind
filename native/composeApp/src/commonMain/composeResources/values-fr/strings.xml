@@ -17,6 +17,7 @@
     <string name="addBook_currentPageLabel">Page actuelle</string>
     <string name="addBook_currentPagePlaceholder">ex. 42</string>
     <string name="addBook_descriptionLabel">Description</string>
+    <string name="addBook_edit">Modifier</string>
     <string name="addBook_genreLabel">Genre</string>
     <string name="addBook_genrePlaceholder">ex. Fiction</string>
     <string name="addBook_inLibrary">Déjà ajouté</string>
@@ -73,6 +74,7 @@
     <string name="addSeries_creatorLabel">Créateur</string>
     <string name="addSeries_creatorPlaceholder">Nom du créateur</string>
     <string name="addSeries_descriptionLabel">Description</string>
+    <string name="addSeries_edit">Modifier</string>
     <string name="addSeries_firstAirDateLabel">Première diffusion</string>
     <string name="addSeries_firstAirDatePlaceholder">Année</string>
     <string name="addSeries_genreLabel">Genre</string>
