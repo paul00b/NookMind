@@ -15,6 +15,7 @@ on:
       - 'native/**'
       - '!native/**/*.md'
       - '!native/distribution/**'
+      - '!native/iosApp/**'
       - '.github/workflows/android-debug-apk.yml'
 
 permissions:

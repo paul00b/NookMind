@@ -52,6 +52,21 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NookMindAppleSignInEnabled</key>
-	<false/>
+	<string>$(NOOKMIND_PAID_TEAM)</string>
+	<key>NookMindPushEnabled</key>
+	<string>$(NOOKMIND_PAID_TEAM)</string>
+	<key>NookMindGoogleClientID</key>
+	<string>$(GOOGLE_AUTH_IOS_CLIENT_ID)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>Google sign-in</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>$(GOOGLE_AUTH_IOS_REVERSED_CLIENT_ID)</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
