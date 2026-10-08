@@ -124,8 +124,10 @@ avec les vrais noms de classes : le workflow envoie le mapping R8 avec chaque bu
 
 ## iOS
 
-Pas encore publiable : il faut un compte Apple Developer payant. Le build simulateur tourne sur CI
-(`ios-simulator-build.yml`), le reste est dans `docs/NEXT-STEPS.md` §6.
+Même principe qu'Android : GitHub → Actions → **iOS release** → Run workflow, et le build part sur
+TestFlight. Il faut d'abord un compte Apple Developer payant, quelques réglages dans les consoles et
+six secrets GitHub : tout est dans [`docs/app-store-publication.md`](docs/app-store-publication.md).
+Avant de payer, l'app se teste sur un iPhone avec un Apple ID gratuit : `docs/ios-test-plan.md`.
 
 ## L'ancien paquet Capacitor
 

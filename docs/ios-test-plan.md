@@ -5,8 +5,11 @@ Build sans compte Apple Developer payant. Ce que ça implique, une fois pour tou
 - Simulateur : tout marche, sans signature.
 - iPhone : l'app s'installe avec ton Apple ID gratuit (« Personal Team »), expire au bout de 7 jours,
   se réinstalle par Cmd+R.
-- Absents de ce build, par construction : Sign in with Apple, connexion Google (bouton visible,
-  échec au tap), notifications. Ce n'est pas un bug, c'est la phase B.
+- Absents de ce build, par construction : Sign in with Apple et notifications. Apple ne les accorde
+  qu'aux comptes Apple Developer payants ; `NOOKMIND_PAID_TEAM = NO` (le défaut) les laisse dehors,
+  sinon la signature échoue. Ce n'est pas un bug.
+- La connexion Google, elle, marche avec un compte gratuit, une fois le client OAuth iOS renseigné
+  (étape 7). Sans lui, le bouton Google est simplement masqué.
 
 ## 1. Installation, une fois
 
@@ -29,8 +32,7 @@ Build sans compte Apple Developer payant. Ce que ça implique, une fois pour tou
    - `native/local.properties` avec `sdk.dir=…` (le plugin Android est appliqué même pour iOS)
 5. **La branche**
    ```bash
-   git fetch origin
-   git checkout claude/optimistic-albattani-rj2h54
+   git checkout main
    git pull
    ```
 6. **Le projet Xcode**
@@ -44,12 +46,23 @@ Build sans compte Apple Developer payant. Ce que ça implique, une fois pour tou
    DEVELOPMENT_TEAM = XXXXXXXXXX
    ```
    Ne rien régler dans l'onglet Signing de Xcode : perdu au prochain `xcodegen generate`.
+
+   Pour tester aussi la connexion Google, ajouter les deux lignes du client OAuth **iOS** (Google
+   Cloud Console, dans le projet du client web ; voir `docs/app-store-publication.md` §5) :
+   ```
+   GOOGLE_AUTH_IOS_CLIENT_ID = 1234567890-abcdef.apps.googleusercontent.com
+   GOOGLE_AUTH_IOS_REVERSED_CLIENT_ID = com.googleusercontent.apps.1234567890-abcdef
+   ```
+   Le `.env` du site contient peut-être déjà ces valeurs (`VITE_GOOGLE_AUTH_IOS_*`, de l'époque
+   Capacitor). Vérifier que le nombre au début est le même que celui du client web : c'est le
+   numéro du projet Google Cloud, et les deux doivent être dans le même projet.
 8. **Premier build**
    ```bash
    open NookMind.xcodeproj
    ```
-   Destination : un iPhone simulé (iPhone 17 Pro, par exemple). Cmd+R. Le premier build lance
-   Gradle, qui télécharge Kotlin/Native (1 Go) : 10 à 20 minutes. Les suivants : 1 à 2 minutes.
+   Destination : un iPhone simulé (iPhone 17 Pro, par exemple). Cmd+R. Le premier build télécharge
+   les paquets Swift (GoogleSignIn, Firebase) et lance Gradle, qui télécharge Kotlin/Native (1 Go) :
+   10 à 20 minutes. Les suivants : 1 à 2 minutes.
 9. **L'iPhone**, pour la partie 3 :
    - sur le téléphone : Réglages → Confidentialité et sécurité → Mode développeur → activer,
      redémarrer ;
@@ -65,6 +78,9 @@ Chaque ligne : ce que tu fais, puis ce que tu dois voir.
 - [ ] Lancement à froid : onboarding, trois slides, swipe, points qui suivent. « Skip » et « Get
       started » mènent à l'écran de connexion.
 - [ ] Connexion e-mail + mot de passe avec ton compte : la bibliothèque arrive, avec tes données.
+- [ ] Si le client iOS Google est renseigné : déconnexion, « Continue with Google », la page Google
+      s'ouvre, choisir le compte, retour dans l'app connecté, même bibliothèque. Une erreur qui parle
+      de `nonce` ou d'`audience` vient de la configuration Supabase (voir le guide App Store §5).
 - [ ] Tuer l'app (Cmd+Shift+H deux fois, swipe up), relancer : session restaurée, pas d'écran de
       connexion.
 
@@ -131,8 +147,9 @@ l'appareil peut dire :
 
 ## 4. Attendu, à ne pas remonter
 
-- « Continue with Google » visible, tap → « Google sign-in is not available on this platform ».
-- Pas de bouton Apple.
+- Pas de bouton Google si `GOOGLE_AUTH_IOS_CLIENT_ID` n'est pas renseigné dans `Local.xcconfig`.
+- Pas de bouton Apple, et la section Notifications indique qu'elles sont indisponibles : il faut un
+  compte payant (`NOOKMIND_PAID_TEAM = YES`).
 - Pas de remplissage automatique des mots de passe (demande une capacité payante).
 - Sur iPhone, l'app cesse de s'ouvrir après 7 jours : Cmd+R depuis Xcode.
 

@@ -317,14 +317,22 @@ les caches. Les captures sont aussi écrites en vignettes base64 dans le log du 
 marqueurs `BEGIN THUMB` / `END THUMB`, pour qui ne peut pas télécharger l'artefact ; l'en-tête de
 l'étape donne la commande de décodage.
 
-**Ce que le simulateur ne couvre pas, et rien d'automatique ne le fera :**
+**Ce que le simulateur ne couvre pas.** Le code des trois services natifs est écrit et compilé par
+la CI ; ce qui leur manque pour tourner est de la configuration, détaillée dans
+`docs/app-store-publication.md` :
 
-| Fonctionnalité | Ce qu'il lui manque | Où ça se branche |
+| Fonctionnalité | Code | Ce qu'il faut pour qu'elle tourne |
 |---|---|---|
-| Sign in with Apple | la capacité sur l'App ID (équipe Apple Developer payante), puis passer `NookMindAppleSignInEnabled` à `true` dans `Info.plist` et ajouter `com.apple.developer.applesignin` aux entitlements | `AppleSignInBridge.swift`, déjà écrit |
-| Connexion Google | le paquet SPM `GoogleSignIn-iOS`, un client OAuth **iOS** dans le projet Google Cloud du client web (comme sur Android), et le schéma d'URL inversé dans `Info.plist` | implémenter `IosGoogleSignInBridge` en Swift |
-| Notifications push | le paquet SPM `firebase-ios-sdk` (FirebaseMessaging), `GoogleService-Info.plist` dans `iosApp/NookMind/`, la clé APNs téléversée dans Firebase, `aps-environment` aux entitlements | implémenter `IosPushBridge` en Swift, brancher l'AppDelegate |
-| Haptiques | un vrai iPhone : le simulateur n'a pas de moteur haptique | rien à écrire a priori, Compose mappe `HapticFeedbackType` vers UIKit ; à vérifier signal par signal |
+| Sign in with Apple | `AppleSignInBridge.swift` | un compte Apple Developer payant et `NOOKMIND_PAID_TEAM = YES`, le provider Apple activé dans Supabase |
+| Connexion Google | `GoogleSignInBridge.swift`, GoogleSignIn 9.2 | un client OAuth **iOS** dans le projet Google Cloud du client web, renseigné dans `Local.xcconfig` (ou le secret `GOOGLE_AUTH_IOS_CLIENT_ID`), et ajouté aux Client IDs Google de Supabase. Marche avec un compte gratuit |
+| Notifications push | `PushBridge.swift` et `AppDelegate.swift`, Firebase Messaging 12 | un compte payant, `GoogleService-Info.plist` dans `iosApp/NookMind/`, la clé APNs importée dans Firebase |
+| Haptiques | rien à écrire a priori, Compose mappe `HapticFeedbackType` vers UIKit | un vrai iPhone : le simulateur n'a pas de moteur haptique ; à vérifier signal par signal |
+
+`NOOKMIND_PAID_TEAM`, dans `iosApp/NookMind/Signing.xcconfig`, choisit les entitlements. `NO` par
+défaut, pour un Apple ID gratuit : aucune capacité payante, sinon la signature échoue. `YES` pour un
+compte Apple Developer : Sign in with Apple et `aps-environment` entrent dans la signature, et
+`Info.plist` transmet `YES` à l'AppDelegate qui branche les deux ponts. Le workflow `ios-release.yml`
+construit toujours avec `YES`.
 
 Les trois interfaces de pont (`IosAppleSignInBridge`, `IosGoogleSignInBridge`, `IosPushBridge`)
 sont définies côté Kotlin dans `iosMain/.../ios/Bridges.kt`. Elles prennent des callbacks et pas
