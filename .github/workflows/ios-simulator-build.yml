@@ -184,6 +184,9 @@ jobs:
               echo
               echo "Full log in the artifacts."
             } >> "$GITHUB_STEP_SUMMARY"
+            # In the job log too, with the lines that follow each error: package resolution, for
+            # one, gives its reasons on the lines after "error:".
+            grep -E -A12 'error:' out/xcodebuild.log | head -80
           fi
 
       # Boot the simulator, install, launch, and check the process is still alive afterwards: a
