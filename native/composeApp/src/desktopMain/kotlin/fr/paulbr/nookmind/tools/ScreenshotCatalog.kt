@@ -46,6 +46,9 @@ class ScreenshotEntry(
 
 /** Screens rendered by the `screenshots` tool. Extended as features land. */
 object ScreenshotCatalog {
+    /** Tall enough for a whole detail sheet to show without scrolling. */
+    private const val SHEET_HEIGHT_DP = 1500
+
     private val container by lazy { AppContainer().also(::seed) }
 
     /** Re-applied at render time: the repositories reset when the (absent) session resolves to signed-out. */
@@ -139,6 +142,13 @@ object ScreenshotCatalog {
         ScreenshotEntry("login-dark") { NookTheme(ThemeMode.DARK, MediaMode.BOOKS) { LoginScreen(container) } },
         ScreenshotEntry("legal") { NookTheme(ThemeMode.LIGHT, MediaMode.BOOKS) { LegalScreen(LegalKind.PRIVACY, onBack = {}) } },
         ScreenshotEntry("books-library-list", content = shellWithView(MediaMode.BOOKS, MainTab.LIBRARY, list = true)),
+        // Dark and tall: a whole sheet in one image, the way the app is mostly used.
+        ScreenshotEntry("books-detail-dark", heightDp = SHEET_HEIGHT_DP, content = shell(MediaMode.BOOKS, MainTab.LIBRARY, dark = true) { BookDetailSheet(container, FakeData.books[0], onClose = {}) }),
+        ScreenshotEntry("books-add-dark", heightDp = SHEET_HEIGHT_DP, content = shell(MediaMode.BOOKS, MainTab.SEARCH, dark = true) { AddBookSheet(container, FakeData.newBook, onClose = {}) }),
+        ScreenshotEntry("movies-detail-dark", heightDp = SHEET_HEIGHT_DP, content = shell(MediaMode.MOVIES, MainTab.LIBRARY, dark = true) { MovieDetailSheet(container, FakeData.movies[0], onClose = {}) }),
+        ScreenshotEntry("movies-add-dark", heightDp = SHEET_HEIGHT_DP, content = shell(MediaMode.MOVIES, MainTab.SEARCH, dark = true) { AddMovieSheet(container, FakeData.newMovie, onClose = {}) }),
+        ScreenshotEntry("series-detail-dark", heightDp = SHEET_HEIGHT_DP, content = shell(MediaMode.SERIES, MainTab.LIBRARY, dark = true) { SeriesDetailSheet(container, FakeData.series[0], onClose = {}) }),
+        ScreenshotEntry("series-add-dark", heightDp = SHEET_HEIGHT_DP, content = shell(MediaMode.SERIES, MainTab.SEARCH, dark = true) { AddSeriesSheet(container, FakeData.newSeries, onClose = {}) }),
         ScreenshotEntry("tablet-books-library", widthDp = 1024, heightDp = 768, content = shell(MediaMode.BOOKS, MainTab.LIBRARY)),
         ScreenshotEntry("tablet-series-home", widthDp = 1024, heightDp = 768, content = shell(MediaMode.SERIES, MainTab.SEARCH)),
     )
