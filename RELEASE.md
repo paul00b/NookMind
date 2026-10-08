@@ -13,12 +13,16 @@ Le build se fait sur GitHub, pas sur le Mac : rien à installer, rien à compile
 2. **Lancer.** GitHub → **Actions** → **Android release** → **Run workflow**, branche `main` :
    - *Version* : laisser vide pour prendre la dernière version sortie et ajouter 1 au dernier
      chiffre (2.0.3 donne 2.0.4). Écrire `2.1.0` pour changer de palier.
-   - *Track* : `internal` (test interne, disponible en quelques minutes, sans relecture) ou `alpha`
-     (test fermé, relu par Google).
+   - *Track* : `alpha` par défaut, le test fermé. Google relit chaque release avant que les
+     testeurs la reçoivent, de quelques heures à quelques jours. `internal` envoie en test interne,
+     sans relecture et disponible en quelques minutes : utile pour essayer un build soi-même avant
+     de le donner aux testeurs, puis le promouvoir en test fermé depuis Play Console (même AAB,
+     pas de nouvelle version).
    - *Status* : `completed` pour que les testeurs l'aient tout de suite, `draft` pour la valider
      soi-même dans Play Console avant.
 3. **Attendre une dizaine de minutes.** À la fin du run :
-   - la version est dans Play Console, sur la piste choisie ;
+   - la version est dans Play Console, sur la piste choisie (en test fermé, en attente de la
+     relecture de Google) ;
    - le commit porte le tag `android-vX.Y.Z` ;
    - l'AAB, un APK installable et le fichier de mapping R8 sont dans les **Artifacts** du run.
 
@@ -106,9 +110,11 @@ release depuis Play Console.
 
 ## Tester une release
 
-Tester la version installée **depuis le Play Store** (lien d'inscription au test interne), pas
-seulement l'APK : c'est elle que Google a re-signée, et c'est sur elle que la connexion Google peut
-casser (`docs/play-store-publication.md` §6.2).
+Tester la version installée **depuis le Play Store**, pas seulement l'APK : c'est elle que Google a
+re-signée, et c'est sur elle que la connexion Google peut casser
+(`docs/play-store-publication.md` §6.2). Pour recevoir les releases du test fermé, il faut être
+soi-même dans la liste de ses testeurs et inscrit par son lien : un téléphone inscrit seulement au
+test interne reste sur la dernière version envoyée en interne.
 
 R8 minifie la release et peut casser ce qui marche en debug. À vérifier à chaque release qui touche
 aux dépendances ou aux règles ProGuard :
