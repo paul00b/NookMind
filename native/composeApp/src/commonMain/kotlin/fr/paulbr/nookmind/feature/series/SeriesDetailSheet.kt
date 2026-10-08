@@ -214,8 +214,8 @@ fun SeriesDetailSheet(container: AppContainer, series: Series, onClose: () -> Un
                                 },
                                 when {
                                     effectiveStatus == SeriesStatus.WATCHED -> Palette.Emerald500
-                                    waiting -> Palette.Purple500
-                                    effectiveStatus == SeriesStatus.WATCHING -> Palette.Blue500
+                                    waiting -> Palette.Purple600
+                                    effectiveStatus == SeriesStatus.WATCHING -> Palette.Blue600
                                     else -> Palette.Amber500
                                 },
                                 small = true,

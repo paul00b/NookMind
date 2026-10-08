@@ -50,6 +50,7 @@ import fr.paulbr.nookmind.core.designsystem.components.Avatar
 import fr.paulbr.nookmind.core.designsystem.components.AvatarSize
 import fr.paulbr.nookmind.core.designsystem.components.modeIcon
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
+import fr.paulbr.nookmind.core.designsystem.onFill
 import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.resources.Res
 import fr.paulbr.nookmind.resources.common_defaultDisplayName
@@ -141,7 +142,7 @@ fun BottomNav(
             MODE_TOGGLE_ORDER.forEach { m ->
                 val active = m == mode
                 val accent = colors.accent(m)
-                val bg by animateColorAsState(if (active) accent.base else Color.Transparent, label = "modeBg")
+                val bg by animateColorAsState(if (active) accent.fill else Color.Transparent, label = "modeBg")
                 Row(
                     Modifier
                         .clip(NookShapes.full)
@@ -151,11 +152,11 @@ fun BottomNav(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    Icon(modeIcon(m), null, Modifier.size(12.dp), tint = if (active) Palette.White else colors.textSubtle)
+                    Icon(modeIcon(m), null, Modifier.size(12.dp), tint = if (active) onFill(accent.fill) else colors.textSubtle)
                     Text(
                         modeLabel(m),
                         style = NookTheme.type.sans(12, FontWeight.SemiBold, 16),
-                        color = if (active) Palette.White else colors.textSubtle,
+                        color = if (active) onFill(accent.fill) else colors.textSubtle,
                     )
                 }
             }

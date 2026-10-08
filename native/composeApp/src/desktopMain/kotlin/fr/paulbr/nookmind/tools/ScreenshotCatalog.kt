@@ -35,6 +35,8 @@ import fr.paulbr.nookmind.feature.shell.MainTab
 import fr.paulbr.nookmind.feature.auth.LoginScreen
 import fr.paulbr.nookmind.feature.legal.LegalKind
 import fr.paulbr.nookmind.feature.legal.LegalScreen
+import fr.paulbr.nookmind.feature.library.MoviesLibraryScreen
+import fr.paulbr.nookmind.feature.library.BooksLibraryScreen
 import fr.paulbr.nookmind.feature.onboarding.OnboardingScreen
 
 class ScreenshotEntry(
@@ -163,9 +165,26 @@ object ScreenshotCatalog {
         ScreenshotEntry("books-library-tall-dark", heightDp = 1600, content = shell(MediaMode.BOOKS, MainTab.LIBRARY, dark = true)),
         ScreenshotEntry("movies-library-tall-dark", heightDp = 1600, content = shell(MediaMode.MOVIES, MainTab.LIBRARY, dark = true)),
         ScreenshotEntry("series-library-tall-dark", heightDp = 1600, content = shell(MediaMode.SERIES, MainTab.LIBRARY, dark = true)),
+        // The library tabs a default open does not show.
+        ScreenshotEntry("books-library-towatch-dark", heightDp = 1200) { libraryOnly(MediaMode.BOOKS) { BooksLibraryScreen(container, PaddingValues(), initialTab = "want_to_read") } },
+        ScreenshotEntry("books-library-read-dark", heightDp = 1200) { libraryOnly(MediaMode.BOOKS) { BooksLibraryScreen(container, PaddingValues(), initialTab = "read") } },
+        ScreenshotEntry("movies-library-watched-dark", heightDp = 1200) { libraryOnly(MediaMode.MOVIES) { MoviesLibraryScreen(container, PaddingValues(), initialTab = "watched") } },
         ScreenshotEntry("tablet-books-library", widthDp = 1024, heightDp = 768, content = shell(MediaMode.BOOKS, MainTab.LIBRARY)),
         ScreenshotEntry("tablet-series-home", widthDp = 1024, heightDp = 768, content = shell(MediaMode.SERIES, MainTab.SEARCH)),
     )
+
+    /** One library screen alone, dark, in grid view, without the navigation around it. */
+    @Composable
+    private fun libraryOnly(mode: MediaMode, content: @Composable () -> Unit) {
+        remember {
+            container.prefs.setMediaMode(mode)
+            container.prefs.setViewMode(mode, fr.paulbr.nookmind.core.data.ViewMode.GRID)
+            seed(container)
+        }
+        NookTheme(ThemeMode.DARK, mode) {
+            Box(Modifier.fillMaxSize().background(NookTheme.colors.background)) { content() }
+        }
+    }
 
     /** Same as [shell] but forces the list view mode of the library. */
     private fun shellWithView(mode: MediaMode, tab: MainTab, list: Boolean, dark: Boolean = false): @Composable () -> Unit = {

@@ -41,12 +41,13 @@ import fr.paulbr.nookmind.core.designsystem.components.MediaImage
 import fr.paulbr.nookmind.core.designsystem.components.NookSheet
 import fr.paulbr.nookmind.core.designsystem.components.SheetCloseButton
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
+import fr.paulbr.nookmind.core.designsystem.onFill
+import fr.paulbr.nookmind.core.domain.buildFlatEpisodeLookup
 import fr.paulbr.nookmind.core.domain.yearOf
 import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.core.model.SeasonState
 import fr.paulbr.nookmind.core.model.TmdbEpisode
 import fr.paulbr.nookmind.core.model.TmdbSeries
-import fr.paulbr.nookmind.core.domain.buildFlatEpisodeLookup
 import fr.paulbr.nookmind.feature.common.CastAccordion
 import fr.paulbr.nookmind.feature.common.TrailerButton
 import fr.paulbr.nookmind.feature.movies.ActorSheet
@@ -229,7 +230,7 @@ fun SeriesPreviewSheet(
                                                 .clickable { selectSeason(s) }
                                                 .padding(horizontal = 12.dp, vertical = 6.dp),
                                         ) {
-                                            Text("S$s", style = NookTheme.type.sans(12, FontWeight.SemiBold, 16), color = if (active) Palette.White else colors.textMuted)
+                                            Text("S$s", style = NookTheme.type.sans(12, FontWeight.SemiBold, 16), color = if (active) onFill(Palette.Amber500) else colors.textMuted)
                                         }
                                     }
                                 }

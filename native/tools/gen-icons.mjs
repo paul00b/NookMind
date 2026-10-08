@@ -77,6 +77,9 @@ const ICONS = {
   Drama: 'drama',
   Satellite: 'satellite',
   ExternalLink: 'external-link',
+  ArrowUpDown: 'arrow-up-down',
+  SlidersHorizontal: 'sliders-horizontal',
+  Folder: 'folder',
 };
 
 function num(v) {

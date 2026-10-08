@@ -1,12 +1,12 @@
 package fr.paulbr.nookmind.feature.onboarding
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -56,6 +56,7 @@ import fr.paulbr.nookmind.core.designsystem.NookShapes
 import fr.paulbr.nookmind.core.designsystem.NookTheme
 import fr.paulbr.nookmind.core.designsystem.Palette
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
+import fr.paulbr.nookmind.core.designsystem.onFill
 import fr.paulbr.nookmind.core.ui.HapticCue
 import fr.paulbr.nookmind.core.ui.LocalNookHaptics
 import fr.paulbr.nookmind.resources.Res
@@ -133,7 +134,7 @@ fun OnboardingScreen(onFinish: () -> Unit) {
                         .clickable(onClick = onFinish)
                         .padding(horizontal = 32.dp, vertical = 12.dp),
                 ) {
-                    Text(stringResource(Res.string.onboarding_getStarted), style = NookTheme.type.sans(14, FontWeight.SemiBold, 20), color = Palette.White)
+                    Text(stringResource(Res.string.onboarding_getStarted), style = NookTheme.type.sans(14, FontWeight.SemiBold, 20), color = onFill(Palette.Teal500))
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {

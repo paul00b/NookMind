@@ -39,6 +39,7 @@ import fr.paulbr.nookmind.core.designsystem.components.SheetCloseButton
 import fr.paulbr.nookmind.core.designsystem.components.SheetController
 import fr.paulbr.nookmind.core.designsystem.components.TextLink
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
+import fr.paulbr.nookmind.core.designsystem.onFill
 import fr.paulbr.nookmind.core.ui.HapticCue
 import fr.paulbr.nookmind.core.ui.LocalNookHaptics
 
@@ -139,7 +140,7 @@ fun StatusSegmentedControl(
                 Text(
                     label,
                     style = NookTheme.type.sans(14, FontWeight.Medium, 20),
-                    color = if (isSelected) Palette.White else colors.textMuted,
+                    color = if (isSelected) onFill(colorOf(key)) else colors.textMuted,
                     maxLines = 1,
                 )
             }

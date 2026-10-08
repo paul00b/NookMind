@@ -55,13 +55,14 @@ import fr.paulbr.nookmind.core.designsystem.alpha
 import fr.paulbr.nookmind.core.designsystem.components.MediaImage
 import fr.paulbr.nookmind.core.designsystem.components.MetaPill
 import fr.paulbr.nookmind.core.designsystem.components.NookCard
+import fr.paulbr.nookmind.core.designsystem.components.NookSheet
 import fr.paulbr.nookmind.core.designsystem.components.Pill
 import fr.paulbr.nookmind.core.designsystem.components.PrimaryButton
 import fr.paulbr.nookmind.core.designsystem.components.SheetCloseButton
 import fr.paulbr.nookmind.core.designsystem.components.SkeletonBox
 import fr.paulbr.nookmind.core.designsystem.components.pulse
-import fr.paulbr.nookmind.core.designsystem.components.NookSheet
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
+import fr.paulbr.nookmind.core.designsystem.onFill
 import fr.paulbr.nookmind.core.domain.EpisodeState
 import fr.paulbr.nookmind.core.domain.daysUntil
 import fr.paulbr.nookmind.core.domain.deriveSeriesStatus
@@ -338,7 +339,7 @@ private fun SeriesNextCard(card: NextUpCard, onMarkWatched: ((Int, Int) -> Unit)
                         .clickable(enabled = !card.dismissing) { onMarkWatched(state.season, state.episode) },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(LucideIcons.Check, contentDescription = stringResource(Res.string.nextUp_markEpisodeWatched), modifier = Modifier.size(18.dp), tint = Palette.White)
+                    Icon(LucideIcons.Check, contentDescription = stringResource(Res.string.nextUp_markEpisodeWatched), modifier = Modifier.size(18.dp), tint = onFill(Palette.Emerald500))
                 }
             }
         }

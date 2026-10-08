@@ -175,6 +175,7 @@
     <string name="library_allAuthors">Tous les auteurs</string>
     <string name="library_allGenres">Tous les genres</string>
     <string name="library_alreadyInCategory">Déjà ajouté</string>
+    <string name="library_author">Auteur</string>
     <string name="library_authorAZ">Auteur A→Z</string>
     <plurals name="library_booksCount">
         <item quantity="one">%1$d livre dans votre collection</item>
@@ -189,6 +190,10 @@
     <string name="library_deleteCategory">Supprimer la collection</string>
     <string name="library_emptyReadingList">Votre liste de lecture est vide</string>
     <string name="library_emptyReadingListDesc">Rendez-vous sur la page d'accueil pour rechercher des livres et les ajouter à votre liste.</string>
+    <string name="library_filters">Filtres</string>
+    <string name="library_filtersDone">Terminé</string>
+    <string name="library_filtersReset">Réinitialiser</string>
+    <string name="library_genre">Genre</string>
     <string name="library_newCategory">Nouvelle collection</string>
     <string name="library_newCategoryPlaceholder">Nom de la collection...</string>
     <string name="library_noBooksFound">Aucun livre trouvé</string>
@@ -198,9 +203,11 @@
     <string name="library_read">Lu</string>
     <string name="library_reading">En cours</string>
     <string name="library_removeFromCategory">Retirer de la collection</string>
+    <string name="library_search">Rechercher dans la bibliothèque</string>
     <string name="library_searchBooks">Rechercher...</string>
     <string name="library_title">Ma bibliothèque</string>
     <string name="library_titleAZ">Titre A→Z</string>
+    <string name="library_updatePage">Mettre à jour la page</string>
     <string name="library_wantToRead">À lire</string>
     <string name="login_appleSignInFailed">Échec de la connexion Apple</string>
     <string name="login_confirmEmail">Vérifiez votre e-mail pour confirmer votre compte, puis connectez-vous.</string>
@@ -265,6 +272,7 @@
     <string name="movieLibrary_confirmAdd">Ajouter à la collection</string>
     <string name="movieLibrary_confirmDeleteCategory">Supprimer "%1$s" ?</string>
     <string name="movieLibrary_dateAdded">Date d'ajout</string>
+    <string name="movieLibrary_director">Réalisateur</string>
     <string name="movieLibrary_directorAZ">Réalisateur A→Z</string>
     <plurals name="movieLibrary_moviesCount">
         <item quantity="one">%1$d film dans votre collection</item>
@@ -277,6 +285,7 @@
     <string name="movieLibrary_noMoviesWatched">Aucun film vu pour l'instant</string>
     <string name="movieLibrary_ratingDesc">Note ↓</string>
     <string name="movieLibrary_removeFromCategory">Retirer de la collection</string>
+    <string name="movieLibrary_search">Rechercher dans mes films</string>
     <string name="movieLibrary_searchMovies">Rechercher...</string>
     <string name="movieLibrary_title">Ma liste de films</string>
     <string name="movieLibrary_titleAZ">Titre A→Z</string>
@@ -451,6 +460,7 @@
     <string name="seriesLibrary_categoryEmptyDesc">Cliquez sur "Ajouter des séries" pour en ajouter depuis votre liste.</string>
     <string name="seriesLibrary_confirmAdd">Ajouter à la collection</string>
     <string name="seriesLibrary_confirmDeleteCategory">Supprimer "%1$s" ?</string>
+    <string name="seriesLibrary_creator">Créateur</string>
     <string name="seriesLibrary_creatorAZ">Créateur A→Z</string>
     <string name="seriesLibrary_dateAdded">Date d'ajout</string>
     <string name="seriesLibrary_newCategory">Nouvelle collection</string>
@@ -459,6 +469,7 @@
     <string name="seriesLibrary_noSeriesWatched">Aucune série terminée pour l'instant</string>
     <string name="seriesLibrary_ratingDesc">Note ↓</string>
     <string name="seriesLibrary_removeFromCategory">Retirer de la collection</string>
+    <string name="seriesLibrary_search">Rechercher dans mes séries</string>
     <string name="seriesLibrary_searchSeries">Rechercher...</string>
     <plurals name="seriesLibrary_seriesCount">
         <item quantity="one">%1$d série dans votre collection</item>

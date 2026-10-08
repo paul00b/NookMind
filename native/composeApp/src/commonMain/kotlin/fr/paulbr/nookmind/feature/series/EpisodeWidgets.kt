@@ -38,6 +38,7 @@ import fr.paulbr.nookmind.core.designsystem.components.Pill
 import fr.paulbr.nookmind.core.designsystem.components.SheetCloseButton
 import fr.paulbr.nookmind.core.designsystem.components.SkeletonBox
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
+import fr.paulbr.nookmind.core.designsystem.onFill
 import fr.paulbr.nookmind.core.domain.getRatingStyle
 import fr.paulbr.nookmind.core.domain.toFixed1
 import fr.paulbr.nookmind.core.model.EpisodeRating
@@ -93,8 +94,8 @@ fun EpisodeRatingBadge(imdb: EpisodeRating?, tmdb: TmdbEpisode?, medium: Boolean
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                Icon(LucideIcons.Star, null, Modifier.size(9.dp), tint = Palette.White)
-                Text(vote.toFixed1(), style = NookTheme.type.sans(10, FontWeight.ExtraBold, 14), color = Palette.White)
+                Icon(LucideIcons.Star, null, Modifier.size(9.dp), tint = onFill(Palette.Amber500))
+                Text(vote.toFixed1(), style = NookTheme.type.sans(10, FontWeight.ExtraBold, 14), color = onFill(Palette.Amber500))
             }
         }
     }

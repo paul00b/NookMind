@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import fr.paulbr.nookmind.core.designsystem.NookShapes
 import fr.paulbr.nookmind.core.designsystem.NookTheme
 import fr.paulbr.nookmind.core.designsystem.Palette
+import fr.paulbr.nookmind.core.designsystem.onFill
 
 /** Generic pill: `px-2 py-0.5 rounded-full text-xs font-medium`. */
 @Composable
@@ -53,10 +54,10 @@ fun Pill(
     }
 }
 
-/** Status badge on posters: white text on a 90 % coloured pill. */
+/** Status badge on posters: a 90 % coloured pill, its text white or dark ink for contrast ([onFill]). */
 @Composable
 fun StatusBadge(text: String, color: Color, modifier: Modifier = Modifier, alpha: Float = 0.9f) {
-    Pill(text, background = color.copy(alpha = alpha), color = Palette.White, modifier = modifier)
+    Pill(text, background = color.copy(alpha = alpha), color = onFill(color), modifier = modifier)
 }
 
 /** Meta pill of the detail sheets: `bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-3 py-1 rounded-full`. */
@@ -86,13 +87,13 @@ fun GenrePill(text: String, modifier: Modifier = Modifier, small: Boolean = fals
     )
 }
 
-/** Solid coloured pill of the detail sheets (`px-3 py-1 rounded-full font-medium text-white`). */
+/** Solid coloured pill of the detail sheets (`px-3 py-1 rounded-full font-medium`), text per [onFill]. */
 @Composable
 fun SolidPill(text: String, color: Color, modifier: Modifier = Modifier, small: Boolean = false) {
     Pill(
         text,
         background = color,
-        color = Palette.White,
+        color = onFill(color),
         modifier = modifier,
         textStyle = if (small) NookTheme.type.sans(12, FontWeight.Medium, 16) else NookTheme.type.sans(14, FontWeight.Medium, 20),
         contentPadding = if (small) PaddingValues(horizontal = 10.dp, vertical = 2.dp) else PaddingValues(horizontal = 12.dp, vertical = 4.dp),
