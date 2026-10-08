@@ -140,6 +140,21 @@ jobs:
       - name: XcodeGen
         run: brew install xcodegen
 
+      # The Release link of the Kotlin framework runs whole-program optimisation over Compose, and ran
+      # out of heap at the project's 3 GB (GC overhead limit exceeded in the call graph builder).
+      # Debug and simulator builds never get there, so the bigger heap is set for this workflow only,
+      # in the user-level gradle.properties that takes precedence over the project's. Compiling Kotlin
+      # inside the Gradle daemon instead of a second daemon leaves that memory to the one that needs it.
+      - name: Gradle memory for the Release framework
+        run: |
+          props="${GRADLE_USER_HOME:-$HOME/.gradle}/gradle.properties"
+          mkdir -p "$(dirname "$props")"
+          {
+            echo "org.gradle.jvmargs=-Xmx6g -XX:+UseParallelGC -Dfile.encoding=UTF-8"
+            echo "kotlin.compiler.execution.strategy=in-process"
+          } >> "$props"
+          cat "$props"
+
       - name: Backend keys
         run: |
           : > "$RUNNER_TEMP/missing.md"
