@@ -4,8 +4,10 @@ name: Screenshots
 # GitHub runner and commits the images to the pushed branch, under screenshots/. It serves design
 # review from a session that cannot build the app itself: the images come back with a git pull.
 #
-# Opt-in: a push runs it only when its last commit message contains [screenshots]. The images are
-# review material, not part of the app: delete screenshots/ before the branch is merged.
+# Opt-in: a push runs it only when its last commit message asks for it. [screenshots] renders the
+# default list below, [screenshots: a,b] those catalog entries, [screenshots: all] the whole catalog.
+# Covers and posters are real ones, fetched from TMDB and Google Books with the repository's keys.
+# The images are review material, not part of the app: delete screenshots/ before the branch is merged.
 
 on:
   push:
@@ -20,11 +22,15 @@ concurrency:
 
 jobs:
   render:
-    if: contains(github.event.head_commit.message, '[screenshots]')
+    if: contains(github.event.head_commit.message, '[screenshots')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      # Catalog entries to render, see composeApp/src/desktopMain/.../tools/ScreenshotCatalog.kt.
+      # Only the two catalogue keys the covers need; the screens themselves run on fake data.
+      TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+      GOOGLE_BOOKS_API_KEY: ${{ secrets.GOOGLE_BOOKS_API_KEY }}
+      COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+      # Default catalog entries, see composeApp/src/desktopMain/.../tools/ScreenshotCatalog.kt.
       ONLY: books-detail-dark,books-add-dark,movies-detail-dark,movies-add-dark,series-detail-dark,series-add-dark,settings-full-dark
 
     steps:
@@ -49,8 +55,11 @@ jobs:
         working-directory: native
         run: |
           rm -rf "$GITHUB_WORKSPACE/screenshots"
+          asked=$(printf '%s' "$COMMIT_MESSAGE" | sed -n 's/.*\[screenshots: *\([^]]*\)\].*/\1/p' | head -n 1)
+          only=()
+          if [ -z "$asked" ]; then only=(-Ponly="$ONLY"); elif [ "$asked" != "all" ]; then only=(-Ponly="$asked"); fi
           ./gradlew :composeApp:screenshots --console=plain \
-            -PoutDir="$GITHUB_WORKSPACE/screenshots" -Plocale=fr -Ponly="$ONLY"
+            -PoutDir="$GITHUB_WORKSPACE/screenshots" -Plocale=fr -Pcovers -PsettleMs=3000 "${only[@]}"
 
       - name: Commit to the branch
         run: |

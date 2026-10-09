@@ -72,6 +72,7 @@ import fr.paulbr.nookmind.core.designsystem.components.OverlineLabel
 import fr.paulbr.nookmind.core.designsystem.components.PrimaryButton
 import fr.paulbr.nookmind.core.designsystem.components.TextLink
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
+import fr.paulbr.nookmind.core.designsystem.onFill
 import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.core.model.ThemeMode
 import fr.paulbr.nookmind.core.ui.HapticCue
@@ -382,7 +383,7 @@ fun SettingsPanel(
                                             }
                                             .padding(horizontal = 12.dp, vertical = 6.dp),
                                     ) {
-                                        Text(label, style = NookTheme.type.sans(12, FontWeight.SemiBold, 16), color = if (subscribed) colors.tealText else Palette.White)
+                                        Text(label, style = NookTheme.type.sans(12, FontWeight.SemiBold, 16), color = if (subscribed) colors.tealText else onFill(Palette.Teal500))
                                     }
                                 }
                                 if (subscribed) {

@@ -38,6 +38,7 @@ import fr.paulbr.nookmind.core.designsystem.components.GhostButton
 import fr.paulbr.nookmind.core.designsystem.components.PrimaryButton
 import fr.paulbr.nookmind.core.designsystem.components.Spinner
 import fr.paulbr.nookmind.core.designsystem.components.TextLink
+import fr.paulbr.nookmind.core.designsystem.onFill
 import fr.paulbr.nookmind.core.domain.daysUntil
 import fr.paulbr.nookmind.core.domain.parseDateOnly
 import fr.paulbr.nookmind.core.domain.todayLocal
@@ -282,7 +283,7 @@ fun SeasonGrid(
                 }
                 val content = when {
                     empty -> colors.textFaint
-                    watched || partial -> Palette.White
+                    watched || partial -> onFill(background)
                     else -> colors.textSubtle
                 }
                 val ring = when {
@@ -368,7 +369,7 @@ fun SeasonGrid(
                                     Text(
                                         ep.toString(),
                                         style = NookTheme.type.sans(12, FontWeight.Medium, 16),
-                                        color = if (isWatched) Palette.White else if (unavailable) colors.textFaint else colors.textSubtle,
+                                        color = if (isWatched) onFill(Palette.Emerald500) else if (unavailable) colors.textFaint else colors.textSubtle,
                                     )
                                 }
                             }

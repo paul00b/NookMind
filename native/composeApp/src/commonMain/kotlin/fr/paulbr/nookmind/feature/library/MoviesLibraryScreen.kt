@@ -34,7 +34,6 @@ import fr.paulbr.nookmind.core.data.ViewMode
 import fr.paulbr.nookmind.core.designsystem.NookTheme
 import fr.paulbr.nookmind.core.designsystem.components.EmptyState
 import fr.paulbr.nookmind.core.designsystem.components.HairlineDivider
-import fr.paulbr.nookmind.core.designsystem.components.NookSelect
 import fr.paulbr.nookmind.core.designsystem.components.SelectOption
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
 import fr.paulbr.nookmind.core.domain.yearOf
@@ -54,6 +53,10 @@ import fr.paulbr.nookmind.feature.shell.TABLET_BREAKPOINT_DP
 import fr.paulbr.nookmind.resources.Res
 import fr.paulbr.nookmind.resources.common_collectionDeleted
 import fr.paulbr.nookmind.resources.common_itemsCountMovies
+import fr.paulbr.nookmind.resources.library_filters
+import fr.paulbr.nookmind.resources.library_filtersDone
+import fr.paulbr.nookmind.resources.library_filtersReset
+import fr.paulbr.nookmind.resources.library_genre
 import fr.paulbr.nookmind.resources.movieLibrary_addMovies
 import fr.paulbr.nookmind.resources.movieLibrary_addMoviesTo
 import fr.paulbr.nookmind.resources.movieLibrary_addNMovies
@@ -66,14 +69,15 @@ import fr.paulbr.nookmind.resources.movieLibrary_categoryEmptyDesc
 import fr.paulbr.nookmind.resources.movieLibrary_confirmAdd
 import fr.paulbr.nookmind.resources.movieLibrary_confirmDeleteCategory
 import fr.paulbr.nookmind.resources.movieLibrary_dateAdded
+import fr.paulbr.nookmind.resources.movieLibrary_director
 import fr.paulbr.nookmind.resources.movieLibrary_directorAZ
-import fr.paulbr.nookmind.resources.movieLibrary_moviesCount
 import fr.paulbr.nookmind.resources.movieLibrary_newCategory
 import fr.paulbr.nookmind.resources.movieLibrary_newCategoryPlaceholder
 import fr.paulbr.nookmind.resources.movieLibrary_noDateGroup
 import fr.paulbr.nookmind.resources.movieLibrary_noMoviesFound
 import fr.paulbr.nookmind.resources.movieLibrary_noMoviesWatched
 import fr.paulbr.nookmind.resources.movieLibrary_ratingDesc
+import fr.paulbr.nookmind.resources.movieLibrary_search
 import fr.paulbr.nookmind.resources.movieLibrary_searchMovies
 import fr.paulbr.nookmind.resources.movieLibrary_title
 import fr.paulbr.nookmind.resources.movieLibrary_titleAZ
@@ -88,18 +92,24 @@ import org.jetbrains.compose.resources.stringResource
 
 private enum class MovieSort(val key: String) { CREATED("created_at"), TITLE("title"), DIRECTOR("director"), RATING("rating"), WATCHED_DATE("watched_date") }
 
-/** Port of MovieLibrary.tsx: status / collection tabs, filters, grid or list, year groups for watched movies. */
+/**
+ * Port of MovieLibrary.tsx: status tabs, collections, sort and filters sheet, grid or list, year
+ * groups for watched movies, search across the list. [initialTab] opens a given tab (screenshots).
+ */
 @Composable
-fun MoviesLibraryScreen(container: AppContainer, contentPadding: PaddingValues) {
+fun MoviesLibraryScreen(container: AppContainer, contentPadding: PaddingValues, initialTab: String? = null) {
     val movies by container.movies.items.collectAsState()
     val loading by container.movies.loading.collectAsState()
     val categories by container.movieCategories.items.collectAsState()
     val scope = rememberCoroutineScope()
 
-    var activeTab by rememberSaveable { mutableStateOf(MovieStatus.WANT_TO_WATCH.key) }
+    var activeTab by rememberSaveable { mutableStateOf(initialTab ?: MovieStatus.WANT_TO_WATCH.key) }
     var genreFilter by rememberSaveable { mutableStateOf("") }
     var directorFilter by rememberSaveable { mutableStateOf("") }
-    var sortKey by rememberSaveable { mutableStateOf(MovieSort.CREATED.key) }
+    var sortKey by rememberSaveable { mutableStateOf(if (initialTab == MovieStatus.WATCHED.key) MovieSort.WATCHED_DATE.key else MovieSort.CREATED.key) }
+    var searchOpen by rememberSaveable { mutableStateOf(false) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var filtersOpen by remember { mutableStateOf(false) }
     var viewMode by remember { mutableStateOf(container.prefs.viewMode(MediaMode.MOVIES)) }
     var selected by remember { mutableStateOf<Movie?>(null) }
     var pickerCategory by remember { mutableStateOf<MovieCategory?>(null) }
@@ -109,8 +119,9 @@ fun MoviesLibraryScreen(container: AppContainer, contentPadding: PaddingValues) 
     val activeStatus = MovieStatus.entries.firstOrNull { it.key == activeTab }
     val isStatusTab = activeStatus != null
     val tabMovies = if (activeStatus != null) movies.filter { it.status == activeStatus } else emptyList()
-    val genres = tabMovies.mapNotNull { it.genre?.takeIf(String::isNotBlank) }.distinct()
-    val directors = tabMovies.map { it.director }.filter { it.isNotBlank() }.distinct()
+    val searching = searchOpen && query.isNotBlank()
+    val genres = tabMovies.mapNotNull { it.genre?.takeIf(String::isNotBlank) }.distinct().sorted()
+    val directors = tabMovies.map { it.director }.filter { it.isNotBlank() }.distinct().sorted()
     val sort = MovieSort.entries.first { it.key == sortKey }
     val filtered = tabMovies
         .filter { genreFilter.isEmpty() || it.genre == genreFilter }
@@ -125,10 +136,16 @@ fun MoviesLibraryScreen(container: AppContainer, contentPadding: PaddingValues) 
             }
         }
     val categoryMovies = activeCategory?.let { cat -> movies.filter { it.id in cat.itemIds } } ?: emptyList()
+    val searchResults = if (searching) {
+        val q = query.trim()
+        movies.filter { it.title.contains(q, ignoreCase = true) || it.director.contains(q, ignoreCase = true) }
+            .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.title })
+    } else emptyList()
+    val activeFilters = listOf(genreFilter, directorFilter).count { it.isNotEmpty() }
 
     val tabs = listOf(
-        LibraryTab(MovieStatus.WANT_TO_WATCH.key, stringResource(Res.string.movieLibrary_wantToWatch), movies.count { it.status == MovieStatus.WANT_TO_WATCH }),
-        LibraryTab(MovieStatus.WATCHED.key, stringResource(Res.string.movieLibrary_watched), movies.count { it.status == MovieStatus.WATCHED }),
+        LibraryTab(MovieStatus.WANT_TO_WATCH.key, stringResource(Res.string.movieLibrary_wantToWatch), movies.count { it.status == MovieStatus.WANT_TO_WATCH }, TabTone.AMBER),
+        LibraryTab(MovieStatus.WATCHED.key, stringResource(Res.string.movieLibrary_watched), movies.count { it.status == MovieStatus.WATCHED }, TabTone.EMERALD),
     )
     val sortOptions = buildList {
         if (activeStatus == MovieStatus.WATCHED) add(SelectOption(MovieSort.WATCHED_DATE.key, stringResource(Res.string.movieLibrary_watchedDate)))
@@ -145,6 +162,7 @@ fun MoviesLibraryScreen(container: AppContainer, contentPadding: PaddingValues) 
         val columns = libraryColumns(maxWidth)
         CompositionLocalProvider(LocalWideLayout provides wide) {
             val pad = libraryPagePadding()
+            val bleed = if (wide) Modifier else Modifier.horizontalBleed(pad)
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                 LazyColumn(
                     Modifier.fillMaxHeight().fillMaxWidth().widthIn(max = LIBRARY_MAX_WIDTH),
@@ -154,31 +172,51 @@ fun MoviesLibraryScreen(container: AppContainer, contentPadding: PaddingValues) 
                         LibraryHeader(
                             title = stringResource(Res.string.movieLibrary_title),
                             titleColor = NookTheme.colors.indigoText,
-                            subtitle = pluralStringResource(Res.plurals.movieLibrary_moviesCount, movies.size, movies.size),
+                            subtitle = pluralStringResource(Res.plurals.common_itemsCountMovies, movies.size, movies.size),
                             viewMode = viewMode,
                             onViewMode = { viewMode = it; container.prefs.setViewMode(MediaMode.MOVIES, it) },
-                        )
-                        Spacer(Modifier.height(24.dp))
-                    }
-                    item(key = "tabs") {
-                        LibraryTabsRow(
-                            tabs = tabs,
-                            categories = categories,
-                            activeId = activeTab,
-                            onSelect = { id ->
-                                activeTab = id
-                                MovieStatus.entries.firstOrNull { it.key == id }?.let { status ->
-                                    genreFilter = ""; directorFilter = ""
-                                    sortKey = if (status == MovieStatus.WATCHED) MovieSort.WATCHED_DATE.key else MovieSort.CREATED.key
-                                }
+                            actions = {
+                                LibraryHeaderButton(LucideIcons.Search, stringResource(Res.string.movieLibrary_search), active = searchOpen, onClick = {
+                                    searchOpen = !searchOpen
+                                    if (!searchOpen) query = ""
+                                })
                             },
-                            onDeleteCategory = { deletingCategoryId = it },
-                            newCategoryLabel = stringResource(Res.string.movieLibrary_newCategory),
-                            newCategoryPlaceholder = stringResource(Res.string.movieLibrary_newCategoryPlaceholder),
-                            onCreateCategory = { name -> scope.launch { container.movieCategories.create(name)?.let { activeTab = it.id } } },
-                            modifier = if (wide) Modifier else Modifier.horizontalBleed(pad),
                         )
-                        Spacer(Modifier.height(24.dp))
+                        Spacer(Modifier.height(if (searchOpen) 16.dp else 20.dp))
+                    }
+                    if (searchOpen) {
+                        item(key = "search") {
+                            LibrarySearchField(query, { query = it }, stringResource(Res.string.movieLibrary_search), onClose = { searchOpen = false; query = "" })
+                            Spacer(Modifier.height(20.dp))
+                        }
+                    }
+                    if (!searching) {
+                        item(key = "tabs") {
+                            LibraryStatusTabs(
+                                tabs = tabs,
+                                activeId = activeTab,
+                                onSelect = { id ->
+                                    activeTab = id
+                                    MovieStatus.entries.firstOrNull { it.key == id }?.let { status ->
+                                        genreFilter = ""; directorFilter = ""
+                                        sortKey = if (status == MovieStatus.WATCHED) MovieSort.WATCHED_DATE.key else MovieSort.CREATED.key
+                                    }
+                                },
+                                modifier = bleed,
+                            )
+                            Spacer(Modifier.height(14.dp))
+                            CollectionChipsRow(
+                                categories = categories,
+                                activeId = activeTab,
+                                onSelect = { id -> activeTab = id },
+                                onDeleteCategory = { deletingCategoryId = it },
+                                newCategoryLabel = stringResource(Res.string.movieLibrary_newCategory),
+                                newCategoryPlaceholder = stringResource(Res.string.movieLibrary_newCategoryPlaceholder),
+                                onCreateCategory = { name -> scope.launch { container.movieCategories.create(name)?.let { activeTab = it.id } } },
+                                modifier = bleed,
+                            )
+                            Spacer(Modifier.height(20.dp))
+                        }
                     }
                     deletingCategoryId?.let { id ->
                         val cat = categories.firstOrNull { it.id == id }
@@ -197,7 +235,7 @@ fun MoviesLibraryScreen(container: AppContainer, contentPadding: PaddingValues) 
                             Spacer(Modifier.height(16.dp))
                         }
                     }
-                    if (activeCategory != null) {
+                    if (!searching && activeCategory != null) {
                         item(key = "category-toolbar") {
                             CategoryToolbar(
                                 countText = pluralStringResource(Res.plurals.common_itemsCountMovies, activeCategory.itemIds.size, activeCategory.itemIds.size),
@@ -207,20 +245,30 @@ fun MoviesLibraryScreen(container: AppContainer, contentPadding: PaddingValues) 
                             Spacer(Modifier.height(16.dp))
                         }
                     }
-                    if (isStatusTab && tabMovies.isNotEmpty()) {
-                        item(key = "filters") {
-                            FilterRow(if (wide) Modifier else Modifier.horizontalBleed(pad)) {
-                                NookSelect(genreFilter, listOf(SelectOption("", stringResource(Res.string.movieLibrary_allGenres))) + genres.map { SelectOption(it, it) }, onChange = { genreFilter = it })
-                                NookSelect(directorFilter, listOf(SelectOption("", stringResource(Res.string.movieLibrary_allDirectors))) + directors.map { SelectOption(it, it) }, onChange = { directorFilter = it })
-                                NookSelect(sortKey, sortOptions, onChange = { sortKey = it })
-                            }
-                            Spacer(Modifier.height(24.dp))
+                    if (!searching && isStatusTab && tabMovies.isNotEmpty()) {
+                        item(key = "toolbar") {
+                            LibraryToolbar(
+                                countText = pluralStringResource(Res.plurals.common_itemsCountMovies, filtered.size, filtered.size),
+                                sortOptions = sortOptions,
+                                sortKey = sortKey,
+                                onSort = { sortKey = it },
+                                filtersLabel = stringResource(Res.string.library_filters),
+                                activeFilters = activeFilters,
+                                onOpenFilters = if (genres.size > 1 || directors.size > 1 || activeFilters > 0) ({ filtersOpen = true }) else null,
+                            )
+                            Spacer(Modifier.height(16.dp))
                         }
                     }
 
                     val onRemoveFromCategory: ((Movie) -> Unit)? = activeCategory?.let { cat -> { m -> scope.launch { container.movieCategories.removeMappedItem(cat.id, m.id) } } }
                     when {
                         loading -> skeletonGrid(columns)
+                        searching -> when {
+                            searchResults.isEmpty() -> item(key = "empty-search") {
+                                EmptyState(icon = LucideIcons.Search, title = stringResource(Res.string.movieLibrary_noMoviesFound))
+                            }
+                            else -> movieRows(searchResults, viewMode, columns, onSelect = { selected = it }, onRemove = null, showStatus = true)
+                        }
                         activeCategory != null -> when {
                             categoryMovies.isEmpty() -> item(key = "empty-category") {
                                 CategoryEmptyState(
@@ -230,7 +278,7 @@ fun MoviesLibraryScreen(container: AppContainer, contentPadding: PaddingValues) 
                                     onAdd = { pickerCategory = activeCategory },
                                 )
                             }
-                            else -> movieRows(categoryMovies, viewMode, columns, onSelect = { selected = it }, onRemove = onRemoveFromCategory)
+                            else -> movieRows(categoryMovies, viewMode, columns, onSelect = { selected = it }, onRemove = onRemoveFromCategory, showStatus = true)
                         }
                         filtered.isEmpty() -> item(key = "empty") { EmptyState(icon = LucideIcons.Film, title = stringResource(Res.string.movieLibrary_noMoviesWatched)) }
                         activeStatus == MovieStatus.WATCHED && sort == MovieSort.WATCHED_DATE -> {
@@ -241,14 +289,28 @@ fun MoviesLibraryScreen(container: AppContainer, contentPadding: PaddingValues) 
                                     if (index > 0) Spacer(Modifier.height(32.dp))
                                     YearDivider(year, list.size)
                                 }
-                                movieRows(list, viewMode, columns, keyPrefix = year, onSelect = { selected = it }, onRemove = null)
+                                movieRows(list, viewMode, columns, keyPrefix = year, onSelect = { selected = it }, onRemove = null, showStatus = false)
                             }
                         }
-                        else -> movieRows(filtered, viewMode, columns, onSelect = { selected = it }, onRemove = null)
+                        else -> movieRows(filtered, viewMode, columns, onSelect = { selected = it }, onRemove = null, showStatus = false)
                     }
                 }
             }
         }
+    }
+
+    if (filtersOpen) {
+        LibraryFiltersSheet(
+            title = stringResource(Res.string.library_filters),
+            groups = listOf(
+                FilterGroup(stringResource(Res.string.library_genre), stringResource(Res.string.movieLibrary_allGenres), genres, genreFilter) { genreFilter = it },
+                FilterGroup(stringResource(Res.string.movieLibrary_director), stringResource(Res.string.movieLibrary_allDirectors), directors, directorFilter) { directorFilter = it },
+            ),
+            resetLabel = stringResource(Res.string.library_filtersReset),
+            doneLabel = stringResource(Res.string.library_filtersDone),
+            onReset = { genreFilter = ""; directorFilter = "" },
+            onClose = { filtersOpen = false },
+        )
     }
 
     selected?.let { MovieDetailSheet(container, it, onClose = { selected = null }) }
@@ -271,11 +333,12 @@ fun MoviesLibraryScreen(container: AppContainer, contentPadding: PaddingValues) 
     }
 }
 
-private fun LazyListScope.movieRows(list: List<Movie>, viewMode: ViewMode, columns: Int, keyPrefix: String = "", onSelect: (Movie) -> Unit, onRemove: ((Movie) -> Unit)?) {
+/** Movies as grid cards or list rows; [showStatus] only where statuses mix (a collection, a search). */
+private fun LazyListScope.movieRows(list: List<Movie>, viewMode: ViewMode, columns: Int, keyPrefix: String = "", onSelect: (Movie) -> Unit, onRemove: ((Movie) -> Unit)?, showStatus: Boolean) {
     if (viewMode == ViewMode.GRID) {
-        gridRows(list, columns, key = { keyPrefix + it.id }) { m -> MovieCard(m, onClick = { onSelect(m) }, onRemove = onRemove?.let { r -> { r(m) } }) }
+        gridRows(list, columns, key = { keyPrefix + it.id }) { m -> MovieCard(m, onClick = { onSelect(m) }, onRemove = onRemove?.let { r -> { r(m) } }, showStatus = showStatus) }
     } else {
-        listRows(list, key = { keyPrefix + it.id }) { m -> MovieListRow(m, onClick = { onSelect(m) }, onRemove = onRemove?.let { r -> { r(m) } }) }
+        listRows(list, key = { keyPrefix + it.id }) { m -> MovieListRow(m, onClick = { onSelect(m) }, onRemove = onRemove?.let { r -> { r(m) } }, showStatus = showStatus) }
     }
 }
 

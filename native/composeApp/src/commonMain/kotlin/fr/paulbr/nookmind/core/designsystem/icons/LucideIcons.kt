@@ -92,4 +92,7 @@ object LucideIcons {
     val Drama: ImageVector by lazy { lucide("Drama", listOf("M10 11h.01", "M14 6h.01", "M18 6h.01", "M6.5 13.1h.01", "M22 5c0 9-4 12-6 12s-6-3-6-12c0-2 2-3 6-3s6 1 6 3", "M17.4 9.9c-.8.8-2 .8-2.8 0", "M10.1 7.1C9 7.2 7.7 7.7 6 8.6c-3.5 2-4.7 3.9-3.7 5.6 4.5 7.8 9.5 8.4 11.2 7.4.9-.5 1.9-2.1 1.9-4.7", "M9.1 16.5c.3-1.1 1.4-1.7 2.4-1.4")) }
     val Satellite: ImageVector by lazy { lucide("Satellite", listOf("m13.5 6.5-3.148-3.148a 1.205 1.205 0 0 0 -1.704 0 L6.352 5.648a 1.205 1.205 0 0 0 0 1.704 L9.5 10.5", "M16.5 7.5 19 5", "m17.5 10.5 3.148 3.148a 1.205 1.205 0 0 1 0 1.704 l-2.296 2.296a 1.205 1.205 0 0 1 -1.704 0 L13.5 14.5", "M9 21a 6 6 0 0 0 -6 -6", "M9.352 10.648a 1.205 1.205 0 0 0 0 1.704 l2.296 2.296a 1.205 1.205 0 0 0 1.704 0 l4.296-4.296a 1.205 1.205 0 0 0 0 -1.704 l-2.296-2.296a 1.205 1.205 0 0 0 -1.704 0 z")) }
     val ExternalLink: ImageVector by lazy { lucide("ExternalLink", listOf("M15 3h6v6", "M10 14 21 3", "M18 13v6a 2 2 0 0 1 -2 2 H5a 2 2 0 0 1 -2 -2 V8a 2 2 0 0 1 2 -2 h6")) }
+    val ArrowUpDown: ImageVector by lazy { lucide("ArrowUpDown", listOf("m21 16-4 4-4-4", "M17 20V4", "m3 8 4-4 4 4", "M7 4v16")) }
+    val SlidersHorizontal: ImageVector by lazy { lucide("SlidersHorizontal", listOf("M10 5H3", "M12 19H3", "M14 3v4", "M16 17v4", "M21 12h-9", "M21 19h-5", "M21 5h-7", "M8 10v4", "M8 12H3")) }
+    val Folder: ImageVector by lazy { lucide("Folder", listOf("M20 20a 2 2 0 0 0 2 -2 V8a 2 2 0 0 0 -2 -2 h-7.9a 2 2 0 0 1 -1.69 -.9 L9.6 3.9A 2 2 0 0 0 7.93 3 H4a 2 2 0 0 0 -2 2 v13a 2 2 0 0 0 2 2 Z")) }
 }

@@ -57,8 +57,11 @@ fun waitingLabel(date: String?, fallback: String = stringResource(Res.string.ser
     )
 }
 
-/** Label + colour of the status badge of a series (SeriesCard.tsx rules). */
-class SeriesBadge(val label: String, val color: Color)
+/**
+ * Label + colour of the badge of a series (SeriesCard.tsx rules). [isStatus] marks the badges that
+ * only repeat the status (watched, to watch); the others carry progress or a date.
+ */
+class SeriesBadge(val label: String, val color: Color, val isStatus: Boolean = false)
 
 @Composable
 fun seriesBadge(series: Series): SeriesBadge {
@@ -66,11 +69,11 @@ fun seriesBadge(series: Series): SeriesBadge {
     val waiting = isSeriesWaiting(series)
     val futureFirstEpisode = if (effective == SeriesStatus.WANT_TO_WATCH) waitingLabel(series.firstAirDate, fallback = "") else ""
     return when {
-        effective == SeriesStatus.WATCHED -> SeriesBadge(stringResource(Res.string.seriesCard_watched), Palette.Emerald500)
-        waiting -> SeriesBadge(waitingLabel(series.nextAirDate), Palette.Purple500)
-        effective == SeriesStatus.WATCHING -> SeriesBadge("S${series.watchedSeasons.size}/${series.seasons ?: "?"}", Palette.Blue500)
+        effective == SeriesStatus.WATCHED -> SeriesBadge(stringResource(Res.string.seriesCard_watched), Palette.Emerald500, isStatus = true)
+        waiting -> SeriesBadge(waitingLabel(series.nextAirDate), Palette.Purple600)
+        effective == SeriesStatus.WATCHING -> SeriesBadge("S${series.watchedSeasons.size}/${series.seasons ?: "?"}", Palette.Blue600)
         futureFirstEpisode.isNotEmpty() -> SeriesBadge(futureFirstEpisode, Palette.Sky500)
-        else -> SeriesBadge(stringResource(Res.string.seriesCard_wantToWatch), Palette.Amber500)
+        else -> SeriesBadge(stringResource(Res.string.seriesCard_wantToWatch), Palette.Amber500, isStatus = true)
     }
 }
 
@@ -79,43 +82,48 @@ fun seriesBadge(series: Series): SeriesBadge {
 fun seriesRowBadge(series: Series): SeriesBadge {
     val effective = getEffectiveSeriesStatus(series)
     return when {
-        isSeriesWaiting(series) -> SeriesBadge(waitingLabel(series.nextAirDate), Palette.Purple500)
-        effective == SeriesStatus.WATCHED -> SeriesBadge(stringResource(Res.string.seriesCard_watched), Palette.Emerald500)
-        effective == SeriesStatus.WATCHING -> SeriesBadge(stringResource(Res.string.seriesCard_watching), Palette.Blue500)
-        else -> SeriesBadge(stringResource(Res.string.seriesCard_wantToWatch), Palette.Amber500)
+        isSeriesWaiting(series) -> SeriesBadge(waitingLabel(series.nextAirDate), Palette.Purple600)
+        effective == SeriesStatus.WATCHED -> SeriesBadge(stringResource(Res.string.seriesCard_watched), Palette.Emerald500, isStatus = true)
+        effective == SeriesStatus.WATCHING -> SeriesBadge(stringResource(Res.string.seriesCard_watching), Palette.Blue600, isStatus = true)
+        else -> SeriesBadge(stringResource(Res.string.seriesCard_wantToWatch), Palette.Amber500, isStatus = true)
     }
 }
 
-/** Port of SeriesCard.tsx. */
+/**
+ * Port of SeriesCard.tsx. The badge stays when it carries progress or a date (S2/5, next season);
+ * a badge that only repeats the status shows with [showStatus], for mixed lists. Title on two lines.
+ */
 @Composable
-fun SeriesCard(series: Series, onClick: () -> Unit, modifier: Modifier = Modifier, onRemove: (() -> Unit)? = null) {
+fun SeriesCard(series: Series, onClick: () -> Unit, modifier: Modifier = Modifier, onRemove: (() -> Unit)? = null, showStatus: Boolean = true) {
     val badge = seriesBadge(series)
     val effective = getEffectiveSeriesStatus(series)
     NookCard(modifier, onClick = onClick) {
         Box {
             MediaImage(series.posterUrl, series.title, Modifier.fillMaxWidth(), mode = MediaMode.SERIES) {
-                StatusBadge(badge.label, badge.color, Modifier.align(Alignment.TopEnd).padding(8.dp))
+                if (showStatus || !badge.isStatus) StatusBadge(badge.label, badge.color, Modifier.align(Alignment.TopEnd).padding(8.dp))
             }
             if (onRemove != null) CardRemoveButton(onRemove, Modifier.align(Alignment.TopStart))
         }
         Spacer(Modifier.height(12.dp))
-        Column(Modifier.padding(horizontal = 8.dp).padding(bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(series.title, style = NookTheme.type.cardTitleSerif, color = NookTheme.colors.textStrong, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Column(Modifier.padding(horizontal = 8.dp).padding(bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(series.title, style = NookTheme.type.cardTitleSerif, color = NookTheme.colors.textStrong, minLines = 2, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(series.creator, style = NookTheme.type.xs, color = NookTheme.colors.textSubtle, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (effective == SeriesStatus.WATCHED && series.rating != null) StarRating(series.rating, size = 13.dp)
+            Box(Modifier.fillMaxWidth().height(18.dp), contentAlignment = Alignment.CenterStart) {
+                if (effective == SeriesStatus.WATCHED && series.rating != null) StarRating(series.rating, size = 13.dp)
+            }
         }
     }
 }
 
-/** Port of SeriesListRow (SeriesLibrary.tsx). */
+/** Port of SeriesListRow (SeriesLibrary.tsx). [showStatus] as on [SeriesCard]. */
 @Composable
-fun SeriesListRow(series: Series, onClick: () -> Unit, onRemove: (() -> Unit)? = null) {
+fun SeriesListRow(series: Series, onClick: () -> Unit, onRemove: (() -> Unit)? = null, showStatus: Boolean = true) {
     val wide = LocalWideLayout.current
     val effective = getEffectiveSeriesStatus(series)
     val badge = seriesRowBadge(series)
     LibraryListRow(series.posterUrl, series.title, series.creator, onClick, mode = MediaMode.SERIES, onRemove = onRemove) {
         if (wide && !series.genre.isNullOrBlank()) GenrePill(series.genre, small = true)
-        if (wide && effective == SeriesStatus.WATCHED && series.rating != null) StarRating(series.rating, size = 12.dp)
-        SolidPill(badge.label, badge.color, small = true)
+        if ((wide || !showStatus) && effective == SeriesStatus.WATCHED && series.rating != null) StarRating(series.rating, size = 12.dp)
+        if (showStatus || !badge.isStatus) SolidPill(badge.label, badge.color, small = true)
     }
 }

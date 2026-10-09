@@ -44,6 +44,7 @@ import fr.paulbr.nookmind.core.designsystem.components.NookTextField
 import fr.paulbr.nookmind.core.designsystem.components.PrimaryButton
 import fr.paulbr.nookmind.core.designsystem.components.modeIcon
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
+import fr.paulbr.nookmind.core.designsystem.onFill
 import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.feature.common.SheetHeader
 
@@ -147,7 +148,7 @@ fun CategoryItemPickerSheet(
                                     .border(2.dp, if (isSelected) Palette.Amber500 else if (colors.isDark) Palette.Gray600 else Palette.Gray300, NookShapes.md),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                if (isSelected) Icon(LucideIcons.Check, null, Modifier.size(12.dp), tint = Palette.White)
+                                if (isSelected) Icon(LucideIcons.Check, null, Modifier.size(12.dp), tint = onFill(Palette.Amber500))
                             }
                         }
                     }

@@ -2,7 +2,6 @@ package fr.paulbr.nookmind.feature.library
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,24 +16,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -42,7 +32,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -51,20 +40,16 @@ import fr.paulbr.nookmind.core.designsystem.NookShapes
 import fr.paulbr.nookmind.core.designsystem.NookTheme
 import fr.paulbr.nookmind.core.designsystem.Palette
 import fr.paulbr.nookmind.core.designsystem.alpha
-import fr.paulbr.nookmind.core.designsystem.components.CountBadge
 import fr.paulbr.nookmind.core.designsystem.components.EmptyState
-import fr.paulbr.nookmind.core.designsystem.components.HairlineDivider
 import fr.paulbr.nookmind.core.designsystem.components.IconGhostButton
 import fr.paulbr.nookmind.core.designsystem.components.InlineBanner
 import fr.paulbr.nookmind.core.designsystem.components.BannerTone
 import fr.paulbr.nookmind.core.designsystem.components.MediaImage
 import fr.paulbr.nookmind.core.designsystem.components.NookCard
-import fr.paulbr.nookmind.core.designsystem.components.NookTextField
 import fr.paulbr.nookmind.core.designsystem.components.PrimaryButton
 import fr.paulbr.nookmind.core.designsystem.components.SkeletonBox
 import fr.paulbr.nookmind.core.designsystem.components.TextLink
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
-import fr.paulbr.nookmind.core.model.CollectionItem
 import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.feature.common.LocalWideLayout
 
@@ -151,114 +136,6 @@ fun ViewModeToggle(viewMode: ViewMode, onViewMode: (ViewMode) -> Unit, modifier:
     }
 }
 
-/**
- * Status tabs + collection tabs + "New collection" affordance, horizontally scrollable, over a
- * hairline. The delete cross of a collection shows on its active tab (the web shows it on hover).
- */
-@Composable
-fun LibraryTabsRow(
-    tabs: List<LibraryTab>,
-    categories: List<CollectionItem>,
-    activeId: String,
-    onSelect: (String) -> Unit,
-    onDeleteCategory: (String) -> Unit,
-    newCategoryLabel: String,
-    newCategoryPlaceholder: String,
-    onCreateCategory: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val colors = NookTheme.colors
-    val wide = LocalWideLayout.current
-    var creating by remember { mutableStateOf(false) }
-    var newName by remember { mutableStateOf("") }
-    val focusRequester = remember { FocusRequester() }
-    var hadFocus by remember { mutableStateOf(false) }
-    val scroll = rememberScrollState()
-
-    fun submit() {
-        val name = newName.trim()
-        if (name.isEmpty()) return
-        onCreateCategory(name)
-        newName = ""
-        creating = false
-        hadFocus = false
-    }
-
-    LaunchedEffect(creating) { if (creating) runCatching { focusRequester.requestFocus() } }
-
-    Box(modifier.fillMaxWidth()) {
-        HairlineDivider(Modifier.align(Alignment.BottomCenter))
-        Row(
-            Modifier.horizontalScroll(scroll).padding(horizontal = if (wide) 0.dp else 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.Bottom,
-        ) {
-            tabs.forEach { tab ->
-                val active = tab.id == activeId
-                TabButton(active = active, onClick = { onSelect(tab.id) }, indicator = tab.tone.base()) {
-                    if (tab.icon != null) {
-                        Icon(tab.icon, null, Modifier.size(13.dp), tint = if (active) tab.tone.text() else colors.textSubtle)
-                        Spacer(Modifier.width(6.dp))
-                    }
-                    Text(tab.label, style = NookTheme.type.sans(14, FontWeight.Medium, 20), color = if (active) tab.tone.text() else colors.textSubtle, maxLines = 1)
-                    Spacer(Modifier.width(6.dp))
-                    CountBadge(tab.count, active, activeColor = tab.tone.base(), activeText = tab.tone.text())
-                }
-            }
-            categories.forEach { cat ->
-                val active = cat.id == activeId
-                TabButton(active = active, onClick = { onSelect(cat.id) }, indicator = Palette.Amber500) {
-                    Text(cat.title, style = NookTheme.type.sans(14, FontWeight.Medium, 20), color = if (active) colors.amberText else colors.textSubtle, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.width(IntrinsicWidthLimit))
-                    Spacer(Modifier.width(6.dp))
-                    CountBadge(cat.itemIds.size, active)
-                    if (active) {
-                        Spacer(Modifier.width(4.dp))
-                        IconGhostButton(LucideIcons.X, contentDescription = null, onClick = { onDeleteCategory(cat.id) }, size = 12.dp, padding = 2.dp, tint = colors.textFaint)
-                    }
-                }
-            }
-            if (creating) {
-                Row(Modifier.padding(bottom = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    NookTextField(
-                        value = newName,
-                        onValueChange = { newName = it },
-                        modifier = Modifier.width(144.dp).onFocusChanged {
-                            if (it.hasFocus) hadFocus = true
-                            else if (hadFocus && newName.isBlank()) { creating = false; hadFocus = false }
-                        },
-                        placeholder = newCategoryPlaceholder,
-                        textStyle = NookTheme.type.sm,
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                        imeAction = ImeAction.Done,
-                        keyboardActions = KeyboardActions(onDone = { submit() }),
-                        focusRequester = focusRequester,
-                    )
-                    IconGhostButton(LucideIcons.Check, contentDescription = null, onClick = { submit() }, size = 16.dp, padding = 4.dp, tint = colors.amberText)
-                    IconGhostButton(LucideIcons.X, contentDescription = null, onClick = { creating = false; newName = ""; hadFocus = false }, size = 16.dp, padding = 4.dp, tint = colors.textFaint)
-                }
-            } else {
-                TabButton(active = false, onClick = { creating = true }, indicator = Color.Transparent) {
-                    Icon(LucideIcons.Plus, null, Modifier.size(14.dp), tint = colors.textFaint)
-                    Spacer(Modifier.width(4.dp))
-                    Text(newCategoryLabel.removePrefix("+ "), style = NookTheme.type.sans(14, FontWeight.Medium, 20), color = colors.textFaint, maxLines = 1)
-                }
-            }
-        }
-    }
-}
-
-/** Widest a collection tab label can be before it ellipsizes. */
-private val IntrinsicWidthLimit = Dp.Unspecified
-
-@Composable
-private fun TabButton(active: Boolean, onClick: () -> Unit, indicator: Color, content: @Composable RowScope.() -> Unit) {
-    Column(Modifier.clip(NookShapes.sm).clickable(onClick = onClick).padding(horizontal = 4.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, content = content)
-        Spacer(Modifier.height(12.dp))
-        Box(Modifier.fillMaxWidth().height(2.dp).background(if (active) indicator else Color.Transparent))
-    }
-}
-
 /** Red confirmation banner shown above the content when deleting a collection. */
 @Composable
 fun DeleteCategoryBanner(text: String, yesText: String, cancelText: String, onConfirm: () -> Unit, onCancel: () -> Unit, modifier: Modifier = Modifier) {
@@ -283,18 +160,6 @@ fun CategoryToolbar(countText: String, addLabel: String, onAdd: () -> Unit, modi
         Text(countText, style = NookTheme.type.sm, color = NookTheme.colors.textSubtle, modifier = Modifier.weight(1f))
         PrimaryButton(addLabel, onClick = onAdd, icon = LucideIcons.Plus, iconSize = 15.dp, contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp))
     }
-}
-
-/** Horizontally scrolling row of filter selects. */
-@Composable
-fun FilterRow(modifier: Modifier = Modifier, content: @Composable RowScope.() -> Unit) {
-    val wide = LocalWideLayout.current
-    Row(
-        modifier.horizontalScroll(rememberScrollState()).padding(horizontal = if (wide) 0.dp else 16.dp).padding(bottom = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        content = content,
-    )
 }
 
 /** Pulsing placeholder card of the loading grid. */

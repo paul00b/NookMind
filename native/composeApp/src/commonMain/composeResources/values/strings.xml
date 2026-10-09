@@ -175,11 +175,8 @@
     <string name="library_allAuthors">All authors</string>
     <string name="library_allGenres">All genres</string>
     <string name="library_alreadyInCategory">Already added</string>
+    <string name="library_author">Author</string>
     <string name="library_authorAZ">Author A→Z</string>
-    <plurals name="library_booksCount">
-        <item quantity="one">%1$d book in your collection</item>
-        <item quantity="other">%1$d books in your collection</item>
-    </plurals>
     <string name="library_cancel">Cancel</string>
     <string name="library_categoryEmpty">This collection is empty.</string>
     <string name="library_categoryEmptyDesc">Click "Add books" to add books from your library.</string>
@@ -189,6 +186,10 @@
     <string name="library_deleteCategory">Delete collection</string>
     <string name="library_emptyReadingList">Your reading list is empty</string>
     <string name="library_emptyReadingListDesc">Head to the Home page to search for books and add them to your reading list.</string>
+    <string name="library_filters">Filters</string>
+    <string name="library_filtersDone">Done</string>
+    <string name="library_filtersReset">Reset</string>
+    <string name="library_genre">Genre</string>
     <string name="library_newCategory">+ New collection</string>
     <string name="library_newCategoryPlaceholder">Collection name...</string>
     <string name="library_noBooksFound">No books found</string>
@@ -198,9 +199,11 @@
     <string name="library_read">Read</string>
     <string name="library_reading">Reading</string>
     <string name="library_removeFromCategory">Remove from collection</string>
+    <string name="library_search">Search your library</string>
     <string name="library_searchBooks">Search books...</string>
     <string name="library_title">My Library</string>
     <string name="library_titleAZ">Title A→Z</string>
+    <string name="library_updatePage">Update page</string>
     <string name="library_wantToRead">Want to read</string>
     <string name="login_appleSignInFailed">Apple sign-in failed</string>
     <string name="login_confirmEmail">Check your email to confirm your account, then log in.</string>
@@ -265,11 +268,8 @@
     <string name="movieLibrary_confirmAdd">Add to collection</string>
     <string name="movieLibrary_confirmDeleteCategory">Delete "%1$s"?</string>
     <string name="movieLibrary_dateAdded">Date added</string>
+    <string name="movieLibrary_director">Director</string>
     <string name="movieLibrary_directorAZ">Director A→Z</string>
-    <plurals name="movieLibrary_moviesCount">
-        <item quantity="one">%1$d movie in your collection</item>
-        <item quantity="other">%1$d movies in your collection</item>
-    </plurals>
     <string name="movieLibrary_newCategory">+ New collection</string>
     <string name="movieLibrary_newCategoryPlaceholder">Collection name...</string>
     <string name="movieLibrary_noDateGroup">No date</string>
@@ -277,6 +277,7 @@
     <string name="movieLibrary_noMoviesWatched">No movies watched yet</string>
     <string name="movieLibrary_ratingDesc">Rating ↓</string>
     <string name="movieLibrary_removeFromCategory">Remove from collection</string>
+    <string name="movieLibrary_search">Search your movies</string>
     <string name="movieLibrary_searchMovies">Search movies...</string>
     <string name="movieLibrary_title">My Watchlist</string>
     <string name="movieLibrary_titleAZ">Title A→Z</string>
@@ -309,7 +310,7 @@
     <string name="nextUp_inDays">In %1$d day</string>
     <string name="nextUp_inDaysPlural">In %1$d days</string>
     <string name="nextUp_loadingMovieDetails">Loading movie details...</string>
-    <string name="nextUp_markAsRead">Mark as read ✓</string>
+    <string name="nextUp_markAsRead">Mark as read</string>
     <string name="nextUp_markEpisodeWatched">Watched</string>
     <string name="nextUp_newlyReleasedMovies">Recently released movies</string>
     <string name="nextUp_nextToRead">Next to read</string>
@@ -451,6 +452,7 @@
     <string name="seriesLibrary_categoryEmptyDesc">Click "Add series" to add series from your list.</string>
     <string name="seriesLibrary_confirmAdd">Add to collection</string>
     <string name="seriesLibrary_confirmDeleteCategory">Delete "%1$s"?</string>
+    <string name="seriesLibrary_creator">Creator</string>
     <string name="seriesLibrary_creatorAZ">Creator A→Z</string>
     <string name="seriesLibrary_dateAdded">Date added</string>
     <string name="seriesLibrary_newCategory">+ New collection</string>
@@ -459,11 +461,8 @@
     <string name="seriesLibrary_noSeriesWatched">No series finished yet</string>
     <string name="seriesLibrary_ratingDesc">Rating ↓</string>
     <string name="seriesLibrary_removeFromCategory">Remove from collection</string>
+    <string name="seriesLibrary_search">Search your series</string>
     <string name="seriesLibrary_searchSeries">Search series...</string>
-    <plurals name="seriesLibrary_seriesCount">
-        <item quantity="one">%1$d series in your collection</item>
-        <item quantity="other">%1$d series in your collection</item>
-    </plurals>
     <string name="seriesLibrary_title">My Series</string>
     <string name="seriesLibrary_titleAZ">Title A→Z</string>
     <string name="seriesLibrary_waitingNextSeason">Waiting for next season</string>

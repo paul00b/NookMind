@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import fr.paulbr.nookmind.core.designsystem.NookShapes
 import fr.paulbr.nookmind.core.designsystem.NookTheme
 import fr.paulbr.nookmind.core.designsystem.Palette
+import fr.paulbr.nookmind.core.designsystem.onFill
 import fr.paulbr.nookmind.core.ui.HapticCue
 import fr.paulbr.nookmind.core.ui.LocalNookHaptics
 
@@ -77,7 +78,7 @@ fun NookPressable(
     }
 }
 
-/** `.btn-primary` — amber pill, white medium text, `active:scale-95`. */
+/** `.btn-primary` — amber pill, medium text in [onFill] (dark ink on amber), `active:scale-95`. */
 @Composable
 fun PrimaryButton(
     text: String,
@@ -96,12 +97,12 @@ fun PrimaryButton(
         modifier = modifier,
         enabled = enabled && !loading,
         background = color,
-        contentColor = Palette.White,
+        contentColor = onFill(color),
         contentPadding = contentPadding,
         pressScale = 0.95f,
     ) {
         if (loading) {
-            Spinner(size = 16.dp, color = Palette.White, trackColor = Palette.White.copy(alpha = 0.3f))
+            Spinner(size = 16.dp, color = onFill(color), trackColor = onFill(color).copy(alpha = 0.3f))
             Spacer8()
         } else if (icon != null) {
             Icon(icon, contentDescription = null, modifier = Modifier.size(iconSize))
@@ -225,7 +226,7 @@ fun ChoiceChip(
         shape = shape,
         background = if (selected) selectedColor else Color.Transparent,
         borderColor = if (selected) selectedColor else colors.borderNeutral,
-        contentColor = if (selected) Palette.White else colors.textMuted,
+        contentColor = if (selected) onFill(selectedColor) else colors.textMuted,
         contentPadding = contentPadding,
     ) {
         Text(text, style = textStyle, maxLines = 1, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
@@ -244,7 +245,7 @@ fun PillTab(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modi
         },
         modifier = modifier,
         background = if (selected) color else colors.surfaceMuted,
-        contentColor = if (selected) Palette.White else colors.textSubtle,
+        contentColor = if (selected) onFill(color) else colors.textSubtle,
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
     ) {
         Text(text, style = NookTheme.type.sans(12, FontWeight.SemiBold, 16), maxLines = 1)

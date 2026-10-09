@@ -13,11 +13,11 @@ import fr.paulbr.nookmind.core.model.Series
 import fr.paulbr.nookmind.core.model.SeriesCategory
 import fr.paulbr.nookmind.core.model.SeriesStatus
 
-/** Sample library used by the screenshot tool (no network: covers stay as placeholders). */
+/** Sample library used by the screenshot tool. Covers stay placeholders unless [FakeCovers] fills them in. */
 object FakeData {
     private const val USER = "user-1"
 
-    val books: List<Book> = listOf(
+    var books: List<Book> = listOf(
         Book("b1", USER, "g1", "Dune", "Frank Herbert", "Set on the desert planet Arrakis, Dune is the story of the boy Paul Atreides, heir to a noble family tasked with ruling an inhospitable world where the only thing of value is the spice melange.", null, "1965-08-01", 412, "Science Fiction", BookStatus.READING, null, "Reread for the film.", 180, "2026-09-10T10:00:00+00:00"),
         Book("b2", USER, "g2", "Le Comte de Monte-Cristo", "Alexandre Dumas", "Edmond Dantès est injustement emprisonné au château d'If.", null, "1844-01-01", 1276, "Classique", BookStatus.WANT_TO_READ, null, null, null, "2026-09-09T10:00:00+00:00"),
         Book("b3", USER, "g3", "The Left Hand of Darkness", "Ursula K. Le Guin", null, null, "1969-03-01", 304, "Science Fiction", BookStatus.WANT_TO_READ, null, null, null, "2026-09-08T10:00:00+00:00"),
@@ -28,17 +28,17 @@ object FakeData {
     )
 
     /** Search results that are not in the library yet, for the add sheets (no duplicate warning). */
-    val newBook = Book(
+    var newBook = Book(
         "", USER, "g9", "La Croisée des chemins", "Franck Thilliez",
         "La Croisée des chemins est une nouvelle de Franck Thilliez issue du recueil Au-delà de l'horizon et autres nouvelles. Martin, un jeune garçon, est retenu prisonnier par Claude, un homme taiseux qui vit seul dans les bois.",
         null, "2021-03-04", 14, "Fiction", BookStatus.WANT_TO_READ, null, null, null, "",
     )
-    val newMovie = Movie(
+    var newMovie = Movie(
         "", USER, 157336, "Interstellar", "Christopher Nolan",
         "The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.",
         null, "2014-11-05", 169, "Science Fiction", MovieStatus.WANT_TO_WATCH, null, null, null, "",
     )
-    val newSeries = Series(
+    var newSeries = Series(
         "", USER, 95396, "Severance", "Dan Erickson",
         "Mark leads a team of office workers whose memories have been surgically divided between their work and personal lives.",
         null, "2022-02-17", 2, emptyList(), emptyMap(), "Drama", SeriesStatus.WANT_TO_WATCH, null, null, null, null, null, "",
@@ -56,7 +56,7 @@ object FakeData {
         GoogleBookVolume("v4", GoogleVolumeInfo(title = "The Dune Encyclopedia", authors = listOf("Willis E. McNelly"), publishedDate = "1984")),
     )
 
-    val movies: List<Movie> = listOf(
+    var movies: List<Movie> = listOf(
         Movie("m1", USER, 438631, "Dune", "Denis Villeneuve", "Paul Atreides, a brilliant and gifted young man born into a great destiny beyond his understanding, must travel to the most dangerous planet in the universe.", null, "2021-09-15", 155, "Science Fiction", MovieStatus.WATCHED, "2026-08-30", 4.5, null, "2026-09-10T10:00:00+00:00"),
         Movie("m2", USER, 693134, "Dune: Part Two", "Denis Villeneuve", null, null, "2024-02-27", 167, "Science Fiction", MovieStatus.WATCHED, "2025-03-02", 5.0, "Even better on IMAX.", "2026-09-09T10:00:00+00:00"),
         Movie("m3", USER, 27205, "Inception", "Christopher Nolan", null, null, "2010-07-15", 148, "Action", MovieStatus.WANT_TO_WATCH, null, null, null, "2026-09-08T10:00:00+00:00"),
@@ -68,7 +68,7 @@ object FakeData {
         MovieCategory("mc1", USER, "Nolan", "2026-06-01T10:00:00+00:00", listOf("m3", "m4")),
     )
 
-    val series: List<Series> = listOf(
+    var series: List<Series> = listOf(
         Series("s1", USER, 1396, "Breaking Bad", "Vince Gilligan", "A chemistry teacher diagnosed with cancer turns to manufacturing methamphetamine.", null, "2008-01-20", 5, listOf(1, 2), mapOf("3" to listOf(1, 2, 3)), "Drama", SeriesStatus.WATCHING, null, null, null, null, null, "2026-09-10T10:00:00+00:00"),
         Series("s2", USER, 94997, "House of the Dragon", "Ryan Condal", null, null, "2022-08-21", 2, listOf(1, 2), emptyMap(), "Fantasy", SeriesStatus.WATCHING, null, null, "2026-12-15", 3, 1, "2026-09-09T10:00:00+00:00"),
         Series("s3", USER, 66732, "Stranger Things", "The Duffer Brothers", null, null, "2016-07-15", 5, listOf(1, 2, 3, 4), emptyMap(), "Science Fiction", SeriesStatus.WATCHING, null, null, "2026-10-01", 5, 1, "2026-09-08T10:00:00+00:00"),

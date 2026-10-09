@@ -324,7 +324,7 @@ val checkApis by tasks.registering(JavaExec::class) {
 /** Renders [fr.paulbr.nookmind.tools.ScreenshotCatalog] to PNG files, headless (design review, CI). */
 val screenshots by tasks.registering(JavaExec::class) {
     group = "nookmind"
-    description = "Render the ScreenshotCatalog to PNG files (headless): -PoutDir=… -Ponly=a,b -Plocale=fr"
+    description = "Render the ScreenshotCatalog to PNG files (headless): -PoutDir=… -Ponly=a,b -Plocale=fr -Pcovers -PsettleMs=3000"
     val desktopTarget = kotlin.targets.getByName("desktop") as org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
     val mainCompilation = desktopTarget.compilations.getByName("main")
     dependsOn(mainCompilation.compileTaskProvider)
@@ -335,6 +335,10 @@ val screenshots by tasks.registering(JavaExec::class) {
     args(
         listOf(project.findProperty("outDir")?.toString() ?: "build/screenshots") +
             (project.findProperty("only")?.toString()?.split(",") ?: emptyList()) +
-            listOfNotNull(project.findProperty("locale")?.toString()?.let { "--locale=$it" }),
+            listOfNotNull(
+                project.findProperty("locale")?.toString()?.let { "--locale=$it" },
+                project.findProperty("settleMs")?.toString()?.let { "--settle-ms=$it" },
+                if (project.hasProperty("covers")) "--covers" else null,
+            ),
     )
 }

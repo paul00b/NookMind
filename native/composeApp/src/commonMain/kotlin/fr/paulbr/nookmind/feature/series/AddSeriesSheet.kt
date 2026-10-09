@@ -214,7 +214,7 @@ fun AddSeriesSheet(container: AppContainer, prefill: Series?, onClose: () -> Uni
                                     },
                                     when (derivedStatus) {
                                         SeriesStatus.WATCHED -> Palette.Emerald500
-                                        SeriesStatus.WATCHING -> Palette.Blue500
+                                        SeriesStatus.WATCHING -> Palette.Blue600
                                         SeriesStatus.WANT_TO_WATCH -> Palette.Amber500
                                     },
                                     small = true,

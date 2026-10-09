@@ -148,11 +148,12 @@ val DarkNookColors = NookColors(
 
 /** Per-mode accent (amber / indigo / teal). */
 @Immutable
-data class ModeAccent(val base: Color, val strong: Color, val text: Color, val subtle: Color)
+/** [fill] is the solid colour of a selected control; it differs from [base] where text on [base] is unreadable. */
+data class ModeAccent(val base: Color, val strong: Color, val text: Color, val subtle: Color, val fill: Color = base)
 
 fun NookColors.accent(mode: MediaMode): ModeAccent = when (mode) {
     MediaMode.BOOKS -> ModeAccent(Palette.Amber500, Palette.Amber600, amberText, Palette.Amber500.alpha(0.10f))
-    MediaMode.MOVIES -> ModeAccent(Palette.Indigo500, Palette.Indigo600, indigoText, Palette.Indigo500.alpha(0.10f))
+    MediaMode.MOVIES -> ModeAccent(Palette.Indigo500, Palette.Indigo600, indigoText, Palette.Indigo500.alpha(0.10f), fill = Palette.Indigo600)
     MediaMode.SERIES -> ModeAccent(Palette.Teal500, Palette.Teal600, tealText, Palette.Teal500.alpha(0.10f))
 }
 
@@ -266,7 +267,7 @@ private fun materialScheme(colors: NookColors, accent: ModeAccent): ColorScheme 
     val base = if (colors.isDark) darkColorScheme() else lightColorScheme()
     return base.copy(
         primary = accent.base,
-        onPrimary = Palette.White,
+        onPrimary = onFill(accent.base),
         background = colors.background,
         onBackground = colors.textBody,
         surface = colors.surface,

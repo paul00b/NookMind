@@ -78,6 +78,7 @@ import fr.paulbr.nookmind.core.designsystem.components.SectionHeader
 import fr.paulbr.nookmind.core.designsystem.components.SkeletonBox
 import fr.paulbr.nookmind.core.designsystem.components.StarRating
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
+import fr.paulbr.nookmind.core.designsystem.onFill
 import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.core.platform.logDebug
 import fr.paulbr.nookmind.feature.shell.TABLET_BREAKPOINT_DP
@@ -453,13 +454,13 @@ fun PosterSlideCard(
     }
 }
 
-/** Small corner badge on a slider poster (`text-[10px] font-bold text-white px-1.5 py-0.5 rounded-md`). */
+/** Small corner badge on a slider poster (`text-[10px] font-bold px-1.5 py-0.5 rounded-md`), text per [onFill]. */
 @Composable
 fun BoxScope.PosterCornerBadge(text: String, color: Color) {
     Text(
         text,
         style = NookTheme.type.sans(10, FontWeight.Bold, 14),
-        color = Palette.White,
+        color = onFill(color),
         modifier = Modifier
             .align(Alignment.BottomEnd)
             .padding(6.dp)

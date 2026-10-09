@@ -28,8 +28,6 @@ import fr.paulbr.nookmind.core.data.ViewMode
 import fr.paulbr.nookmind.core.designsystem.NookTheme
 import fr.paulbr.nookmind.core.designsystem.Palette
 import fr.paulbr.nookmind.core.designsystem.components.EmptyState
-import fr.paulbr.nookmind.core.designsystem.components.IconGhostButton
-import fr.paulbr.nookmind.core.designsystem.components.NookSelect
 import fr.paulbr.nookmind.core.designsystem.components.SectionHeader
 import fr.paulbr.nookmind.core.designsystem.components.SelectOption
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
@@ -52,6 +50,10 @@ import fr.paulbr.nookmind.feature.shell.TABLET_BREAKPOINT_DP
 import fr.paulbr.nookmind.resources.Res
 import fr.paulbr.nookmind.resources.common_collectionDeleted
 import fr.paulbr.nookmind.resources.common_itemsCountSeries
+import fr.paulbr.nookmind.resources.library_filters
+import fr.paulbr.nookmind.resources.library_filtersDone
+import fr.paulbr.nookmind.resources.library_filtersReset
+import fr.paulbr.nookmind.resources.library_genre
 import fr.paulbr.nookmind.resources.seriesLibrary_addNSeries
 import fr.paulbr.nookmind.resources.seriesLibrary_addSeries
 import fr.paulbr.nookmind.resources.seriesLibrary_addSeriesTo
@@ -63,6 +65,7 @@ import fr.paulbr.nookmind.resources.seriesLibrary_categoryEmpty
 import fr.paulbr.nookmind.resources.seriesLibrary_categoryEmptyDesc
 import fr.paulbr.nookmind.resources.seriesLibrary_confirmAdd
 import fr.paulbr.nookmind.resources.seriesLibrary_confirmDeleteCategory
+import fr.paulbr.nookmind.resources.seriesLibrary_creator
 import fr.paulbr.nookmind.resources.seriesLibrary_creatorAZ
 import fr.paulbr.nookmind.resources.seriesLibrary_dateAdded
 import fr.paulbr.nookmind.resources.seriesLibrary_newCategory
@@ -70,8 +73,8 @@ import fr.paulbr.nookmind.resources.seriesLibrary_newCategoryPlaceholder
 import fr.paulbr.nookmind.resources.seriesLibrary_noSeriesFound
 import fr.paulbr.nookmind.resources.seriesLibrary_noSeriesWatched
 import fr.paulbr.nookmind.resources.seriesLibrary_ratingDesc
+import fr.paulbr.nookmind.resources.seriesLibrary_search
 import fr.paulbr.nookmind.resources.seriesLibrary_searchSeries
-import fr.paulbr.nookmind.resources.seriesLibrary_seriesCount
 import fr.paulbr.nookmind.resources.seriesLibrary_title
 import fr.paulbr.nookmind.resources.seriesLibrary_titleAZ
 import fr.paulbr.nookmind.resources.seriesLibrary_waitingNextSeason
@@ -97,6 +100,9 @@ fun SeriesLibraryScreen(container: AppContainer, contentPadding: PaddingValues) 
     var genreFilter by rememberSaveable { mutableStateOf("") }
     var creatorFilter by rememberSaveable { mutableStateOf("") }
     var sortKey by rememberSaveable { mutableStateOf(SeriesSort.CREATED.key) }
+    var searchOpen by rememberSaveable { mutableStateOf(false) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var filtersOpen by remember { mutableStateOf(false) }
     var viewMode by remember { mutableStateOf(container.prefs.viewMode(MediaMode.SERIES)) }
     var selected by remember { mutableStateOf<Series?>(null) }
     var pickerCategory by remember { mutableStateOf<SeriesCategory?>(null) }
@@ -117,8 +123,9 @@ fun SeriesLibraryScreen(container: AppContainer, contentPadding: PaddingValues) 
     }
 
     val tabSeries = if (activeStatus != null) series.filter { matchesTab(it, activeStatus) } else emptyList()
-    val genres = tabSeries.mapNotNull { it.genre?.takeIf(String::isNotBlank) }.distinct()
-    val creators = tabSeries.map { it.creator }.filter { it.isNotBlank() }.distinct()
+    val searching = searchOpen && query.isNotBlank()
+    val genres = tabSeries.mapNotNull { it.genre?.takeIf(String::isNotBlank) }.distinct().sorted()
+    val creators = tabSeries.map { it.creator }.filter { it.isNotBlank() }.distinct().sorted()
     val filtered = tabSeries
         .filter { genreFilter.isEmpty() || it.genre == genreFilter }
         .filter { creatorFilter.isEmpty() || it.creator == creatorFilter }
@@ -131,6 +138,12 @@ fun SeriesLibraryScreen(container: AppContainer, contentPadding: PaddingValues) 
             }
         }
     val categorySeries = activeCategory?.let { cat -> series.filter { it.id in cat.itemIds } } ?: emptyList()
+    val searchResults = if (searching) {
+        val q = query.trim()
+        series.filter { it.title.contains(q, ignoreCase = true) || it.creator.contains(q, ignoreCase = true) }
+            .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.title })
+    } else emptyList()
+    val activeFilters = listOf(genreFilter, creatorFilter).count { it.isNotEmpty() }
 
     val tabs = listOf(
         LibraryTab(SeriesStatus.WATCHING.key, stringResource(Res.string.seriesLibrary_watching), series.count { matchesTab(it, SeriesStatus.WATCHING) }, TabTone.BLUE, LucideIcons.Play),
@@ -150,6 +163,7 @@ fun SeriesLibraryScreen(container: AppContainer, contentPadding: PaddingValues) 
         val columns = libraryColumns(maxWidth)
         CompositionLocalProvider(LocalWideLayout provides wide) {
             val pad = libraryPagePadding()
+            val bleed = if (wide) Modifier else Modifier.horizontalBleed(pad)
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                 LazyColumn(
                     Modifier.fillMaxHeight().fillMaxWidth().widthIn(max = LIBRARY_MAX_WIDTH),
@@ -159,31 +173,46 @@ fun SeriesLibraryScreen(container: AppContainer, contentPadding: PaddingValues) 
                         LibraryHeader(
                             title = stringResource(Res.string.seriesLibrary_title),
                             titleColor = NookTheme.colors.tealText,
-                            subtitle = pluralStringResource(Res.plurals.seriesLibrary_seriesCount, series.size, series.size),
+                            subtitle = pluralStringResource(Res.plurals.common_itemsCountSeries, series.size, series.size),
                             viewMode = viewMode,
                             onViewMode = { viewMode = it; container.prefs.setViewMode(MediaMode.SERIES, it) },
                             actions = {
-                                IconGhostButton(LucideIcons.BarChart2, contentDescription = null, onClick = { showStats = true }, size = 18.dp, tint = NookTheme.colors.textFaint, shape = fr.paulbr.nookmind.core.designsystem.NookShapes.xl)
+                                LibraryHeaderButton(LucideIcons.BarChart2, contentDescription = null, onClick = { showStats = true })
+                                LibraryHeaderButton(LucideIcons.Search, stringResource(Res.string.seriesLibrary_search), active = searchOpen, onClick = {
+                                    searchOpen = !searchOpen
+                                    if (!searchOpen) query = ""
+                                })
                             },
                         )
-                        Spacer(Modifier.height(24.dp))
+                        Spacer(Modifier.height(if (searchOpen) 16.dp else 20.dp))
                     }
-                    item(key = "tabs") {
-                        LibraryTabsRow(
-                            tabs = tabs,
-                            categories = categories,
-                            activeId = activeTab,
-                            onSelect = { id ->
-                                activeTab = id
-                                if (SeriesStatus.entries.any { it.key == id }) { genreFilter = ""; creatorFilter = "" }
-                            },
-                            onDeleteCategory = { deletingCategoryId = it },
-                            newCategoryLabel = stringResource(Res.string.seriesLibrary_newCategory),
-                            newCategoryPlaceholder = stringResource(Res.string.seriesLibrary_newCategoryPlaceholder),
-                            onCreateCategory = { name -> scope.launch { container.seriesCategories.create(name)?.let { activeTab = it.id } } },
-                            modifier = if (wide) Modifier else Modifier.horizontalBleed(pad),
-                        )
-                        Spacer(Modifier.height(24.dp))
+                    if (searchOpen) {
+                        item(key = "search") {
+                            LibrarySearchField(query, { query = it }, stringResource(Res.string.seriesLibrary_search), onClose = { searchOpen = false; query = "" })
+                            Spacer(Modifier.height(20.dp))
+                        }
+                    }
+                    if (!searching) {
+                        item(key = "tabs") {
+                            LibraryStatusTabs(
+                                tabs = tabs,
+                                activeId = activeTab,
+                                onSelect = { id -> activeTab = id; genreFilter = ""; creatorFilter = "" },
+                                modifier = bleed,
+                            )
+                            Spacer(Modifier.height(14.dp))
+                            CollectionChipsRow(
+                                categories = categories,
+                                activeId = activeTab,
+                                onSelect = { id -> activeTab = id },
+                                onDeleteCategory = { deletingCategoryId = it },
+                                newCategoryLabel = stringResource(Res.string.seriesLibrary_newCategory),
+                                newCategoryPlaceholder = stringResource(Res.string.seriesLibrary_newCategoryPlaceholder),
+                                onCreateCategory = { name -> scope.launch { container.seriesCategories.create(name)?.let { activeTab = it.id } } },
+                                modifier = bleed,
+                            )
+                            Spacer(Modifier.height(20.dp))
+                        }
                     }
                     deletingCategoryId?.let { id ->
                         val cat = categories.firstOrNull { it.id == id }
@@ -202,7 +231,7 @@ fun SeriesLibraryScreen(container: AppContainer, contentPadding: PaddingValues) 
                             Spacer(Modifier.height(16.dp))
                         }
                     }
-                    if (activeCategory != null) {
+                    if (!searching && activeCategory != null) {
                         item(key = "category-toolbar") {
                             CategoryToolbar(
                                 countText = pluralStringResource(Res.plurals.common_itemsCountSeries, activeCategory.itemIds.size, activeCategory.itemIds.size),
@@ -212,20 +241,30 @@ fun SeriesLibraryScreen(container: AppContainer, contentPadding: PaddingValues) 
                             Spacer(Modifier.height(16.dp))
                         }
                     }
-                    if (isStatusTab && tabSeries.isNotEmpty()) {
-                        item(key = "filters") {
-                            FilterRow(if (wide) Modifier else Modifier.horizontalBleed(pad)) {
-                                NookSelect(genreFilter, listOf(SelectOption("", stringResource(Res.string.seriesLibrary_allGenres))) + genres.map { SelectOption(it, it) }, onChange = { genreFilter = it })
-                                NookSelect(creatorFilter, listOf(SelectOption("", stringResource(Res.string.seriesLibrary_allCreators))) + creators.map { SelectOption(it, it) }, onChange = { creatorFilter = it })
-                                NookSelect(sortKey, sortOptions, onChange = { sortKey = it })
-                            }
-                            Spacer(Modifier.height(24.dp))
+                    if (!searching && isStatusTab && tabSeries.isNotEmpty()) {
+                        item(key = "toolbar") {
+                            LibraryToolbar(
+                                countText = pluralStringResource(Res.plurals.common_itemsCountSeries, filtered.size, filtered.size),
+                                sortOptions = sortOptions,
+                                sortKey = sortKey,
+                                onSort = { sortKey = it },
+                                filtersLabel = stringResource(Res.string.library_filters),
+                                activeFilters = activeFilters,
+                                onOpenFilters = if (genres.size > 1 || creators.size > 1 || activeFilters > 0) ({ filtersOpen = true }) else null,
+                            )
+                            Spacer(Modifier.height(16.dp))
                         }
                     }
 
                     val onRemoveFromCategory: ((Series) -> Unit)? = activeCategory?.let { cat -> { s -> scope.launch { container.seriesCategories.removeMappedItem(cat.id, s.id) } } }
                     when {
                         loading -> skeletonGrid(columns)
+                        searching -> when {
+                            searchResults.isEmpty() -> item(key = "empty-search") {
+                                EmptyState(icon = LucideIcons.Search, title = stringResource(Res.string.seriesLibrary_noSeriesFound))
+                            }
+                            else -> seriesRows(searchResults, viewMode, columns, onSelect = { selected = it }, onRemove = null, showStatus = true)
+                        }
                         activeCategory != null -> when {
                             categorySeries.isEmpty() -> item(key = "empty-category") {
                                 CategoryEmptyState(
@@ -235,7 +274,7 @@ fun SeriesLibraryScreen(container: AppContainer, contentPadding: PaddingValues) 
                                     onAdd = { pickerCategory = activeCategory },
                                 )
                             }
-                            else -> seriesRows(categorySeries, viewMode, columns, onSelect = { selected = it }, onRemove = onRemoveFromCategory)
+                            else -> seriesRows(categorySeries, viewMode, columns, onSelect = { selected = it }, onRemove = onRemoveFromCategory, showStatus = true)
                         }
                         filtered.isEmpty() -> item(key = "empty") { EmptyState(icon = LucideIcons.Tv, title = stringResource(Res.string.seriesLibrary_noSeriesWatched)) }
                         activeStatus == SeriesStatus.WATCHING -> {
@@ -246,7 +285,7 @@ fun SeriesLibraryScreen(container: AppContainer, contentPadding: PaddingValues) 
                                     SectionHeader(stringResource(Res.string.seriesLibrary_watching), icon = LucideIcons.Play, color = NookTheme.colors.blueText)
                                     Spacer(Modifier.height(16.dp))
                                 }
-                                seriesRows(active, viewMode, columns, keyPrefix = "active", onSelect = { selected = it }, onRemove = null)
+                                seriesRows(active, viewMode, columns, keyPrefix = "active", onSelect = { selected = it }, onRemove = null, showStatus = false)
                             }
                             if (waiting.isNotEmpty()) {
                                 item(key = "waiting-header") {
@@ -254,14 +293,28 @@ fun SeriesLibraryScreen(container: AppContainer, contentPadding: PaddingValues) 
                                     SectionHeader(stringResource(Res.string.seriesLibrary_waitingNextSeason), icon = LucideIcons.Clock, color = NookTheme.colors.purpleText)
                                     Spacer(Modifier.height(16.dp))
                                 }
-                                seriesRows(waiting, viewMode, columns, keyPrefix = "waiting", onSelect = { selected = it }, onRemove = null)
+                                seriesRows(waiting, viewMode, columns, keyPrefix = "waiting", onSelect = { selected = it }, onRemove = null, showStatus = false)
                             }
                         }
-                        else -> seriesRows(filtered, viewMode, columns, onSelect = { selected = it }, onRemove = null)
+                        else -> seriesRows(filtered, viewMode, columns, onSelect = { selected = it }, onRemove = null, showStatus = false)
                     }
                 }
             }
         }
+    }
+
+    if (filtersOpen) {
+        LibraryFiltersSheet(
+            title = stringResource(Res.string.library_filters),
+            groups = listOf(
+                FilterGroup(stringResource(Res.string.library_genre), stringResource(Res.string.seriesLibrary_allGenres), genres, genreFilter) { genreFilter = it },
+                FilterGroup(stringResource(Res.string.seriesLibrary_creator), stringResource(Res.string.seriesLibrary_allCreators), creators, creatorFilter) { creatorFilter = it },
+            ),
+            resetLabel = stringResource(Res.string.library_filtersReset),
+            doneLabel = stringResource(Res.string.library_filtersDone),
+            onReset = { genreFilter = ""; creatorFilter = "" },
+            onClose = { filtersOpen = false },
+        )
     }
 
     selected?.let { SeriesDetailSheet(container, it, onClose = { selected = null }) }
@@ -285,10 +338,11 @@ fun SeriesLibraryScreen(container: AppContainer, contentPadding: PaddingValues) 
     }
 }
 
-private fun LazyListScope.seriesRows(list: List<Series>, viewMode: ViewMode, columns: Int, keyPrefix: String = "", onSelect: (Series) -> Unit, onRemove: ((Series) -> Unit)?) {
+/** Series as grid cards or list rows; [showStatus] only where statuses mix (a collection, a search). */
+private fun LazyListScope.seriesRows(list: List<Series>, viewMode: ViewMode, columns: Int, keyPrefix: String = "", onSelect: (Series) -> Unit, onRemove: ((Series) -> Unit)?, showStatus: Boolean) {
     if (viewMode == ViewMode.GRID) {
-        gridRows(list, columns, key = { keyPrefix + it.id }) { s -> SeriesCard(s, onClick = { onSelect(s) }, onRemove = onRemove?.let { r -> { r(s) } }) }
+        gridRows(list, columns, key = { keyPrefix + it.id }) { s -> SeriesCard(s, onClick = { onSelect(s) }, onRemove = onRemove?.let { r -> { r(s) } }, showStatus = showStatus) }
     } else {
-        listRows(list, key = { keyPrefix + it.id }) { s -> SeriesListRow(s, onClick = { onSelect(s) }, onRemove = onRemove?.let { r -> { r(s) } }) }
+        listRows(list, key = { keyPrefix + it.id }) { s -> SeriesListRow(s, onClick = { onSelect(s) }, onRemove = onRemove?.let { r -> { r(s) } }, showStatus = showStatus) }
     }
 }

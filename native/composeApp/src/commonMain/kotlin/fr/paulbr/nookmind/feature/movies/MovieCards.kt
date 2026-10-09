@@ -22,6 +22,7 @@ import fr.paulbr.nookmind.core.designsystem.components.NookCard
 import fr.paulbr.nookmind.core.designsystem.components.SolidPill
 import fr.paulbr.nookmind.core.designsystem.components.StarRating
 import fr.paulbr.nookmind.core.designsystem.components.StatusBadge
+import fr.paulbr.nookmind.core.domain.yearOf
 import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.core.model.Movie
 import fr.paulbr.nookmind.core.model.MovieStatus
@@ -33,6 +34,7 @@ import fr.paulbr.nookmind.resources.addMovie_alreadyWatched
 import fr.paulbr.nookmind.resources.addMovie_wantToWatch
 import fr.paulbr.nookmind.resources.movieCard_wantToWatch
 import fr.paulbr.nookmind.resources.movieCard_watched
+import fr.paulbr.nookmind.resources.movieDetail_runtime
 import org.jetbrains.compose.resources.stringResource
 
 fun movieStatusColor(status: MovieStatus): Color = when (status) {
@@ -53,32 +55,48 @@ fun movieStatusOptions(): List<Pair<String, String>> = listOf(
     MovieStatus.WATCHED.key to stringResource(Res.string.addMovie_alreadyWatched),
 )
 
-/** Port of MovieCard.tsx. */
+/**
+ * Port of MovieCard.tsx: poster, title on two lines, director, then stars once watched or
+ * "year · length" before. [showStatus] puts the status badge on the poster, for mixed lists only.
+ */
 @Composable
-fun MovieCard(movie: Movie, onClick: () -> Unit, modifier: Modifier = Modifier, onRemove: (() -> Unit)? = null) {
+fun MovieCard(movie: Movie, onClick: () -> Unit, modifier: Modifier = Modifier, onRemove: (() -> Unit)? = null, showStatus: Boolean = true) {
     NookCard(modifier, onClick = onClick) {
         Box {
             MediaImage(movie.posterUrl, movie.title, Modifier.fillMaxWidth(), mode = MediaMode.MOVIES) {
-                StatusBadge(movieStatusLabel(movie.status), movieStatusColor(movie.status), Modifier.align(Alignment.TopEnd).padding(8.dp))
+                if (showStatus) StatusBadge(movieStatusLabel(movie.status), movieStatusColor(movie.status), Modifier.align(Alignment.TopEnd).padding(8.dp))
             }
             if (onRemove != null) CardRemoveButton(onRemove, Modifier.align(Alignment.TopStart))
         }
         Spacer(Modifier.height(12.dp))
-        Column(Modifier.padding(horizontal = 8.dp).padding(bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(movie.title, style = NookTheme.type.cardTitleSerif, color = NookTheme.colors.textStrong, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Column(Modifier.padding(horizontal = 8.dp).padding(bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(movie.title, style = NookTheme.type.cardTitleSerif, color = NookTheme.colors.textStrong, minLines = 2, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(movie.director, style = NookTheme.type.xs, color = NookTheme.colors.textSubtle, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (movie.status == MovieStatus.WATCHED && movie.rating != null) StarRating(movie.rating, size = 13.dp)
+            Box(Modifier.fillMaxWidth().height(18.dp), contentAlignment = Alignment.CenterStart) {
+                if (movie.status == MovieStatus.WATCHED && movie.rating != null) {
+                    StarRating(movie.rating, size = 13.dp)
+                } else {
+                    movieMeta(movie)?.let { Text(it, style = NookTheme.type.xs, color = NookTheme.colors.textSubtle, maxLines = 1) }
+                }
+            }
         }
     }
 }
 
-/** Port of MovieListRow (MovieLibrary.tsx). */
+/** "2010 · 148 min", or whichever half is known; null with neither. */
 @Composable
-fun MovieListRow(movie: Movie, onClick: () -> Unit, onRemove: (() -> Unit)? = null) {
+fun movieMeta(movie: Movie): String? {
+    val runtime = movie.runtime?.let { stringResource(Res.string.movieDetail_runtime, it) }
+    return listOfNotNull(yearOf(movie.releaseDate), runtime).joinToString(" · ").ifBlank { null }
+}
+
+/** Port of MovieListRow (MovieLibrary.tsx). [showStatus] as on [MovieCard]; without it a watched movie shows its stars. */
+@Composable
+fun MovieListRow(movie: Movie, onClick: () -> Unit, onRemove: (() -> Unit)? = null, showStatus: Boolean = true) {
     val wide = LocalWideLayout.current
     LibraryListRow(movie.posterUrl, movie.title, movie.director, onClick, mode = MediaMode.MOVIES, onRemove = onRemove) {
         if (wide && !movie.genre.isNullOrBlank()) GenrePill(movie.genre, small = true)
-        if (wide && movie.status == MovieStatus.WATCHED && movie.rating != null) StarRating(movie.rating, size = 12.dp)
-        SolidPill(movieStatusLabel(movie.status), movieStatusColor(movie.status), small = true)
+        if ((wide || !showStatus) && movie.status == MovieStatus.WATCHED && movie.rating != null) StarRating(movie.rating, size = 12.dp)
+        if (showStatus) SolidPill(movieStatusLabel(movie.status), movieStatusColor(movie.status), small = true)
     }
 }

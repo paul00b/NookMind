@@ -25,6 +25,7 @@ import fr.paulbr.nookmind.core.designsystem.NookTheme
 import fr.paulbr.nookmind.core.designsystem.Palette
 import fr.paulbr.nookmind.core.designsystem.components.Spinner
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
+import fr.paulbr.nookmind.core.designsystem.onFill
 import fr.paulbr.nookmind.core.domain.SearchSections
 import fr.paulbr.nookmind.core.domain.getEffectiveSeriesStatus
 import fr.paulbr.nookmind.core.domain.isSeriesWaiting
@@ -132,7 +133,7 @@ fun SeriesHomeScreen(container: AppContainer, contentPadding: PaddingValues) {
                     PosterSlider(stringResource(Res.string.seriesHome_watching), icon = LucideIcons.Play, titleColor = colors.blueText) {
                         items(list, key = { it.id }) { s ->
                             PosterSlideCard(s.posterUrl, s.title, onClick = { selected = s }, mode = MediaMode.SERIES) {
-                                PosterCornerBadge("S${s.watchedSeasons.size}/${s.seasons ?: "?"}", Palette.Blue500)
+                                PosterCornerBadge("S${s.watchedSeasons.size}/${s.seasons ?: "?"}", Palette.Blue600)
                             }
                         }
                     }
@@ -148,7 +149,7 @@ fun SeriesHomeScreen(container: AppContainer, contentPadding: PaddingValues) {
                         items(list, key = { it.id }) { s ->
                             val label = waitingLabel(s.nextAirDate)
                             PosterSlideCard(s.posterUrl, s.title, onClick = { selected = s }, mode = MediaMode.SERIES) {
-                                PosterCornerBadge(label, Palette.Purple500)
+                                PosterCornerBadge(label, Palette.Purple600)
                             }
                         }
                     }
@@ -213,7 +214,7 @@ fun SeriesHomeScreen(container: AppContainer, contentPadding: PaddingValues) {
                         .clickable(enabled = selectingId == null) { search.hideDropdown(); previewTarget = tmdb },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(LucideIcons.Eye, stringResource(Res.string.seriesDetail_viewImdbRatings), Modifier.size(17.dp), tint = Palette.White)
+                    Icon(LucideIcons.Eye, stringResource(Res.string.seriesDetail_viewImdbRatings), Modifier.size(17.dp), tint = onFill(Palette.Amber500))
                 }
             },
         )
