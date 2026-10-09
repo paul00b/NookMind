@@ -64,6 +64,10 @@ fun main(args: Array<String>) {
     if (args.contains("--covers")) {
         kotlinx.coroutines.runBlocking { FakeCovers.fill(ScreenshotCatalog.container) }
     }
+    // The app's loader, without the fade so that a cover loaded late is not caught mid-animation.
+    coil3.SingletonImageLoader.setSafe { context ->
+        fr.paulbr.nookmind.core.network.nookImageLoader(context, ScreenshotCatalog.container.httpClient, crossfade = false)
+    }
     val positional = args.filterNot { it.startsWith("--") }
     val outDir = File(positional.firstOrNull() ?: "build/screenshots")
     val only = positional.drop(1).toSet()
