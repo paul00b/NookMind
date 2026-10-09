@@ -1,20 +1,15 @@
 package fr.paulbr.nookmind.feature.movies
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import fr.paulbr.nookmind.core.designsystem.NookTheme
 import fr.paulbr.nookmind.core.designsystem.Palette
 import fr.paulbr.nookmind.core.designsystem.components.GenrePill
 import fr.paulbr.nookmind.core.designsystem.components.MediaImage
@@ -22,20 +17,18 @@ import fr.paulbr.nookmind.core.designsystem.components.NookCard
 import fr.paulbr.nookmind.core.designsystem.components.SolidPill
 import fr.paulbr.nookmind.core.designsystem.components.StarRating
 import fr.paulbr.nookmind.core.designsystem.components.StatusBadge
-import fr.paulbr.nookmind.core.domain.yearOf
 import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.core.model.Movie
 import fr.paulbr.nookmind.core.model.MovieStatus
 import fr.paulbr.nookmind.feature.common.LocalWideLayout
-import fr.paulbr.nookmind.feature.library.CardFooterLine
 import fr.paulbr.nookmind.feature.library.CardRemoveButton
+import fr.paulbr.nookmind.feature.library.GridCardText
 import fr.paulbr.nookmind.feature.library.LibraryListRow
 import fr.paulbr.nookmind.resources.Res
 import fr.paulbr.nookmind.resources.addMovie_alreadyWatched
 import fr.paulbr.nookmind.resources.addMovie_wantToWatch
 import fr.paulbr.nookmind.resources.movieCard_wantToWatch
 import fr.paulbr.nookmind.resources.movieCard_watched
-import fr.paulbr.nookmind.resources.movieDetail_runtime
 import org.jetbrains.compose.resources.stringResource
 
 fun movieStatusColor(status: MovieStatus): Color = when (status) {
@@ -57,8 +50,9 @@ fun movieStatusOptions(): List<Pair<String, String>> = listOf(
 )
 
 /**
- * Port of MovieCard.tsx: poster, title on up to two lines, director, then stars once watched or
- * "year · length" before. [showStatus] puts the status badge on the poster, for mixed lists only.
+ * Port of MovieCard.tsx: poster, then title and director on one line each (every card the same
+ * height), with the rating beside the director once watched. [showStatus] puts the status badge on the
+ * poster, for mixed lists only.
  */
 @Composable
 fun MovieCard(movie: Movie, onClick: () -> Unit, modifier: Modifier = Modifier, onRemove: (() -> Unit)? = null, showStatus: Boolean = true) {
@@ -70,23 +64,8 @@ fun MovieCard(movie: Movie, onClick: () -> Unit, modifier: Modifier = Modifier, 
             if (onRemove != null) CardRemoveButton(onRemove, Modifier.align(Alignment.TopStart))
         }
         Spacer(Modifier.height(12.dp))
-        Column(Modifier.padding(horizontal = 8.dp).padding(bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(movie.title, style = NookTheme.type.cardTitleSerif, color = NookTheme.colors.textStrong, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Text(movie.director, style = NookTheme.type.xs, color = NookTheme.colors.textSubtle, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            val meta = movieMeta(movie)
-            when {
-                movie.status == MovieStatus.WATCHED && movie.rating != null -> CardFooterLine { StarRating(movie.rating, size = 13.dp) }
-                meta != null -> CardFooterLine { Text(meta, style = NookTheme.type.xs, color = NookTheme.colors.textSubtle, maxLines = 1) }
-            }
-        }
+        GridCardText(movie.title, movie.director, rating = movie.rating.takeIf { movie.status == MovieStatus.WATCHED })
     }
-}
-
-/** "2010 · 148 min", or whichever half is known; null with neither. */
-@Composable
-fun movieMeta(movie: Movie): String? {
-    val runtime = movie.runtime?.let { stringResource(Res.string.movieDetail_runtime, it) }
-    return listOfNotNull(yearOf(movie.releaseDate), runtime).joinToString(" · ").ifBlank { null }
 }
 
 /** Port of MovieListRow (MovieLibrary.tsx). [showStatus] as on [MovieCard]; without it a watched movie shows its stars. */

@@ -5,13 +5,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -42,6 +40,7 @@ import fr.paulbr.nookmind.core.designsystem.NookShapes
 import fr.paulbr.nookmind.core.designsystem.NookTheme
 import fr.paulbr.nookmind.core.designsystem.Palette
 import fr.paulbr.nookmind.core.designsystem.alpha
+import fr.paulbr.nookmind.core.designsystem.components.CompactRating
 import fr.paulbr.nookmind.core.designsystem.components.EmptyState
 import fr.paulbr.nookmind.core.designsystem.components.IconGhostButton
 import fr.paulbr.nookmind.core.designsystem.components.InlineBanner
@@ -54,6 +53,10 @@ import fr.paulbr.nookmind.core.designsystem.components.TextLink
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
 import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.feature.common.LocalWideLayout
+import fr.paulbr.nookmind.resources.Res
+import fr.paulbr.nookmind.resources.common_decimalSeparator
+import org.jetbrains.compose.resources.stringResource
+import kotlin.math.roundToInt
 
 /** Colour of a status tab (`amber` default, `blue` watching, `emerald` watched). */
 enum class TabTone { AMBER, BLUE, EMERALD }
@@ -181,19 +184,16 @@ fun LazyListScope.skeletonGrid(columns: Int, count: Int = 8) {
     gridRows(List(count) { it }, columns, key = { "skeleton-$it" }) { SkeletonCard() }
 }
 
-/**
- * Lays [items] out as grid rows of [columns] cells (`gap-4`). The cells of a row share its height, so a
- * card whose title fits on one line ends level with a neighbour on two.
- */
+/** Lays [items] out as grid rows of [columns] cells (`gap-4`). */
 fun <T> LazyListScope.gridRows(items: List<T>, columns: Int, key: (T) -> Any, spacing: Dp = 16.dp, itemContent: @Composable (T) -> Unit) {
     val rows = items.chunked(columns)
     rows.forEachIndexed { rowIndex, chunk ->
         item(key = "row-" + key(chunk.first()).toString()) {
             Row(
-                Modifier.fillMaxWidth().padding(bottom = if (rowIndex < rows.lastIndex) spacing else 0.dp).height(IntrinsicSize.Min),
+                Modifier.fillMaxWidth().padding(bottom = if (rowIndex < rows.lastIndex) spacing else 0.dp),
                 horizontalArrangement = Arrangement.spacedBy(spacing),
             ) {
-                chunk.forEach { Box(Modifier.weight(1f).fillMaxHeight(), propagateMinConstraints = true) { itemContent(it) } }
+                chunk.forEach { Box(Modifier.weight(1f)) { itemContent(it) } }
                 repeat(columns - chunk.size) { Spacer(Modifier.weight(1f)) }
             }
         }
@@ -302,10 +302,27 @@ fun CardRemoveButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
-/** Last line of a grid card (stars, progress, "year · length"), at a fixed height. */
+/**
+ * Title and second line of a grid card, one line each so that every card has the same height:
+ * who made it, and the rating once there is one ("★ 4,5").
+ */
 @Composable
-fun CardFooterLine(content: @Composable () -> Unit) {
-    Box(Modifier.fillMaxWidth().height(18.dp), contentAlignment = Alignment.CenterStart) { content() }
+fun GridCardText(title: String, subtitle: String, rating: Double?) {
+    val colors = NookTheme.colors
+    Column(Modifier.padding(horizontal = 8.dp).padding(bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(title, style = NookTheme.type.cardTitleSerif, color = colors.textStrong, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(subtitle, Modifier.weight(1f), style = NookTheme.type.xs, color = colors.textSubtle, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (rating != null) CompactRating(ratingLabel(rating))
+        }
+    }
+}
+
+/** "4", "4,5" ("4.5" in English): ratings go by half stars. */
+@Composable
+private fun ratingLabel(rating: Double): String {
+    val tenths = (rating * 10).roundToInt()
+    return if (tenths % 10 == 0) "${tenths / 10}" else "${tenths / 10}${stringResource(Res.string.common_decimalSeparator)}${tenths % 10}"
 }
 
 /** Empty state of a collection tab, with the "Add …" call to action. */
