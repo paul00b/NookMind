@@ -3,9 +3,11 @@ package fr.paulbr.nookmind.core.designsystem.components
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -13,6 +15,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -76,6 +79,15 @@ private fun StarIcon(fill: Fill, size: Dp, emptyStroke: Color) {
                 drawPath(path, color = Palette.Amber500)
             }
         }
+    }
+}
+
+/** One filled star before [label] ("★ 4,5"): a rating that shares its line with other text. */
+@Composable
+fun CompactRating(label: String, modifier: Modifier = Modifier) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+        StarIcon(Fill.FULL, 11.dp, Palette.Amber500)
+        Text(label, style = NookTheme.type.xs, color = NookTheme.colors.textSubtle, maxLines = 1)
     }
 }
 

@@ -35,13 +35,13 @@ import fr.paulbr.nookmind.core.designsystem.components.PrimaryButton
 import fr.paulbr.nookmind.core.designsystem.components.SolidPill
 import fr.paulbr.nookmind.core.designsystem.components.StarRating
 import fr.paulbr.nookmind.core.designsystem.components.StatusBadge
-import fr.paulbr.nookmind.core.domain.yearOf
 import fr.paulbr.nookmind.core.model.Book
 import fr.paulbr.nookmind.core.model.BookStatus
 import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.feature.common.LocalWideLayout
 import fr.paulbr.nookmind.feature.common.ProgressBar
 import fr.paulbr.nookmind.feature.library.CardRemoveButton
+import fr.paulbr.nookmind.feature.library.GridCardText
 import fr.paulbr.nookmind.feature.library.LibraryListRow
 import fr.paulbr.nookmind.resources.Res
 import fr.paulbr.nookmind.resources.addBook_status_read
@@ -50,7 +50,6 @@ import fr.paulbr.nookmind.resources.addBook_status_want_to_read
 import fr.paulbr.nookmind.resources.bookCard_read
 import fr.paulbr.nookmind.resources.bookCard_wantToRead
 import fr.paulbr.nookmind.resources.bookDetail_noPageYet
-import fr.paulbr.nookmind.resources.bookDetail_pages
 import fr.paulbr.nookmind.resources.bookDetail_save
 import fr.paulbr.nookmind.resources.common_pageOf
 import fr.paulbr.nookmind.resources.common_pageOnly
@@ -82,46 +81,28 @@ fun bookStatusOptions(): List<Pair<String, String>> = listOf(
 )
 
 /**
- * Port of BookCard.tsx: cover, serif title on two lines (minimum two, so a grid row lines up), author,
- * then what matters for the status: stars once read, progress while reading, year and length before.
+ * Port of BookCard.tsx: cover, then title and author on one line each (every card the same height),
+ * with the rating beside the author once read and the progress along the cover while reading.
  * [showStatus] puts the status badge on the cover, for mixed lists (a collection, a search); in a
  * status tab the tab already says it.
  */
 @Composable
 fun BookCard(book: Book, onClick: () -> Unit, modifier: Modifier = Modifier, onRemove: (() -> Unit)? = null, showStatus: Boolean = true) {
+    val current = book.currentPage
+    val total = book.pageCount
     NookCard(modifier, onClick = onClick) {
         Box {
             MediaImage(book.coverUrl, book.title, Modifier.fillMaxWidth(), mode = MediaMode.BOOKS) {
                 if (showStatus) StatusBadge(bookStatusLabel(book.status), bookStatusColor(book.status), Modifier.align(Alignment.TopEnd).padding(8.dp))
+                if (book.status == BookStatus.READING && current != null && total != null && total > 0) {
+                    ProgressBar(current.toFloat() / total, Modifier.align(Alignment.BottomCenter).padding(8.dp), height = 4.dp)
+                }
             }
             if (onRemove != null) CardRemoveButton(onRemove, Modifier.align(Alignment.TopStart))
         }
         Spacer(Modifier.height(12.dp))
-        Column(Modifier.padding(horizontal = 8.dp).padding(bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(book.title, style = NookTheme.type.cardTitleSerif, color = NookTheme.colors.textStrong, minLines = 2, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Text(book.author, style = NookTheme.type.xs, color = NookTheme.colors.textSubtle, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Box(Modifier.fillMaxWidth().height(18.dp), contentAlignment = Alignment.CenterStart) { BookCardFooter(book) }
-        }
+        GridCardText(book.title, book.author, rating = book.rating.takeIf { book.status == BookStatus.READ })
     }
-}
-
-/** Last line of a book card: stars, progress or "year · pages", whichever the status calls for. */
-@Composable
-private fun BookCardFooter(book: Book) {
-    val current = book.currentPage
-    val total = book.pageCount
-    when {
-        book.status == BookStatus.READ && book.rating != null -> StarRating(book.rating, size = 13.dp)
-        book.status == BookStatus.READING && current != null && total != null && total > 0 -> ProgressBar(current.toFloat() / total, height = 4.dp)
-        else -> bookMeta(book)?.let { Text(it, style = NookTheme.type.xs, color = NookTheme.colors.textSubtle, maxLines = 1) }
-    }
-}
-
-/** "1965 · 412 pages", or whichever half is known; null with neither. */
-@Composable
-fun bookMeta(book: Book): String? {
-    val pages = book.pageCount?.let { stringResource(Res.string.bookDetail_pages, it) }
-    return listOfNotNull(yearOf(book.publishedDate), pages).joinToString(" · ").ifBlank { null }
 }
 
 /**

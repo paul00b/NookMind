@@ -149,6 +149,8 @@
     <string name="common_ok">OK</string>
     <string name="common_pageOf">Page %1$d / %2$d</string>
     <string name="common_pageOnly">Page %1$d</string>
+    <!-- Between the units and the tenths of a rating: 4,5 -->
+    <string name="common_decimalSeparator">,</string>
     <string name="common_retry">Réessayer</string>
     <string name="common_seasonEpisodeShort">S%1$dE%2$d</string>
     <string name="common_stats">Stats</string>

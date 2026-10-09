@@ -40,6 +40,7 @@ import fr.paulbr.nookmind.core.designsystem.NookShapes
 import fr.paulbr.nookmind.core.designsystem.NookTheme
 import fr.paulbr.nookmind.core.designsystem.Palette
 import fr.paulbr.nookmind.core.designsystem.alpha
+import fr.paulbr.nookmind.core.designsystem.components.CompactRating
 import fr.paulbr.nookmind.core.designsystem.components.EmptyState
 import fr.paulbr.nookmind.core.designsystem.components.IconGhostButton
 import fr.paulbr.nookmind.core.designsystem.components.InlineBanner
@@ -52,6 +53,10 @@ import fr.paulbr.nookmind.core.designsystem.components.TextLink
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
 import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.feature.common.LocalWideLayout
+import fr.paulbr.nookmind.resources.Res
+import fr.paulbr.nookmind.resources.common_decimalSeparator
+import org.jetbrains.compose.resources.stringResource
+import kotlin.math.roundToInt
 
 /** Colour of a status tab (`amber` default, `blue` watching, `emerald` watched). */
 enum class TabTone { AMBER, BLUE, EMERALD }
@@ -295,6 +300,29 @@ fun CardRemoveButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     ) {
         Icon(LucideIcons.X, null, Modifier.size(11.dp), tint = Palette.White)
     }
+}
+
+/**
+ * Title and second line of a grid card, one line each so that every card has the same height:
+ * who made it, and the rating once there is one ("★ 4,5").
+ */
+@Composable
+fun GridCardText(title: String, subtitle: String, rating: Double?) {
+    val colors = NookTheme.colors
+    Column(Modifier.padding(horizontal = 8.dp).padding(bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(title, style = NookTheme.type.cardTitleSerif, color = colors.textStrong, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(subtitle, Modifier.weight(1f), style = NookTheme.type.xs, color = colors.textSubtle, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (rating != null) CompactRating(ratingLabel(rating))
+        }
+    }
+}
+
+/** "4", "4,5" ("4.5" in English): ratings go by half stars. */
+@Composable
+private fun ratingLabel(rating: Double): String {
+    val tenths = (rating * 10).roundToInt()
+    return if (tenths % 10 == 0) "${tenths / 10}" else "${tenths / 10}${stringResource(Res.string.common_decimalSeparator)}${tenths % 10}"
 }
 
 /** Empty state of a collection tab, with the "Add …" call to action. */
