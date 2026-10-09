@@ -27,6 +27,7 @@ import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.core.model.Movie
 import fr.paulbr.nookmind.core.model.MovieStatus
 import fr.paulbr.nookmind.feature.common.LocalWideLayout
+import fr.paulbr.nookmind.feature.library.CardFooterLine
 import fr.paulbr.nookmind.feature.library.CardRemoveButton
 import fr.paulbr.nookmind.feature.library.LibraryListRow
 import fr.paulbr.nookmind.resources.Res
@@ -56,7 +57,7 @@ fun movieStatusOptions(): List<Pair<String, String>> = listOf(
 )
 
 /**
- * Port of MovieCard.tsx: poster, title on two lines, director, then stars once watched or
+ * Port of MovieCard.tsx: poster, title on up to two lines, director, then stars once watched or
  * "year · length" before. [showStatus] puts the status badge on the poster, for mixed lists only.
  */
 @Composable
@@ -70,14 +71,12 @@ fun MovieCard(movie: Movie, onClick: () -> Unit, modifier: Modifier = Modifier, 
         }
         Spacer(Modifier.height(12.dp))
         Column(Modifier.padding(horizontal = 8.dp).padding(bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(movie.title, style = NookTheme.type.cardTitleSerif, color = NookTheme.colors.textStrong, minLines = 2, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(movie.title, style = NookTheme.type.cardTitleSerif, color = NookTheme.colors.textStrong, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(movie.director, style = NookTheme.type.xs, color = NookTheme.colors.textSubtle, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Box(Modifier.fillMaxWidth().height(18.dp), contentAlignment = Alignment.CenterStart) {
-                if (movie.status == MovieStatus.WATCHED && movie.rating != null) {
-                    StarRating(movie.rating, size = 13.dp)
-                } else {
-                    movieMeta(movie)?.let { Text(it, style = NookTheme.type.xs, color = NookTheme.colors.textSubtle, maxLines = 1) }
-                }
+            val meta = movieMeta(movie)
+            when {
+                movie.status == MovieStatus.WATCHED && movie.rating != null -> CardFooterLine { StarRating(movie.rating, size = 13.dp) }
+                meta != null -> CardFooterLine { Text(meta, style = NookTheme.type.xs, color = NookTheme.colors.textSubtle, maxLines = 1) }
             }
         }
     }

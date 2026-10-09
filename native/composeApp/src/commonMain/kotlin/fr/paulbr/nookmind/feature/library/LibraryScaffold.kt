@@ -5,11 +5,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -179,16 +181,19 @@ fun LazyListScope.skeletonGrid(columns: Int, count: Int = 8) {
     gridRows(List(count) { it }, columns, key = { "skeleton-$it" }) { SkeletonCard() }
 }
 
-/** Lays [items] out as grid rows of [columns] cells (`gap-4`). */
+/**
+ * Lays [items] out as grid rows of [columns] cells (`gap-4`). The cells of a row share its height, so a
+ * card whose title fits on one line ends level with a neighbour on two.
+ */
 fun <T> LazyListScope.gridRows(items: List<T>, columns: Int, key: (T) -> Any, spacing: Dp = 16.dp, itemContent: @Composable (T) -> Unit) {
     val rows = items.chunked(columns)
     rows.forEachIndexed { rowIndex, chunk ->
         item(key = "row-" + key(chunk.first()).toString()) {
             Row(
-                Modifier.fillMaxWidth().padding(bottom = if (rowIndex < rows.lastIndex) spacing else 0.dp),
+                Modifier.fillMaxWidth().padding(bottom = if (rowIndex < rows.lastIndex) spacing else 0.dp).height(IntrinsicSize.Min),
                 horizontalArrangement = Arrangement.spacedBy(spacing),
             ) {
-                chunk.forEach { Box(Modifier.weight(1f)) { itemContent(it) } }
+                chunk.forEach { Box(Modifier.weight(1f).fillMaxHeight(), propagateMinConstraints = true) { itemContent(it) } }
                 repeat(columns - chunk.size) { Spacer(Modifier.weight(1f)) }
             }
         }
@@ -295,6 +300,12 @@ fun CardRemoveButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     ) {
         Icon(LucideIcons.X, null, Modifier.size(11.dp), tint = Palette.White)
     }
+}
+
+/** Last line of a grid card (stars, progress, "year · length"), at a fixed height. */
+@Composable
+fun CardFooterLine(content: @Composable () -> Unit) {
+    Box(Modifier.fillMaxWidth().height(18.dp), contentAlignment = Alignment.CenterStart) { content() }
 }
 
 /** Empty state of a collection tab, with the "Add …" call to action. */

@@ -31,6 +31,7 @@ import fr.paulbr.nookmind.core.model.SeriesStatus
 import fr.paulbr.nookmind.core.platform.DateStyle
 import fr.paulbr.nookmind.core.platform.formatLocalDate
 import fr.paulbr.nookmind.feature.common.LocalWideLayout
+import fr.paulbr.nookmind.feature.library.CardFooterLine
 import fr.paulbr.nookmind.feature.library.CardRemoveButton
 import fr.paulbr.nookmind.feature.library.LibraryListRow
 import fr.paulbr.nookmind.resources.Res
@@ -91,7 +92,7 @@ fun seriesRowBadge(series: Series): SeriesBadge {
 
 /**
  * Port of SeriesCard.tsx. The badge stays when it carries progress or a date (S2/5, next season);
- * a badge that only repeats the status shows with [showStatus], for mixed lists. Title on two lines.
+ * a badge that only repeats the status shows with [showStatus], for mixed lists. Title on up to two lines.
  */
 @Composable
 fun SeriesCard(series: Series, onClick: () -> Unit, modifier: Modifier = Modifier, onRemove: (() -> Unit)? = null, showStatus: Boolean = true) {
@@ -106,11 +107,9 @@ fun SeriesCard(series: Series, onClick: () -> Unit, modifier: Modifier = Modifie
         }
         Spacer(Modifier.height(12.dp))
         Column(Modifier.padding(horizontal = 8.dp).padding(bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(series.title, style = NookTheme.type.cardTitleSerif, color = NookTheme.colors.textStrong, minLines = 2, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(series.title, style = NookTheme.type.cardTitleSerif, color = NookTheme.colors.textStrong, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(series.creator, style = NookTheme.type.xs, color = NookTheme.colors.textSubtle, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Box(Modifier.fillMaxWidth().height(18.dp), contentAlignment = Alignment.CenterStart) {
-                if (effective == SeriesStatus.WATCHED && series.rating != null) StarRating(series.rating, size = 13.dp)
-            }
+            if (effective == SeriesStatus.WATCHED && series.rating != null) CardFooterLine { StarRating(series.rating, size = 13.dp) }
         }
     }
 }
