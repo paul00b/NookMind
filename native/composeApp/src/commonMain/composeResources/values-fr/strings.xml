@@ -310,7 +310,7 @@
     <string name="nextUp_inDays">Dans %1$d jour</string>
     <string name="nextUp_inDaysPlural">Dans %1$d jours</string>
     <string name="nextUp_loadingMovieDetails">Chargement des détails du film...</string>
-    <string name="nextUp_markAsRead">Marquer comme lu ✓</string>
+    <string name="nextUp_markAsRead">Marquer comme lu</string>
     <string name="nextUp_markEpisodeWatched">Vu</string>
     <string name="nextUp_newlyReleasedMovies">Films sortis récemment</string>
     <string name="nextUp_nextToRead">Prochain à lire</string>

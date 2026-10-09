@@ -1,0 +1,30 @@
+name: Diag covers
+
+# Temporary: fetches a few Google Books covers at several zoom levels to see which ones come back as
+# the "image not available" placeholder. Removed once the question is answered.
+
+on:
+  push:
+    branches: ['claude/**']
+
+permissions:
+  contents: write
+
+jobs:
+  diag:
+    if: contains(github.event.head_commit.message, '[diag-covers]')
+    runs-on: ubuntu-latest
+    env:
+      KEY: ${{ secrets.GOOGLE_BOOKS_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch covers
+        run: python3 .github/diag/covers.py
+      - name: Commit to the branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A screenshots/diag
+          git commit -m "chore: diagnostic des couvertures Google Books"
+          git pull --rebase origin "$GITHUB_REF_NAME"
+          git push origin "HEAD:$GITHUB_REF_NAME"

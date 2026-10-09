@@ -56,6 +56,7 @@ import fr.paulbr.nookmind.feature.common.LocalWideLayout
 import fr.paulbr.nookmind.feature.common.ProgressBar
 import fr.paulbr.nookmind.resources.Res
 import fr.paulbr.nookmind.resources.discover_title
+import fr.paulbr.nookmind.resources.bookDetail_movedToRead
 import fr.paulbr.nookmind.resources.nextUp_markAsRead
 import fr.paulbr.nookmind.resources.nextUp_nextToRead
 import fr.paulbr.nookmind.resources.nextUp_noReading
@@ -164,7 +165,7 @@ private fun ReadingCard(container: AppContainer, book: Book) {
                         onClick = {
                             scope.launch {
                                 val stored = container.books.update(book.id, patchOf("status" to BookStatus.READ.key, "current_page" to null))
-                                if (stored != null) container.toasts.success(markAsReadText)
+                                if (stored != null) container.toasts.success(Res.string.bookDetail_movedToRead)
                             }
                         },
                         color = colors.emeraldText,

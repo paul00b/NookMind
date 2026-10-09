@@ -310,7 +310,7 @@
     <string name="nextUp_inDays">In %1$d day</string>
     <string name="nextUp_inDaysPlural">In %1$d days</string>
     <string name="nextUp_loadingMovieDetails">Loading movie details...</string>
-    <string name="nextUp_markAsRead">Mark as read ✓</string>
+    <string name="nextUp_markAsRead">Mark as read</string>
     <string name="nextUp_markEpisodeWatched">Watched</string>
     <string name="nextUp_newlyReleasedMovies">Recently released movies</string>
     <string name="nextUp_nextToRead">Next to read</string>
