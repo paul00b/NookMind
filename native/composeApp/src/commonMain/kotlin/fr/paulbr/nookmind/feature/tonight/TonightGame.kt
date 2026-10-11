@@ -15,7 +15,10 @@ enum class Player { ME, PARTNER }
 /** Why a movie is in the deck, shown on its card. */
 sealed interface CardReason {
     data object Watchlist : CardReason
+    data class PartnerWatchlist(val name: String) : CardReason
+    data object BothWatchlists : CardReason
     data class BecauseYouLiked(val title: String) : CardReason
+    data class PartnerLiked(val name: String, val title: String) : CardReason
     data object Trending : CardReason
 }
 

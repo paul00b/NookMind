@@ -9,15 +9,40 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import fr.paulbr.nookmind.app.AppContainer
+import fr.paulbr.nookmind.core.data.Friend
 
-enum class TonightStep { SETUP, DEALING, SWIPE, HANDOFF, DUEL, MATCH }
+enum class TonightStep { SETUP, DEALING, SWIPE, HANDOFF, WAITING, DUEL, MATCH }
 
 /** How the movie of the evening was found, for the line above the ticket. */
 enum class MatchVia { MATCH, SHARED_LOVE, FINAL, EXTRA_TIME, CHANCE }
 
+/** Why the cards could not be dealt. */
+enum class DealError { NOT_ENOUGH, ONLINE, GONE }
+
+/** What the online game hears of each move, to tell the other phone. */
+interface TonightSync {
+    fun vote(card: Int, verdict: Verdict)
+    fun undo(card: Int)
+}
+
+/** The other phone of an online evening: where its player is, as the last poll saw it. */
+@Stable
+class TonightRemote(val sessionId: String, val isHost: Boolean, val partnerId: String) {
+    var round by mutableIntStateOf(1)
+    var partnerJoined by mutableStateOf(false)
+    var partnerProgress by mutableIntStateOf(0)
+    var partnerLeft by mutableStateOf(false)
+    var myPick by mutableStateOf<Int?>(null)
+    var partnerPicked by mutableStateOf(false)
+    var revealedRound by mutableIntStateOf(0)
+    var nudged by mutableStateOf(false)
+}
+
 /**
- * One evening of Ce soir ? on a single phone: the setup, the deck, both players' verdicts and where
- * they lead. Plain Compose state, so the screenshot catalog can build any step directly.
+ * One evening of Ce soir ?: the setup, the deck, both players' verdicts and where they lead. On a
+ * single phone both players take turns; online ([remote] set) each one plays on their own phone and
+ * the partner's verdicts arrive once both went through the deck. Plain Compose state, so the
+ * screenshot catalog can build any step directly.
  */
 @Stable
 class TonightState(partnerName: String = "", services: Set<StreamingService> = emptySet()) {
@@ -25,6 +50,11 @@ class TonightState(partnerName: String = "", services: Set<StreamingService> = e
     var partnerName by mutableStateOf(partnerName)
     var services by mutableStateOf(services)
     var shortOnly by mutableStateOf(false)
+
+    /** The friend picked in the setup, to play online; null for someone on the same phone. */
+    var friend by mutableStateOf<Friend?>(null)
+    var remote by mutableStateOf<TonightRemote?>(null)
+    var sync: TonightSync? = null
 
     var deck by mutableStateOf<List<TonightCard>>(emptyList())
         private set
@@ -42,7 +72,10 @@ class TonightState(partnerName: String = "", services: Set<StreamingService> = e
     var via by mutableStateOf(MatchVia.MATCH)
         private set
 
-    var dealError by mutableStateOf(false)
+    /** A winner drawn by chance, waiting for the roulette of the duel before the ticket. */
+    var pendingChance by mutableStateOf<Int?>(null)
+
+    var dealError by mutableStateOf<DealError?>(null)
     var showRules by mutableStateOf(false)
 
     /** Stills of each movie for the long-press preview, fetched when its card comes up. */
@@ -60,13 +93,16 @@ class TonightState(partnerName: String = "", services: Set<StreamingService> = e
         player = Player.ME
         outcome = null
         winner = null
+        pendingChance = null
         step = TonightStep.SWIPE
     }
 
     fun decide(verdict: Verdict) {
         if (index >= deck.size) return
-        (if (player == Player.ME) mine else theirs)[index] = verdict
+        val card = index
+        (if (player == Player.ME) mine else theirs)[card] = verdict
         index++
+        sync?.vote(card, verdict)
         if (index >= deck.size) finishTurn()
     }
 
@@ -74,6 +110,9 @@ class TonightState(partnerName: String = "", services: Set<StreamingService> = e
         if (index == 0) return
         index--
         (if (player == Player.ME) mine else theirs).remove(index)
+        sync?.undo(index)
+        // Online, waiting for the other one is left by taking a card back.
+        if (step == TonightStep.WAITING) step = TonightStep.SWIPE
     }
 
     fun startPartnerTurn() {
@@ -85,14 +124,26 @@ class TonightState(partnerName: String = "", services: Set<StreamingService> = e
     fun win(cardIndex: Int, how: MatchVia) {
         winner = cardIndex
         via = how
+        pendingChance = null
         step = TonightStep.MATCH
     }
 
     private fun finishTurn() {
-        if (player == Player.ME) {
-            step = TonightStep.HANDOFF
-            return
+        when {
+            remote != null -> step = TonightStep.WAITING
+            player == Player.ME -> step = TonightStep.HANDOFF
+            else -> settle()
         }
+    }
+
+    /** Online: the partner's verdicts, once both went through the deck without a shared yes. */
+    fun reveal(partner: Map<Int, Verdict>) {
+        theirs.clear()
+        theirs.putAll(partner)
+        settle()
+    }
+
+    private fun settle() {
         val result = outcomeOf(deck.size, mine, theirs)
         outcome = result
         if (result is Outcome.Match) {
@@ -112,7 +163,10 @@ class TonightState(partnerName: String = "", services: Set<StreamingService> = e
         player = Player.ME
         outcome = null
         winner = null
-        dealError = false
+        pendingChance = null
+        dealError = null
+        remote = null
+        sync = null
         step = TonightStep.SETUP
     }
 
@@ -130,5 +184,8 @@ class TonightState(partnerName: String = "", services: Set<StreamingService> = e
 
 @Composable
 fun rememberTonightState(container: AppContainer): TonightState = remember {
-    TonightState(container.prefs.tonightPartner, StreamingService.fromKeys(container.prefs.tonightServices))
+    TonightState(container.prefs.tonightPartner, StreamingService.fromKeys(container.prefs.tonightServices)).apply {
+        val last = container.prefs.tonightFriend
+        if (last.isNotEmpty()) friend = container.social.friends.value.firstOrNull { it.userId == last && it.accepted }
+    }
 }

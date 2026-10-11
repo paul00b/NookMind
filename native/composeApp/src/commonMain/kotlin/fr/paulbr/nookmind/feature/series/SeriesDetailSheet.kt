@@ -85,6 +85,7 @@ import fr.paulbr.nookmind.resources.seriesDetail_yourRating
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+import fr.paulbr.nookmind.feature.social.FriendsTake
 
 /** Port of SeriesDetailModal.tsx. */
 @Composable
@@ -308,6 +309,7 @@ fun SeriesDetailSheet(container: AppContainer, series: Series, onClose: () -> Un
                             }, size = 26.dp)
                         }
                     }
+                    FriendsTake(container, "series", series.tmdbId?.toString())
                     EditableNote(
                         note = local.personalNote,
                         labelText = stringResource(Res.string.seriesDetail_personalNote),

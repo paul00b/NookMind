@@ -78,6 +78,9 @@ import fr.paulbr.nookmind.resources.tonight_love
 import fr.paulbr.nookmind.resources.tonight_no
 import fr.paulbr.nookmind.resources.tonight_preview
 import fr.paulbr.nookmind.resources.tonight_reasonBecause
+import fr.paulbr.nookmind.resources.tonight_reasonBoth
+import fr.paulbr.nookmind.resources.tonight_reasonPartnerLiked
+import fr.paulbr.nookmind.resources.tonight_reasonPartnerWatchlist
 import fr.paulbr.nookmind.resources.tonight_reasonTrending
 import fr.paulbr.nookmind.resources.tonight_reasonWatchlist
 import fr.paulbr.nookmind.resources.tonight_ruleHold
@@ -177,8 +180,13 @@ internal fun SwipeStep(container: AppContainer, state: TonightState, names: Toni
                 Spacer(Modifier.width(8.dp))
                 RoundIconButton(LucideIcons.Undo2, stringResource(Res.string.tonight_undo), { if (!busy) state.undo() }, enabled = top > 0)
                 Spacer(Modifier.width(10.dp))
-                val me = state.player == Player.ME
-                Initial(if (me) names.me else names.partner, if (me) TonightColors.Me else TonightColors.Partner, 32.dp)
+                val remote = state.remote
+                if (remote != null) {
+                    PartnerBadge(names.partner, remote, state.deck.size)
+                } else {
+                    val me = state.player == Player.ME
+                    Initial(if (me) names.me else names.partner, if (me) TonightColors.Me else TonightColors.Partner, 32.dp)
+                }
             }
 
             Box(
@@ -286,6 +294,10 @@ internal fun SwipeStep(container: AppContainer, state: TonightState, names: Toni
             }
         }
 
+        state.remote?.let { remote ->
+            JoinedBanner(names.partner, remote.partnerJoined, Modifier.align(Alignment.TopCenter).padding(top = 66.dp))
+        }
+
         if (state.showRules) {
             RulesOverlay(onGo = {
                 state.showRules = false
@@ -388,7 +400,10 @@ private fun CardInfo(card: TonightCard, modifier: Modifier) {
         }
         val (icon, reason) = when (val r = card.reason) {
             CardReason.Watchlist -> LucideIcons.Bookmark to stringResource(Res.string.tonight_reasonWatchlist)
+            is CardReason.PartnerWatchlist -> LucideIcons.Bookmark to stringResource(Res.string.tonight_reasonPartnerWatchlist, r.name)
+            CardReason.BothWatchlists -> LucideIcons.Heart to stringResource(Res.string.tonight_reasonBoth)
             is CardReason.BecauseYouLiked -> LucideIcons.Sparkles to stringResource(Res.string.tonight_reasonBecause, r.title)
+            is CardReason.PartnerLiked -> LucideIcons.Sparkles to stringResource(Res.string.tonight_reasonPartnerLiked, r.name, r.title)
             CardReason.Trending -> LucideIcons.Flame to stringResource(Res.string.tonight_reasonTrending)
         }
         Row(

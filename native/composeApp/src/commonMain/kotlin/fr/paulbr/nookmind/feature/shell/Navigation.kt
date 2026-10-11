@@ -8,6 +8,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -121,6 +122,7 @@ fun BottomNav(
     onTab: (MainTab) -> Unit,
     hazeState: HazeState,
     modifier: Modifier = Modifier,
+    socialBadge: Boolean = false,
 ) {
     val colors = NookTheme.colors
     val frosted = frostedPill()
@@ -189,7 +191,10 @@ fun BottomNav(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    Icon(tabIcon(t), null, Modifier.size(22.dp).scale(scale), tint = tint)
+                    Box {
+                        Icon(tabIcon(t), null, Modifier.size(22.dp).scale(scale), tint = tint)
+                        if (t == MainTab.SOCIAL && socialBadge) BadgeDot(Modifier.align(Alignment.TopEnd).offset(x = 3.dp, y = (-2).dp))
+                    }
                     Text(tabLabel(t), style = NookTheme.type.sans(10, FontWeight.Medium, 12), color = tint, maxLines = 1)
                 }
             }
@@ -231,6 +236,7 @@ fun Sidebar(
     onTab: (MainTab) -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
+    socialBadge: Boolean = false,
 ) {
     val colors = NookTheme.colors
     val mode by container.prefs.mediaMode.collectAsState()
@@ -305,7 +311,8 @@ fun Sidebar(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Icon(tabIcon(t), null, Modifier.size(18.dp), tint = if (active) accent.text else colors.textMuted)
-                    Text(tabLabel(t), style = NookTheme.type.sans(14, FontWeight.Medium, 20), color = if (active) accent.text else colors.textMuted)
+                    Text(tabLabel(t), style = NookTheme.type.sans(14, FontWeight.Medium, 20), color = if (active) accent.text else colors.textMuted, modifier = Modifier.weight(1f))
+                    if (t == MainTab.SOCIAL && socialBadge) BadgeDot()
                 }
             }
         }
@@ -324,4 +331,10 @@ fun Sidebar(
             Icon(LucideIcons.Settings, null, Modifier.size(15.dp), tint = colors.textFaint)
         }
     }
+}
+
+/** Something waits in the Social tab: an invitation or a friend request. */
+@Composable
+private fun BadgeDot(modifier: Modifier = Modifier) {
+    Box(modifier.size(9.dp).clip(NookShapes.full).background(Palette.Rose500, NookShapes.full).border(1.5.dp, NookTheme.colors.background, NookShapes.full))
 }

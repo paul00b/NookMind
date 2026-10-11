@@ -10,6 +10,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -36,6 +37,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -66,8 +68,11 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import fr.paulbr.nookmind.app.AppContainer
 import fr.paulbr.nookmind.core.data.AuthState
+import fr.paulbr.nookmind.core.data.TonightSessionRow
 import fr.paulbr.nookmind.core.designsystem.NookShapes
 import fr.paulbr.nookmind.core.designsystem.NookTheme
+import fr.paulbr.nookmind.core.designsystem.components.Avatar
+import fr.paulbr.nookmind.core.designsystem.components.AvatarSize
 import fr.paulbr.nookmind.core.designsystem.components.NookTextField
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
 import fr.paulbr.nookmind.core.model.MediaMode
@@ -87,20 +92,28 @@ import fr.paulbr.nookmind.resources.tonight_extraTime
 import fr.paulbr.nookmind.resources.tonight_final
 import fr.paulbr.nookmind.resources.tonight_finalTitle
 import fr.paulbr.nookmind.resources.tonight_go
+import fr.paulbr.nookmind.resources.tonight_gone
 import fr.paulbr.nookmind.resources.tonight_handOver
+import fr.paulbr.nookmind.resources.tonight_invite
 import fr.paulbr.nookmind.resources.tonight_length
 import fr.paulbr.nookmind.resources.tonight_maybesTitle
 import fr.paulbr.nookmind.resources.tonight_noneTitle
+import fr.paulbr.nookmind.resources.tonight_onlineError
+import fr.paulbr.nookmind.resources.tonight_onlineHint
 import fr.paulbr.nookmind.resources.tonight_partnerFallback
+import fr.paulbr.nookmind.resources.tonight_partnerPicked
 import fr.paulbr.nookmind.resources.tonight_partnerPlaceholder
 import fr.paulbr.nookmind.resources.tonight_redeal
+import fr.paulbr.nookmind.resources.tonight_samePhone
 import fr.paulbr.nookmind.resources.tonight_secret
 import fr.paulbr.nookmind.resources.tonight_services
 import fr.paulbr.nookmind.resources.tonight_shortOnly
 import fr.paulbr.nookmind.resources.tonight_singleTitle
 import fr.paulbr.nookmind.resources.tonight_tapPoster
+import fr.paulbr.nookmind.resources.tonight_tapPosterOnline
 import fr.paulbr.nookmind.resources.tonight_title
 import fr.paulbr.nookmind.resources.tonight_turnOf
+import fr.paulbr.nookmind.resources.tonight_waitingPick
 import fr.paulbr.nookmind.resources.tonight_withWho
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -145,8 +158,9 @@ internal fun rememberTonightNames(container: AppContainer, state: TonightState):
 }
 
 /**
- * Ce soir ?, on a single phone: each player swipes the same ten cards in turn, then the movie both
- * said yes to wins. Drawn over the whole app; [animate] off renders each step at rest (screenshots).
+ * Ce soir ?: on a single phone each player swipes the same ten cards in turn; online each one plays
+ * on their own phone, and the first movie both say yes to wins at once. Drawn over the whole app;
+ * [joinSessionId] opens an invitation; [animate] off renders each step at rest (screenshots).
  */
 @Composable
 fun TonightScreen(
@@ -154,27 +168,100 @@ fun TonightScreen(
     onClose: () -> Unit,
     state: TonightState = rememberTonightState(container),
     animate: Boolean = true,
+    joinSessionId: String? = null,
 ) {
     val scope = rememberCoroutineScope()
-    BackHandler(enabled = true, onBack = onClose)
+    var link by remember { mutableStateOf<TonightLink?>(null) }
+    val fallbackPartner = stringResource(Res.string.tonight_partnerFallback)
+
+    /** Leaving an online evening before the end calls it off for the other phone too. */
+    fun leave() {
+        val remote = state.remote
+        if (remote != null && state.step != TonightStep.MATCH && !remote.partnerLeft) {
+            container.scope.launch { container.social.cancelTonight(remote.sessionId) }
+        }
+        onClose()
+    }
+    BackHandler(enabled = true, onBack = ::leave)
+
+    fun goOnline(row: TonightSessionRow, myId: String, cards: List<TonightCard>) {
+        val isHost = row.host == myId
+        val remote = TonightRemote(row.id, isHost, if (isHost) row.guest else row.host).apply { round = row.round }
+        val newLink = TonightLink(container.social, state, remote, myId, scope)
+        state.remote = remote
+        state.sync = newLink
+        link = newLink
+        state.showRules = !container.prefs.tonightTutorialSeen
+        state.startRound(cards)
+        newLink.applyRow(row)
+    }
 
     fun deal(skip: Set<Int> = emptySet()) {
-        container.prefs.tonightPartner = state.partnerName.trim()
+        val friend = state.friend
+        val remote = state.remote
         container.prefs.tonightServices = state.services.map { it.key }.toSet()
-        state.dealError = false
+        if (remote == null) {
+            container.prefs.tonightFriend = friend?.userId.orEmpty()
+            if (friend == null) container.prefs.tonightPartner = state.partnerName.trim() else state.partnerName = friend.firstName
+        }
+        state.dealError = null
         state.step = TonightStep.DEALING
         scope.launch {
             val started = kotlin.time.TimeSource.Monotonic.markNow()
-            val cards = runCatching { dealTonightDeck(container, state.services, state.shortOnly, skip) }.getOrDefault(emptyList())
+            val partnerId = remote?.partnerId ?: friend?.userId
+            val taste = partnerId?.let { id -> partnerTasteOf(state.partnerName, container.social.library.value.filter { it.owner == id }) }
+            val cards = runCatching { dealTonightDeck(container, state.services, state.shortOnly, skip, taste) }.getOrDefault(emptyList())
             // Let the shuffle be seen, even when everything came from the cache.
             val left = 900L - started.elapsedNow().inWholeMilliseconds
             if (left > 0) delay(left)
-            if (cards.size < 4) {
-                state.dealError = true
-            } else {
-                state.showRules = !container.prefs.tonightTutorialSeen
-                state.startRound(cards)
+            val myId = container.social.myId
+            val activeLink = link
+            when {
+                cards.size < 4 -> state.dealError = DealError.NOT_ENOUGH
+                remote != null && activeLink != null -> if (!activeLink.redeal(cards)) state.dealError = DealError.ONLINE
+                friend != null && myId != null -> {
+                    val row = container.social.createTonight(friend.userId, encodeDeck(cards, myId, friend.userId))
+                    if (row == null) state.dealError = DealError.ONLINE else goOnline(row, myId, cards)
+                }
+                friend != null -> state.dealError = DealError.ONLINE
+                else -> {
+                    state.showRules = !container.prefs.tonightTutorialSeen
+                    state.startRound(cards)
+                }
             }
+        }
+    }
+
+    // An invitation: the deck is the host's, the reasons are said from this side.
+    LaunchedEffect(joinSessionId) {
+        val id = joinSessionId ?: return@LaunchedEffect
+        state.dealError = null
+        state.step = TonightStep.DEALING
+        val started = kotlin.time.TimeSource.Monotonic.markNow()
+        val myId = container.social.myId
+        val row = container.social.joinTonight(id)
+        val left = 900L - started.elapsedNow().inWholeMilliseconds
+        if (left > 0) delay(left)
+        if (row == null || myId == null || row.status == "cancelled" || row.status == "done") {
+            state.dealError = DealError.GONE
+            return@LaunchedEffect
+        }
+        val partnerId = if (row.host == myId) row.guest else row.host
+        val partner = container.social.friendById(partnerId) ?: run {
+            container.social.refresh()
+            container.social.friendById(partnerId)
+        }
+        state.friend = partner
+        state.partnerName = partner?.firstName?.ifBlank { null } ?: fallbackPartner
+        goOnline(row, myId, decodeDeck(row.deck, myId, state.partnerName))
+    }
+
+    // Where the other phone is: its progress, a match, its picks, a new deal, or its leaving.
+    LaunchedEffect(link) {
+        val active = link ?: return@LaunchedEffect
+        while (true) {
+            delay(1_500)
+            if (state.step != TonightStep.MATCH) active.poll()
         }
     }
 
@@ -191,13 +278,17 @@ fun TonightScreen(
                 val names = rememberTonightNames(container, state)
                 Crossfade(state.step, animationSpec = tween(if (animate) 260 else 0), label = "tonight-step") { step ->
                     when (step) {
-                        TonightStep.SETUP -> SetupStep(state, onDeal = { deal() }, onClose = onClose)
-                        TonightStep.DEALING -> DealingStep(state.dealError, onRetry = { deal() }, onClose = onClose)
-                        TonightStep.SWIPE -> SwipeStep(container, state, names, onClose = onClose)
+                        TonightStep.SETUP -> SetupStep(container, state, onDeal = { deal() }, onClose = ::leave)
+                        TonightStep.DEALING -> DealingStep(state.dealError, onRetry = { deal(state.deck.map { it.tmdbId }.toSet()) }, onClose = ::leave)
+                        TonightStep.SWIPE -> SwipeStep(container, state, names, onClose = ::leave)
                         TonightStep.HANDOFF -> HandoffStep(state, names)
-                        TonightStep.DUEL -> DuelStep(state, names, onRedeal = { deal(state.deck.map { it.tmdbId }.toSet()) }, onClose = onClose)
-                        TonightStep.MATCH -> MatchStep(container, state, names, animate, onPlayAgain = { state.reset() }, onClose = onClose)
+                        TonightStep.WAITING -> WaitingStep(container, state, names, onClose = ::leave)
+                        TonightStep.DUEL -> DuelStep(state, names, link, onRedeal = { deal(state.deck.map { it.tmdbId }.toSet()) }, onClose = ::leave)
+                        TonightStep.MATCH -> MatchStep(container, state, names, animate, onPlayAgain = { link = null; state.reset() }, onClose = onClose)
                     }
+                }
+                if (state.remote?.partnerLeft == true && state.step != TonightStep.MATCH) {
+                    PartnerLeftOverlay(names.partner, onClose = onClose)
                 }
             }
         }
@@ -207,7 +298,10 @@ fun TonightScreen(
 // ── Setup ──────────────────────────────────────────────────────────────────
 
 @Composable
-private fun SetupStep(state: TonightState, onDeal: () -> Unit, onClose: () -> Unit) {
+private fun SetupStep(container: AppContainer, state: TonightState, onDeal: () -> Unit, onClose: () -> Unit) {
+    val friends by container.social.friends.collectAsState()
+    val accepted = friends.filter { it.accepted }
+    val friend = state.friend
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), horizontalArrangement = Arrangement.End) {
             RoundIconButton(LucideIcons.X, stringResource(Res.string.tonight_close), onClose)
@@ -216,15 +310,39 @@ private fun SetupStep(state: TonightState, onDeal: () -> Unit, onClose: () -> Un
             Text(stringResource(Res.string.tonight_title), style = NookTheme.type.serif(46, lineHeight = 50), color = TonightColors.Text)
             Spacer(Modifier.height(10.dp))
             SectionLabel(stringResource(Res.string.tonight_withWho))
-            NookTextField(
-                value = state.partnerName,
-                onValueChange = { state.partnerName = it.take(24) },
-                placeholder = stringResource(Res.string.tonight_partnerPlaceholder),
-                modifier = Modifier.fillMaxWidth(),
-                textStyle = NookTheme.type.sans(17, FontWeight.Medium, 24),
-                shape = RoundedCornerShape(16.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 14.dp),
-            )
+            if (accepted.isNotEmpty()) {
+                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    WhoChip(stringResource(Res.string.tonight_samePhone), selected = friend == null, onClick = {
+                        state.friend = null
+                        state.partnerName = container.prefs.tonightPartner
+                    }) {
+                        Icon(LucideIcons.Smartphone, null, Modifier.size(22.dp), tint = TonightColors.Text)
+                    }
+                    accepted.forEach { f ->
+                        WhoChip(f.firstName, selected = friend?.userId == f.userId, onClick = { state.friend = f }) {
+                            Avatar(f.displayName, f.avatarUrl, AvatarSize.LG)
+                        }
+                    }
+                }
+                Spacer(Modifier.height(14.dp))
+            }
+            if (friend == null) {
+                NookTextField(
+                    value = state.partnerName,
+                    onValueChange = { state.partnerName = it.take(24) },
+                    placeholder = stringResource(Res.string.tonight_partnerPlaceholder),
+                    modifier = Modifier.fillMaxWidth(),
+                    textStyle = NookTheme.type.sans(17, FontWeight.Medium, 24),
+                    shape = RoundedCornerShape(16.dp),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 14.dp),
+                )
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(LucideIcons.Wifi, null, Modifier.size(16.dp), tint = TonightColors.VioletText)
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(Res.string.tonight_onlineHint, friend.firstName), style = NookTheme.type.sans(15, lineHeight = 21), color = TonightColors.Muted)
+                }
+            }
             SectionLabel(stringResource(Res.string.tonight_services))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 StreamingService.entries.forEach { service ->
@@ -237,23 +355,62 @@ private fun SetupStep(state: TonightState, onDeal: () -> Unit, onClose: () -> Un
             TonightChip(stringResource(Res.string.tonight_shortOnly), selected = state.shortOnly) { state.shortOnly = !state.shortOnly }
             Spacer(Modifier.height(24.dp))
         }
-        BigButton(stringResource(Res.string.tonight_deal), onDeal, Modifier.padding(horizontal = 18.dp, vertical = 16.dp))
+        BigButton(
+            if (friend != null) stringResource(Res.string.tonight_invite, friend.firstName) else stringResource(Res.string.tonight_deal),
+            onDeal,
+            Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
+            icon = if (friend != null) LucideIcons.Send else null,
+        )
+    }
+}
+
+/** Someone to play with: a round picture and a first name, ringed when picked. */
+@Composable
+private fun WhoChip(label: String, selected: Boolean, onClick: () -> Unit, picture: @Composable () -> Unit) {
+    val haptics = LocalNookHaptics.current
+    Column(
+        Modifier.width(64.dp).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
+            haptics.perform(HapticCue.TOGGLE_ON)
+            onClick()
+        },
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            Modifier
+                .size(60.dp)
+                .border(2.dp, if (selected) TonightColors.VioletText else Color.Transparent, CircleShape)
+                .padding(4.dp)
+                .clip(CircleShape)
+                .background(TonightColors.Surface2),
+            contentAlignment = Alignment.Center,
+        ) { picture() }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            label, style = NookTheme.type.sans(13, if (selected) FontWeight.SemiBold else FontWeight.Medium, 17),
+            color = if (selected) TonightColors.Text else TonightColors.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
 // ── Dealing ────────────────────────────────────────────────────────────────
 
 @Composable
-private fun DealingStep(error: Boolean, onRetry: () -> Unit, onClose: () -> Unit) {
+private fun DealingStep(error: DealError?, onRetry: () -> Unit, onClose: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), horizontalArrangement = Arrangement.End) {
             RoundIconButton(LucideIcons.X, stringResource(Res.string.tonight_close), onClose)
         }
         Column(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            if (error) {
-                Text(stringResource(Res.string.tonight_dealError), style = NookTheme.type.sans(16, FontWeight.Medium, 24), color = TonightColors.Text, textAlign = TextAlign.Center)
+            if (error != null) {
+                val message = when (error) {
+                    DealError.NOT_ENOUGH -> Res.string.tonight_dealError
+                    DealError.ONLINE -> Res.string.tonight_onlineError
+                    DealError.GONE -> Res.string.tonight_gone
+                }
+                Text(stringResource(message), style = NookTheme.type.sans(16, FontWeight.Medium, 24), color = TonightColors.Text, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(20.dp))
-                BigButton(stringResource(Res.string.common_retry), onRetry, Modifier.width(220.dp))
+                if (error == DealError.GONE) BigButton(stringResource(Res.string.tonight_close), onClose, Modifier.width(220.dp))
+                else BigButton(stringResource(Res.string.common_retry), onRetry, Modifier.width(220.dp))
             } else {
                 ShufflingCards()
                 Spacer(Modifier.height(36.dp))
@@ -324,10 +481,12 @@ private fun HandoffStep(state: TonightState, names: TonightNames) {
 // ── Duel ───────────────────────────────────────────────────────────────────
 
 @Composable
-private fun DuelStep(state: TonightState, names: TonightNames, onRedeal: () -> Unit, onClose: () -> Unit) {
+private fun DuelStep(state: TonightState, names: TonightNames, link: TonightLink?, onRedeal: () -> Unit, onClose: () -> Unit) {
     val haptics = LocalNookHaptics.current
     val scope = rememberCoroutineScope()
     val outcome = state.outcome ?: Outcome.None
+    val remote = state.remote
+    val online = remote != null
     val sides: List<Int> = when (outcome) {
         is Outcome.Final -> listOf(outcome.a, outcome.b)
         is Outcome.Maybes -> listOf(outcome.a, outcome.b)
@@ -337,7 +496,7 @@ private fun DuelStep(state: TonightState, names: TonightNames, onRedeal: () -> U
     val pickVia = if (outcome is Outcome.Final) MatchVia.FINAL else MatchVia.EXTRA_TIME
     var chosen by remember(outcome) { mutableStateOf<Int?>(null) }
     var hot by remember(outcome) { mutableStateOf<Int?>(null) }
-    val locked = chosen != null || hot != null
+    val locked = chosen != null || hot != null || state.pendingChance != null
 
     fun choose(i: Int, via: MatchVia) {
         if (chosen != null) return
@@ -346,26 +505,47 @@ private fun DuelStep(state: TonightState, names: TonightNames, onRedeal: () -> U
         scope.launch { delay(650); state.win(i, via) }
     }
 
+    fun tap(i: Int) {
+        if (locked) return
+        if (online) {
+            // Online each one picks on their own phone: the same poster wins, two different ones go to chance.
+            haptics.perform(HapticCue.CONFIRM)
+            link?.pick(i, sides.first(), sides.last())
+        } else {
+            choose(i, pickVia)
+        }
+    }
+
     fun roll() {
         if (locked) return
         val pool = sides.ifEmpty { state.deck.indices.filter { state.mine[it] != Verdict.SEEN && state.theirs[it] != Verdict.SEEN }.ifEmpty { state.deck.indices.toList() } }
-        val winner = pool.random()
-        scope.launch {
-            if (sides.size == 2) {
-                // The highlight jumps from one poster to the other, slower and slower, and stops on the
-                // winner: with an even number of jumps, it starts on the other one.
-                val delays = listOf(80, 80, 90, 100, 120, 150, 190, 240, 310, 400)
-                var current = if (winner == sides[0]) sides[1] else sides[0]
-                for (wait in delays) {
-                    hot = current
-                    haptics.perform(HapticCue.TICK)
-                    delay(wait.toLong())
-                    current = if (current == sides[0]) sides[1] else sides[0]
-                }
-                hot = winner
-            }
-            choose(winner, MatchVia.CHANCE)
+        if (online) {
+            link?.chance(pool)
+        } else {
+            state.pendingChance = pool.random()
         }
+    }
+
+    // Chance has spoken (here, or on the other phone): the highlight jumps from one poster to the
+    // other, slower and slower, and stops on the winner. With an even number of jumps, it starts on
+    // the other one.
+    LaunchedEffect(state.pendingChance) {
+        val winner = state.pendingChance ?: return@LaunchedEffect
+        if (sides.size == 2 && winner in sides) {
+            val delays = listOf(80, 80, 90, 100, 120, 150, 190, 240, 310, 400)
+            var current = if (winner == sides[0]) sides[1] else sides[0]
+            for (wait in delays) {
+                hot = current
+                haptics.perform(HapticCue.TICK)
+                delay(wait.toLong())
+                current = if (current == sides[0]) sides[1] else sides[0]
+            }
+            hot = winner
+        }
+        chosen = winner
+        haptics.perform(HapticCue.CONFIRM)
+        delay(650)
+        state.win(winner, MatchVia.CHANCE)
     }
 
     Column(Modifier.fillMaxSize()) {
@@ -387,7 +567,10 @@ private fun DuelStep(state: TonightState, names: TonightNames, onRedeal: () -> U
             Text(stringResource(title), style = NookTheme.type.serif(32, lineHeight = 38), color = TonightColors.Text)
             if (sides.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
-                Text(stringResource(Res.string.tonight_tapPoster), style = NookTheme.type.sans(15, lineHeight = 21), color = TonightColors.Muted)
+                Text(
+                    if (online && sides.size == 2) stringResource(Res.string.tonight_tapPosterOnline, names.partner) else stringResource(Res.string.tonight_tapPoster),
+                    style = NookTheme.type.sans(15, lineHeight = 21), color = TonightColors.Muted,
+                )
                 Spacer(Modifier.height(20.dp))
                 Box {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)) {
@@ -395,8 +578,13 @@ private fun DuelStep(state: TonightState, names: TonightNames, onRedeal: () -> U
                             DuelPoster(
                                 card = state.deck[i],
                                 mine = state.mine[i], theirs = state.theirs[i], names = names,
-                                highlight = when { chosen == i -> TonightColors.Yes; hot == i -> TonightColors.Text; else -> null },
-                                onClick = { if (!locked) choose(i, pickVia) },
+                                highlight = when {
+                                    chosen == i -> TonightColors.Yes
+                                    hot == i -> TonightColors.Text
+                                    remote?.myPick == i -> TonightColors.VioletText
+                                    else -> null
+                                },
+                                onClick = { tap(i) },
                                 modifier = Modifier.weight(1f, fill = false).width(170.dp),
                             )
                         }
@@ -406,6 +594,24 @@ private fun DuelStep(state: TonightState, names: TonightNames, onRedeal: () -> U
                             Modifier.align(Alignment.TopCenter).offset(y = 104.dp).size(46.dp).clip(CircleShape).background(TonightColors.Text),
                             contentAlignment = Alignment.Center,
                         ) { Text("VS", style = NookTheme.type.sans(15, FontWeight.ExtraBold, 18), color = Color(0xFF111111)) }
+                    }
+                }
+                if (remote != null && !locked) {
+                    val status = when {
+                        remote.myPick != null && !remote.partnerPicked -> stringResource(Res.string.tonight_waitingPick, names.partner)
+                        remote.myPick == null && remote.partnerPicked -> stringResource(Res.string.tonight_partnerPicked, names.partner)
+                        else -> null
+                    }
+                    if (status != null) {
+                        Spacer(Modifier.height(14.dp))
+                        Row(
+                            Modifier.align(Alignment.CenterHorizontally).clip(CircleShape).background(TonightColors.Surface).padding(horizontal = 14.dp, vertical = 9.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Initial(names.partner, TonightColors.Partner, 22.dp)
+                            Spacer(Modifier.width(8.dp))
+                            Text(status, style = NookTheme.type.sans(14, FontWeight.Medium, 18), color = TonightColors.Text)
+                        }
                     }
                 }
             }

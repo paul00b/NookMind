@@ -81,6 +81,7 @@ import fr.paulbr.nookmind.resources.common_pageOf
 import fr.paulbr.nookmind.resources.common_pageOnly
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
+import fr.paulbr.nookmind.feature.social.FriendsTake
 
 /** Port of BookDetailModal.tsx. */
 @Composable
@@ -224,6 +225,8 @@ fun BookDetailSheet(container: AppContainer, book: Book, onClose: () -> Unit) {
                                 seeLessText = stringResource(Res.string.bookDetail_seeLess),
                             )
                         }
+
+                        FriendsTake(container, "book", book.googleBooksId)
 
                         EditableNote(
                             note = local.personalNote,

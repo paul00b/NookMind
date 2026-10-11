@@ -10,6 +10,7 @@ import fr.paulbr.nookmind.core.data.LibraryMessages
 import fr.paulbr.nookmind.core.data.LibraryRepository
 import fr.paulbr.nookmind.core.data.PushRepository
 import fr.paulbr.nookmind.core.data.SeriesRefreshJob
+import fr.paulbr.nookmind.core.data.SocialRepository
 import fr.paulbr.nookmind.core.model.Book
 import fr.paulbr.nookmind.core.model.BookCategory
 import fr.paulbr.nookmind.core.model.Movie
@@ -171,6 +172,8 @@ class AppContainer(
     )
 
     val push = PushRepository(supabase, auth, nookMindApi, pushPlatform)
+
+    val social = SocialRepository(supabase, auth, nookMindApi, scope)
 
     val seriesRefresh = SeriesRefreshJob(series, tmdb, prefs, scope)
 
