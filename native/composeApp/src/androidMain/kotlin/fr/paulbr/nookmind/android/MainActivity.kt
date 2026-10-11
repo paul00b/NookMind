@@ -1,5 +1,6 @@
 package fr.paulbr.nookmind.android
 
+import fr.paulbr.nookmind.core.domain.ShareLinks
 import android.Manifest
 import android.content.Intent
 import android.os.Build
@@ -56,10 +57,12 @@ class MainActivity : ComponentActivity() {
         // A tap while the app runs carries our own extra; in the background the system shows the
         // notification itself and hands its data keys over as they are.
         if (intent == null) return
-        val route = intent.getStringExtra(EXTRA_ROUTE) ?: intent.getStringExtra("route") ?: return
+        val route = intent.getStringExtra(EXTRA_ROUTE) ?: intent.getStringExtra("route")
+            ?: intent.dataString?.let(ShareLinks::routeOf) ?: return
         (application as NookMindApplication).container.pendingRoute.value = route
         intent.removeExtra(EXTRA_ROUTE)
         intent.removeExtra("route")
+        intent.data = null
     }
 
     companion object {

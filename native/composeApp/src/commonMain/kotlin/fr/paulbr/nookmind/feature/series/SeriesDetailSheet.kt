@@ -86,6 +86,7 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import fr.paulbr.nookmind.feature.social.FriendsTake
+import fr.paulbr.nookmind.feature.common.ShareItemButton
 
 /** Port of SeriesDetailModal.tsx. */
 @Composable
@@ -350,7 +351,10 @@ fun SeriesDetailSheet(container: AppContainer, series: Series, onClose: () -> Un
                     }
                 }
             }
-            SheetCloseButton(controller, Modifier.align(Alignment.TopEnd).padding(16.dp))
+            Row(Modifier.align(Alignment.TopEnd).padding(16.dp)) {
+                ShareItemButton(container, "series", local.tmdbId?.toString())
+                SheetCloseButton(controller)
+            }
         }
     }
 

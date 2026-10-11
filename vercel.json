@@ -3,10 +3,32 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/s/:kind/:id",
+      "destination": "/api/share?kind=:kind&id=:id"
+    },
+    {
+      "source": "/.well-known/assetlinks.json",
+      "destination": "/api/assetlinks"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ],
   "crons": [
-    { "path": "/api/push/send-daily", "schedule": "0 9 * * *" }
-  ]
+    {
+      "path": "/api/push/send-daily",
+      "schedule": "0 9 * * *"
+    }
+  ],
+  "functions": {
+    "api/share-image.ts": {
+      "includeFiles": "api/_lib/{fonts/**,logo.png}"
+    }
+  }
 }

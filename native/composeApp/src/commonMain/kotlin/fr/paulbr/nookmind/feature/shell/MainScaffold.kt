@@ -58,6 +58,12 @@ import fr.paulbr.nookmind.feature.settings.SettingsPanel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import fr.paulbr.nookmind.core.domain.ShareLinks
+import fr.paulbr.nookmind.feature.common.ItemSheetsHost
+import fr.paulbr.nookmind.feature.common.rememberItemSheets
+import fr.paulbr.nookmind.resources.share_notFound
+import org.jetbrains.compose.resources.stringResource
+import fr.paulbr.nookmind.resources.Res
 
 enum class MainTab { SEARCH, LIBRARY, NEXT_UP, SOCIAL }
 
@@ -105,6 +111,10 @@ fun MainScaffold(
     val friends by container.social.friends.collectAsState()
     val socialBadge = tab != MainTab.SOCIAL && (invitations.isNotEmpty() || friends.any { it.incoming && !it.accepted })
 
+    // A shared link (nookmind://add/movie/…, or the https page) opens the item, to add it.
+    val linkSheets = rememberItemSheets(container)
+    val linkMissing = stringResource(Res.string.share_notFound)
+
     // Deep routes coming from a notification tap.
     val pendingRoute by container.pendingRoute.collectAsState()
     LaunchedEffect(pendingRoute) {
@@ -114,6 +124,9 @@ fun MainScaffold(
             route == "/library" -> tab = MainTab.LIBRARY
             route == "/discover" -> tab = MainTab.NEXT_UP
             route == "/social" -> tab = MainTab.SOCIAL
+            route.startsWith("/add/") -> ShareLinks.parseRoute(route)?.let { (kind, key) ->
+                linkSheets.open(kind, key, onMissing = { container.toasts.error(linkMissing) })
+            }
             route.startsWith("/tonight/") -> {
                 tab = MainTab.SOCIAL
                 openTonight(route.removePrefix("/tonight/").ifBlank { null })
@@ -179,6 +192,8 @@ fun MainScaffold(
                 TonightScreen(container, onClose = { tonightOpen = false; tonightJoin = null }, joinSessionId = tonightJoin)
             }
         }
+
+        ItemSheetsHost(container, linkSheets)
 
         ToastHost(
             controller = container.toasts,

@@ -82,6 +82,7 @@ import fr.paulbr.nookmind.resources.common_pageOnly
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import fr.paulbr.nookmind.feature.social.FriendsTake
+import fr.paulbr.nookmind.feature.common.ShareItemButton
 
 /** Port of BookDetailModal.tsx. */
 @Composable
@@ -283,7 +284,10 @@ fun BookDetailSheet(container: AppContainer, book: Book, onClose: () -> Unit) {
                     }
                 }
             }
-            SheetCloseButton(controller, Modifier.align(Alignment.TopEnd).padding(16.dp))
+            Row(Modifier.align(Alignment.TopEnd).padding(16.dp)) {
+                ShareItemButton(container, "book", local.googleBooksId)
+                SheetCloseButton(controller)
+            }
         }
     }
 }

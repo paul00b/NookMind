@@ -67,6 +67,14 @@
 				<string>$(GOOGLE_AUTH_IOS_REVERSED_CLIENT_ID)</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>Shared links</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>nookmind</string>
+			</array>
+		</dict>
 	</array>
 </dict>
 </plist>

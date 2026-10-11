@@ -234,6 +234,8 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = appVersionCode
         versionName = appVersionName
+        // The domain of the shared links (the Vercel API), for the https intent filter.
+        manifestPlaceholders["shareHost"] = runCatching { java.net.URI(secret("API_BASE_URL")).host }.getOrNull() ?: "nookmind.invalid"
     }
 
     val keystorePropertiesFile = rootProject.file("keystore.properties")
