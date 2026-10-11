@@ -15,6 +15,8 @@ import platform.Foundation.languageCode
 import platform.Foundation.preferredLanguages
 import platform.UIKit.UIActivityViewController
 import platform.UIKit.UIApplication
+// Declared in a category of UIViewController (UIPopoverPresentationControllerAdditions): imported by name.
+import platform.UIKit.popoverPresentationController
 
 actual val platformKind: PlatformKind = PlatformKind.IOS
 
