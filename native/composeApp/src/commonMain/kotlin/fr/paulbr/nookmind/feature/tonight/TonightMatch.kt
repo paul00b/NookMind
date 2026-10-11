@@ -69,7 +69,6 @@ import fr.paulbr.nookmind.core.ui.LocalNookHaptics
 import fr.paulbr.nookmind.feature.common.TrailerDialog
 import fr.paulbr.nookmind.feature.common.watchProviderUrl
 import fr.paulbr.nookmind.resources.Res
-import fr.paulbr.nookmind.resources.common_trailer
 import fr.paulbr.nookmind.resources.common_trailerNotFound
 import fr.paulbr.nookmind.resources.tonight_addToList
 import fr.paulbr.nookmind.resources.tonight_close
@@ -89,6 +88,7 @@ import fr.paulbr.nookmind.resources.tonight_ticketLength
 import fr.paulbr.nookmind.resources.tonight_ticketOn
 import fr.paulbr.nookmind.resources.tonight_ticketSeat
 import fr.paulbr.nookmind.resources.tonight_ticketShowtime
+import fr.paulbr.nookmind.resources.tonight_trailer
 import fr.paulbr.nookmind.resources.tonight_watchOn
 import fr.paulbr.nookmind.resources.tonight_whereToWatch
 import kotlinx.coroutines.delay
@@ -226,7 +226,7 @@ internal fun MatchStep(
                             )
                         }
                     }
-                    GhostAction(stringResource(Res.string.common_trailer), LucideIcons.Film, enabled = !loadingTrailer, modifier = Modifier.weight(1f)) {
+                    GhostAction(stringResource(Res.string.tonight_trailer), LucideIcons.Film, enabled = !loadingTrailer, modifier = Modifier.weight(1f)) {
                         loadingTrailer = true
                         scope.launch {
                             val key = container.tmdb.fetchTrailerKey("movie", card.tmdbId)

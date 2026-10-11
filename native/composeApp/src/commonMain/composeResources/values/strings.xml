@@ -650,5 +650,6 @@
     <string name="tonight_addToList">Add to my list</string>
     <string name="tonight_inList">In your list</string>
     <string name="tonight_playAgain">Play again</string>
+    <string name="tonight_trailer">Trailer</string>
     <string name="tonight_names">%1$s &amp; %2$s</string>
 </resources>

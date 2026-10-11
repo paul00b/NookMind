@@ -650,5 +650,6 @@
     <string name="tonight_addToList">Ajouter à ma liste</string>
     <string name="tonight_inList">Dans ta liste</string>
     <string name="tonight_playAgain">Rejouer</string>
+    <string name="tonight_trailer">Bande-annonce</string>
     <string name="tonight_names">%1$s &amp; %2$s</string>
 </resources>
