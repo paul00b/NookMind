@@ -85,6 +85,7 @@ import fr.paulbr.nookmind.resources.tonight_ruleLove
 import fr.paulbr.nookmind.resources.tonight_ruleNo
 import fr.paulbr.nookmind.resources.tonight_ruleSeen
 import fr.paulbr.nookmind.resources.tonight_ruleYes
+import fr.paulbr.nookmind.resources.tonight_rules
 import fr.paulbr.nookmind.resources.tonight_rulesTitle
 import fr.paulbr.nookmind.resources.tonight_seen
 import fr.paulbr.nookmind.resources.tonight_stampLove
@@ -172,6 +173,8 @@ internal fun SwipeStep(container: AppContainer, state: TonightState, names: Toni
                     }
                 }
                 Spacer(Modifier.width(12.dp))
+                RoundIconButton(LucideIcons.CircleHelp, stringResource(Res.string.tonight_rules), { state.showRules = true })
+                Spacer(Modifier.width(8.dp))
                 RoundIconButton(LucideIcons.Undo2, stringResource(Res.string.tonight_undo), { if (!busy) state.undo() }, enabled = top > 0)
                 Spacer(Modifier.width(10.dp))
                 val me = state.player == Player.ME

@@ -39,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -49,6 +50,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -102,6 +104,7 @@ import fr.paulbr.nookmind.resources.tonight_turnOf
 import fr.paulbr.nookmind.resources.tonight_withWho
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.stringResource
 
 /** The fixed night palette of Ce soir ?, whatever the app theme: it plays like a cinema. */
@@ -568,14 +571,37 @@ internal fun Initial(name: String, color: Color, size: Dp, ring: Boolean = false
     }
 }
 
-/** The way in, at the top of the movies' Next Up tab. */
+/**
+ * The way in, in the Social tab and on the movies' search page. From 7 pm, a light sweeps across it
+ * now and then: it is the time to use it.
+ */
 @Composable
-fun TonightEntryCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun TonightEntryCard(onClick: () -> Unit, modifier: Modifier = Modifier, shine: Boolean = rememberEvening()) {
+    val sweep = if (shine) {
+        rememberInfiniteTransition(label = "evening").animateFloat(
+            0f, 1f, infiniteRepeatable(tween(1_500, delayMillis = 2_600, easing = FastOutSlowInEasing)), label = "sweep",
+        )
+    } else null
     Row(
         modifier
             .fillMaxWidth()
             .clip(NookShapes.xl2)
             .background(Brush.linearGradient(listOf(Color(0xFF312E81), TonightColors.Violet, Color(0xFF9D174D))))
+            .drawWithContent {
+                drawContent()
+                val progress = sweep?.value ?: return@drawWithContent
+                val band = size.width * 0.35f
+                val x = -band + progress * (size.width + band * 2)
+                drawRect(
+                    Brush.linearGradient(
+                        0f to Color.Transparent,
+                        0.5f to Color.White.copy(alpha = 0.32f),
+                        1f to Color.Transparent,
+                        start = Offset(x - band / 2, 0f),
+                        end = Offset(x + band / 2, size.height),
+                    ),
+                )
+            }
             .clickable(onClick = onClick)
             .padding(horizontal = 18.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -591,4 +617,21 @@ fun TonightEntryCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
         }
         Icon(LucideIcons.ChevronRight, null, Modifier.size(20.dp), tint = Color.White.copy(alpha = 0.8f))
     }
+}
+
+/** From 7 pm until the small hours: the evening, rechecked every minute. */
+@Composable
+private fun rememberEvening(): Boolean {
+    val evening by produceState(isEvening()) {
+        while (true) {
+            delay(60_000)
+            value = isEvening()
+        }
+    }
+    return evening
+}
+
+private fun isEvening(): Boolean {
+    val hour = kotlin.time.Clock.System.now().toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).hour
+    return hour >= 19 || hour < 4
 }

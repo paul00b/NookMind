@@ -182,6 +182,7 @@ object ScreenshotCatalog {
         ScreenshotEntry("books-library-read-dark", heightDp = 1200) { libraryOnly(MediaMode.BOOKS) { BooksLibraryScreen(container, PaddingValues(), initialTab = "read") } },
         ScreenshotEntry("movies-library-watched-dark", heightDp = 1200) { libraryOnly(MediaMode.MOVIES) { MoviesLibraryScreen(container, PaddingValues(), initialTab = "watched") } },
         ScreenshotEntry("tablet-books-library", widthDp = 1024, heightDp = 768, content = shell(MediaMode.BOOKS, MainTab.LIBRARY)),
+        ScreenshotEntry("social-dark", content = shell(MediaMode.MOVIES, MainTab.SOCIAL, dark = true)),
         // Ce soir ?, one entry per step.
         ScreenshotEntry("tonight-setup-dark", content = tonight(TonightStep.SETUP)),
         ScreenshotEntry("tonight-rules-dark", content = tonight(TonightStep.SWIPE) { showRules = true }),

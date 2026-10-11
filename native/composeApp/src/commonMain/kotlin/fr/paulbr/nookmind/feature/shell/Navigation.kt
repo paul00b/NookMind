@@ -57,6 +57,7 @@ import fr.paulbr.nookmind.resources.common_defaultDisplayName
 import fr.paulbr.nookmind.resources.logo
 import fr.paulbr.nookmind.resources.nav_books
 import fr.paulbr.nookmind.resources.nav_discover
+import fr.paulbr.nookmind.resources.nav_social
 import fr.paulbr.nookmind.resources.nav_home
 import fr.paulbr.nookmind.resources.nav_library
 import fr.paulbr.nookmind.resources.nav_movies
@@ -79,12 +80,14 @@ fun tabLabel(tab: MainTab): String = when (tab) {
     MainTab.SEARCH -> stringResource(Res.string.nav_home)
     MainTab.LIBRARY -> stringResource(Res.string.nav_library)
     MainTab.NEXT_UP -> stringResource(Res.string.nav_discover)
+    MainTab.SOCIAL -> stringResource(Res.string.nav_social)
 }
 
 fun tabIcon(tab: MainTab): ImageVector = when (tab) {
     MainTab.SEARCH -> LucideIcons.Search
     MainTab.LIBRARY -> LucideIcons.Library
     MainTab.NEXT_UP -> LucideIcons.Compass
+    MainTab.SOCIAL -> LucideIcons.Users
 }
 
 /**
@@ -129,7 +132,12 @@ fun BottomNav(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // Mode toggle pill
+        // Mode toggle pill, left out of the Social tab, which is the same in every mode.
+        androidx.compose.animation.AnimatedVisibility(
+            visible = tab != MainTab.SOCIAL,
+            enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.expandVertically(),
+            exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.shrinkVertically(),
+        ) {
         Row(
             Modifier
                 .shadow(6.dp, NookShapes.full, ambientColor = Palette.Black.copy(alpha = 0.15f), spotColor = Palette.Black.copy(alpha = 0.15f))
@@ -160,6 +168,7 @@ fun BottomNav(
                     )
                 }
             }
+        }
         }
 
         // Main tabs pill

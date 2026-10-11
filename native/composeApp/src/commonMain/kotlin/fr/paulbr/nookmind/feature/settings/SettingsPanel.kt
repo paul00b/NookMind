@@ -122,6 +122,7 @@ import fr.paulbr.nookmind.resources.settings_searchSectionsTitle
 import fr.paulbr.nookmind.resources.settings_sections_books_lastRead
 import fr.paulbr.nookmind.resources.settings_sections_books_wantToRead
 import fr.paulbr.nookmind.resources.settings_sections_movies_lastWatched
+import fr.paulbr.nookmind.resources.settings_sections_movies_tonight
 import fr.paulbr.nookmind.resources.settings_sections_movies_trending
 import fr.paulbr.nookmind.resources.settings_sections_movies_wantToWatch
 import fr.paulbr.nookmind.resources.settings_sections_series_lastWatched
@@ -513,6 +514,7 @@ fun sectionLabel(mode: MediaMode, id: String): String = when (mode) {
         else -> stringResource(Res.string.settings_sections_books_lastRead)
     }
     MediaMode.MOVIES -> when (id) {
+        "tonight" -> stringResource(Res.string.settings_sections_movies_tonight)
         "trending" -> stringResource(Res.string.settings_sections_movies_trending)
         "want_to_watch" -> stringResource(Res.string.settings_sections_movies_wantToWatch)
         else -> stringResource(Res.string.settings_sections_movies_lastWatched)

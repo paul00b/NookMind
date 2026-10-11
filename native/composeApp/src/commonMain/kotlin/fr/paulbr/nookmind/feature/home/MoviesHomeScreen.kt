@@ -34,6 +34,7 @@ import fr.paulbr.nookmind.feature.common.TrendingSlider
 import fr.paulbr.nookmind.feature.common.rememberSearchController
 import fr.paulbr.nookmind.feature.movies.AddMovieSheet
 import fr.paulbr.nookmind.feature.movies.MovieDetailSheet
+import fr.paulbr.nookmind.feature.tonight.TonightEntryCard
 import fr.paulbr.nookmind.resources.Res
 import fr.paulbr.nookmind.resources.movieHome_categoryNowPlaying
 import fr.paulbr.nookmind.resources.movieHome_categoryTopRated
@@ -52,7 +53,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /** Port of MovieHome.tsx: TMDB search, Discover slider, "Want to watch" and "Last watched" sliders. */
 @Composable
-fun MoviesHomeScreen(container: AppContainer, contentPadding: PaddingValues) {
+fun MoviesHomeScreen(container: AppContainer, contentPadding: PaddingValues, onOpenTonight: () -> Unit = {}) {
     val colors = NookTheme.colors
     val movies by container.movies.items.collectAsState()
     val sectionPrefs by container.prefs.searchSections(MediaMode.MOVIES).collectAsState()
@@ -86,6 +87,9 @@ fun MoviesHomeScreen(container: AppContainer, contentPadding: PaddingValues) {
 
     val sections = SearchSections.orderSections(
         listOf(
+            HomeSection("tonight", visibility["tonight"] != false) {
+                TonightEntryCard(onClick = onOpenTonight)
+            },
             HomeSection("trending", visibility["trending"] != false) {
                 TrendingSlider(
                     title = stringResource(Res.string.movieHome_trendingTitle),
