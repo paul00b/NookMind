@@ -94,6 +94,7 @@ import fr.paulbr.nookmind.resources.bookDetail_yourRating
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import fr.paulbr.nookmind.feature.social.FriendsTake
+import fr.paulbr.nookmind.feature.common.ShareItemButton
 
 /**
  * Port of AddBookModal.tsx. [prefill] comes from a Google Books result; null means a manual add.
@@ -253,7 +254,10 @@ fun AddBookSheet(container: AppContainer, prefill: Book?, onClose: () -> Unit) {
                         }
                     }
                 }
-                SheetCloseButton(controller, Modifier.align(Alignment.TopEnd).padding(16.dp))
+                Row(Modifier.align(Alignment.TopEnd).padding(16.dp)) {
+                    ShareItemButton(container, "book", form.googleBooksId)
+                    SheetCloseButton(controller)
+                }
             }
         }
     } else {

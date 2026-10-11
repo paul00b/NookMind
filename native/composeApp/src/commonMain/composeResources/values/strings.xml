@@ -748,4 +748,6 @@
     <string name="tonight_howMany">How many movies</string>
     <string name="tonight_cards">%1$d movies</string>
     <string name="tonight_reasonPopular">A favourite of the genre</string>
+    <string name="common_share">Share</string>
+    <string name="share_notFound">This link leads nowhere.</string>
 </resources>

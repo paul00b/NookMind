@@ -100,6 +100,7 @@ import fr.paulbr.nookmind.resources.movieDetail_seeMore
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import fr.paulbr.nookmind.feature.social.FriendsTake
+import fr.paulbr.nookmind.feature.common.ShareItemButton
 
 /**
  * Port of AddMovieModal.tsx: preview mode when [prefill] comes from TMDB (poster, meta pills,
@@ -266,7 +267,10 @@ fun AddMovieSheet(container: AppContainer, prefill: Movie?, onClose: () -> Unit)
                         onSave = { form = form.copy(personalNote = it.ifBlank { null }) },
                     )
                 }
-                SheetCloseButton(controller, Modifier.align(Alignment.TopEnd).padding(16.dp))
+                Row(Modifier.align(Alignment.TopEnd).padding(16.dp)) {
+                    ShareItemButton(container, "movie", form.tmdbId?.toString())
+                    SheetCloseButton(controller)
+                }
             }
         }
     } else {

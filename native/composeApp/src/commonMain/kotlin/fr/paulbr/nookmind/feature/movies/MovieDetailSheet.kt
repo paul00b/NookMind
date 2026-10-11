@@ -85,6 +85,7 @@ import fr.paulbr.nookmind.resources.movieDetail_yourRating
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import fr.paulbr.nookmind.feature.social.FriendsTake
+import fr.paulbr.nookmind.feature.common.ShareItemButton
 
 /** Port of MovieDetailModal.tsx. */
 @Composable
@@ -270,7 +271,10 @@ fun MovieDetailSheet(container: AppContainer, movie: Movie, onClose: () -> Unit)
                     }
                 }
             }
-            SheetCloseButton(controller, Modifier.align(Alignment.TopEnd).padding(16.dp))
+            Row(Modifier.align(Alignment.TopEnd).padding(16.dp)) {
+                ShareItemButton(container, "movie", local.tmdbId?.toString())
+                SheetCloseButton(controller)
+            }
         }
     }
 

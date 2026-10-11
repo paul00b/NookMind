@@ -28,6 +28,7 @@
     "@capgo/capacitor-social-login": "^8.3.20",
     "@supabase/supabase-js": "^2.99.1",
     "@vercel/analytics": "^2.0.1",
+    "@vercel/og": "^0.6.8",
     "firebase": "^12.13.0",
     "firebase-admin": "^14.3.0",
     "i18next": "^26.4.0",

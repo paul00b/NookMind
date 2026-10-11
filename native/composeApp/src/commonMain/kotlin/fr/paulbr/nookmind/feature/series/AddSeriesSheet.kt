@@ -96,6 +96,7 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import fr.paulbr.nookmind.feature.social.FriendsTake
+import fr.paulbr.nookmind.feature.common.ShareItemButton
 
 /**
  * Port of AddSeriesModal.tsx: form + season grid, status derived from the watched seasons.
@@ -267,7 +268,10 @@ fun AddSeriesSheet(container: AppContainer, prefill: Series?, onClose: () -> Uni
                         )
                     }
                 }
-                SheetCloseButton(controller, Modifier.align(Alignment.TopEnd).padding(16.dp))
+                Row(Modifier.align(Alignment.TopEnd).padding(16.dp)) {
+                    ShareItemButton(container, "series", form.tmdbId?.toString())
+                    SheetCloseButton(controller)
+                }
             }
         }
     } else {

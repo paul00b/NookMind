@@ -5,6 +5,7 @@ import fr.paulbr.nookmind.core.platform.UnavailableAppleSignIn
 import fr.paulbr.nookmind.core.platform.UnavailableGoogleSignIn
 import fr.paulbr.nookmind.core.platform.UnsupportedPushPlatform
 import kotlinx.coroutines.launch
+import fr.paulbr.nookmind.core.domain.ShareLinks
 
 /**
  * Process-wide composition root, the counterpart of `NookMindApplication` on Android. Swift calls
@@ -32,6 +33,13 @@ object IosApp {
     /** A notification tap carries the in-app route to open (`/library`, `/discover`, ...), like the Android intent extra. */
     fun openRoute(route: String) {
         container.pendingRoute.value = route
+    }
+
+    /** A shared link opened the app: true when it was one of ours (`nookmind://add/...`). */
+    fun openLink(url: String): Boolean {
+        val route = ShareLinks.routeOf(url) ?: return false
+        container.pendingRoute.value = route
+        return true
     }
 
     /** Firebase rotated the FCM token: keep the stored subscription in sync, like the Android messaging service. */
