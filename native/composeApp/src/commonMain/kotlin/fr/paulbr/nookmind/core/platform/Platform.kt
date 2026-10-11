@@ -47,3 +47,6 @@ expect fun logDebug(tag: String, message: String, throwable: Throwable? = null)
 
 /** Opens [url] in the system browser / the app registered for it (`window.open` / `<a target=_blank>`). */
 expect fun openExternalUrl(url: String)
+
+/** Opens the system share sheet with [text] (a friend code, an invitation). */
+expect fun shareText(text: String)

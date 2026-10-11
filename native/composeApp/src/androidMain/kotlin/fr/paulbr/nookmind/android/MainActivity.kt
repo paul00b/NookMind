@@ -53,9 +53,13 @@ class MainActivity : ComponentActivity() {
 
     /** A notification carries the in-app route it should open (`/library`, `/discover`, …). */
     private fun consumeRoute(intent: Intent?) {
-        val route = intent?.getStringExtra(EXTRA_ROUTE) ?: return
+        // A tap while the app runs carries our own extra; in the background the system shows the
+        // notification itself and hands its data keys over as they are.
+        if (intent == null) return
+        val route = intent.getStringExtra(EXTRA_ROUTE) ?: intent.getStringExtra("route") ?: return
         (application as NookMindApplication).container.pendingRoute.value = route
         intent.removeExtra(EXTRA_ROUTE)
+        intent.removeExtra("route")
     }
 
     companion object {

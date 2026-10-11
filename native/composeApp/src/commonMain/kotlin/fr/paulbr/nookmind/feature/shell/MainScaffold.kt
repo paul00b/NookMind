@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -79,6 +80,12 @@ fun MainScaffold(
     var settingsOpen by rememberSaveable { mutableStateOf(false) }
     var notifPromptOpen by remember { mutableStateOf(false) }
     var tonightOpen by rememberSaveable { mutableStateOf(false) }
+    // The online evening a friend invited me to, opened from the Social tab or a notification.
+    var tonightJoin by rememberSaveable { mutableStateOf<String?>(null) }
+    val openTonight: (String?) -> Unit = { session ->
+        tonightJoin = session
+        tonightOpen = true
+    }
     val scope = rememberCoroutineScope()
 
     // Series metadata refresh (24 h) starts once the library is available.
@@ -93,13 +100,24 @@ fun MainScaffold(
         notifPromptOpen = true
     }
 
+    // An invitation or a friend request waiting puts a dot on the Social tab.
+    val invitations by container.social.invitations.collectAsState()
+    val friends by container.social.friends.collectAsState()
+    val socialBadge = tab != MainTab.SOCIAL && (invitations.isNotEmpty() || friends.any { it.incoming && !it.accepted })
+
     // Deep routes coming from a notification tap.
     val pendingRoute by container.pendingRoute.collectAsState()
     LaunchedEffect(pendingRoute) {
-        when (pendingRoute) {
-            null -> Unit
-            "/library" -> tab = MainTab.LIBRARY
-            "/discover" -> tab = MainTab.NEXT_UP
+        val route = pendingRoute
+        when {
+            route == null -> Unit
+            route == "/library" -> tab = MainTab.LIBRARY
+            route == "/discover" -> tab = MainTab.NEXT_UP
+            route == "/social" -> tab = MainTab.SOCIAL
+            route.startsWith("/tonight/") -> {
+                tab = MainTab.SOCIAL
+                openTonight(route.removePrefix("/tonight/").ifBlank { null })
+            }
             else -> tab = MainTab.SEARCH
         }
         if (pendingRoute != null) container.pendingRoute.value = null
@@ -126,9 +144,9 @@ fun MainScaffold(
             ModeAmbianceBackground(mode)
             if (wide) {
                 Row(Modifier.fillMaxSize()) {
-                    Sidebar(container = container, tab = tab, onTab = { tab = it }, onOpenSettings = { settingsOpen = true })
+                    Sidebar(container = container, tab = tab, onTab = { tab = it }, onOpenSettings = { settingsOpen = true }, socialBadge = socialBadge)
                     Box(Modifier.weight(1f)) {
-                        ModeContent(container, mode, tab, bottomPadding = 0.dp, onOpenTonight = { tonightOpen = true })
+                        ModeContent(container, mode, tab, bottomPadding = 0.dp, onOpenTonight = openTonight)
                     }
                 }
             } else {
@@ -139,7 +157,7 @@ fun MainScaffold(
                         onModeChange = { container.prefs.setMediaMode(it) },
                         modifier = Modifier.weight(1f),
                     ) {
-                        ModeContent(container, mode, tab, bottomPadding = BOTTOM_NAV_CLEARANCE.dp, onOpenTonight = { tonightOpen = true })
+                        ModeContent(container, mode, tab, bottomPadding = BOTTOM_NAV_CLEARANCE.dp, onOpenTonight = openTonight)
                     }
                 }
             }
@@ -152,11 +170,14 @@ fun MainScaffold(
                 onTab = { tab = it },
                 hazeState = hazeState,
                 modifier = Modifier.align(Alignment.BottomCenter),
+                socialBadge = socialBadge,
             )
         }
 
         if (tonightOpen) {
-            TonightScreen(container, onClose = { tonightOpen = false })
+            key(tonightJoin) {
+                TonightScreen(container, onClose = { tonightOpen = false; tonightJoin = null }, joinSessionId = tonightJoin)
+            }
         }
 
         ToastHost(
@@ -193,12 +214,12 @@ fun MainScaffold(
 const val BOTTOM_NAV_CLEARANCE = 144
 
 @Composable
-private fun ModeContent(container: AppContainer, mode: MediaMode, tab: MainTab, bottomPadding: androidx.compose.ui.unit.Dp, onOpenTonight: () -> Unit) {
+private fun ModeContent(container: AppContainer, mode: MediaMode, tab: MainTab, bottomPadding: androidx.compose.ui.unit.Dp, onOpenTonight: (String?) -> Unit) {
     val contentPadding = PaddingValues(bottom = bottomPadding)
     when (tab) {
         MainTab.SEARCH -> when (mode) {
             MediaMode.BOOKS -> BooksHomeScreen(container, contentPadding)
-            MediaMode.MOVIES -> MoviesHomeScreen(container, contentPadding, onOpenTonight)
+            MediaMode.MOVIES -> MoviesHomeScreen(container, contentPadding, onOpenTonight = { onOpenTonight(null) })
             MediaMode.SERIES -> SeriesHomeScreen(container, contentPadding)
         }
         MainTab.LIBRARY -> when (mode) {

@@ -65,7 +65,7 @@ class PushRepository(
                 limit(1)
             }.decodeSingleOrNull<SubscriptionRow>()
             _subscribed.value = row?.fcmToken != null
-            if (row != null) _preferences.value = NotificationPreferences(row.notifyEpisodes, row.notifySeasons, row.notifyMovies)
+            if (row != null) _preferences.value = NotificationPreferences(row.notifyEpisodes, row.notifySeasons, row.notifyMovies, readNotifySocial(user.id))
         }.onFailure { logDebug("push", "refresh failed", it) }
     }
 
@@ -92,6 +92,7 @@ class PushRepository(
                     put("notify_movies", prefs.notifyMovies)
                     put("updated_at", Clock.System.now().toString())
                 })
+                if (!prefs.notifySocial) writeNotifySocial(user.id, false)
                 _subscribed.value = true
                 PushEnableResult.Enabled as PushEnableResult
             }.getOrElse {
@@ -140,8 +141,36 @@ class PushRepository(
                     eq("transport", "fcm")
                 }
             }
+            writeNotifySocial(user.id, next.notifySocial)
             true
         }.getOrElse { logDebug("push", "updatePreferences failed", it); false }
+    }
+
+    // `notify_social` comes with the social migration: read and written apart, so the other
+    // switches keep working on a database that does not have it yet.
+
+    @Serializable
+    private data class SocialFlagRow(@kotlinx.serialization.SerialName("notify_social") val notifySocial: Boolean = true)
+
+    private suspend fun readNotifySocial(userId: String): Boolean = runCatching {
+        client.from("push_subscriptions").select(Columns.raw("notify_social")) {
+            filter {
+                eq("user_id", userId)
+                eq("transport", "fcm")
+            }
+            limit(1)
+        }.decodeSingleOrNull<SocialFlagRow>()?.notifySocial ?: true
+    }.getOrDefault(true)
+
+    private suspend fun writeNotifySocial(userId: String, value: Boolean) {
+        runCatching {
+            client.from("push_subscriptions").update(buildJsonObject { put("notify_social", value) }) {
+                filter {
+                    eq("user_id", userId)
+                    eq("transport", "fcm")
+                }
+            }
+        }.onFailure { logDebug("push", "notify_social not saved", it) }
     }
 
     /** Keeps the stored token in sync when FCM rotates it (called from the Android service). */

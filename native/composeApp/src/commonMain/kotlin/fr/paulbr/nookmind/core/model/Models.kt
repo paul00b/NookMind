@@ -341,4 +341,5 @@ data class NotificationPreferences(
     @SerialName("notify_episodes") val notifyEpisodes: Boolean = true,
     @SerialName("notify_seasons") val notifySeasons: Boolean = true,
     @SerialName("notify_movies") val notifyMovies: Boolean = true,
+    @SerialName("notify_social") val notifySocial: Boolean = true,
 )

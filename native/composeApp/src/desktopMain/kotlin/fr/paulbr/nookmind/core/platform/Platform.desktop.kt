@@ -26,3 +26,9 @@ actual fun openExternalUrl(url: String) {
         if (java.awt.Desktop.isDesktopSupported()) java.awt.Desktop.getDesktop().browse(java.net.URI(url))
     }.onFailure { println("[platform] cannot open $url: ${it.message}") }
 }
+
+actual fun shareText(text: String) {
+    runCatching {
+        java.awt.Toolkit.getDefaultToolkit().systemClipboard.setContents(java.awt.datatransfer.StringSelection(text), null)
+    }.onFailure { println("[platform] cannot share: ${it.message}") }
+}

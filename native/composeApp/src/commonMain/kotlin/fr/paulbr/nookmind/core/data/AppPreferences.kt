@@ -127,6 +127,11 @@ class AppPreferences(private val settings: Settings) {
         get() = settings.getStringOrNull(KEY_TONIGHT_PARTNER).orEmpty()
         set(value) = settings.putString(KEY_TONIGHT_PARTNER, value)
 
+    /** Id of the friend Ce soir ? was last played with online, empty for someone on the same phone. */
+    var tonightFriend: String
+        get() = settings.getStringOrNull(KEY_TONIGHT_FRIEND).orEmpty()
+        set(value) = settings.putString(KEY_TONIGHT_FRIEND, value)
+
     /** Streaming services ticked in Ce soir ?, as their keys. */
     var tonightServices: Set<String>
         get() = settings.getStringOrNull(KEY_TONIGHT_SERVICES)?.split(',')?.filter(String::isNotBlank)?.toSet().orEmpty()
@@ -136,6 +141,7 @@ class AppPreferences(private val settings: Settings) {
         const val KEY_TONIGHT_TUTORIAL = "nookmind_tonight_tutorial_seen"
         const val KEY_TONIGHT_PARTNER = "nookmind_tonight_partner"
         const val KEY_TONIGHT_SERVICES = "nookmind_tonight_services"
+        const val KEY_TONIGHT_FRIEND = "nookmind_tonight_friend"
         const val KEY_THEME = "bm_theme"
         const val KEY_MEDIA_MODE = "media-mode"
         const val KEY_ONBOARDING = "nookmind_onboarding_completed"

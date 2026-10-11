@@ -106,6 +106,7 @@ import fr.paulbr.nookmind.resources.settings_notifMovies
 import fr.paulbr.nookmind.resources.settings_notifNotSupported
 import fr.paulbr.nookmind.resources.settings_notifPermissionDenied
 import fr.paulbr.nookmind.resources.settings_notifSeasons
+import fr.paulbr.nookmind.resources.settings_notifSocial
 import fr.paulbr.nookmind.resources.settings_notifTestNobody
 import fr.paulbr.nookmind.resources.settings_notifTestRejected
 import fr.paulbr.nookmind.resources.settings_notifTestSent
@@ -397,6 +398,9 @@ fun SettingsPanel(
                                     }
                                     SettingToggleRow(LucideIcons.Film, stringResource(Res.string.settings_notifMovies), preferences.notifyMovies) { value ->
                                         scope.launch { container.push.updatePreferences { it.copy(notifyMovies = value) } }
+                                    }
+                                    SettingToggleRow(LucideIcons.Users, stringResource(Res.string.settings_notifSocial), preferences.notifySocial) { value ->
+                                        scope.launch { container.push.updatePreferences { it.copy(notifySocial = value) } }
                                     }
                                 }
                             }

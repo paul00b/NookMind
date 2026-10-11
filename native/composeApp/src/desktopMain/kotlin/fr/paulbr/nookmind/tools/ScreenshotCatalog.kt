@@ -41,6 +41,7 @@ import fr.paulbr.nookmind.feature.onboarding.OnboardingScreen
 import fr.paulbr.nookmind.core.model.TmdbMovie
 import fr.paulbr.nookmind.core.model.WatchProvider
 import fr.paulbr.nookmind.feature.tonight.CardReason
+import fr.paulbr.nookmind.feature.tonight.TonightRemote
 import fr.paulbr.nookmind.feature.tonight.MatchVia
 import fr.paulbr.nookmind.feature.tonight.Outcome
 import fr.paulbr.nookmind.feature.tonight.Player
@@ -73,6 +74,19 @@ object ScreenshotCatalog {
         c.movieCategories.seedLocal(FakeData.movieCategories)
         c.series.seedLocal(FakeData.series)
         c.seriesCategories.seedLocal(FakeData.seriesCategories)
+        c.social.seedLocal(FakeSocial.profile, FakeSocial.friends, FakeSocial.library(), FakeSocial.received(), FakeSocial.sent, FakeSocial.invitations())
+    }
+
+    /** The Social tab before any friend: the code to share and nothing else. */
+    private fun lonelySocial(): @Composable () -> Unit = {
+        remember {
+            container.prefs.setMediaMode(MediaMode.MOVIES)
+            seed(container)
+            container.social.seedLocal(FakeSocial.profile, emptyList(), emptyList())
+        }
+        NookTheme(ThemeMode.DARK, MediaMode.MOVIES) {
+            MainScaffold(container, onOpenLegal = {}, onReplayOnboarding = {}, initialTab = MainTab.SOCIAL)
+        }
     }
 
     /** The main shell on a given mode / tab, with an optional sheet on top. */
@@ -182,7 +196,9 @@ object ScreenshotCatalog {
         ScreenshotEntry("books-library-read-dark", heightDp = 1200) { libraryOnly(MediaMode.BOOKS) { BooksLibraryScreen(container, PaddingValues(), initialTab = "read") } },
         ScreenshotEntry("movies-library-watched-dark", heightDp = 1200) { libraryOnly(MediaMode.MOVIES) { MoviesLibraryScreen(container, PaddingValues(), initialTab = "watched") } },
         ScreenshotEntry("tablet-books-library", widthDp = 1024, heightDp = 768, content = shell(MediaMode.BOOKS, MainTab.LIBRARY)),
-        ScreenshotEntry("social-dark", content = shell(MediaMode.MOVIES, MainTab.SOCIAL, dark = true)),
+        ScreenshotEntry("social-dark", heightDp = 2600, content = shell(MediaMode.MOVIES, MainTab.SOCIAL, dark = true)),
+        ScreenshotEntry("social", heightDp = 2600, content = shell(MediaMode.BOOKS, MainTab.SOCIAL)),
+        ScreenshotEntry("social-empty-dark", content = lonelySocial()),
         // Ce soir ?, one entry per step.
         ScreenshotEntry("tonight-setup-dark", content = tonight(TonightStep.SETUP)),
         ScreenshotEntry("tonight-rules-dark", content = tonight(TonightStep.SWIPE) { showRules = true }),
@@ -192,6 +208,29 @@ object ScreenshotCatalog {
             mine[1] = Verdict.NO
         }),
         ScreenshotEntry("tonight-handoff-dark", content = tonight(TonightStep.HANDOFF)),
+        // Ce soir ? online, with Léa on her own phone.
+        ScreenshotEntry("tonight-setup-online-dark", content = tonight(TonightStep.SETUP) { friend = FakeSocial.friends[0] }),
+        ScreenshotEntry("tonight-online-swipe-dark", content = tonight(TonightStep.SWIPE) { cards ->
+            remote = TonightRemote("s-1", isHost = true, partnerId = "u-lea").apply { partnerJoined = true; partnerProgress = 6 }
+            preview(cards.mapIndexed { i, c -> if (i == 3) c.copy(reason = CardReason.PartnerWatchlist("Léa")) else c }, TonightStep.SWIPE, index = 3)
+        }),
+        ScreenshotEntry("tonight-waiting-dark", content = tonight(TonightStep.WAITING) { cards ->
+            remote = TonightRemote("s-1", isHost = true, partnerId = "u-lea").apply { partnerJoined = true; partnerProgress = 4 }
+            preview(cards, TonightStep.WAITING, index = cards.size)
+        }),
+        ScreenshotEntry("tonight-waiting-invite-dark", content = tonight(TonightStep.WAITING) { cards ->
+            remote = TonightRemote("s-1", isHost = true, partnerId = "u-lea")
+            preview(cards, TonightStep.WAITING, index = cards.size)
+        }),
+        ScreenshotEntry("tonight-online-duel-dark", content = tonight(TonightStep.DUEL) { cards ->
+            remote = TonightRemote("s-1", isHost = true, partnerId = "u-lea").apply { partnerJoined = true; partnerProgress = cards.size; myPick = 1 }
+            mine[1] = Verdict.YES; theirs[3] = Verdict.LOVE
+            preview(cards, TonightStep.DUEL, outcome = Outcome.Maybes(3, 1))
+        }),
+        ScreenshotEntry("tonight-partner-left-dark", content = tonight(TonightStep.SWIPE) { cards ->
+            remote = TonightRemote("s-1", isHost = true, partnerId = "u-lea").apply { partnerJoined = true; partnerLeft = true }
+            preview(cards, TonightStep.SWIPE, index = 2)
+        }),
         ScreenshotEntry("tonight-duel-dark", content = tonight(TonightStep.DUEL) { cards ->
             mine[0] = Verdict.YES; theirs[0] = Verdict.LOVE
             mine[2] = Verdict.YES; theirs[2] = Verdict.YES

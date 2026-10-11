@@ -84,6 +84,7 @@ import fr.paulbr.nookmind.resources.movieDetail_yesDelete
 import fr.paulbr.nookmind.resources.movieDetail_yourRating
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
+import fr.paulbr.nookmind.feature.social.FriendsTake
 
 /** Port of MovieDetailModal.tsx. */
 @Composable
@@ -225,6 +226,8 @@ fun MovieDetailSheet(container: AppContainer, movie: Movie, onClose: () -> Unit)
                 movie.tmdbId?.let { TrailerButton(container, "movie", it) }
 
                 CastAccordion(cast, stringResource(Res.string.movieDetail_cast), onSelect = { selectedActorId = it })
+
+                FriendsTake(container, "movie", movie.tmdbId?.toString())
 
                 EditableNote(
                     note = local.personalNote,

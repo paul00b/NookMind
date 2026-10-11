@@ -13,6 +13,7 @@ import platform.Foundation.NSUserDefaults
 // extension members: they resolve only when imported by name, unlike the class's own members.
 import platform.Foundation.languageCode
 import platform.Foundation.preferredLanguages
+import platform.UIKit.UIActivityViewController
 import platform.UIKit.UIApplication
 
 actual val platformKind: PlatformKind = PlatformKind.IOS
@@ -69,4 +70,13 @@ actual fun openExternalUrl(url: String) {
         return
     }
     UIApplication.sharedApplication.openURL(nsUrl, options = emptyMap<Any?, Any>(), completionHandler = null)
+}
+
+actual fun shareText(text: String) {
+    var top = UIApplication.sharedApplication.keyWindow?.rootViewController ?: return
+    while (true) top = top.presentedViewController ?: break
+    val sheet = UIActivityViewController(activityItems = listOf(text), applicationActivities = null)
+    // On iPad the sheet is a popover and needs an anchor.
+    sheet.popoverPresentationController?.sourceView = top.view
+    top.presentViewController(sheet, animated = true, completion = null)
 }

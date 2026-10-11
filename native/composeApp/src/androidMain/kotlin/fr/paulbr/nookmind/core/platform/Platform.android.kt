@@ -36,3 +36,13 @@ actual fun openExternalUrl(url: String) {
         AndroidContextHolder.appContext.startActivity(intent)
     }.onFailure { Log.w("platform", "cannot open $url", it) }
 }
+
+actual fun shareText(text: String) {
+    runCatching {
+        val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
+        val activity = fr.paulbr.nookmind.android.ActivityTracker.current
+        val chooser = Intent.createChooser(send, null)
+        if (activity != null) activity.startActivity(chooser)
+        else AndroidContextHolder.appContext.startActivity(chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }.onFailure { Log.w("platform", "cannot share", it) }
+}

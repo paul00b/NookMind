@@ -1,6 +1,7 @@
 package fr.paulbr.nookmind.feature.tonight
 
 import fr.paulbr.nookmind.app.AppContainer
+import fr.paulbr.nookmind.core.data.FriendItem
 import fr.paulbr.nookmind.core.model.Movie
 import fr.paulbr.nookmind.core.model.MovieStatus
 import fr.paulbr.nookmind.core.model.TmdbMovie
@@ -14,30 +15,91 @@ import kotlinx.coroutines.withTimeoutOrNull
 private const val CANDIDATES = 18
 private const val CARD_TIMEOUT_MS = 8_000L
 
+/** What the deck knows of the friend it is dealt for: the movies they share. */
+class PartnerTaste(
+    val name: String,
+    /** Their "To watch" list, as TMDB ids. */
+    val watchlist: List<Int>,
+    /** What they have already watched. */
+    val watched: Set<Int>,
+    /** Every movie of their library, watched or not. */
+    val library: Set<Int>,
+    /** Their best rated movies, best first, as seeds for recommendations. */
+    val favourites: List<Pair<Int, String>>,
+)
+
+/** The taste of a friend from what they share of their movies. */
+fun partnerTasteOf(name: String, items: List<FriendItem>): PartnerTaste {
+    val movies = items.filter { it.kind == "movie" }.mapNotNull { item -> item.itemKey.toIntOrNull()?.let { it to item } }
+    val watched = movies.filter { it.second.status == MovieStatus.WATCHED.key }
+    return PartnerTaste(
+        name = name,
+        watchlist = movies.filter { it.second.status == MovieStatus.WANT_TO_WATCH.key }.map { it.first },
+        watched = watched.map { it.first }.toSet(),
+        library = movies.map { it.first }.toSet(),
+        favourites = watched
+            .sortedWith(compareByDescending<Pair<Int, FriendItem>> { it.second.rating ?: 0.0 }.thenByDescending { it.second.finishedAt ?: it.second.createdAt })
+            .map { it.first to it.second.title },
+    )
+}
+
+/**
+ * The watchlist part of a deck for two: movies on both lists first, then one of mine and one of
+ * theirs in turn, up to [limit]. A movie the other one has already seen stays out.
+ */
+fun mergeWatchlists(mine: List<Int>, theirs: List<Int>, mySeen: Set<Int>, theirSeen: Set<Int>, partnerName: String, limit: Int = 8): List<Pair<Int, CardReason>> {
+    val picked = LinkedHashMap<Int, CardReason>()
+    mine.filter { it in theirs }.forEach { if (picked.size < limit) picked[it] = CardReason.BothWatchlists }
+    val a = mine.filter { it !in picked && it !in theirSeen }
+    val b = theirs.filter { it !in picked && it !in mySeen }
+    var i = 0
+    while (picked.size < limit && (i < a.size || i < b.size)) {
+        a.getOrNull(i)?.let { if (picked.size < limit && it !in picked) picked[it] = CardReason.Watchlist }
+        b.getOrNull(i)?.let { if (picked.size < limit && it !in picked) picked[it] = CardReason.PartnerWatchlist(partnerName) }
+        i++
+    }
+    return picked.toList()
+}
+
 /**
  * Deals a round from the library: movies of the "To watch" list first, then TMDB recommendations
  * from the movies rated best, then what is trending. Nothing already watched comes up, and nothing
- * in [skip] (the cards of the round before, when dealing again).
+ * in [skip] (the cards of the round before, when dealing again). With a [partner], their list and
+ * their favourites count as much as mine.
  */
 suspend fun dealTonightDeck(
     container: AppContainer,
     services: Set<StreamingService>,
     shortOnly: Boolean,
     skip: Set<Int> = emptySet(),
+    partner: PartnerTaste? = null,
 ): List<TonightCard> = coroutineScope {
     val library = container.movies.items.value
     val inLibrary = library.mapNotNull { it.tmdbId }.toSet()
-    val watchlist = library.filter { it.status == MovieStatus.WANT_TO_WATCH && it.tmdbId != null && it.tmdbId !in skip }.shuffled().take(8)
-    val seeds = library.filter { it.status == MovieStatus.WATCHED && it.tmdbId != null }
+    val myWatchlist = library.filter { it.status == MovieStatus.WANT_TO_WATCH && it.tmdbId != null && it.tmdbId !in skip }.map { it.tmdbId!! }.shuffled()
+    val mySeeds = library.filter { it.status == MovieStatus.WATCHED && it.tmdbId != null }
         .sortedWith(compareByDescending<Movie> { it.rating ?: 0.0 }.thenByDescending { it.watchedDate ?: it.createdAt })
-        .take(6).shuffled().take(3)
+        .take(6).shuffled().take(if (partner == null) 3 else 2)
+        .map { Triple(it.tmdbId!!, it.title, null as String?) }
+    val theirSeeds = partner?.favourites?.take(6)?.shuffled()?.take(2)?.map { Triple(it.first, it.second, partner.name) }.orEmpty()
 
     val candidates = LinkedHashMap<Int, Pair<TmdbMovie?, CardReason>>()
-    watchlist.forEach { candidates[it.tmdbId!!] = null to CardReason.Watchlist }
+    if (partner == null) {
+        myWatchlist.take(8).forEach { candidates[it] = null to CardReason.Watchlist }
+    } else {
+        val myWatched = library.filter { it.status == MovieStatus.WATCHED }.mapNotNull { it.tmdbId }.toSet()
+        val theirWatchlist = partner.watchlist.filter { it !in skip }.shuffled()
+        mergeWatchlists(myWatchlist, theirWatchlist, myWatched, partner.watched, partner.name).forEach { (id, reason) -> candidates[id] = null to reason }
+    }
+    val known = inLibrary + partner?.library.orEmpty() + skip
 
     // Recommendations of each seed, taken in turn so one movie does not fill the deck.
-    val recommended = seeds.map { seed -> async { seed.title to container.tmdb.fetchMovieRecommendations(seed.tmdbId!!) } }.awaitAll()
-        .map { (title, list) -> list.filter { it.id !in inLibrary && it.id !in skip && !it.posterPath.isNullOrBlank() }.map { it to CardReason.BecauseYouLiked(title) } }
+    val recommended = (mySeeds + theirSeeds).map { (id, title, by) ->
+        async {
+            val reason = if (by == null) CardReason.BecauseYouLiked(title) else CardReason.PartnerLiked(by, title)
+            container.tmdb.fetchMovieRecommendations(id).filter { it.id !in known && !it.posterPath.isNullOrBlank() }.map { it to reason }
+        }
+    }.awaitAll()
     var rank = 0
     while (candidates.size < CANDIDATES && recommended.any { rank < it.size }) {
         recommended.forEach { list -> list.getOrNull(rank)?.let { (movie, reason) -> if (movie.id !in candidates) candidates[movie.id] = movie to reason } }
@@ -45,7 +107,7 @@ suspend fun dealTonightDeck(
     }
     if (candidates.size < CANDIDATES) {
         container.tmdb.fetchTrendingMovies(20)
-            .filter { it.id !in inLibrary && it.id !in skip && !it.posterPath.isNullOrBlank() }
+            .filter { it.id !in known && !it.posterPath.isNullOrBlank() }
             .forEach { if (candidates.size < CANDIDATES && it.id !in candidates) candidates[it.id] = it to CardReason.Trending }
     }
 
