@@ -216,6 +216,30 @@ class TmdbApi(
         return links
     }
 
+    // ── Ce soir ? ──────────────────────────────────────────────────────────
+
+    /** TMDB's "more like this" for a movie (first page). */
+    suspend fun fetchMovieRecommendations(tmdbId: Int): List<TmdbMovie> = runCatching {
+        val res = getJson("/movie/$tmdbId/recommendations", mapOf("language" to tmdbLocale()), 8_000)
+        if (!res.ok) emptyList() else res.body<PagedResults<TmdbMovie>>().results ?: emptyList()
+    }.getOrDefault(emptyList())
+
+    @Serializable
+    private data class TmdbImage(
+        @kotlinx.serialization.SerialName("file_path") val filePath: String = "",
+        @kotlinx.serialization.SerialName("vote_count") val voteCount: Int = 0,
+    )
+
+    @Serializable
+    private data class ImagesResponse(val backdrops: List<TmdbImage> = emptyList())
+
+    /** Up to [max] stills of a movie without any text on them, the most voted first. */
+    suspend fun fetchMovieStills(tmdbId: Int, max: Int = 3): List<String> = runCatching {
+        val res = getJson("/movie/$tmdbId/images", mapOf("include_image_language" to "null"), 8_000)
+        if (!res.ok) emptyList()
+        else res.body<ImagesResponse>().backdrops.sortedByDescending { it.voteCount }.take(max).mapNotNull { posterUrl(it.filePath, "w780") }
+    }.getOrDefault(emptyList())
+
     // ── Trailers ───────────────────────────────────────────────────────────
 
     private fun pickBestTrailer(videos: List<TmdbVideo>): TmdbVideo? {

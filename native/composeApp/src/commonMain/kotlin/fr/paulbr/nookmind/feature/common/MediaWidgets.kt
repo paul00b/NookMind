@@ -222,6 +222,10 @@ private fun encode(value: String): String = value.encodeURLParameter()
 private fun fallbackUrl(provider: WatchProvider, title: String, tmdbLink: String?): String? =
     PROVIDER_SEARCH_URLS[provider.providerId]?.invoke(title) ?: tmdbLink
 
+/** Where a tap on [provider] goes: its deep link when the proxy found one, else a search in its app, else TMDB's page. */
+fun watchProviderUrl(provider: WatchProvider, title: String, tmdbLink: String?, deepLinks: Map<String, String>): String? =
+    deepLinks[provider.providerId.toString()] ?: fallbackUrl(provider, title, tmdbLink)
+
 /** Port of WatchProviders.tsx: streaming logos (36 dp) that deep-link into the provider apps. */
 @Composable
 fun WatchProvidersRow(container: AppContainer, providers: WatchProvidersResult?, title: String, loading: Boolean, modifier: Modifier = Modifier) {

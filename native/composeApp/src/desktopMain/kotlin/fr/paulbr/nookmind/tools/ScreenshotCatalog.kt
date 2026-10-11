@@ -38,6 +38,18 @@ import fr.paulbr.nookmind.feature.legal.LegalScreen
 import fr.paulbr.nookmind.feature.library.MoviesLibraryScreen
 import fr.paulbr.nookmind.feature.library.BooksLibraryScreen
 import fr.paulbr.nookmind.feature.onboarding.OnboardingScreen
+import fr.paulbr.nookmind.core.model.TmdbMovie
+import fr.paulbr.nookmind.core.model.WatchProvider
+import fr.paulbr.nookmind.feature.tonight.CardReason
+import fr.paulbr.nookmind.feature.tonight.MatchVia
+import fr.paulbr.nookmind.feature.tonight.Outcome
+import fr.paulbr.nookmind.feature.tonight.Player
+import fr.paulbr.nookmind.feature.tonight.StreamingService
+import fr.paulbr.nookmind.feature.tonight.TonightCard
+import fr.paulbr.nookmind.feature.tonight.TonightScreen
+import fr.paulbr.nookmind.feature.tonight.TonightState
+import fr.paulbr.nookmind.feature.tonight.TonightStep
+import fr.paulbr.nookmind.feature.tonight.Verdict
 
 class ScreenshotEntry(
     val name: String,
@@ -170,8 +182,50 @@ object ScreenshotCatalog {
         ScreenshotEntry("books-library-read-dark", heightDp = 1200) { libraryOnly(MediaMode.BOOKS) { BooksLibraryScreen(container, PaddingValues(), initialTab = "read") } },
         ScreenshotEntry("movies-library-watched-dark", heightDp = 1200) { libraryOnly(MediaMode.MOVIES) { MoviesLibraryScreen(container, PaddingValues(), initialTab = "watched") } },
         ScreenshotEntry("tablet-books-library", widthDp = 1024, heightDp = 768, content = shell(MediaMode.BOOKS, MainTab.LIBRARY)),
+        // Ce soir ?, one entry per step.
+        ScreenshotEntry("tonight-setup-dark", content = tonight(TonightStep.SETUP)),
+        ScreenshotEntry("tonight-rules-dark", content = tonight(TonightStep.SWIPE) { showRules = true }),
+        ScreenshotEntry("tonight-swipe-dark", content = tonight(TonightStep.SWIPE) { cards ->
+            preview(cards, TonightStep.SWIPE, index = 2)
+            mine[0] = Verdict.YES
+            mine[1] = Verdict.NO
+        }),
+        ScreenshotEntry("tonight-handoff-dark", content = tonight(TonightStep.HANDOFF)),
+        ScreenshotEntry("tonight-duel-dark", content = tonight(TonightStep.DUEL) { cards ->
+            mine[0] = Verdict.YES; theirs[0] = Verdict.LOVE
+            mine[2] = Verdict.YES; theirs[2] = Verdict.YES
+            preview(cards, TonightStep.DUEL, player = Player.PARTNER, outcome = Outcome.Final(0, 2))
+        }),
+        ScreenshotEntry("tonight-match-dark", content = tonight(TonightStep.MATCH) { cards ->
+            preview(cards, TonightStep.MATCH, player = Player.PARTNER, winner = 2, via = MatchVia.MATCH)
+        }),
         ScreenshotEntry("tablet-series-home", widthDp = 1024, heightDp = 768, content = shell(MediaMode.SERIES, MainTab.SEARCH)),
     )
+
+    /** Ce soir ? at [step], on cards made from the fake library, with every animation at rest. */
+    private fun tonight(step: TonightStep, configure: TonightState.(List<TonightCard>) -> Unit = {}): @Composable () -> Unit = {
+        remember { seed(container) }
+        val state = remember {
+            TonightState("Léa", setOf(StreamingService.NETFLIX, StreamingService.PRIME)).apply {
+                val cards = tonightCards()
+                preview(cards, step)
+                configure(cards)
+            }
+        }
+        TonightScreen(container, onClose = {}, state = state, animate = false)
+    }
+
+    private fun tonightCards(): List<TonightCard> = FakeData.movies.mapIndexed { i, movie ->
+        TonightCard(
+            movie = TmdbMovie(
+                id = movie.tmdbId ?: i, title = movie.title, releaseDate = movie.releaseDate.orEmpty(), runtime = movie.runtime,
+                overview = movie.description ?: "Cobb vole des secrets dans les rêves des autres. On lui propose l'inverse : y implanter une idée.",
+            ),
+            posterUrl = movie.posterUrl, year = movie.releaseDate?.take(4), runtime = movie.runtime, director = movie.director,
+            genres = listOfNotNull(movie.genre), provider = WatchProvider(8, "Netflix"), providersLink = null,
+            reason = if (i % 2 == 0) CardReason.Watchlist else CardReason.BecauseYouLiked("Interstellar"),
+        )
+    }
 
     /** One library screen alone, dark, in grid view, without the navigation around it. */
     @Composable

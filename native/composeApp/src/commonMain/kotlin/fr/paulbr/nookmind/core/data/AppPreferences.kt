@@ -115,7 +115,27 @@ class AppPreferences(private val settings: Settings) {
         get() = settings.getLongOrNull(KEY_SERIES_REFRESH)
         set(value) = if (value == null) settings.remove(KEY_SERIES_REFRESH) else settings.putLong(KEY_SERIES_REFRESH, value)
 
+    // ── Ce soir ? ─────────────────────────────────────────────────────────
+
+    /** The rules of Ce soir ? show once, then never again. */
+    var tonightTutorialSeen: Boolean
+        get() = settings.hasKey(KEY_TONIGHT_TUTORIAL)
+        set(value) = if (value) settings.putString(KEY_TONIGHT_TUTORIAL, "1") else settings.remove(KEY_TONIGHT_TUTORIAL)
+
+    /** Name of the last person Ce soir ? was played with. */
+    var tonightPartner: String
+        get() = settings.getStringOrNull(KEY_TONIGHT_PARTNER).orEmpty()
+        set(value) = settings.putString(KEY_TONIGHT_PARTNER, value)
+
+    /** Streaming services ticked in Ce soir ?, as their keys. */
+    var tonightServices: Set<String>
+        get() = settings.getStringOrNull(KEY_TONIGHT_SERVICES)?.split(',')?.filter(String::isNotBlank)?.toSet().orEmpty()
+        set(value) = settings.putString(KEY_TONIGHT_SERVICES, value.joinToString(","))
+
     companion object {
+        const val KEY_TONIGHT_TUTORIAL = "nookmind_tonight_tutorial_seen"
+        const val KEY_TONIGHT_PARTNER = "nookmind_tonight_partner"
+        const val KEY_TONIGHT_SERVICES = "nookmind_tonight_services"
         const val KEY_THEME = "bm_theme"
         const val KEY_MEDIA_MODE = "media-mode"
         const val KEY_ONBOARDING = "nookmind_onboarding_completed"
