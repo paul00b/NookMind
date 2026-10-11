@@ -199,6 +199,10 @@ object ScreenshotCatalog {
         ScreenshotEntry("social-dark", heightDp = 2600, content = shell(MediaMode.MOVIES, MainTab.SOCIAL, dark = true)),
         ScreenshotEntry("social", heightDp = 2600, content = shell(MediaMode.BOOKS, MainTab.SOCIAL)),
         ScreenshotEntry("social-empty-dark", content = lonelySocial()),
+        // A movie of Tom's opened from the salon: the add sheet, with what friends did with it.
+        ScreenshotEntry("social-friend-movie-dark", heightDp = SHEET_HEIGHT_DP, content = shell(MediaMode.BOOKS, MainTab.SOCIAL, dark = true) {
+            NookTheme(ThemeMode.DARK, MediaMode.MOVIES) { AddMovieSheet(container, FakeData.newMovie, onClose = {}) }
+        }),
         // Ce soir ?, one entry per step.
         ScreenshotEntry("tonight-setup-dark", content = tonight(TonightStep.SETUP)),
         ScreenshotEntry("tonight-rules-dark", content = tonight(TonightStep.SWIPE) { showRules = true }),

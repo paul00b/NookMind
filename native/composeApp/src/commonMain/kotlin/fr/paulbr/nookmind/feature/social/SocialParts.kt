@@ -55,6 +55,7 @@ import fr.paulbr.nookmind.core.designsystem.components.NookPressable
 import fr.paulbr.nookmind.core.designsystem.components.NookTextField
 import fr.paulbr.nookmind.core.designsystem.components.NookToggle
 import fr.paulbr.nookmind.core.designsystem.components.PrimaryButton
+import fr.paulbr.nookmind.core.designsystem.components.Spinner
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
 import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.core.ui.HapticCue
@@ -297,10 +298,11 @@ internal fun FriendRow(friend: Friend, onRemove: () -> Unit) {
 
 /** A poster tile of "En ce moment", with the friend on its corner. */
 @Composable
-internal fun NowTile(item: FriendItem, friend: Friend?, modifier: Modifier = Modifier) {
-    Column(modifier.width(96.dp)) {
+internal fun NowTile(item: FriendItem, friend: Friend?, loading: Boolean, onOpen: () -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier.width(96.dp).clip(NookShapes.xl).clickable(onClick = onOpen)) {
         Box {
             MediaImage(item.imageUrl, item.title, Modifier.fillMaxWidth(), mode = modeOfKind(item.kind), shape = NookShapes.xl, placeholderIconSize = 24.dp)
+            if (loading) OpeningVeil(Modifier.matchParentSize())
             if (friend != null) {
                 Box(Modifier.align(Alignment.BottomStart).padding(6.dp).border(2.dp, NookTheme.colors.background, CircleShape)) {
                     Avatar(friend.displayName, friend.avatarUrl, AvatarSize.SM)
@@ -312,6 +314,14 @@ internal fun NowTile(item: FriendItem, friend: Friend?, modifier: Modifier = Mod
         if (friend != null) {
             Text("${friend.firstName} ${verbOf(item)}", style = NookTheme.type.xs, color = NookTheme.colors.textSubtle, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
+    }
+}
+
+/** Darkens a poster while its full sheet loads. */
+@Composable
+private fun OpeningVeil(modifier: Modifier) {
+    Box(modifier.clip(NookShapes.xl).background(Color.Black.copy(alpha = 0.45f)), contentAlignment = Alignment.Center) {
+        Spinner(size = 20.dp, color = Color.White, trackColor = Color.White.copy(alpha = 0.3f))
     }
 }
 
@@ -332,13 +342,18 @@ internal fun SalonItem(
     friend: Friend?,
     myReaction: String?,
     inMyLibrary: Boolean,
+    loading: Boolean,
+    onOpen: () -> Unit,
     onReact: (String) -> Unit,
     onAdd: () -> Unit,
 ) {
     val colors = NookTheme.colors
     val accent = socialAccent()
-    Row(Modifier.fillMaxWidth().padding(vertical = 10.dp)) {
-        MediaImage(item.imageUrl, item.title, Modifier.width(76.dp), mode = modeOfKind(item.kind), shape = NookShapes.xl, placeholderIconSize = 22.dp)
+    Row(Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(vertical = 10.dp)) {
+        Box(Modifier.width(76.dp)) {
+            MediaImage(item.imageUrl, item.title, Modifier.fillMaxWidth(), mode = modeOfKind(item.kind), shape = NookShapes.xl, placeholderIconSize = 22.dp)
+            if (loading) OpeningVeil(Modifier.matchParentSize())
+        }
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -403,7 +418,7 @@ private fun ReactionChip(icon: ImageVector, label: String, selected: Boolean, ac
 
 /** "Tom trouve « Dune » culte · 2 h" */
 @Composable
-internal fun ReceivedReactionRow(reaction: ReceivedReaction, friend: Friend?) {
+internal fun ReceivedReactionRow(reaction: ReceivedReaction, friend: Friend?, onOpen: () -> Unit) {
     val colors = NookTheme.colors
     val name = friend?.firstName ?: fr.paulbr.nookmind.core.data.firstNameOf(reaction.displayName)
     val text = stringResource(
@@ -415,7 +430,7 @@ internal fun ReceivedReactionRow(reaction: ReceivedReaction, friend: Friend?) {
         name, reaction.itemTitle,
     )
     val (icon, _) = reactionLabel(reaction.reaction)
-    Row(Modifier.fillMaxWidth().padding(vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
         Box {
             Avatar(friend?.displayName ?: reaction.displayName, friend?.avatarUrl, AvatarSize.MD)
             Box(

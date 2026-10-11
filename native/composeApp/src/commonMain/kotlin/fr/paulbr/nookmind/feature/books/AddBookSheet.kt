@@ -93,6 +93,7 @@ import fr.paulbr.nookmind.resources.bookDetail_seeMore
 import fr.paulbr.nookmind.resources.bookDetail_yourRating
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
+import fr.paulbr.nookmind.feature.social.FriendsTake
 
 /**
  * Port of AddBookModal.tsx. [prefill] comes from a Google Books result; null means a manual add.
@@ -226,6 +227,8 @@ fun AddBookSheet(container: AppContainer, prefill: Book?, onClose: () -> Unit) {
                                     seeLessText = stringResource(Res.string.bookDetail_seeLess),
                                 )
                             }
+
+                            FriendsTake(container, "book", form.googleBooksId)
 
                             EditableNote(
                                 note = form.personalNote,
