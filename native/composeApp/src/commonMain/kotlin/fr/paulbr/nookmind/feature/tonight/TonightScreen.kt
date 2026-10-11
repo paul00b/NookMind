@@ -366,14 +366,6 @@ private fun SetupStep(container: AppContainer, state: TonightState, onDeal: () -
                     }
                 }
             }
-            SectionLabel(stringResource(Res.string.tonight_services))
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                StreamingService.entries.forEach { service ->
-                    TonightChip(service.label, selected = service in state.services) {
-                        state.services = if (service in state.services) state.services - service else state.services + service
-                    }
-                }
-            }
             SectionLabel(stringResource(Res.string.tonight_howMany))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 DECK_SIZES.forEach { size ->
@@ -381,6 +373,14 @@ private fun SetupStep(container: AppContainer, state: TonightState, onDeal: () -
                 }
                 Spacer(Modifier.width(8.dp))
                 TonightChip(stringResource(Res.string.tonight_shortOnly), selected = state.shortOnly) { state.shortOnly = !state.shortOnly }
+            }
+            SectionLabel(stringResource(Res.string.tonight_services))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                StreamingService.entries.forEach { service ->
+                    TonightChip(service.label, selected = service in state.services) {
+                        state.services = if (service in state.services) state.services - service else state.services + service
+                    }
+                }
             }
             Spacer(Modifier.height(24.dp))
         }
