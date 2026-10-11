@@ -11,7 +11,7 @@ data class SearchSectionPreference(val id: String, val visible: Boolean = true)
 object SearchSections {
     val DEFAULT_ORDER: Map<MediaMode, List<String>> = mapOf(
         MediaMode.BOOKS to listOf("want_to_read", "last_read"),
-        MediaMode.MOVIES to listOf("trending", "want_to_watch", "last_watched"),
+        MediaMode.MOVIES to listOf("tonight", "trending", "want_to_watch", "last_watched"),
         MediaMode.SERIES to listOf("trending", "watching", "waiting", "want_to_watch", "last_watched"),
     )
 

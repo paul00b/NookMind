@@ -65,7 +65,6 @@ import fr.paulbr.nookmind.core.platform.DateStyle
 import fr.paulbr.nookmind.feature.common.LocalWideLayout
 import fr.paulbr.nookmind.feature.common.TrailerButton
 import fr.paulbr.nookmind.feature.common.formatIsoDate
-import fr.paulbr.nookmind.feature.tonight.TonightEntryCard
 import fr.paulbr.nookmind.resources.Res
 import fr.paulbr.nookmind.resources.movieDetail_description
 import fr.paulbr.nookmind.resources.movieDetail_runtime
@@ -96,7 +95,7 @@ private const val DAY_MS: Long = 24 * 60 * 60 * 1000
 
 /** Port of NextUpMovies.tsx: recent releases and upcoming movies from TMDB, ordered by the user's favourite genres. */
 @Composable
-fun NextUpMoviesScreen(container: AppContainer, contentPadding: PaddingValues, onOpenTonight: () -> Unit = {}) {
+fun NextUpMoviesScreen(container: AppContainer, contentPadding: PaddingValues) {
     val movies by container.movies.items.collectAsState()
     val wide = LocalWideLayout.current
     var upcoming by remember { mutableStateOf<List<TmdbMovie>>(emptyList()) }
@@ -153,7 +152,6 @@ fun NextUpMoviesScreen(container: AppContainer, contentPadding: PaddingValues, o
 
     Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(contentPadding), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.fillMaxWidth().widthIn(max = 1152.dp).padding(pagePadding)) {
-            TonightEntryCard(onClick = onOpenTonight, modifier = Modifier.padding(horizontal = rowPadding).padding(bottom = 28.dp))
             when {
                 loading -> {
                     SkeletonBox(Modifier.padding(horizontal = rowPadding).width(160.dp).height(28.dp), shape = NookShapes.lg, color = NookTheme.colors.surfaceMuted)

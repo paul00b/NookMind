@@ -588,8 +588,13 @@
     <string name="toast_series_updateError">Failed to update series</string>
     <string name="watchProviders_availableOn">Available on</string>
     <!-- Ce soir ? -->
+    <string name="nav_social">Social</string>
+    <string name="social_title">Social</string>
+    <string name="social_subtitle">Your friends and your evenings</string>
+    <string name="settings_sections_movies_tonight">Tonight?</string>
+    <string name="tonight_rules">See the rules</string>
     <string name="tonight_title">Tonight?</string>
-    <string name="tonight_entrySubtitle">Pick a movie together, in a minute.</string>
+    <string name="tonight_entrySubtitle">Pick a movie together.</string>
     <string name="tonight_withWho">With</string>
     <string name="tonight_partnerPlaceholder">Their name</string>
     <string name="tonight_partnerFallback">Your partner</string>

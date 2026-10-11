@@ -89,6 +89,15 @@ const ICONS = {
   Smartphone: 'smartphone',
   Sparkles: 'sparkles',
   Popcorn: 'popcorn',
+  Users: 'users',
+  CircleHelp: 'circle-help',
+  UserPlus: 'user-plus',
+  Copy: 'copy',
+  Link: 'link',
+  Wifi: 'wifi',
+  Inbox: 'inbox',
+  MessageCircle: 'message-circle',
+  Crown: 'crown',
 };
 
 function num(v) {

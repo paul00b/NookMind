@@ -49,6 +49,7 @@ import fr.paulbr.nookmind.feature.library.MoviesLibraryScreen
 import fr.paulbr.nookmind.feature.library.SeriesLibraryScreen
 import fr.paulbr.nookmind.feature.nextup.NextUpBooksScreen
 import fr.paulbr.nookmind.feature.nextup.NextUpMoviesScreen
+import fr.paulbr.nookmind.feature.social.SocialScreen
 import fr.paulbr.nookmind.feature.tonight.TonightScreen
 import fr.paulbr.nookmind.feature.nextup.NextUpSeriesScreen
 import fr.paulbr.nookmind.feature.settings.NotificationPromptSheet
@@ -57,7 +58,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
-enum class MainTab { SEARCH, LIBRARY, NEXT_UP }
+enum class MainTab { SEARCH, LIBRARY, NEXT_UP, SOCIAL }
 
 /** Swipe order of the web app (`MODES = ['series', 'movies', 'books']`). */
 private val SWIPE_MODES = listOf(MediaMode.SERIES, MediaMode.MOVIES, MediaMode.BOOKS)
@@ -197,7 +198,7 @@ private fun ModeContent(container: AppContainer, mode: MediaMode, tab: MainTab, 
     when (tab) {
         MainTab.SEARCH -> when (mode) {
             MediaMode.BOOKS -> BooksHomeScreen(container, contentPadding)
-            MediaMode.MOVIES -> MoviesHomeScreen(container, contentPadding)
+            MediaMode.MOVIES -> MoviesHomeScreen(container, contentPadding, onOpenTonight)
             MediaMode.SERIES -> SeriesHomeScreen(container, contentPadding)
         }
         MainTab.LIBRARY -> when (mode) {
@@ -207,9 +208,10 @@ private fun ModeContent(container: AppContainer, mode: MediaMode, tab: MainTab, 
         }
         MainTab.NEXT_UP -> when (mode) {
             MediaMode.BOOKS -> NextUpBooksScreen(container, contentPadding)
-            MediaMode.MOVIES -> NextUpMoviesScreen(container, contentPadding, onOpenTonight)
+            MediaMode.MOVIES -> NextUpMoviesScreen(container, contentPadding)
             MediaMode.SERIES -> NextUpSeriesScreen(container, contentPadding)
         }
+        MainTab.SOCIAL -> SocialScreen(container, contentPadding, onOpenTonight)
     }
 }
 
