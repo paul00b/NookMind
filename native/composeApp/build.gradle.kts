@@ -2,6 +2,7 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
+import java.net.URI
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -235,7 +236,7 @@ android {
         versionCode = appVersionCode
         versionName = appVersionName
         // The domain of the shared links (the Vercel API), for the https intent filter.
-        manifestPlaceholders["shareHost"] = runCatching { java.net.URI(secret("API_BASE_URL")).host }.getOrNull() ?: "nookmind.invalid"
+        manifestPlaceholders["shareHost"] = runCatching { URI(secret("API_BASE_URL")).host }.getOrNull() ?: "nookmind.invalid"
     }
 
     val keystorePropertiesFile = rootProject.file("keystore.properties")
