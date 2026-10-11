@@ -233,6 +233,8 @@ data class TmdbMovie(
     val runtime: Int? = null,
     val genres: List<TmdbGenre>? = null,
     val credits: TmdbCredits? = null,
+    /** Genres of a movie from a list (search, discover, recommendations), where [genres] is absent. */
+    @SerialName("genre_ids") val genreIds: List<Int>? = null,
 )
 
 @Serializable

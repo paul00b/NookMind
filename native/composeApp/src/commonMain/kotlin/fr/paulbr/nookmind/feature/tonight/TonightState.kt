@@ -50,6 +50,8 @@ class TonightState(partnerName: String = "", services: Set<StreamingService> = e
     var partnerName by mutableStateOf(partnerName)
     var services by mutableStateOf(services)
     var shortOnly by mutableStateOf(false)
+    var deckSize by mutableIntStateOf(DECK_SIZE)
+    var genres by mutableStateOf<Set<TonightGenre>>(emptySet())
 
     /** The friend picked in the setup, to play online; null for someone on the same phone. */
     var friend by mutableStateOf<Friend?>(null)
@@ -185,6 +187,8 @@ class TonightState(partnerName: String = "", services: Set<StreamingService> = e
 @Composable
 fun rememberTonightState(container: AppContainer): TonightState = remember {
     TonightState(container.prefs.tonightPartner, StreamingService.fromKeys(container.prefs.tonightServices)).apply {
+        deckSize = container.prefs.tonightDeckSize.takeIf { it in DECK_SIZES } ?: DECK_SIZE
+        genres = TonightGenre.fromKeys(container.prefs.tonightGenres)
         val last = container.prefs.tonightFriend
         if (last.isNotEmpty()) friend = container.social.friends.value.firstOrNull { it.userId == last && it.accepted }
     }

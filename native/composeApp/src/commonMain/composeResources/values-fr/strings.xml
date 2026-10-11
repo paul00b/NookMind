@@ -626,7 +626,7 @@
     <string name="tonight_close">Fermer</string>
     <string name="tonight_preview">Aperçu</string>
     <string name="tonight_turnOf">Au tour de %1$s</string>
-    <string name="tonight_handOver">Passe-lui le téléphone : mêmes 10 cartes.</string>
+    <string name="tonight_handOver">Passe-lui le téléphone : les mêmes %1$d cartes.</string>
     <string name="tonight_secret">Tes choix restent cachés</string>
     <string name="tonight_final">Finale</string>
     <string name="tonight_finalTitle">Deux matchs, un seul film ce soir.</string>
@@ -636,7 +636,7 @@
     <string name="tonight_noneTitle">Rien en commun ce soir.</string>
     <string name="tonight_tapPoster">Touchez l'affiche de votre choix.</string>
     <string name="tonight_chance">Le hasard choisit</string>
-    <string name="tonight_redeal">Redistribuer 10 cartes</string>
+    <string name="tonight_redeal">Redistribuer les cartes</string>
     <string name="tonight_match">C'est un match</string>
     <string name="tonight_matchLove">Coup de cœur commun</string>
     <string name="tonight_matchFinal">Gagné en finale</string>
@@ -730,8 +730,22 @@
     <string name="tonight_reasonPartnerLiked">%1$s a aimé %2$s</string>
     <string name="tonight_reasonPartnerWatchlist">Dans la liste de %1$s</string>
     <string name="tonight_samePhone">À côté</string>
-    <string name="tonight_waitingHint">Le premier film où vous dites oui tous les deux gagne.</string>
+    <string name="tonight_waitingHint">Le match se fait quand vous avez fini tous les deux.</string>
     <string name="tonight_waitingNotJoined">%1$s n'a pas encore ouvert l'invitation.</string>
     <string name="tonight_waitingProgress">%1$s en est à %2$d sur %3$d.</string>
     <string name="tonight_tapPosterOnline">Touche ton préféré. Si %1$s choisit le même, il gagne ; sinon le hasard tranche.</string>
+    <string name="tonight_mood">Envie de quoi ?</string>
+    <string name="tonight_genreAll">Un peu de tout</string>
+    <string name="tonight_genreAction">Action</string>
+    <string name="tonight_genreComedy">Comédie</string>
+    <string name="tonight_genreDrama">Drame</string>
+    <string name="tonight_genreThriller">Thriller</string>
+    <string name="tonight_genreScifi">SF et fantastique</string>
+    <string name="tonight_genreHorror">Horreur</string>
+    <string name="tonight_genreRomance">Romance</string>
+    <string name="tonight_genreAnimation">Animation</string>
+    <string name="tonight_genreDocumentary">Documentaire</string>
+    <string name="tonight_howMany">Combien de films</string>
+    <string name="tonight_cards">%1$d films</string>
+    <string name="tonight_reasonPopular">Un incontournable du genre</string>
 </resources>

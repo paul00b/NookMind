@@ -95,7 +95,6 @@ import fr.paulbr.nookmind.resources.tonight_go
 import fr.paulbr.nookmind.resources.tonight_gone
 import fr.paulbr.nookmind.resources.tonight_handOver
 import fr.paulbr.nookmind.resources.tonight_invite
-import fr.paulbr.nookmind.resources.tonight_length
 import fr.paulbr.nookmind.resources.tonight_maybesTitle
 import fr.paulbr.nookmind.resources.tonight_noneTitle
 import fr.paulbr.nookmind.resources.tonight_onlineError
@@ -119,6 +118,19 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.stringResource
+import fr.paulbr.nookmind.resources.tonight_mood
+import fr.paulbr.nookmind.resources.tonight_genreAll
+import fr.paulbr.nookmind.resources.tonight_howMany
+import fr.paulbr.nookmind.resources.tonight_cards
+import fr.paulbr.nookmind.resources.tonight_genreAction
+import fr.paulbr.nookmind.resources.tonight_genreComedy
+import fr.paulbr.nookmind.resources.tonight_genreDrama
+import fr.paulbr.nookmind.resources.tonight_genreThriller
+import fr.paulbr.nookmind.resources.tonight_genreScifi
+import fr.paulbr.nookmind.resources.tonight_genreHorror
+import fr.paulbr.nookmind.resources.tonight_genreRomance
+import fr.paulbr.nookmind.resources.tonight_genreAnimation
+import fr.paulbr.nookmind.resources.tonight_genreDocumentary
 
 /** The fixed night palette of Ce soir ?, whatever the app theme: it plays like a cinema. */
 internal object TonightColors {
@@ -200,6 +212,8 @@ fun TonightScreen(
         val friend = state.friend
         val remote = state.remote
         container.prefs.tonightServices = state.services.map { it.key }.toSet()
+        container.prefs.tonightGenres = state.genres.map { it.key }.toSet()
+        container.prefs.tonightDeckSize = state.deckSize
         if (remote == null) {
             container.prefs.tonightFriend = friend?.userId.orEmpty()
             if (friend == null) container.prefs.tonightPartner = state.partnerName.trim() else state.partnerName = friend.firstName
@@ -210,7 +224,7 @@ fun TonightScreen(
             val started = kotlin.time.TimeSource.Monotonic.markNow()
             val partnerId = remote?.partnerId ?: friend?.userId
             val taste = partnerId?.let { id -> partnerTasteOf(state.partnerName, container.social.library.value.filter { it.owner == id }) }
-            val cards = runCatching { dealTonightDeck(container, state.services, state.shortOnly, skip, taste) }.getOrDefault(emptyList())
+            val cards = runCatching { dealTonightDeck(container, state.services, state.shortOnly, skip, taste, state.deckSize, state.genres) }.getOrDefault(emptyList())
             // Let the shuffle be seen, even when everything came from the cache.
             val left = 900L - started.elapsedNow().inWholeMilliseconds
             if (left > 0) delay(left)
@@ -343,6 +357,15 @@ private fun SetupStep(container: AppContainer, state: TonightState, onDeal: () -
                     Text(stringResource(Res.string.tonight_onlineHint, friend.firstName), style = NookTheme.type.sans(15, lineHeight = 21), color = TonightColors.Muted)
                 }
             }
+            SectionLabel(stringResource(Res.string.tonight_mood))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                TonightChip(stringResource(Res.string.tonight_genreAll), selected = state.genres.isEmpty()) { state.genres = emptySet() }
+                TonightGenre.entries.forEach { genre ->
+                    TonightChip(genreLabel(genre), selected = genre in state.genres) {
+                        state.genres = if (genre in state.genres) state.genres - genre else state.genres + genre
+                    }
+                }
+            }
             SectionLabel(stringResource(Res.string.tonight_services))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 StreamingService.entries.forEach { service ->
@@ -351,8 +374,14 @@ private fun SetupStep(container: AppContainer, state: TonightState, onDeal: () -
                     }
                 }
             }
-            SectionLabel(stringResource(Res.string.tonight_length))
-            TonightChip(stringResource(Res.string.tonight_shortOnly), selected = state.shortOnly) { state.shortOnly = !state.shortOnly }
+            SectionLabel(stringResource(Res.string.tonight_howMany))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                DECK_SIZES.forEach { size ->
+                    TonightChip(stringResource(Res.string.tonight_cards, size), selected = state.deckSize == size) { state.deckSize = size }
+                }
+                Spacer(Modifier.width(8.dp))
+                TonightChip(stringResource(Res.string.tonight_shortOnly), selected = state.shortOnly) { state.shortOnly = !state.shortOnly }
+            }
             Spacer(Modifier.height(24.dp))
         }
         BigButton(
@@ -363,6 +392,21 @@ private fun SetupStep(container: AppContainer, state: TonightState, onDeal: () -
         )
     }
 }
+
+@Composable
+private fun genreLabel(genre: TonightGenre): String = stringResource(
+    when (genre) {
+        TonightGenre.ACTION -> Res.string.tonight_genreAction
+        TonightGenre.COMEDY -> Res.string.tonight_genreComedy
+        TonightGenre.DRAMA -> Res.string.tonight_genreDrama
+        TonightGenre.THRILLER -> Res.string.tonight_genreThriller
+        TonightGenre.SCIFI -> Res.string.tonight_genreScifi
+        TonightGenre.HORROR -> Res.string.tonight_genreHorror
+        TonightGenre.ROMANCE -> Res.string.tonight_genreRomance
+        TonightGenre.ANIMATION -> Res.string.tonight_genreAnimation
+        TonightGenre.DOCUMENTARY -> Res.string.tonight_genreDocumentary
+    },
+)
 
 /** Someone to play with: a round picture and a first name, ringed when picked. */
 @Composable
@@ -462,7 +506,7 @@ private fun HandoffStep(state: TonightState, names: TonightNames) {
             Spacer(Modifier.height(26.dp))
             Text(stringResource(Res.string.tonight_turnOf, names.partner), style = NookTheme.type.serif(34, lineHeight = 40), color = TonightColors.Text, textAlign = TextAlign.Center)
             Spacer(Modifier.height(10.dp))
-            Text(stringResource(Res.string.tonight_handOver), style = NookTheme.type.sans(16, lineHeight = 23), color = TonightColors.Muted, textAlign = TextAlign.Center)
+            Text(stringResource(Res.string.tonight_handOver, state.deck.size), style = NookTheme.type.sans(16, lineHeight = 23), color = TonightColors.Muted, textAlign = TextAlign.Center)
             Spacer(Modifier.height(18.dp))
             Row(
                 Modifier.clip(CircleShape).background(Color(0x73000000)).padding(horizontal = 14.dp, vertical = 9.dp),
