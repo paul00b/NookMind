@@ -29,6 +29,15 @@ class GoogleBooksApi(private val client: HttpClient) {
         return response.body<VolumesResponse>().items ?: emptyList()
     }
 
+    /** One volume by its id (a friend's book), or null when it cannot be read. */
+    suspend fun fetchVolume(id: String): GoogleBookVolume? = runCatching {
+        val response = client.get("$BASE_URL/$id") {
+            AppConfig.googleBooksApiKey?.let { parameter("key", it) }
+            timeout { requestTimeoutMillis = 8_000 }
+        }
+        if (response.status.value !in 200..299) null else response.body<GoogleBookVolume>()
+    }.getOrNull()
+
     companion object {
         private const val BASE_URL = "https://www.googleapis.com/books/v1/volumes"
 

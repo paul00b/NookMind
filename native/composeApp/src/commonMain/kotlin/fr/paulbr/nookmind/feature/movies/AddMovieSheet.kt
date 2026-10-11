@@ -99,6 +99,7 @@ import fr.paulbr.nookmind.resources.movieDetail_seeLess
 import fr.paulbr.nookmind.resources.movieDetail_seeMore
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
+import fr.paulbr.nookmind.feature.social.FriendsTake
 
 /**
  * Port of AddMovieModal.tsx: preview mode when [prefill] comes from TMDB (poster, meta pills,
@@ -254,6 +255,7 @@ fun AddMovieSheet(container: AppContainer, prefill: Movie?, onClose: () -> Unit)
                     }
                     form.tmdbId?.let { TrailerButton(container, "movie", it) }
                     CastAccordion(cast, stringResource(Res.string.movieDetail_cast), onSelect = { selectedActorId = it })
+                    FriendsTake(container, "movie", form.tmdbId?.toString())
                     // The note reads and edits like on MovieDetailSheet; the form keeps its plain text area.
                     EditableNote(
                         note = form.personalNote,

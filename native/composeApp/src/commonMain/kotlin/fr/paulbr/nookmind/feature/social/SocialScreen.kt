@@ -43,6 +43,7 @@ import fr.paulbr.nookmind.core.designsystem.components.Spinner
 import fr.paulbr.nookmind.core.designsystem.components.TextLink
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
 import fr.paulbr.nookmind.core.model.Book
+import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.core.model.BookStatus
 import fr.paulbr.nookmind.core.model.Movie
 import fr.paulbr.nookmind.core.model.MovieStatus
@@ -80,6 +81,16 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import fr.paulbr.nookmind.core.network.GoogleBooksApi
+import fr.paulbr.nookmind.feature.movies.AddMovieSheet
+import fr.paulbr.nookmind.feature.movies.MovieDetailSheet
+import fr.paulbr.nookmind.feature.series.AddSeriesSheet
+import fr.paulbr.nookmind.feature.series.SeriesDetailSheet
+import fr.paulbr.nookmind.feature.books.AddBookSheet
+import fr.paulbr.nookmind.feature.books.BookDetailSheet
 
 /**
  * The Social tab, the same in every mode: invitations to Ce soir ?, what friends are watching and
@@ -120,6 +131,44 @@ fun SocialScreen(container: AppContainer, contentPadding: PaddingValues, onOpenT
     val mine = ownedKeys(movies, series, books)
     val now = nowPlaying(library)
     val salon = salonFeed(library)
+
+    // A friend's movie, series or book opens like a search result (to add it on my side), or as
+    // my own sheet when I already have it.
+    var opening by remember { mutableStateOf<String?>(null) }
+    var moviePrefill by remember { mutableStateOf<Movie?>(null) }
+    var seriesPrefill by remember { mutableStateOf<Series?>(null) }
+    var bookPrefill by remember { mutableStateOf<Book?>(null) }
+    var movieSelected by remember { mutableStateOf<Movie?>(null) }
+    var seriesSelected by remember { mutableStateOf<Series?>(null) }
+    var bookSelected by remember { mutableStateOf<Book?>(null) }
+
+    fun open(kind: String, key: String, title: String, subtitle: String?, imageUrl: String?) {
+        if (opening != null) return
+        when (kind) {
+            "movie" -> movies.firstOrNull { it.tmdbId?.toString() == key }?.let { movieSelected = it; return }
+            "series" -> series.firstOrNull { it.tmdbId?.toString() == key }?.let { seriesSelected = it; return }
+            else -> books.firstOrNull { it.googleBooksId == key }?.let { bookSelected = it; return }
+        }
+        opening = "$kind:$key"
+        scope.launch {
+            when (kind) {
+                "movie" -> {
+                    val id = key.toIntOrNull()
+                    moviePrefill = id?.let { container.tmdb.fetchMovieDetails(it) }?.let { TmdbApi.extractMovieData(it) }
+                        ?: Movie(tmdbId = id, title = title, director = subtitle.orEmpty(), posterUrl = imageUrl)
+                }
+                "series" -> {
+                    val id = key.toIntOrNull()
+                    seriesPrefill = id?.let { container.tmdb.fetchSeriesDetails(it) }?.let { TmdbApi.extractSeriesData(it) }
+                        ?: Series(tmdbId = id, title = title, creator = subtitle.orEmpty(), posterUrl = imageUrl)
+                }
+                else -> bookPrefill = container.googleBooks.fetchVolume(key)?.let { GoogleBooksApi.extractBookData(it) }
+                    ?: Book(googleBooksId = key, title = title, author = subtitle.orEmpty(), coverUrl = imageUrl)
+            }
+            opening = null
+        }
+    }
+    fun openItem(item: FriendItem) = open(item.kind, item.itemKey, item.title, item.subtitle, item.imageUrl)
 
     suspend fun addFriend(code: String): Boolean {
         val result = social.addFriend(code)
@@ -182,14 +231,16 @@ fun SocialScreen(container: AppContainer, contentPadding: PaddingValues, onOpenT
             if (received.isNotEmpty()) {
                 SocialSpacer()
                 SocialTitle(stringResource(Res.string.social_reactions))
-                received.take(5).forEach { ReceivedReactionRow(it, byId[it.fromUser]) }
+                received.take(5).forEach { r ->
+                    ReceivedReactionRow(r, byId[r.fromUser], onOpen = { open(r.kind, r.itemKey, r.itemTitle, null, null) })
+                }
             }
 
             if (now.isNotEmpty()) {
                 SocialSpacer()
                 SocialTitle(stringResource(Res.string.social_now))
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    now.forEach { NowTile(it, byId[it.owner]) }
+                    now.forEach { item -> NowTile(item, byId[item.owner], loading = opening == "${item.kind}:${item.itemKey}", onOpen = { openItem(item) }) }
                 }
             }
 
@@ -203,6 +254,8 @@ fun SocialScreen(container: AppContainer, contentPadding: PaddingValues, onOpenT
                         friend = byId[item.owner],
                         myReaction = sent.firstOrNull { it.toUser == item.owner && it.kind == item.kind && it.itemKey == item.itemKey }?.reaction,
                         inMyLibrary = (item.kind to item.itemKey) in mine,
+                        loading = opening == "${item.kind}:${item.itemKey}",
+                        onOpen = { openItem(item) },
                         onReact = { key ->
                             scope.launch { if (!social.react(item, key)) container.toasts.error(Res.string.social_reactError) }
                         },
@@ -248,6 +301,15 @@ fun SocialScreen(container: AppContainer, contentPadding: PaddingValues, onOpenT
             Spacer(Modifier.height(24.dp))
         }
     }
+
+    // The Social tab is the same in every mode: each sheet takes the colours of its own kind.
+    val themeMode by container.prefs.theme.collectAsState()
+    moviePrefill?.let { NookTheme(themeMode, MediaMode.MOVIES) { AddMovieSheet(container, it, onClose = { moviePrefill = null }) } }
+    seriesPrefill?.let { NookTheme(themeMode, MediaMode.SERIES) { AddSeriesSheet(container, it, onClose = { seriesPrefill = null }) } }
+    bookPrefill?.let { NookTheme(themeMode, MediaMode.BOOKS) { AddBookSheet(container, it, onClose = { bookPrefill = null }) } }
+    movieSelected?.let { NookTheme(themeMode, MediaMode.MOVIES) { MovieDetailSheet(container, it, onClose = { movieSelected = null }) } }
+    seriesSelected?.let { NookTheme(themeMode, MediaMode.SERIES) { SeriesDetailSheet(container, it, onClose = { seriesSelected = null }) } }
+    bookSelected?.let { NookTheme(themeMode, MediaMode.BOOKS) { BookDetailSheet(container, it, onClose = { bookSelected = null }) } }
 }
 
 @Composable

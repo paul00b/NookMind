@@ -95,6 +95,7 @@ import fr.paulbr.nookmind.resources.seriesDetail_yourRating
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+import fr.paulbr.nookmind.feature.social.FriendsTake
 
 /**
  * Port of AddSeriesModal.tsx: form + season grid, status derived from the watched seasons.
@@ -235,6 +236,7 @@ fun AddSeriesSheet(container: AppContainer, prefill: Series?, onClose: () -> Uni
                                 clampLines = 3,
                             )
                         }
+                        FriendsTake(container, "series", form.tmdbId?.toString())
                     }
 
                     val totalSeasons = form.seasons
