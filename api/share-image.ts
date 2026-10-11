@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { ImageResponse } from '@vercel/og';
 import { ACCENTS, COPY, loadShareItem, parseKind, parseLang, parseSharer, type ShareItem, type ShareLang } from './_lib/shareItem.js';
 
@@ -9,12 +10,14 @@ import { ACCENTS, COPY, loadShareItem, parseKind, parseLang, parseSharer, type S
 const WIDTH = 1200;
 const HEIGHT = 630;
 
+// Shipped with the function by vercel.json (includeFiles), next to it under the project root.
+const asset = (name: string) => readFileSync(join(process.cwd(), 'api', '_lib', name));
 const fonts = [
-  { name: 'Playfair', data: readFileSync(new URL('./_lib/fonts/playfair_bold.ttf', import.meta.url)), weight: 700 as const, style: 'normal' as const },
-  { name: 'Inter', data: readFileSync(new URL('./_lib/fonts/inter_regular.ttf', import.meta.url)), weight: 400 as const, style: 'normal' as const },
-  { name: 'Inter', data: readFileSync(new URL('./_lib/fonts/inter_semibold.ttf', import.meta.url)), weight: 600 as const, style: 'normal' as const },
+  { name: 'Playfair', data: asset('fonts/playfair_bold.ttf'), weight: 700 as const, style: 'normal' as const },
+  { name: 'Inter', data: asset('fonts/inter_regular.ttf'), weight: 400 as const, style: 'normal' as const },
+  { name: 'Inter', data: asset('fonts/inter_semibold.ttf'), weight: 600 as const, style: 'normal' as const },
 ];
-const logo = `data:image/png;base64,${readFileSync(new URL('./_lib/logo.png', import.meta.url)).toString('base64')}`;
+const logo = `data:image/png;base64,${asset('logo.png').toString('base64')}`;
 
 type Node = { type: string; props: Record<string, unknown> };
 
