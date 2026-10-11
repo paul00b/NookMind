@@ -49,6 +49,7 @@ import fr.paulbr.nookmind.feature.library.MoviesLibraryScreen
 import fr.paulbr.nookmind.feature.library.SeriesLibraryScreen
 import fr.paulbr.nookmind.feature.nextup.NextUpBooksScreen
 import fr.paulbr.nookmind.feature.nextup.NextUpMoviesScreen
+import fr.paulbr.nookmind.feature.tonight.TonightScreen
 import fr.paulbr.nookmind.feature.nextup.NextUpSeriesScreen
 import fr.paulbr.nookmind.feature.settings.NotificationPromptSheet
 import fr.paulbr.nookmind.feature.settings.SettingsPanel
@@ -76,6 +77,7 @@ fun MainScaffold(
     var tab by rememberSaveable { mutableStateOf(initialTab) }
     var settingsOpen by rememberSaveable { mutableStateOf(false) }
     var notifPromptOpen by remember { mutableStateOf(false) }
+    var tonightOpen by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     // Series metadata refresh (24 h) starts once the library is available.
@@ -125,7 +127,7 @@ fun MainScaffold(
                 Row(Modifier.fillMaxSize()) {
                     Sidebar(container = container, tab = tab, onTab = { tab = it }, onOpenSettings = { settingsOpen = true })
                     Box(Modifier.weight(1f)) {
-                        ModeContent(container, mode, tab, bottomPadding = 0.dp)
+                        ModeContent(container, mode, tab, bottomPadding = 0.dp, onOpenTonight = { tonightOpen = true })
                     }
                 }
             } else {
@@ -136,7 +138,7 @@ fun MainScaffold(
                         onModeChange = { container.prefs.setMediaMode(it) },
                         modifier = Modifier.weight(1f),
                     ) {
-                        ModeContent(container, mode, tab, bottomPadding = BOTTOM_NAV_CLEARANCE.dp)
+                        ModeContent(container, mode, tab, bottomPadding = BOTTOM_NAV_CLEARANCE.dp, onOpenTonight = { tonightOpen = true })
                     }
                 }
             }
@@ -150,6 +152,10 @@ fun MainScaffold(
                 hazeState = hazeState,
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
+        }
+
+        if (tonightOpen) {
+            TonightScreen(container, onClose = { tonightOpen = false })
         }
 
         ToastHost(
@@ -186,7 +192,7 @@ fun MainScaffold(
 const val BOTTOM_NAV_CLEARANCE = 144
 
 @Composable
-private fun ModeContent(container: AppContainer, mode: MediaMode, tab: MainTab, bottomPadding: androidx.compose.ui.unit.Dp) {
+private fun ModeContent(container: AppContainer, mode: MediaMode, tab: MainTab, bottomPadding: androidx.compose.ui.unit.Dp, onOpenTonight: () -> Unit) {
     val contentPadding = PaddingValues(bottom = bottomPadding)
     when (tab) {
         MainTab.SEARCH -> when (mode) {
@@ -201,7 +207,7 @@ private fun ModeContent(container: AppContainer, mode: MediaMode, tab: MainTab, 
         }
         MainTab.NEXT_UP -> when (mode) {
             MediaMode.BOOKS -> NextUpBooksScreen(container, contentPadding)
-            MediaMode.MOVIES -> NextUpMoviesScreen(container, contentPadding)
+            MediaMode.MOVIES -> NextUpMoviesScreen(container, contentPadding, onOpenTonight)
             MediaMode.SERIES -> NextUpSeriesScreen(container, contentPadding)
         }
     }

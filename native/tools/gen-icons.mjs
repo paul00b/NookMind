@@ -80,6 +80,15 @@ const ICONS = {
   ArrowUpDown: 'arrow-up-down',
   SlidersHorizontal: 'sliders-horizontal',
   Folder: 'folder',
+  Heart: 'heart',
+  Undo2: 'undo-2',
+  Hand: 'hand',
+  Lock: 'lock',
+  Dices: 'dices',
+  Repeat: 'repeat',
+  Smartphone: 'smartphone',
+  Sparkles: 'sparkles',
+  Popcorn: 'popcorn',
 };
 
 function num(v) {
