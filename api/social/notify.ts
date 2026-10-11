@@ -70,7 +70,7 @@ async function buildMessage(callerId: string, body: Record<string, unknown>): Pr
     return {
       to: session.guest as string,
       title: `${name} t'invite à « Ce soir ? »`,
-      body: 'Dix films, chacun son téléphone : trouvez celui de ce soir.',
+      body: 'Chacun swipe sur son téléphone, le match tombe à la fin.',
       route: `/tonight/${session.id}`,
     };
   }

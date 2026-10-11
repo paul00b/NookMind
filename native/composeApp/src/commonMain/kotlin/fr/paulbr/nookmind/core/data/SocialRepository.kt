@@ -397,6 +397,12 @@ class SocialRepository(
         put("p_b", b)
     })
 
+    suspend fun settle(sessionId: String, card: Int, via: String): TonightSessionRow? = sessionCall("tonight_settle", buildJsonObject {
+        put("p_session", sessionId)
+        put("p_card", card)
+        put("p_via", via)
+    })
+
     suspend fun chance(sessionId: String, cards: List<Int>): TonightSessionRow? = sessionCall("tonight_chance", buildJsonObject {
         put("p_session", sessionId)
         putJsonArray("p_cards") { cards.forEach { add(JsonPrimitive(it)) } }

@@ -5,6 +5,7 @@ import fr.paulbr.nookmind.core.model.WatchProvider
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class TonightGameTest {
     private val y = Verdict.YES
@@ -18,9 +19,16 @@ class TonightGameTest {
     }
 
     @Test
-    fun severalSharedYesesPlayAFinalFavouritesFirst() {
-        val outcome = outcomeOf(5, mapOf(0 to y, 1 to y, 3 to y), mapOf(0 to y, 1 to y, 3 to l))
-        assertEquals(Outcome.Final(3, 0), outcome)
+    fun theMovieLovedMostWinsOutright() {
+        // A shared favourite beats a single one, which beats a plain yes.
+        assertEquals(Outcome.Match(1), outcomeOf(5, mapOf(0 to y, 1 to l, 3 to y), mapOf(0 to y, 1 to l, 3 to l)))
+        assertEquals(Outcome.Match(3), outcomeOf(5, mapOf(0 to y, 1 to y, 3 to y), mapOf(0 to y, 1 to y, 3 to l)))
+    }
+
+    @Test
+    fun aTieAtTheTopPlaysAFinal() {
+        assertEquals(Outcome.Final(0, 1), outcomeOf(5, mapOf(0 to y, 1 to y, 3 to y), mapOf(0 to y, 1 to y, 3 to y)))
+        assertEquals(Outcome.Final(0, 2), outcomeOf(4, mapOf(0 to l, 2 to y), mapOf(0 to y, 2 to l)))
     }
 
     @Test
@@ -41,6 +49,24 @@ class TonightGameTest {
         assertEquals(listOf(2, 4, 1, 3), pickDeck(listOf(a, b, c, d), setOf(StreamingService.NETFLIX), null).map { it.tmdbId })
         assertEquals(listOf(2, 4, 3), pickDeck(listOf(a, b, c, d), setOf(StreamingService.NETFLIX), 120).map { it.tmdbId })
         assertEquals(listOf(1, 2), pickDeck(listOf(a, b, c, d), emptySet(), null, size = 2).map { it.tmdbId })
+    }
+
+    @Test
+    fun genresFilterTheDeck() {
+        val comedy = card(1, 100, null, genres = listOf(35))
+        val horror = card(2, 100, null, genres = listOf(27, 53))
+        val unknown = card(3, 100, null)
+        assertTrue(matchesGenres(listOf(27), emptySet()), "nothing picked fits all")
+        assertTrue(matchesGenres(listOf(53), setOf(TonightGenre.THRILLER)))
+        assertEquals(listOf(2), pickDeck(listOf(comedy, horror, unknown), emptySet(), null, genres = setOf(TonightGenre.HORROR)).map { it.tmdbId })
+        assertEquals(listOf(1, 2), pickDeck(listOf(comedy, horror, unknown), emptySet(), null, genres = setOf(TonightGenre.COMEDY, TonightGenre.THRILLER)).map { it.tmdbId })
+    }
+
+    @Test
+    fun aBiggerDeckLooksAtMoreMovies() {
+        assertEquals(18, candidatesFor(10, emptySet()))
+        assertTrue(candidatesFor(20, emptySet()) >= 30)
+        assertTrue(candidatesFor(20, setOf(TonightGenre.COMEDY)) > candidatesFor(20, emptySet()))
     }
 
     @Test
@@ -73,8 +99,8 @@ class TonightGameTest {
         assertNull(formatRuntime(0))
     }
 
-    private fun card(id: Int, runtime: Int?, provider: WatchProvider?) = TonightCard(
-        movie = TmdbMovie(id = id, title = "Film $id"),
+    private fun card(id: Int, runtime: Int?, provider: WatchProvider?, genres: List<Int>? = null) = TonightCard(
+        movie = TmdbMovie(id = id, title = "Film $id", genreIds = genres),
         posterUrl = null, year = null, runtime = runtime, director = null, genres = emptyList(),
         provider = provider, providersLink = null, reason = CardReason.Trending,
     )

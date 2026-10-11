@@ -218,6 +218,23 @@ class TmdbApi(
 
     // ── Ce soir ? ──────────────────────────────────────────────────────────
 
+    /** Popular, well-rated movies of any of [genres] (TMDB ids), one page at a time. */
+    suspend fun discoverMovies(genres: Set<Int>, page: Int = 1): List<TmdbMovie> = runCatching {
+        val res = getJson(
+            "/discover/movie",
+            mapOf(
+                "language" to tmdbLocale(),
+                "with_genres" to genres.joinToString("|"),
+                "sort_by" to "popularity.desc",
+                "vote_count.gte" to "300",
+                "include_adult" to "false",
+                "page" to page.toString(),
+            ),
+            8_000,
+        )
+        if (!res.ok) emptyList() else res.body<PagedResults<TmdbMovie>>().results ?: emptyList()
+    }.getOrDefault(emptyList())
+
     /** TMDB's "more like this" for a movie (first page). */
     suspend fun fetchMovieRecommendations(tmdbId: Int): List<TmdbMovie> = runCatching {
         val res = getJson("/movie/$tmdbId/recommendations", mapOf("language" to tmdbLocale()), 8_000)

@@ -11,9 +11,10 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withTimeoutOrNull
 
-/** How many movies get their details fetched before the ten cards are picked among them. */
-private const val CANDIDATES = 18
 private const val CARD_TIMEOUT_MS = 8_000L
+
+/** How many movies get their details fetched before the [size] cards are picked among them. */
+internal fun candidatesFor(size: Int, genres: Set<TonightGenre>): Int = size * 17 / 10 + 1 + if (genres.isEmpty()) 0 else 6
 
 /** What the deck knows of the friend it is dealt for: the movies they share. */
 class PartnerTaste(
@@ -62,10 +63,10 @@ fun mergeWatchlists(mine: List<Int>, theirs: List<Int>, mySeen: Set<Int>, theirS
 }
 
 /**
- * Deals a round from the library: movies of the "To watch" list first, then TMDB recommendations
- * from the movies rated best, then what is trending. Nothing already watched comes up, and nothing
- * in [skip] (the cards of the round before, when dealing again). With a [partner], their list and
- * their favourites count as much as mine.
+ * Deals a round of [size] cards from the library: movies of the "To watch" list first, then TMDB
+ * recommendations from the movies rated best, then what is popular. Nothing already watched comes
+ * up, and nothing in [skip] (the cards of the round before, when dealing again). With a [partner],
+ * their list and their favourites count as much as mine; with [genres], only those kinds of movies.
  */
 suspend fun dealTonightDeck(
     container: AppContainer,
@@ -73,49 +74,61 @@ suspend fun dealTonightDeck(
     shortOnly: Boolean,
     skip: Set<Int> = emptySet(),
     partner: PartnerTaste? = null,
+    size: Int = DECK_SIZE,
+    genres: Set<TonightGenre> = emptySet(),
 ): List<TonightCard> = coroutineScope {
+    val wanted = candidatesFor(size, genres)
+    val big = size > DECK_SIZE
     val library = container.movies.items.value
     val inLibrary = library.mapNotNull { it.tmdbId }.toSet()
     val myWatchlist = library.filter { it.status == MovieStatus.WANT_TO_WATCH && it.tmdbId != null && it.tmdbId !in skip }.map { it.tmdbId!! }.shuffled()
     val mySeeds = library.filter { it.status == MovieStatus.WATCHED && it.tmdbId != null }
         .sortedWith(compareByDescending<Movie> { it.rating ?: 0.0 }.thenByDescending { it.watchedDate ?: it.createdAt })
-        .take(6).shuffled().take(if (partner == null) 3 else 2)
+        .take(if (big) 10 else 6).shuffled().take(if (partner == null) (if (big) 5 else 3) else (if (big) 3 else 2))
         .map { Triple(it.tmdbId!!, it.title, null as String?) }
-    val theirSeeds = partner?.favourites?.take(6)?.shuffled()?.take(2)?.map { Triple(it.first, it.second, partner.name) }.orEmpty()
+    val theirSeeds = partner?.favourites?.take(if (big) 10 else 6)?.shuffled()?.take(if (big) 3 else 2)?.map { Triple(it.first, it.second, partner.name) }.orEmpty()
 
     val candidates = LinkedHashMap<Int, Pair<TmdbMovie?, CardReason>>()
+    val watchlistLimit = if (big) 14 else 8
     if (partner == null) {
-        myWatchlist.take(8).forEach { candidates[it] = null to CardReason.Watchlist }
+        myWatchlist.take(watchlistLimit).forEach { candidates[it] = null to CardReason.Watchlist }
     } else {
         val myWatched = library.filter { it.status == MovieStatus.WATCHED }.mapNotNull { it.tmdbId }.toSet()
         val theirWatchlist = partner.watchlist.filter { it !in skip }.shuffled()
-        mergeWatchlists(myWatchlist, theirWatchlist, myWatched, partner.watched, partner.name).forEach { (id, reason) -> candidates[id] = null to reason }
+        mergeWatchlists(myWatchlist, theirWatchlist, myWatched, partner.watched, partner.name, watchlistLimit)
+            .forEach { (id, reason) -> candidates[id] = null to reason }
     }
     val known = inLibrary + partner?.library.orEmpty() + skip
+    fun fits(movie: TmdbMovie) = movie.id !in known && !movie.posterPath.isNullOrBlank() && matchesGenres(movie.genreIds.orEmpty(), genres)
 
     // Recommendations of each seed, taken in turn so one movie does not fill the deck.
     val recommended = (mySeeds + theirSeeds).map { (id, title, by) ->
         async {
             val reason = if (by == null) CardReason.BecauseYouLiked(title) else CardReason.PartnerLiked(by, title)
-            container.tmdb.fetchMovieRecommendations(id).filter { it.id !in known && !it.posterPath.isNullOrBlank() }.map { it to reason }
+            container.tmdb.fetchMovieRecommendations(id).filter(::fits).map { it to reason }
         }
     }.awaitAll()
     var rank = 0
-    while (candidates.size < CANDIDATES && recommended.any { rank < it.size }) {
+    while (candidates.size < wanted && recommended.any { rank < it.size }) {
         recommended.forEach { list -> list.getOrNull(rank)?.let { (movie, reason) -> if (movie.id !in candidates) candidates[movie.id] = movie to reason } }
         rank++
     }
-    if (candidates.size < CANDIDATES) {
-        container.tmdb.fetchTrendingMovies(20)
-            .filter { it.id !in known && !it.posterPath.isNullOrBlank() }
-            .forEach { if (candidates.size < CANDIDATES && it.id !in candidates) candidates[it.id] = it to CardReason.Trending }
+    // Then what is popular: this week's trends, or the favourites of the picked genres.
+    var page = 1
+    while (candidates.size < wanted && page <= 3) {
+        val more = if (genres.isEmpty()) container.tmdb.fetchTrendingMoviesPaged(page).results
+        else container.tmdb.discoverMovies(genres.flatMap { it.tmdbIds }.toSet(), page)
+        if (more.isEmpty()) break
+        val reason = if (genres.isEmpty()) CardReason.Trending else CardReason.Popular
+        more.filter(::fits).forEach { if (candidates.size < wanted && it.id !in candidates) candidates[it.id] = it to reason }
+        page++
     }
 
     val byTmdbId = library.filter { it.tmdbId != null }.associateBy { it.tmdbId!! }
     val cards = candidates.entries.map { (id, entry) ->
         async { withTimeoutOrNull(CARD_TIMEOUT_MS) { cardFor(container, id, entry.first, byTmdbId[id], entry.second, services) } }
     }.awaitAll().filterNotNull()
-    pickDeck(cards, services, if (shortOnly) 120 else null)
+    pickDeck(cards, services, if (shortOnly) 120 else null, size, genres)
 }
 
 private suspend fun cardFor(

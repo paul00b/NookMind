@@ -20,6 +20,8 @@ sealed interface CardReason {
     data class BecauseYouLiked(val title: String) : CardReason
     data class PartnerLiked(val name: String, val title: String) : CardReason
     data object Trending : CardReason
+    /** A favourite of the genres picked in the setup. */
+    data object Popular : CardReason
 }
 
 /** One card of the deck: a movie, where to watch it, and why it was picked. */
@@ -67,12 +69,47 @@ fun providerLabel(provider: WatchProvider): String =
 fun pickProvider(providers: List<WatchProvider>, services: Set<StreamingService>): WatchProvider? =
     providers.firstOrNull { p -> services.any { it.matches(p) } } ?: providers.firstOrNull()
 
+/** The moods the host can pick before dealing, each one a few TMDB genres. */
+enum class TonightGenre(val key: String, val tmdbIds: Set<Int>) {
+    ACTION("action", setOf(28, 12)),
+    COMEDY("comedy", setOf(35)),
+    DRAMA("drama", setOf(18)),
+    THRILLER("thriller", setOf(53, 80, 9648)),
+    SCIFI("scifi", setOf(878, 14)),
+    HORROR("horror", setOf(27)),
+    ROMANCE("romance", setOf(10749)),
+    ANIMATION("animation", setOf(16, 10751)),
+    DOCUMENTARY("documentary", setOf(99)),
+    ;
+
+    companion object {
+        fun fromKeys(keys: Set<String>): Set<TonightGenre> = entries.filter { it.key in keys }.toSet()
+    }
+}
+
+/** Whether a movie of [genreIds] fits the picked [genres] (any of them; nothing picked fits all). */
+fun matchesGenres(genreIds: Collection<Int>, genres: Set<TonightGenre>): Boolean =
+    genres.isEmpty() || genres.any { genre -> genre.tmdbIds.any { it in genreIds } }
+
+/** The TMDB genres of a card: from its details, or from the list it came from. */
+val TonightCard.genreIds: List<Int> get() = movie.genres?.map { it.id }?.takeIf { it.isNotEmpty() } ?: movie.genreIds.orEmpty()
+
+/** The two deck sizes on offer. */
+val DECK_SIZES = listOf(10, 20)
+
 /**
  * The [size] cards of a round, from [candidates] already in order of preference: films on a ticked
- * service come first, then the rest; [maxRuntime] drops the long ones (an unknown length stays).
+ * service come first, then the rest; [maxRuntime] drops the long ones (an unknown length stays),
+ * [genres] the ones of another kind.
  */
-fun pickDeck(candidates: List<TonightCard>, services: Set<StreamingService>, maxRuntime: Int?, size: Int = DECK_SIZE): List<TonightCard> {
-    val fitting = candidates.filter { card -> maxRuntime == null || (card.runtime ?: 0) <= maxRuntime }
+fun pickDeck(
+    candidates: List<TonightCard>,
+    services: Set<StreamingService>,
+    maxRuntime: Int?,
+    size: Int = DECK_SIZE,
+    genres: Set<TonightGenre> = emptySet(),
+): List<TonightCard> {
+    val fitting = candidates.filter { card -> (maxRuntime == null || (card.runtime ?: 0) <= maxRuntime) && matchesGenres(card.genreIds, genres) }
     if (services.isEmpty()) return fitting.take(size)
     val (available, elsewhere) = fitting.partition { card -> card.provider?.let { p -> services.any { it.matches(p) } } == true }
     return (available + elsewhere).take(size)
@@ -98,9 +135,9 @@ fun verdictOf(dx: Float, dy: Float, vx: Float, vy: Float, threshold: Float, minF
 
 /** Where a round ends up once both players have been through the deck. */
 sealed interface Outcome {
-    /** One movie both said yes to. */
+    /** One movie both said yes to, or the one they loved more than the others. */
     data class Match(val index: Int) : Outcome
-    /** Several shared yeses: the two best play a final. */
+    /** Several shared yeses loved as much: the two best play a final. */
     data class Final(val a: Int, val b: Int) : Outcome
     /** No shared yes, but movies one of them wanted: the two best play extra time. */
     data class Maybes(val a: Int, val b: Int) : Outcome
@@ -108,14 +145,18 @@ sealed interface Outcome {
     data object None : Outcome
 }
 
-/** Favourites first, then the order of the deck. */
+/**
+ * Favourites first, then the order of the deck. Among the movies both said yes to, a shared
+ * favourite beats a single one, which beats a plain yes: the one loved most wins outright, and
+ * only a tie at the top goes to a final.
+ */
 fun outcomeOf(size: Int, mine: Map<Int, Verdict>, theirs: Map<Int, Verdict>): Outcome {
     fun yes(verdicts: Map<Int, Verdict>, i: Int) = verdicts[i]?.isYes == true
     fun loves(i: Int) = (if (mine[i] == Verdict.LOVE) 1 else 0) + (if (theirs[i] == Verdict.LOVE) 1 else 0)
     val order = compareByDescending<Int> { loves(it) }.thenBy { it }
     val both = (0 until size).filter { yes(mine, it) && yes(theirs, it) }.sortedWith(order)
     if (both.size == 1) return Outcome.Match(both[0])
-    if (both.size >= 2) return Outcome.Final(both[0], both[1])
+    if (both.size >= 2) return if (loves(both[0]) > loves(both[1])) Outcome.Match(both[0]) else Outcome.Final(both[0], both[1])
     val maybes = (0 until size).filter { yes(mine, it) != yes(theirs, it) }.sortedWith(order)
     return when {
         maybes.size >= 2 -> Outcome.Maybes(maybes[0], maybes[1])

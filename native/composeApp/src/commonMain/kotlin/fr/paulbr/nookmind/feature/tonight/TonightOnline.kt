@@ -61,6 +61,7 @@ internal fun TonightCard.toShared(myId: String, partnerId: String): SharedCard {
         is CardReason.BecauseYouLiked -> Triple("liked", myId, r.title)
         is CardReason.PartnerLiked -> Triple("liked", partnerId, r.title)
         CardReason.Trending -> Triple("trending", null, null)
+        CardReason.Popular -> Triple("popular", null, null)
     }
     return SharedCard(
         id = tmdbId, title = title, overview = movie.overview, posterPath = movie.posterPath, poster = posterUrl,
@@ -76,6 +77,7 @@ internal fun SharedCard.toCard(myId: String, partnerName: String): TonightCard {
         "watchlist" -> if (mineToo) CardReason.Watchlist else CardReason.PartnerWatchlist(partnerName)
         "both" -> CardReason.BothWatchlists
         "liked" -> if (mineToo) CardReason.BecauseYouLiked(about.orEmpty()) else CardReason.PartnerLiked(partnerName, about.orEmpty())
+        "popular" -> CardReason.Popular
         else -> CardReason.Trending
     }
     return TonightCard(
@@ -133,6 +135,17 @@ internal class TonightLink(
         queue.trySend { retrying { social.pick(remote.sessionId, card, a, b) } }
     }
 
+    /** Tells the session the winner this phone found in the revealed verdicts. */
+    fun settle(card: Int, via: MatchVia) {
+        val key = when (via) {
+            MatchVia.SHARED_LOVE -> "shared_love"
+            MatchVia.FINAL, MatchVia.EXTRA_TIME -> "extra_time"
+            MatchVia.CHANCE -> "chance"
+            MatchVia.MATCH -> "match"
+        }
+        queue.trySend { retrying { social.settle(remote.sessionId, card, key) } }
+    }
+
     fun chance(cards: List<Int>) {
         queue.trySend { retrying { social.chance(remote.sessionId, cards) } }
     }
@@ -171,7 +184,8 @@ internal class TonightLink(
         remote.partnerProgress = partnerProgress
         remote.partnerPicked = (if (remote.isHost) row.guestPick else row.hostPick) != null
         row.winner?.let { winner ->
-            val via = matchViaOf(row.via)
+            // A pick both made in a final reads as won in the final, not in extra time.
+            val via = matchViaOf(row.via).let { if (it == MatchVia.EXTRA_TIME && state.outcome is Outcome.Final) MatchVia.FINAL else it }
             if (via == MatchVia.CHANCE && state.step == TonightStep.DUEL) {
                 if (state.pendingChance == null) state.pendingChance = winner
             } else {
@@ -191,6 +205,8 @@ internal class TonightLink(
                 }
                 if (state.remote !== remote || state.step != TonightStep.WAITING) return@launch
                 state.reveal(votes.filter { it.userId != myId }.mapNotNull { v -> verdictOfKey(v.verdict)?.let { v.card to it } }.toMap())
+                // Both phones rank the same verdicts the same way; the session keeps the result.
+                state.winner?.let { if (state.step == TonightStep.MATCH) settle(it, state.via) }
             }
         }
     }

@@ -212,6 +212,11 @@ object ScreenshotCatalog {
             mine[1] = Verdict.NO
         }),
         ScreenshotEntry("tonight-handoff-dark", content = tonight(TonightStep.HANDOFF)),
+        // A deck of 20, a few cards in.
+        ScreenshotEntry("tonight-swipe-20-dark", content = tonight(TonightStep.SWIPE) { cards ->
+            val twenty = (0 until 20).map { i -> cards[i % cards.size].let { it.copy(movie = it.movie.copy(id = it.movie.id * 100 + i)) } }
+            preview(twenty, TonightStep.SWIPE, index = 7)
+        }),
         // Ce soir ? online, with Léa on her own phone.
         ScreenshotEntry("tonight-setup-online-dark", content = tonight(TonightStep.SETUP) { friend = FakeSocial.friends[0] }),
         ScreenshotEntry("tonight-online-swipe-dark", content = tonight(TonightStep.SWIPE) { cards ->

@@ -81,6 +81,7 @@ import fr.paulbr.nookmind.resources.tonight_reasonBecause
 import fr.paulbr.nookmind.resources.tonight_reasonBoth
 import fr.paulbr.nookmind.resources.tonight_reasonPartnerLiked
 import fr.paulbr.nookmind.resources.tonight_reasonPartnerWatchlist
+import fr.paulbr.nookmind.resources.tonight_reasonPopular
 import fr.paulbr.nookmind.resources.tonight_reasonTrending
 import fr.paulbr.nookmind.resources.tonight_reasonWatchlist
 import fr.paulbr.nookmind.resources.tonight_ruleHold
@@ -170,7 +171,7 @@ internal fun SwipeStep(container: AppContainer, state: TonightState, names: Toni
             Row(Modifier.fillMaxWidth().height(60.dp).padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
                 RoundIconButton(LucideIcons.X, stringResource(Res.string.tonight_close), onClose)
                 Spacer(Modifier.width(12.dp))
-                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(if (state.deck.size > 12) 2.dp else 4.dp)) {
                     state.deck.indices.forEach { i ->
                         Box(Modifier.weight(1f).height(4.dp).clip(CircleShape).background(if (i < top) TonightColors.VioletText else TonightColors.Track))
                     }
@@ -405,6 +406,7 @@ private fun CardInfo(card: TonightCard, modifier: Modifier) {
             is CardReason.BecauseYouLiked -> LucideIcons.Sparkles to stringResource(Res.string.tonight_reasonBecause, r.title)
             is CardReason.PartnerLiked -> LucideIcons.Sparkles to stringResource(Res.string.tonight_reasonPartnerLiked, r.name, r.title)
             CardReason.Trending -> LucideIcons.Flame to stringResource(Res.string.tonight_reasonTrending)
+            CardReason.Popular -> LucideIcons.Star to stringResource(Res.string.tonight_reasonPopular)
         }
         Row(
             Modifier.padding(top = 12.dp).clip(CircleShape).background(Color(0x8C6D28D9)).border(1.dp, Color(0x59C4B5FD), CircleShape)
