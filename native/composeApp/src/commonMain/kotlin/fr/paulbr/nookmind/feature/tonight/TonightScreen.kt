@@ -110,6 +110,7 @@ import fr.paulbr.nookmind.resources.tonight_services
 import fr.paulbr.nookmind.resources.tonight_shortOnly
 import fr.paulbr.nookmind.resources.tonight_singleTitle
 import fr.paulbr.nookmind.resources.tonight_tapPoster
+import fr.paulbr.nookmind.resources.tonight_tapPosterOnline
 import fr.paulbr.nookmind.resources.tonight_title
 import fr.paulbr.nookmind.resources.tonight_turnOf
 import fr.paulbr.nookmind.resources.tonight_waitingPick
@@ -566,7 +567,10 @@ private fun DuelStep(state: TonightState, names: TonightNames, link: TonightLink
             Text(stringResource(title), style = NookTheme.type.serif(32, lineHeight = 38), color = TonightColors.Text)
             if (sides.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
-                Text(stringResource(Res.string.tonight_tapPoster), style = NookTheme.type.sans(15, lineHeight = 21), color = TonightColors.Muted)
+                Text(
+                    if (online && sides.size == 2) stringResource(Res.string.tonight_tapPosterOnline, names.partner) else stringResource(Res.string.tonight_tapPoster),
+                    style = NookTheme.type.sans(15, lineHeight = 21), color = TonightColors.Muted,
+                )
                 Spacer(Modifier.height(20.dp))
                 Box {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)) {

@@ -234,7 +234,7 @@ fun SocialScreen(container: AppContainer, contentPadding: PaddingValues, onOpenT
                 )
                 Spacer(Modifier.height(6.dp))
                 (accepted + outgoing).forEach { friend ->
-                    FriendRow(friend, shared = library.count { it.owner == friend.userId }, onRemove = { scope.launch { social.remove(friend) } })
+                    FriendRow(friend, onRemove = { scope.launch { social.remove(friend) } })
                 }
             }
 

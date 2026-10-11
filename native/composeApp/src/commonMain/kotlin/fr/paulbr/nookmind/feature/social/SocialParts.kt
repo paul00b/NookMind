@@ -274,7 +274,7 @@ internal fun RequestRow(friend: Friend, onAccept: () -> Unit, onDecline: () -> U
 
 /** A friend, or a request of mine still waiting; removing asks once more. */
 @Composable
-internal fun FriendRow(friend: Friend, shared: Int, onRemove: () -> Unit) {
+internal fun FriendRow(friend: Friend, onRemove: () -> Unit) {
     val colors = NookTheme.colors
     var confirming by remember { mutableStateOf(false) }
     Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -283,7 +283,6 @@ internal fun FriendRow(friend: Friend, shared: Int, onRemove: () -> Unit) {
         Column(Modifier.weight(1f)) {
             Text(friend.displayName.ifBlank { "?" }, style = NookTheme.type.sans(15, FontWeight.SemiBold, 20), color = colors.textStrong, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (!friend.accepted) Text(stringResource(Res.string.social_pending), style = NookTheme.type.xs, color = colors.textSubtle)
-            else if (shared > 0) Text(shared.toString(), style = NookTheme.type.xs, color = colors.textFaint)
         }
         if (confirming) {
             GhostButton(stringResource(Res.string.social_removeConfirm), onClick = { confirming = false; onRemove() }, color = colors.redText, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp))

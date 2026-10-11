@@ -733,4 +733,5 @@
     <string name="tonight_waitingHint">The first movie you both say yes to wins.</string>
     <string name="tonight_waitingNotJoined">%1$s hasn't opened the invitation yet.</string>
     <string name="tonight_waitingProgress">%1$s is at %2$d of %3$d.</string>
+    <string name="tonight_tapPosterOnline">Tap your favourite. If %1$s picks the same one, it wins; otherwise chance decides.</string>
 </resources>
