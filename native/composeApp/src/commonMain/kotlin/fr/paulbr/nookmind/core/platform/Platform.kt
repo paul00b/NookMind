@@ -50,3 +50,6 @@ expect fun openExternalUrl(url: String)
 
 /** Opens the system share sheet with [text] (a friend code, an invitation). */
 expect fun shareText(text: String)
+
+/** The version the store shows (versionName, CFBundleShortVersionString), or null where there is none. */
+expect fun appVersionName(): String?

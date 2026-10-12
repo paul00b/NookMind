@@ -27,6 +27,9 @@ actual fun openExternalUrl(url: String) {
     }.onFailure { println("[platform] cannot open $url: ${it.message}") }
 }
 
+/** The screenshot tool has no packaged version: the About section falls back to APP_VERSION. */
+actual fun appVersionName(): String? = null
+
 actual fun shareText(text: String) {
     runCatching {
         java.awt.Toolkit.getDefaultToolkit().systemClipboard.setContents(java.awt.datatransfer.StringSelection(text), null)
