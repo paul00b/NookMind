@@ -154,7 +154,7 @@ export const COPY = {
 
 export const ANDROID_PACKAGE = 'fr.paulbr.nookmind';
 export const STORE_URL = `https://play.google.com/store/apps/details?id=${ANDROID_PACKAGE}`;
-export const IOS_BUNDLE_ID = 'fr.paulbr.nookmind';
+export const IOS_BUNDLE_ID = 'fr.paulbr.nookmind.app';
 /** The Apple developer team of the iOS app. Public (it is in every signed build); APPLE_TEAM_ID overrides it. */
 export const APPLE_TEAM_ID = '73QPJZQA92';
 

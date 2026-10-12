@@ -208,8 +208,8 @@ jobs:
 
           launch() {  # $1 = name of the shot, then launch arguments
             local shot=$1; shift
-            xcrun simctl terminate "$UDID" fr.paulbr.nookmind 2>/dev/null || true
-            xcrun simctl launch --stdout="$PWD/out/app-$shot.log" --stderr="$PWD/out/app-$shot.err.log" "$UDID" fr.paulbr.nookmind "$@"
+            xcrun simctl terminate "$UDID" fr.paulbr.nookmind.app 2>/dev/null || true
+            xcrun simctl launch --stdout="$PWD/out/app-$shot.log" --stderr="$PWD/out/app-$shot.err.log" "$UDID" fr.paulbr.nookmind.app "$@"
             sleep 25
             if ! pgrep -f "NookMind.app/NookMind" > /dev/null; then
               echo "The app is no longer running 25 s after launch ($shot). Its output:"
@@ -225,8 +225,8 @@ jobs:
           # a string "true" under this key in the "prefs" NSUserDefaults suite, brings up the login
           # screen on the next launch, and that one follows the system appearance.
           launch 01-onboarding-en
-          xcrun simctl terminate "$UDID" fr.paulbr.nookmind 2>/dev/null || true
-          container=$(xcrun simctl get_app_container "$UDID" fr.paulbr.nookmind data)
+          xcrun simctl terminate "$UDID" fr.paulbr.nookmind.app 2>/dev/null || true
+          container=$(xcrun simctl get_app_container "$UDID" fr.paulbr.nookmind.app data)
           xcrun simctl spawn "$UDID" defaults write "$container/Library/Preferences/fr.paulbr.nookmind.prefs" \
             nookmind_onboarding_completed -string true
 

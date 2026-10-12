@@ -190,9 +190,9 @@ jobs:
             printf '%s' "$GOOGLE_SERVICE_INFO_PLIST" | base64 -D > "$dest" 2>/dev/null || true
           fi
           bundle=$(/usr/libexec/PlistBuddy -c 'Print :BUNDLE_ID' "$dest" 2>/dev/null || true)
-          if [ "$bundle" != "fr.paulbr.nookmind" ]; then
+          if [ "$bundle" != "fr.paulbr.nookmind.app" ]; then
             rm -f "$dest"
-            problem="GoogleService-Info.plist is unreadable or not for fr.paulbr.nookmind (BUNDLE_ID: ${bundle:-none})."
+            problem="GoogleService-Info.plist is unreadable or not for fr.paulbr.nookmind.app (BUNDLE_ID: ${bundle:-none})."
             { echo "### No push notifications in this build"; echo; echo "$problem"; } >> "$GITHUB_STEP_SUMMARY"
             if [ "$IS_RELEASE" = "true" ]; then echo "::error::$problem"; exit 1; fi
           fi
