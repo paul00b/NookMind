@@ -25,7 +25,9 @@ packages:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "2.0.0"
+    # The first iOS release takes this version, the next ones the last ios-v tag plus one. 2.0.9 lines
+    # it up with Android, which reached 2.0.9 first.
+    MARKETING_VERSION: "2.0.9"
     CURRENT_PROJECT_VERSION: "2"
     # The Gradle phase below writes into composeApp/build. Xcode 15+ sandboxes run scripts by
     # default, which turns that write into a permission error deep inside the Kotlin build.
@@ -49,7 +51,7 @@ targets:
       Release: NookMind/Signing.xcconfig
     settings:
       base:
-        # The suffix is empty except in a Local.xcconfig that sets it: see Signing.xcconfig.
+        # fr.paulbr.nookmind.app, or .dev in a Local.xcconfig that says so: see Signing.xcconfig.
         PRODUCT_BUNDLE_IDENTIFIER: fr.paulbr.nookmind$(NOOKMIND_BUNDLE_ID_SUFFIX)
         PRODUCT_NAME: NookMind
         INFOPLIST_FILE: NookMind/Info.plist

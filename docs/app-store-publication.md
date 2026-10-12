@@ -1,7 +1,7 @@
 # Publier NookMind sur l'App Store
 
-Date : 2026-10-08
-App concernée : l'hôte iOS `native/iosApp/` et le code partagé Kotlin, bundle ID `fr.paulbr.nookmind`.
+Date : 2026-10-08, mise à jour le 2026-10-12 (identifiant iOS, liens partagés, version alignée sur Android)
+App concernée : l'hôte iOS `native/iosApp/` et le code partagé Kotlin, bundle ID `fr.paulbr.nookmind.app` (Android : `fr.paulbr.nookmind`, voir §3).
 
 Même structure que `docs/play-store-publication.md`. Ce qui se fait dans les consoles (Apple,
 Google Cloud, Firebase, Supabase) est pour toi ; le code et la CI sont déjà en place.
@@ -21,6 +21,7 @@ Google Cloud, Firebase, Supabase) est pour toi ; le code et la CI sont déjà en
 | Déclaration de chiffrement | `ITSAppUsesNonExemptEncryption = NO` dans `Info.plist` : pas de question à chaque envoi |
 | Xcode 26 | Exigé par l'App Store depuis le 28 avril 2026 ([Apple](https://developer.apple.com/news/upcoming-requirements/)), la CI l'utilise |
 | Suppression de compte dans l'app | Existe, Apple l'exige aussi |
+| Liens partagés | `https://<domaine API>/s/...` s'ouvre direct dans l'app (lien universel), via `/.well-known/apple-app-site-association` servi par Vercel |
 | iPad | Non : iPhone seul pour la première version (`TARGETED_DEVICE_FAMILY: "1"`). Voir §12 |
 
 **Vérifié sur iPhone le 2026-10-08**, avec un Apple ID gratuit et le build `fr.paulbr.nookmind.dev` :
@@ -52,12 +53,15 @@ corrige de la même façon, compte payant ou pas.
 L'Apple ID doit avoir la validation en deux étapes. Compter un à deux jours de vérification.
 
 Une fois validé, récupérer le **Team ID** (10 caractères) : developer.apple.com → Account →
-Membership details. Il sert à trois endroits :
+Membership details. NookMind : **`73QPJZQA92`**, le même que l'équipe gratuite, puisqu'une
+inscription individuelle convertit l'équipe personnelle ([Apple](https://help.apple.com/xcode/mac/current/en.lproj/dev17411c009.html)).
+Il n'est pas secret (il figure dans chaque build signé) : il est écrit dans le workflow de release et
+dans `api/_lib/shareItem.ts`, et le secret GitHub `APPLE_TEAM_ID` ne sert qu'à passer à une autre
+équipe. Il sert encore à deux endroits :
 
-- secret GitHub `APPLE_TEAM_ID` ;
 - `native/iosApp/NookMind/Local.xcconfig` sur le Mac, avec le passage en compte payant :
   ```
-  DEVELOPMENT_TEAM = TONTEAMID
+  DEVELOPMENT_TEAM = 73QPJZQA92
   NOOKMIND_PAID_TEAM = YES
   ```
 - la clé APNs dans Firebase (§7).
@@ -75,21 +79,23 @@ App :
 | Champ | Valeur |
 |---|---|
 | Description | NookMind |
-| Bundle ID | Explicit, `fr.paulbr.nookmind` |
-| Capabilities | **Sign in with Apple** et **Push Notifications** |
+| Bundle ID | Explicit, `fr.paulbr.nookmind.app` |
+| Capabilities | **Sign in with Apple**, **Push Notifications** et **Associated Domains** |
 
-**Si Apple répond que `fr.paulbr.nookmind` n'est pas disponible** : il appartient déjà à une autre
-équipe. Le projet Capacitor (`ios/App`) signe avec `fr.paulbr.nookmind` et l'équipe `SJ42PK8VK6`,
-qui l'a très probablement réservé lors des essais de mai. Trois issues, dans l'ordre de préférence :
+Associated Domains sert aux liens partagés (un film envoyé à un ami s'ouvre direct dans l'app).
+Xcode sait normalement l'activer seul pendant la release, mais cochée ici, la signature ne peut pas
+échouer dessus.
 
-1. Si `SJ42PK8VK6` est un compte à toi (un autre Apple ID), publier depuis ce compte, ou supprimer
-   l'identifiant dans son portail s'il est payant.
-2. Si c'était une équipe gratuite, attendre : ses enregistrements expirent au bout de quelques jours
-   sans utilisation, d'après un ingénieur Apple ([forum Apple](https://developer.apple.com/forums/thread/80294)),
-   sans délai garanti.
-3. Sinon, publier l'app iOS sous un autre identifiant, par exemple `fr.paulbr.nookmind.app`. Rien
-   n'oblige l'identifiant iOS à être celui d'Android ; il faut alors le changer dans
-   `native/iosApp/project.yml`, dans l'app iOS Firebase et dans le client OAuth iOS.
+**Pourquoi `.app` et pas `fr.paulbr.nookmind` comme sur Android** : le 2026-10-12, Apple a répondu
+« An App ID with Identifier 'fr.paulbr.nookmind' is not available ». Il appartient à l'équipe
+`SJ42PK8VK6`, celle du développeur qui a monté le projet Capacitor (`ios/App`) en mai. Le récupérer
+dépendrait de son compte : il ne peut supprimer l'identifiant que si aucun build n'a été envoyé avec
+([Apple](https://developer.apple.com/help/account/identifiers/delete-an-app-id)), Apple ne dit pas
+si une autre équipe peut ensuite le reprendre, et un transfert d'app exige une version déjà publiée
+sur l'App Store ([Apple](https://developer.apple.com/help/app-store-connect/transfer-an-app/app-transfer-criteria)).
+L'identifiant ne se voit nulle part pour les utilisateurs, et rien n'oblige iOS à reprendre celui
+d'Android : l'app iOS est donc `fr.paulbr.nookmind.app` (`NOOKMIND_BUNDLE_ID_SUFFIX` dans
+`Signing.xcconfig`). Il ne pourra plus changer une fois l'app sur l'App Store.
 
 Les builds de test sur ton iPhone ne sont pas concernés : ils signent sous `fr.paulbr.nookmind.dev`
 (`NOOKMIND_BUNDLE_ID_SUFFIX` dans `Local.xcconfig`, voir `docs/ios-test-plan.md`).
@@ -105,7 +111,7 @@ Les builds de test sur ton iPhone ne sont pas concernés : ils signent sous `fr.
 | Plateforme | iOS |
 | Nom | NookMind (30 caractères max, unique sur tout l'App Store : si c'est pris, « NookMind - Livres, films » par exemple) |
 | Langue principale | Français (France) |
-| Bundle ID | `fr.paulbr.nookmind`, dans la liste après l'étape 3 |
+| Bundle ID | `fr.paulbr.nookmind.app`, dans la liste après l'étape 3 |
 | SKU | `nookmind-ios` (interne, jamais affiché) |
 
 L'envoi automatique échoue tant que cette fiche n'existe pas.
@@ -119,11 +125,11 @@ Fonctionne aussi avec un compte gratuit, donc faisable dès l'étape 1.
 1. **Google Cloud Console**, dans **le projet du client web** (le nombre au début de
    `GOOGLE_AUTH_WEB_CLIENT_ID` est le numéro du projet), comme pour Android → APIs & Services →
    Identifiants → Créer des identifiants → ID client OAuth → type **iOS** → bundle ID
-   `fr.paulbr.nookmind` → Créer. Copier l'ID client.
+   `fr.paulbr.nookmind.app` → Créer. Copier l'ID client.
 
    Le `.env` du site contient peut-être déjà un client iOS (`VITE_GOOGLE_AUTH_IOS_CLIENT_ID`, de
    l'époque Capacitor). Avant de le réutiliser, vérifier dans Google Cloud qu'il est bien dans le
-   projet du client web et que son bundle ID est `fr.paulbr.nookmind` : l'ancien projet Xcode
+   projet du client web et que son bundle ID est `fr.paulbr.nookmind.app` : l'ancien projet Xcode
    Capacitor utilisait `fr.paulbr.bookmind`.
 
 2. **Supabase** → Authentication → Providers → Google → **Client IDs** : ajouter l'ID client iOS
@@ -137,7 +143,7 @@ Fonctionne aussi avec un compte gratuit, donc faisable dès l'étape 1.
 
    Le build de test signe sous `fr.paulbr.nookmind.dev` (voir `docs/ios-test-plan.md`) et a son
    propre client iOS, « iOS Dev », déclaré lui aussi dans Supabase. La version App Store aura besoin
-   d'un second client pour `fr.paulbr.nookmind`, à ajouter de la même façon.
+   d'un second client pour `fr.paulbr.nookmind.app`, à ajouter de la même façon.
 
 3. **Secret GitHub** `GOOGLE_AUTH_IOS_CLIENT_ID` : l'ID client complet. Le workflow en déduit
    la forme inversée.
@@ -159,7 +165,7 @@ satisfait ([forum Apple](https://developer.apple.com/forums/thread/760974)).
 
 1. La capacité sur l'App ID (§3).
 2. **Supabase** → Authentication → Providers → **Apple** → activer → **Client IDs** :
-   `fr.paulbr.nookmind`. Pas de clé secrète ni de Services ID : ils ne servent qu'au flux web
+   `fr.paulbr.nookmind.app`. Pas de clé secrète ni de Services ID : ils ne servent qu'au flux web
    (OAuth), l'app utilise le flux natif ([Supabase](https://supabase.com/docs/guides/auth/social-login/auth-apple)).
 3. Rien d'autre : `NOOKMIND_PAID_TEAM = YES` active le bouton. Le workflow de release le met
    toujours.
@@ -173,7 +179,7 @@ satisfait ([forum Apple](https://developer.apple.com/forums/thread/760974)).
    **Sandbox & Production** → Register → **télécharger le `.p8`**. Apple ne le laisse télécharger
    qu'une fois : le ranger avec le keystore Android. Noter le **Key ID**.
 2. **Firebase** (projet `nookmind-8f5be`) → Paramètres du projet → Général → Ajouter une
-   application → **iOS** → bundle ID `fr.paulbr.nookmind` → télécharger
+   application → **iOS** → bundle ID `fr.paulbr.nookmind.app` → télécharger
    **`GoogleService-Info.plist`**. Ignorer les étapes d'installation du SDK : c'est déjà fait.
 3. **Firebase** → Paramètres du projet → **Cloud Messaging** → Configuration de l'application
    Apple → Clé d'authentification APNs → Importer : le `.p8`, le Key ID, le Team ID.
@@ -211,13 +217,25 @@ haut de la page.
 | `APP_STORE_CONNECT_API_KEY` | Le contenu du `.p8`, lignes BEGIN et END comprises | Oui |
 | `APP_STORE_CONNECT_API_KEY_ID` | Key ID de la clé d'API | Oui |
 | `APP_STORE_CONNECT_API_ISSUER_ID` | Issuer ID | Oui |
-| `APPLE_TEAM_ID` | Team ID | Oui |
+| `APPLE_TEAM_ID` | Team ID | Non : `73QPJZQA92` par défaut |
 | `GOOGLE_AUTH_IOS_CLIENT_ID` | ID client OAuth iOS | Non : sans lui, pas de bouton Google |
 | `GOOGLE_SERVICE_INFO_PLIST` | Contenu de `GoogleService-Info.plist` | Non : sans lui, pas de notifications |
 
 Les six clés du backend (`SUPABASE_URL`, etc.) existent déjà, les workflows Android s'en servent.
 
 Une clé Admin est puissante : si elle fuit, la révoquer dans la même page et en générer une autre.
+
+### La variable Vercel, pour les liens partagés
+
+Vercel → le projet → Settings → Environment Variables, environnement Production, puis redéployer :
+
+| Variable | Valeur | Effet |
+|---|---|---|
+| `IOS_STORE_URL` | Le lien public TestFlight (§10), plus tard la page App Store | Sur iPhone, « Pas encore l'app ? » mène là au lieu de Google Play. Sans elle, ce lien est masqué sur iPhone |
+
+`/.well-known/apple-app-site-association` (les liens universels) n'a besoin de rien : il prend le
+Team ID du code, ou `APPLE_TEAM_ID` sur Vercel s'il est défini. Apple met ce fichier en cache, et
+l'iPhone le relit à l'installation de l'app.
 
 ---
 
@@ -230,8 +248,12 @@ tag `ios-vX.Y.Z`. Compter 25 à 40 minutes : la compilation Kotlin/Native en Rel
 lente. Apple traite ensuite le build 5 à 30 minutes avant qu'il apparaisse dans TestFlight.
 
 Numérotation : la même règle qu'Android (`X.Y.Z`, build `X×10000 + Y×100 + Z`), avec sa propre
-série de tags `ios-v`, puisque les deux apps sortent indépendamment. La première sera 2.0.0
-(build 20000).
+série de tags `ios-v`, puisque les deux apps sortent indépendamment. La première sera 2.0.9
+(build 20009), le numéro où en est Android, puis 2.0.10, etc.
+
+Si le run échoue, le résumé dit pourquoi. Les causes les plus probables au premier essai : la fiche
+App Store Connect pas encore créée (§4), une clé d'API qui n'est pas Admin (§8), ou un `.p8` collé
+sans ses lignes BEGIN et END.
 
 Le résumé du run indique ce que contient le build : Apple activé ou non, Google configuré ou non,
 Firebase présent ou non, et les entitlements réellement signés.
@@ -245,7 +267,7 @@ et accès → inviter, le rôle « Assistance client » suffit). Pas de relectur
 build dès qu'il est traité. Ils installent l'app **TestFlight** et acceptent l'invitation.
 
 **Testeurs externes** : jusqu'à 10 000, par e-mail ou par **lien public**, sans compte App Store
-Connect. La première version de chaque numéro de version passe par la Beta App Review, en général
+Connect. C'est ce qu'il faut pour partager l'app avec des amis. La première version de chaque numéro de version passe par la Beta App Review, en général
 en une journée environ ([Expo](https://docs.expo.dev/submit/testflight/)). Il faut remplir les
 informations de test : description, e-mail de retour, URL de confidentialité, et un **compte de
 démo e-mail + mot de passe** pour le relecteur (le même que pour Play).
@@ -253,6 +275,31 @@ démo e-mail + mot de passe** pour le relecteur (le même que pour Play).
 Pas de règle des 12 testeurs pendant 14 jours : tu peux soumettre à l'App Store quand tu veux.
 
 Un build TestFlight expire au bout de 90 jours.
+
+### Le lien public, pas à pas
+
+1. App Store Connect → l'app → **TestFlight** → **Informations de test** (Test Information) :
+   description de la bêta, e-mail de retour, coordonnées, URL de confidentialité
+   (`https://nookmind.paulbr.fr/privacy`), et dans **Informations de connexion** le compte de démo
+   e-mail + mot de passe.
+2. **Test interne** → `+` → un groupe, par exemple « Moi », avec ton compte dedans. Apple exige un
+   groupe interne avant de pouvoir créer un groupe externe, et tu reçois le build tout de suite,
+   sans relecture : c'est le moment de le tester toi-même.
+3. **Test externe** → `+` → un groupe « Amis » → **Builds** → `+` → le build 2.0.9 → « À tester »
+   (ce que les testeurs doivent regarder) → **Soumettre pour relecture**. Le statut passe à « En
+   attente de relecture », puis « Prêt à tester ».
+4. Dans le groupe → **Lien public** → « Ouvert à tous », avec une limite de testeurs si tu veux. Le
+   lien `https://testflight.apple.com/join/...` fonctionne une fois le build approuvé. N'importe qui
+   peut le faire suivre, et ceux qui rejoignent par ce lien restent anonymes dans App Store Connect
+   ([Apple](https://developer.apple.com/help/app-store-connect/test-a-beta-version/invite-external-testers)).
+5. Mettre ce lien dans `IOS_STORE_URL` sur Vercel (§8), pour que la page d'un lien partagé
+   le propose aux amis sur iPhone.
+
+Côté ami : il installe **TestFlight** depuis l'App Store, ouvre le lien, puis Installer.
+
+Pour les versions suivantes, ajouter le build au groupe. Apple fait une relecture complète du
+premier build envoyé ; les suivants « peuvent » s'en passer, sans garantie, et un seul build par
+version peut être en relecture à la fois (même source).
 
 ---
 
@@ -307,15 +354,17 @@ qu'elle y fonctionne, pas qu'elle y soit belle.
 
 - [x] App testée sur ton iPhone avec le compte gratuit (`docs/ios-test-plan.md`), Google compris
 - [x] Décision iPad : iPhone seul (§12)
-- [ ] Compte Apple Developer validé, Team ID noté
-- [ ] App ID `fr.paulbr.nookmind` avec Sign in with Apple et Push Notifications
+- [x] Compte Apple Developer validé, Team ID `73QPJZQA92`
+- [ ] App ID `fr.paulbr.nookmind.app` avec Sign in with Apple, Push Notifications et Associated Domains
 - [ ] App créée dans App Store Connect
 - [ ] Client OAuth iOS dans le projet du client web, ajouté aux Client IDs Google de Supabase
-- [ ] Provider Apple activé dans Supabase avec `fr.paulbr.nookmind`
+- [ ] Provider Apple activé dans Supabase avec `fr.paulbr.nookmind.app`
 - [ ] Clé APNs créée, importée dans Firebase ; app iOS ajoutée à Firebase
 - [ ] Clé d'API App Store Connect (Admin) ; les six secrets GitHub iOS
 - [ ] `.p8` APNs et `.p8` d'API sauvegardés hors du Mac
 - [ ] Première release TestFlight, installée et testée : e-mail, Google, Apple, notification
+- [ ] Groupe de testeurs externes, relecture bêta acceptée, lien public activé
+- [ ] Vercel : `IOS_STORE_URL` (lien public), redéployé
 - [ ] Politique de confidentialité : Apple ajouté
 - [ ] Fiche, captures, confidentialité, classification, compte de démo
 - [ ] Soumission à l'App Store

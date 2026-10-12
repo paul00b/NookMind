@@ -53,9 +53,9 @@ Build sans compte Apple Developer payant. Ce que ça implique, une fois pour tou
    La seconde ligne fait signer l'app sous `fr.paulbr.nookmind.dev`, comme le build debug Android
    porte `.debug`. Un identifiant appartient à la première équipe qui signe avec, et une équipe
    gratuite ne peut pas le libérer : sans le suffixe, Xcode répond « Failed Registering Bundle
-   Identifier … not available », parce que `fr.paulbr.nookmind` est déjà pris (par l'équipe du projet
-   Capacitor, `SJ42PK8VK6`, selon toute vraisemblance). Le vrai identifiant reste ainsi libre pour
-   le compte payant qui publiera.
+   Identifier … not available ». L'identifiant de l'App Store, `fr.paulbr.nookmind.app`, reste ainsi
+   au compte payant qui publie (`fr.paulbr.nookmind` tout court appartient à l'équipe du projet
+   Capacitor, `SJ42PK8VK6`).
 
    Ne rien régler dans l'onglet Signing de Xcode : perdu au prochain `xcodegen generate`.
 
