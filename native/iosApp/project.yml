@@ -25,7 +25,9 @@ packages:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "2.0.0"
+    # The first iOS release takes this version, the next ones the last ios-v tag plus one. 2.0.9 lines
+    # it up with Android, which reached 2.0.9 first.
+    MARKETING_VERSION: "2.0.9"
     CURRENT_PROJECT_VERSION: "2"
     # The Gradle phase below writes into composeApp/build. Xcode 15+ sandboxes run scripts by
     # default, which turns that write into a permission error deep inside the Kotlin build.

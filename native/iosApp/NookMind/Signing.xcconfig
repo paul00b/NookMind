@@ -6,6 +6,7 @@
 //     NOOKMIND_PAID_TEAM = YES
 //     GOOGLE_AUTH_IOS_CLIENT_ID = 1234567890-abcdef.apps.googleusercontent.com
 //     GOOGLE_AUTH_IOS_REVERSED_CLIENT_ID = com.googleusercontent.apps.1234567890-abcdef
+//     NOOKMIND_SHARE_HOST = nookmind.example.com
 //
 // Without any of it the project still builds for the simulator, which is all the simulator CI needs.
 CODE_SIGN_STYLE = Automatic
@@ -23,11 +24,19 @@ NOOKMIND_BUNDLE_ID_SUFFIX =
 // without Sign in with Apple or push notifications. Apple grants those two entitlements to paid teams
 // only, and an entitlement the team cannot sign makes the whole build fail, so they stay out.
 // YES: a paid Apple Developer Program team. Both entitlements go in and both features turn on, through
-// the YES/NO strings Info.plist hands to AppDelegate. The release workflow always builds with YES.
+// the YES/NO strings Info.plist hands to AppDelegate, along with the associated domain of the shared
+// links (NOOKMIND_SHARE_HOST below). The release workflow always builds with YES.
 NOOKMIND_PAID_TEAM = NO
 NOOKMIND_ENTITLEMENTS_NO = NookMind/NookMind.entitlements
 NOOKMIND_ENTITLEMENTS_YES = NookMind/NookMind.Paid.entitlements
 CODE_SIGN_ENTITLEMENTS = $(NOOKMIND_ENTITLEMENTS_$(NOOKMIND_PAID_TEAM))
+
+// Shared links (https://<host>/s/movie/438631) open straight in the app on a paid-team build: the
+// host of API_BASE_URL, declared as an associated domain, and the apple-app-site-association file
+// that host serves (api/app-links.ts). The release workflow derives it from the API_BASE_URL secret;
+// the placeholder keeps the entitlement well-formed anywhere else, and the links then go through the
+// share page and its nookmind:// button.
+NOOKMIND_SHARE_HOST = nookmind.invalid
 
 // Google sign-in: the iOS OAuth client of the Google Cloud project that owns the web client (the
 // GOOGLE_AUTH_WEB_CLIENT_ID of secrets.properties), and its reversed form, the URL scheme Google's

@@ -244,6 +244,12 @@ jobs:
             CURRENT_PROJECT_VERSION="$CODE"
             NOOKMIND_PAID_TEAM=YES
           )
+          # Shared links open in the app (universal links): the domain they live on, the one of the
+          # API, declared in the paid-team entitlements. See Signing.xcconfig.
+          share_host=$(printf '%s' "$API_BASE_URL" | sed -E 's#^[A-Za-z]+://##; s#[/:?].*$##')
+          if [ -n "$share_host" ]; then
+            args+=(NOOKMIND_SHARE_HOST="$share_host")
+          fi
           # Google sign-in on iOS: the client id, and the reversed form Info.plist registers as a URL
           # scheme. Derived here so that the secret is the one value Google Cloud shows.
           if [ -n "$GOOGLE_IOS_CLIENT_ID" ]; then
@@ -289,7 +295,7 @@ jobs:
             if [ "$IS_RELEASE" = "true" ]; then
               echo
               echo '```'
-              codesign -d --entitlements - --xml "$app" 2>/dev/null | plutil -convert xml1 -o - - 2>/dev/null | grep -E -A2 'applesignin|aps-environment' || echo "entitlements unreadable"
+              codesign -d --entitlements - --xml "$app" 2>/dev/null | plutil -convert xml1 -o - - 2>/dev/null | grep -E -A2 'applesignin|aps-environment|associated-domains' || echo "entitlements unreadable"
               echo '```'
             fi
           } | tee -a "$GITHUB_STEP_SUMMARY"

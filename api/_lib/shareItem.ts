@@ -154,3 +154,14 @@ export const COPY = {
 
 export const ANDROID_PACKAGE = 'fr.paulbr.nookmind';
 export const STORE_URL = `https://play.google.com/store/apps/details?id=${ANDROID_PACKAGE}`;
+export const IOS_BUNDLE_ID = 'fr.paulbr.nookmind';
+
+/**
+ * Where an iPhone gets the app, from IOS_STORE_URL on Vercel: the TestFlight public link while the
+ * app is in beta (https://testflight.apple.com/join/...), its App Store page afterwards. Undefined
+ * until it is set, and the page then offers no download on an iPhone rather than the Play Store.
+ */
+export const IOS_STORE_URL = (() => {
+  const value = process.env.IOS_STORE_URL?.trim();
+  return value && /^https:\/\/(testflight|apps)\.apple\.com\//.test(value) ? value : undefined;
+})();

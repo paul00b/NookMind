@@ -9,7 +9,11 @@
     },
     {
       "source": "/.well-known/assetlinks.json",
-      "destination": "/api/assetlinks"
+      "destination": "/api/app-links?os=android"
+    },
+    {
+      "source": "/.well-known/apple-app-site-association",
+      "destination": "/api/app-links?os=ios"
     },
     {
       "source": "/api/(.*)",

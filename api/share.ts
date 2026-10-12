@@ -1,9 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { ACCENTS, ANDROID_PACKAGE, COPY, STORE_URL, loadShareItem, parseKind, parseLang, parseSharer } from './_lib/shareItem.js';
+import { ACCENTS, ANDROID_PACKAGE, COPY, IOS_STORE_URL, STORE_URL, loadShareItem, parseKind, parseLang, parseSharer } from './_lib/shareItem.js';
 
 // The page behind a shared link (/s/:kind/:id, rewritten here by vercel.json): Open Graph tags for
 // the preview in chats, and for whoever opens it, the poster, a few words and a button that opens
-// NookMind on the add sheet, or the store when the app is not installed.
+// NookMind on the add sheet, or the store when the app is not installed: Google Play, or on an iPhone
+// the TestFlight or App Store link set in IOS_STORE_URL.
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
@@ -11,6 +12,11 @@ function escapeHtml(value: string): string {
 
 function clip(text: string, max: number): string {
   return text.length <= max ? text : `${text.slice(0, max - 1).trimEnd()}…`;
+}
+
+/** A value for an inline script, unable to close the script element. */
+function scriptValue(value: unknown): string {
+  return JSON.stringify(value).replace(/</g, '\\u003c');
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -98,7 +104,7 @@ ${background ? `<div class="backdrop" style="background-image:url('${escapeHtml(
 <div class="shade"></div>
 </div>
 <main>
-  <a class="brand" href="${escapeHtml(STORE_URL)}"><img src="/logo.png" alt="">NookMind</a>
+  <a class="brand" data-store href="${escapeHtml(STORE_URL)}"><img src="/logo.png" alt="">NookMind</a>
   ${item
     ? `${item.poster ? `<img class="poster" src="${escapeHtml(item.poster)}" alt="">` : `<div class="poster empty"><img src="/logo.png" alt="" width="80" height="80"></div>`}
   <div class="kicker">${escapeHtml(kicker)}</div>
@@ -106,15 +112,29 @@ ${background ? `<div class="backdrop" style="background-image:url('${escapeHtml(
   ${meta ? `<div class="meta">${escapeHtml(meta)}</div>` : ''}
   ${item.overview ? `<p class="overview">${escapeHtml(item.overview)}</p>` : ''}
   <a class="cta" id="open" href="${escapeHtml(appUrl)}">${escapeHtml(copy.cta)}</a>
-  <a class="store" href="${escapeHtml(STORE_URL)}">${escapeHtml(copy.store)}</a>`
+  <a class="store" data-store href="${escapeHtml(STORE_URL)}">${escapeHtml(copy.store)}</a>`
     : `<h1 style="margin-top:40px">${escapeHtml(copy.notFound)}</h1>
-  <a class="cta" href="${escapeHtml(STORE_URL)}">${escapeHtml(copy.storeOnly)}</a>`}
+  <a class="cta" data-store href="${escapeHtml(STORE_URL)}">${escapeHtml(copy.storeOnly)}</a>`}
   <footer>${escapeHtml(copy.tagline)}</footer>
 </main>
-${item ? `<script>
-  // Android opens the app through an intent, which falls back to the store when it is missing.
-  if (/android/i.test(navigator.userAgent)) document.getElementById('open').href = ${JSON.stringify(intentUrl)};
-</script>` : ''}
+<script>
+  (function () {
+    var ua = navigator.userAgent;
+    var open = document.getElementById('open');
+    // Android opens the app through an intent, which falls back to the store when it is missing.
+    if (/android/i.test(ua)) { if (open) open.href = ${scriptValue(intentUrl)}; return; }
+    // An iPhone or an iPad (which says it is a Mac) gets the TestFlight or App Store link instead of
+    // Google Play, or no download at all while there is none.
+    var ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (!ios) return;
+    var store = ${scriptValue(IOS_STORE_URL ?? null)};
+    document.querySelectorAll('[data-store]').forEach(function (link) {
+      if (store) link.href = store;
+      else if (link.classList.contains('brand')) link.removeAttribute('href');
+      else link.remove();
+    });
+  })();
+</script>
 </body>
 </html>`;
 

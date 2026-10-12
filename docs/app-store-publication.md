@@ -1,6 +1,6 @@
 # Publier NookMind sur l'App Store
 
-Date : 2026-10-08
+Date : 2026-10-08, mise à jour le 2026-10-12 (liens partagés, version alignée sur Android)
 App concernée : l'hôte iOS `native/iosApp/` et le code partagé Kotlin, bundle ID `fr.paulbr.nookmind`.
 
 Même structure que `docs/play-store-publication.md`. Ce qui se fait dans les consoles (Apple,
@@ -21,6 +21,7 @@ Google Cloud, Firebase, Supabase) est pour toi ; le code et la CI sont déjà en
 | Déclaration de chiffrement | `ITSAppUsesNonExemptEncryption = NO` dans `Info.plist` : pas de question à chaque envoi |
 | Xcode 26 | Exigé par l'App Store depuis le 28 avril 2026 ([Apple](https://developer.apple.com/news/upcoming-requirements/)), la CI l'utilise |
 | Suppression de compte dans l'app | Existe, Apple l'exige aussi |
+| Liens partagés | `https://<domaine API>/s/...` s'ouvre direct dans l'app (lien universel) quand `APPLE_TEAM_ID` est sur Vercel (§8) ; sinon par la page et son bouton |
 | iPad | Non : iPhone seul pour la première version (`TARGETED_DEVICE_FAMILY: "1"`). Voir §12 |
 
 **Vérifié sur iPhone le 2026-10-08**, avec un Apple ID gratuit et le build `fr.paulbr.nookmind.dev` :
@@ -76,7 +77,11 @@ App :
 |---|---|
 | Description | NookMind |
 | Bundle ID | Explicit, `fr.paulbr.nookmind` |
-| Capabilities | **Sign in with Apple** et **Push Notifications** |
+| Capabilities | **Sign in with Apple**, **Push Notifications** et **Associated Domains** |
+
+Associated Domains sert aux liens partagés (un film envoyé à un ami s'ouvre direct dans l'app).
+Xcode sait normalement l'activer seul pendant la release, mais cochée ici, la signature ne peut pas
+échouer dessus.
 
 **Si Apple répond que `fr.paulbr.nookmind` n'est pas disponible** : il appartient déjà à une autre
 équipe. Le projet Capacitor (`ios/App`) signe avec `fr.paulbr.nookmind` et l'équipe `SJ42PK8VK6`,
@@ -219,6 +224,18 @@ Les six clés du backend (`SUPABASE_URL`, etc.) existent déjà, les workflows A
 
 Une clé Admin est puissante : si elle fuit, la révoquer dans la même page et en générer une autre.
 
+### Les variables Vercel, pour les liens partagés
+
+Vercel → le projet → Settings → Environment Variables, environnement Production, puis redéployer :
+
+| Variable | Valeur | Effet |
+|---|---|---|
+| `APPLE_TEAM_ID` | Le Team ID | Publie `/.well-known/apple-app-site-association` : un lien partagé ouvre l'app direct sur iPhone |
+| `IOS_STORE_URL` | Le lien public TestFlight (§10), plus tard la page App Store | Sur iPhone, « Pas encore l'app ? » mène là au lieu de Google Play. Sans elle, ce lien est masqué sur iPhone |
+
+Apple met en cache le fichier des liens universels, et l'iPhone le relit à l'installation de l'app :
+après avoir ajouté `APPLE_TEAM_ID`, réinstaller l'app pour que les liens s'ouvrent direct.
+
 ---
 
 ## 9. Sortir une version iOS
@@ -230,8 +247,12 @@ tag `ios-vX.Y.Z`. Compter 25 à 40 minutes : la compilation Kotlin/Native en Rel
 lente. Apple traite ensuite le build 5 à 30 minutes avant qu'il apparaisse dans TestFlight.
 
 Numérotation : la même règle qu'Android (`X.Y.Z`, build `X×10000 + Y×100 + Z`), avec sa propre
-série de tags `ios-v`, puisque les deux apps sortent indépendamment. La première sera 2.0.0
-(build 20000).
+série de tags `ios-v`, puisque les deux apps sortent indépendamment. La première sera 2.0.9
+(build 20009), le numéro où en est Android, puis 2.0.10, etc.
+
+Si le run échoue, le résumé dit pourquoi. Les causes les plus probables au premier essai : la fiche
+App Store Connect pas encore créée (§4), une clé d'API qui n'est pas Admin (§8), ou un `.p8` collé
+sans ses lignes BEGIN et END.
 
 Le résumé du run indique ce que contient le build : Apple activé ou non, Google configuré ou non,
 Firebase présent ou non, et les entitlements réellement signés.
@@ -245,7 +266,7 @@ et accès → inviter, le rôle « Assistance client » suffit). Pas de relectur
 build dès qu'il est traité. Ils installent l'app **TestFlight** et acceptent l'invitation.
 
 **Testeurs externes** : jusqu'à 10 000, par e-mail ou par **lien public**, sans compte App Store
-Connect. La première version de chaque numéro de version passe par la Beta App Review, en général
+Connect. C'est ce qu'il faut pour partager l'app avec des amis. La première version de chaque numéro de version passe par la Beta App Review, en général
 en une journée environ ([Expo](https://docs.expo.dev/submit/testflight/)). Il faut remplir les
 informations de test : description, e-mail de retour, URL de confidentialité, et un **compte de
 démo e-mail + mot de passe** pour le relecteur (le même que pour Play).
@@ -253,6 +274,31 @@ démo e-mail + mot de passe** pour le relecteur (le même que pour Play).
 Pas de règle des 12 testeurs pendant 14 jours : tu peux soumettre à l'App Store quand tu veux.
 
 Un build TestFlight expire au bout de 90 jours.
+
+### Le lien public, pas à pas
+
+1. App Store Connect → l'app → **TestFlight** → **Informations de test** (Test Information) :
+   description de la bêta, e-mail de retour, coordonnées, URL de confidentialité
+   (`https://nookmind.paulbr.fr/privacy`), et dans **Informations de connexion** le compte de démo
+   e-mail + mot de passe.
+2. **Test interne** → `+` → un groupe, par exemple « Moi », avec ton compte dedans. Apple exige un
+   groupe interne avant de pouvoir créer un groupe externe, et tu reçois le build tout de suite,
+   sans relecture : c'est le moment de le tester toi-même.
+3. **Test externe** → `+` → un groupe « Amis » → **Builds** → `+` → le build 2.0.9 → « À tester »
+   (ce que les testeurs doivent regarder) → **Soumettre pour relecture**. Le statut passe à « En
+   attente de relecture », puis « Prêt à tester ».
+4. Dans le groupe → **Lien public** → « Ouvert à tous », avec une limite de testeurs si tu veux. Le
+   lien `https://testflight.apple.com/join/...` fonctionne une fois le build approuvé. N'importe qui
+   peut le faire suivre, et ceux qui rejoignent par ce lien restent anonymes dans App Store Connect
+   ([Apple](https://developer.apple.com/help/app-store-connect/test-a-beta-version/invite-external-testers)).
+5. Mettre ce lien dans `IOS_STORE_URL` sur Vercel (§8), pour que la page d'un lien partagé
+   le propose aux amis sur iPhone.
+
+Côté ami : il installe **TestFlight** depuis l'App Store, ouvre le lien, puis Installer.
+
+Pour les versions suivantes, ajouter le build au groupe. Apple fait une relecture complète du
+premier build envoyé ; les suivants « peuvent » s'en passer, sans garantie, et un seul build par
+version peut être en relecture à la fois (même source).
 
 ---
 
@@ -308,7 +354,7 @@ qu'elle y fonctionne, pas qu'elle y soit belle.
 - [x] App testée sur ton iPhone avec le compte gratuit (`docs/ios-test-plan.md`), Google compris
 - [x] Décision iPad : iPhone seul (§12)
 - [ ] Compte Apple Developer validé, Team ID noté
-- [ ] App ID `fr.paulbr.nookmind` avec Sign in with Apple et Push Notifications
+- [ ] App ID `fr.paulbr.nookmind` avec Sign in with Apple, Push Notifications et Associated Domains
 - [ ] App créée dans App Store Connect
 - [ ] Client OAuth iOS dans le projet du client web, ajouté aux Client IDs Google de Supabase
 - [ ] Provider Apple activé dans Supabase avec `fr.paulbr.nookmind`
@@ -316,6 +362,8 @@ qu'elle y fonctionne, pas qu'elle y soit belle.
 - [ ] Clé d'API App Store Connect (Admin) ; les six secrets GitHub iOS
 - [ ] `.p8` APNs et `.p8` d'API sauvegardés hors du Mac
 - [ ] Première release TestFlight, installée et testée : e-mail, Google, Apple, notification
+- [ ] Groupe de testeurs externes, relecture bêta acceptée, lien public activé
+- [ ] Vercel : `APPLE_TEAM_ID` et `IOS_STORE_URL` (lien public), redéployé
 - [ ] Politique de confidentialité : Apple ajouté
 - [ ] Fiche, captures, confidentialité, classification, compte de démo
 - [ ] Soumission à l'App Store
