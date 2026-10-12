@@ -56,6 +56,9 @@ jobs:
       GOOGLE_BOOKS_API_KEY: ${{ secrets.GOOGLE_BOOKS_API_KEY }}
       TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
       GOOGLE_AUTH_WEB_CLIENT_ID: ${{ secrets.GOOGLE_AUTH_WEB_CLIENT_ID }}
+      # The Apple developer team that signs. Not a secret, it is written in every signed build: the
+      # repository secret only overrides it, for a move to another team.
+      TEAM_ID: ${{ secrets.APPLE_TEAM_ID || '73QPJZQA92' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -205,11 +208,10 @@ jobs:
           ASC_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
           ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
-          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          for k in ASC_KEY ASC_KEY_ID ASC_ISSUER_ID TEAM_ID; do
+          for k in ASC_KEY ASC_KEY_ID ASC_ISSUER_ID; do
             if [ -z "${!k}" ]; then
-              echo "::error::APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_KEY_ID, APP_STORE_CONNECT_API_ISSUER_ID and APPLE_TEAM_ID are required to release. See docs/app-store-publication.md."
+              echo "::error::APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_KEY_ID and APP_STORE_CONNECT_API_ISSUER_ID are required to release. See docs/app-store-publication.md."
               exit 1
             fi
           done
@@ -229,7 +231,6 @@ jobs:
           GOOGLE_IOS_CLIENT_ID: ${{ secrets.GOOGLE_AUTH_IOS_CLIENT_ID }}
           ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
-          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           mkdir -p out
           args=(
@@ -307,7 +308,6 @@ jobs:
         env:
           ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
-          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
           <?xml version="1.0" encoding="UTF-8"?>

@@ -155,6 +155,8 @@ export const COPY = {
 export const ANDROID_PACKAGE = 'fr.paulbr.nookmind';
 export const STORE_URL = `https://play.google.com/store/apps/details?id=${ANDROID_PACKAGE}`;
 export const IOS_BUNDLE_ID = 'fr.paulbr.nookmind';
+/** The Apple developer team of the iOS app. Public (it is in every signed build); APPLE_TEAM_ID overrides it. */
+export const APPLE_TEAM_ID = '73QPJZQA92';
 
 /**
  * Where an iPhone gets the app, from IOS_STORE_URL on Vercel: the TestFlight public link while the

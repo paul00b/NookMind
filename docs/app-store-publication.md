@@ -21,7 +21,7 @@ Google Cloud, Firebase, Supabase) est pour toi ; le code et la CI sont déjà en
 | Déclaration de chiffrement | `ITSAppUsesNonExemptEncryption = NO` dans `Info.plist` : pas de question à chaque envoi |
 | Xcode 26 | Exigé par l'App Store depuis le 28 avril 2026 ([Apple](https://developer.apple.com/news/upcoming-requirements/)), la CI l'utilise |
 | Suppression de compte dans l'app | Existe, Apple l'exige aussi |
-| Liens partagés | `https://<domaine API>/s/...` s'ouvre direct dans l'app (lien universel) quand `APPLE_TEAM_ID` est sur Vercel (§8) ; sinon par la page et son bouton |
+| Liens partagés | `https://<domaine API>/s/...` s'ouvre direct dans l'app (lien universel), via `/.well-known/apple-app-site-association` servi par Vercel |
 | iPad | Non : iPhone seul pour la première version (`TARGETED_DEVICE_FAMILY: "1"`). Voir §12 |
 
 **Vérifié sur iPhone le 2026-10-08**, avec un Apple ID gratuit et le build `fr.paulbr.nookmind.dev` :
@@ -53,12 +53,15 @@ corrige de la même façon, compte payant ou pas.
 L'Apple ID doit avoir la validation en deux étapes. Compter un à deux jours de vérification.
 
 Une fois validé, récupérer le **Team ID** (10 caractères) : developer.apple.com → Account →
-Membership details. Il sert à trois endroits :
+Membership details. NookMind : **`73QPJZQA92`**, le même que l'équipe gratuite, puisqu'une
+inscription individuelle convertit l'équipe personnelle ([Apple](https://help.apple.com/xcode/mac/current/en.lproj/dev17411c009.html)).
+Il n'est pas secret (il figure dans chaque build signé) : il est écrit dans le workflow de release et
+dans `api/_lib/shareItem.ts`, et le secret GitHub `APPLE_TEAM_ID` ne sert qu'à passer à une autre
+équipe. Il sert encore à deux endroits :
 
-- secret GitHub `APPLE_TEAM_ID` ;
 - `native/iosApp/NookMind/Local.xcconfig` sur le Mac, avec le passage en compte payant :
   ```
-  DEVELOPMENT_TEAM = TONTEAMID
+  DEVELOPMENT_TEAM = 73QPJZQA92
   NOOKMIND_PAID_TEAM = YES
   ```
 - la clé APNs dans Firebase (§7).
@@ -216,7 +219,7 @@ haut de la page.
 | `APP_STORE_CONNECT_API_KEY` | Le contenu du `.p8`, lignes BEGIN et END comprises | Oui |
 | `APP_STORE_CONNECT_API_KEY_ID` | Key ID de la clé d'API | Oui |
 | `APP_STORE_CONNECT_API_ISSUER_ID` | Issuer ID | Oui |
-| `APPLE_TEAM_ID` | Team ID | Oui |
+| `APPLE_TEAM_ID` | Team ID | Non : `73QPJZQA92` par défaut |
 | `GOOGLE_AUTH_IOS_CLIENT_ID` | ID client OAuth iOS | Non : sans lui, pas de bouton Google |
 | `GOOGLE_SERVICE_INFO_PLIST` | Contenu de `GoogleService-Info.plist` | Non : sans lui, pas de notifications |
 
@@ -224,17 +227,17 @@ Les six clés du backend (`SUPABASE_URL`, etc.) existent déjà, les workflows A
 
 Une clé Admin est puissante : si elle fuit, la révoquer dans la même page et en générer une autre.
 
-### Les variables Vercel, pour les liens partagés
+### La variable Vercel, pour les liens partagés
 
 Vercel → le projet → Settings → Environment Variables, environnement Production, puis redéployer :
 
 | Variable | Valeur | Effet |
 |---|---|---|
-| `APPLE_TEAM_ID` | Le Team ID | Publie `/.well-known/apple-app-site-association` : un lien partagé ouvre l'app direct sur iPhone |
 | `IOS_STORE_URL` | Le lien public TestFlight (§10), plus tard la page App Store | Sur iPhone, « Pas encore l'app ? » mène là au lieu de Google Play. Sans elle, ce lien est masqué sur iPhone |
 
-Apple met en cache le fichier des liens universels, et l'iPhone le relit à l'installation de l'app :
-après avoir ajouté `APPLE_TEAM_ID`, réinstaller l'app pour que les liens s'ouvrent direct.
+`/.well-known/apple-app-site-association` (les liens universels) n'a besoin de rien : il prend le
+Team ID du code, ou `APPLE_TEAM_ID` sur Vercel s'il est défini. Apple met ce fichier en cache, et
+l'iPhone le relit à l'installation de l'app.
 
 ---
 
@@ -353,7 +356,7 @@ qu'elle y fonctionne, pas qu'elle y soit belle.
 
 - [x] App testée sur ton iPhone avec le compte gratuit (`docs/ios-test-plan.md`), Google compris
 - [x] Décision iPad : iPhone seul (§12)
-- [ ] Compte Apple Developer validé, Team ID noté
+- [x] Compte Apple Developer validé, Team ID `73QPJZQA92`
 - [ ] App ID `fr.paulbr.nookmind` avec Sign in with Apple, Push Notifications et Associated Domains
 - [ ] App créée dans App Store Connect
 - [ ] Client OAuth iOS dans le projet du client web, ajouté aux Client IDs Google de Supabase
@@ -363,7 +366,7 @@ qu'elle y fonctionne, pas qu'elle y soit belle.
 - [ ] `.p8` APNs et `.p8` d'API sauvegardés hors du Mac
 - [ ] Première release TestFlight, installée et testée : e-mail, Google, Apple, notification
 - [ ] Groupe de testeurs externes, relecture bêta acceptée, lien public activé
-- [ ] Vercel : `APPLE_TEAM_ID` et `IOS_STORE_URL` (lien public), redéployé
+- [ ] Vercel : `IOS_STORE_URL` (lien public), redéployé
 - [ ] Politique de confidentialité : Apple ajouté
 - [ ] Fiche, captures, confidentialité, classification, compte de démo
 - [ ] Soumission à l'App Store
