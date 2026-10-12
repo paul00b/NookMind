@@ -4,6 +4,7 @@ import com.russhwolf.settings.NSUserDefaultsSettings
 import com.russhwolf.settings.Settings
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.toNSDateComponents
+import platform.Foundation.NSBundle
 import platform.Foundation.NSCalendar
 import platform.Foundation.NSDateFormatter
 import platform.Foundation.NSLocale
@@ -73,6 +74,9 @@ actual fun openExternalUrl(url: String) {
     }
     UIApplication.sharedApplication.openURL(nsUrl, options = emptyMap<Any?, Any>(), completionHandler = null)
 }
+
+actual fun appVersionName(): String? =
+    NSBundle.mainBundle.objectForInfoDictionaryKey("CFBundleShortVersionString") as? String
 
 actual fun shareText(text: String) {
     var top = UIApplication.sharedApplication.keyWindow?.rootViewController ?: return

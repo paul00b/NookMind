@@ -37,6 +37,12 @@ actual fun openExternalUrl(url: String) {
     }.onFailure { Log.w("platform", "cannot open $url", it) }
 }
 
+actual fun appVersionName(): String? = runCatching {
+    val context = AndroidContextHolder.appContext
+    @Suppress("DEPRECATION")
+    context.packageManager.getPackageInfo(context.packageName, 0).versionName
+}.getOrNull()
+
 actual fun shareText(text: String) {
     runCatching {
         val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)

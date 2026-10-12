@@ -75,6 +75,8 @@ import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
 import fr.paulbr.nookmind.core.designsystem.onFill
 import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.core.model.ThemeMode
+import fr.paulbr.nookmind.core.platform.appVersionName
+import fr.paulbr.nookmind.core.platform.openExternalUrl
 import fr.paulbr.nookmind.core.ui.HapticCue
 import fr.paulbr.nookmind.core.ui.nookHaptics
 import fr.paulbr.nookmind.feature.legal.LegalKind
@@ -91,6 +93,7 @@ import fr.paulbr.nookmind.resources.settings_cacheRefreshing
 import fr.paulbr.nookmind.resources.settings_cancel
 import fr.paulbr.nookmind.resources.settings_clearCache
 import fr.paulbr.nookmind.resources.settings_dark
+import fr.paulbr.nookmind.resources.settings_dataSources
 import fr.paulbr.nookmind.resources.settings_deleteAccount
 import fr.paulbr.nookmind.resources.settings_displayNameSaved
 import fr.paulbr.nookmind.resources.settings_enableNotifications
@@ -141,13 +144,14 @@ import fr.paulbr.nookmind.resources.settings_testNotificationsRetry
 import fr.paulbr.nookmind.resources.settings_testNotificationsSending
 import fr.paulbr.nookmind.resources.settings_testNotificationsSent
 import fr.paulbr.nookmind.resources.settings_theme
+import fr.paulbr.nookmind.resources.settings_tmdbNotice
 import fr.paulbr.nookmind.resources.settings_title
 import fr.paulbr.nookmind.resources.settings_version
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
-/** Version shown in the About section (`APP_VERSION` of SettingsPanel.tsx, bumped for the native app). */
+/** Version shown in the About section where the platform has none to give (the desktop screenshot tool). */
 const val APP_VERSION = "2.0.0"
 
 private enum class TestState { IDLE, LOADING, SUCCESS, ERROR }
@@ -454,7 +458,7 @@ fun SettingsPanel(
                 SettingsSection(stringResource(Res.string.settings_about)) {
                     NookCard(Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            AboutRow(stringResource(Res.string.settings_version), APP_VERSION)
+                            AboutRow(stringResource(Res.string.settings_version), remember { appVersionName() } ?: APP_VERSION)
                             AboutRow(stringResource(Res.string.settings_app), "NookMind")
                             Text(
                                 stringResource(Res.string.settings_tagline),
@@ -463,6 +467,14 @@ fun SettingsPanel(
                                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp), textAlign = TextAlign.Center,
                             )
                             HairlineDivider(Modifier.padding(top = 8.dp))
+                            // Where the details come from. TMDB asks for this notice in an About or
+                            // Credits section of any app that uses its API.
+                            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(stringResource(Res.string.settings_dataSources), style = NookTheme.type.xs, color = colors.textSubtle, textAlign = TextAlign.Center)
+                                Text(stringResource(Res.string.settings_tmdbNotice), style = NookTheme.type.xs, color = colors.textFaint, textAlign = TextAlign.Center)
+                                TextLink("themoviedb.org", onClick = { openExternalUrl("https://www.themoviedb.org") }, color = colors.textFaint)
+                            }
+                            HairlineDivider()
                             val spin = rememberInfiniteTransition(label = "refresh")
                             val angle by spin.animateFloat(0f, 360f, infiniteRepeatable(tween(1000)), label = "angle")
                             ActionRow(
