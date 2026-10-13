@@ -129,10 +129,12 @@ internal fun FriendProfileScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             full {
+                // The card colour disappears on the dark background: one step lighter there.
+                val buttonBackground = if (colors.isDark) colors.surfaceMuted else colors.surface
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconGhostButton(LucideIcons.ChevronLeft, stringResource(Res.string.common_back), onBack, background = colors.surface, padding = 12.dp)
+                    IconGhostButton(LucideIcons.ChevronLeft, stringResource(Res.string.common_back), onBack, background = buttonBackground, padding = 12.dp)
                     Spacer(Modifier.weight(1f))
-                    IconGhostButton(LucideIcons.Ellipsis, stringResource(Res.string.social_options), { optionsOpen = true }, background = colors.surface, padding = 12.dp)
+                    IconGhostButton(LucideIcons.Ellipsis, stringResource(Res.string.social_options), { optionsOpen = true }, background = buttonBackground, padding = 12.dp)
                 }
             }
             full {
