@@ -110,7 +110,12 @@ fun <T> TrendingSlider(
             categories.forEach { cat -> PillTab(cat.label, selected = cat.key == categoryKey, onClick = { categoryKey = cat.key }) }
         }
         Spacer(Modifier.height(12.dp))
-        LazyRow(state = listState, horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(bottom = 8.dp)) {
+        LazyRow(
+            Modifier.horizontalBleed(SLIDER_BLEED),
+            state = listState,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(start = SLIDER_BLEED, end = SLIDER_BLEED, bottom = 8.dp),
+        ) {
             if (initialLoading) {
                 items(8) { SliderSkeletonCard(width) }
             } else {

@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -86,9 +89,10 @@ internal fun FriendInviteSheet(
                 Spacer(Modifier.height(20.dp))
 
                 // Dark modules on white in both themes: a scanner needs the contrast more than the
-                // card needs to match the night background.
+                // card needs to match the night background. Most of the sheet's width, so it reads
+                // from across a table.
                 Box(
-                    Modifier.size(224.dp).clip(NookShapes.xl3).background(Color.White).padding(18.dp),
+                    Modifier.fillMaxWidth(0.82f).widthIn(max = 320.dp).aspectRatio(1f).clip(NookShapes.xl3).background(Color.White).padding(16.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     val content = link ?: profile?.friendCode
@@ -183,5 +187,6 @@ private fun InvitationQr(content: String, ink: Color) {
             ball = QrBrush.solid(ink)
         }
     }
-    Image(painter, stringResource(Res.string.social_qrDescription), Modifier.fillMaxWidth())
+    // Both dimensions set: the painter's own size (ten pixels a module) never decides how big it shows.
+    Image(painter, stringResource(Res.string.social_qrDescription), Modifier.fillMaxSize())
 }

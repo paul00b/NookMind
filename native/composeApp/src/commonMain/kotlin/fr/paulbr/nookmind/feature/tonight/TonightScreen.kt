@@ -71,6 +71,7 @@ import fr.paulbr.nookmind.core.data.AuthState
 import fr.paulbr.nookmind.core.data.TonightSessionRow
 import fr.paulbr.nookmind.core.designsystem.NookShapes
 import fr.paulbr.nookmind.core.designsystem.NookTheme
+import fr.paulbr.nookmind.feature.common.horizontalBleed
 import fr.paulbr.nookmind.core.designsystem.components.Avatar
 import fr.paulbr.nookmind.core.designsystem.components.AvatarSize
 import fr.paulbr.nookmind.core.designsystem.components.NookTextField
@@ -325,7 +326,10 @@ private fun SetupStep(container: AppContainer, state: TonightState, onDeal: () -
             Spacer(Modifier.height(10.dp))
             SectionLabel(stringResource(Res.string.tonight_withWho))
             if (accepted.isNotEmpty()) {
-                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                Row(
+                    Modifier.horizontalBleed(20.dp).horizontalScroll(rememberScrollState()).padding(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
                     WhoChip(stringResource(Res.string.tonight_samePhone), selected = friend == null, onClick = {
                         state.friend = null
                         state.partnerName = container.prefs.tonightPartner
