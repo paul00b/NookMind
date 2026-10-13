@@ -54,7 +54,9 @@ jobs:
       - name: Render
         working-directory: native
         run: |
-          rm -rf "$GITHUB_WORKSPACE/screenshots"
+          # This workflow's images only: the web-*.png ones belong to the Web app workflow, which
+          # commits them to the same branch at the same time.
+          find "$GITHUB_WORKSPACE/screenshots" -maxdepth 1 -type f ! -name 'web-*' -delete 2>/dev/null || true
           asked=$(printf '%s' "$COMMIT_MESSAGE" | sed -n 's/.*\[screenshots: *\([^]]*\)\].*/\1/p' | head -n 1)
           only=()
           if [ -z "$asked" ]; then only=(-Ponly="$ONLY"); elif [ "$asked" != "all" ]; then only=(-Ponly="$asked"); fi
