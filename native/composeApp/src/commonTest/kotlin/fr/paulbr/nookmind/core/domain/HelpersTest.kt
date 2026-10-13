@@ -54,8 +54,11 @@ class HelpersTest {
     fun searchSectionSanitizeKeepsOrderAndFillsMissing() {
         val prefs = listOf(SearchSectionPreference("last_watched", false), SearchSectionPreference("bogus"), SearchSectionPreference("trending"))
         val result = SearchSections.sanitize(prefs, MediaMode.SERIES)
-        assertEquals(listOf("last_watched", "trending", "watching", "waiting", "want_to_watch"), result.map { it.id })
-        assertEquals(false, result.first().visible)
+        // On regarde quoi ?, new on the series home, goes first; the other missing ones at the end.
+        assertEquals(listOf("tonight", "last_watched", "trending", "watching", "waiting", "want_to_watch"), result.map { it.id })
+        assertEquals(false, result[1].visible)
+        val books = SearchSections.sanitize(listOf(SearchSectionPreference("last_read")), MediaMode.BOOKS)
+        assertEquals(listOf("last_read", "want_to_read"), books.map { it.id }, "only On regarde quoi ? jumps ahead")
         assertEquals(SearchSections.defaults(MediaMode.BOOKS), SearchSections.sanitize(null, MediaMode.BOOKS))
     }
 

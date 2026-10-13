@@ -235,6 +235,31 @@ class TmdbApi(
         if (!res.ok) emptyList() else res.body<PagedResults<TmdbMovie>>().results ?: emptyList()
     }.getOrDefault(emptyList())
 
+    /**
+     * Popular, well-rated series of any of [genres] (TMDB TV ids, none for all), mini-series only
+     * with [miniseries], one page at a time.
+     */
+    suspend fun discoverSeries(genres: Set<Int>, page: Int = 1, miniseries: Boolean = false): List<TmdbSeries> = runCatching {
+        val params = buildMap {
+            put("language", tmdbLocale())
+            if (genres.isNotEmpty()) put("with_genres", genres.joinToString("|"))
+            // TMDB's series types: 2 is "Miniseries".
+            if (miniseries) put("with_type", "2")
+            put("sort_by", "popularity.desc")
+            put("vote_count.gte", if (miniseries) "50" else "200")
+            put("include_adult", "false")
+            put("page", page.toString())
+        }
+        val res = getJson("/discover/tv", params, 8_000)
+        if (!res.ok) emptyList() else res.body<PagedResults<TmdbSeries>>().results ?: emptyList()
+    }.getOrDefault(emptyList())
+
+    /** TMDB's "more like this" for a series (first page). */
+    suspend fun fetchSeriesRecommendations(tmdbId: Int): List<TmdbSeries> = runCatching {
+        val res = getJson("/tv/$tmdbId/recommendations", mapOf("language" to tmdbLocale()), 8_000)
+        if (!res.ok) emptyList() else res.body<PagedResults<TmdbSeries>>().results ?: emptyList()
+    }.getOrDefault(emptyList())
+
     /** TMDB's "more like this" for a movie (first page). */
     suspend fun fetchMovieRecommendations(tmdbId: Int): List<TmdbMovie> = runCatching {
         val res = getJson("/movie/$tmdbId/recommendations", mapOf("language" to tmdbLocale()), 8_000)
@@ -251,8 +276,13 @@ class TmdbApi(
     private data class ImagesResponse(val backdrops: List<TmdbImage> = emptyList())
 
     /** Up to [max] stills of a movie without any text on them, the most voted first. */
-    suspend fun fetchMovieStills(tmdbId: Int, max: Int = 3): List<String> = runCatching {
-        val res = getJson("/movie/$tmdbId/images", mapOf("include_image_language" to "null"), 8_000)
+    suspend fun fetchMovieStills(tmdbId: Int, max: Int = 3): List<String> = fetchStills("movie", tmdbId, max)
+
+    /** The same for a series. */
+    suspend fun fetchSeriesStills(tmdbId: Int, max: Int = 3): List<String> = fetchStills("tv", tmdbId, max)
+
+    private suspend fun fetchStills(kind: String, tmdbId: Int, max: Int): List<String> = runCatching {
+        val res = getJson("/$kind/$tmdbId/images", mapOf("include_image_language" to "null"), 8_000)
         if (!res.ok) emptyList()
         else res.body<ImagesResponse>().backdrops.sortedByDescending { it.voteCount }.take(max).mapNotNull { posterUrl(it.filePath, "w780") }
     }.getOrDefault(emptyList())

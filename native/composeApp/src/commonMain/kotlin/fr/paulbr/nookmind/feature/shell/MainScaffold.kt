@@ -55,6 +55,7 @@ import fr.paulbr.nookmind.feature.library.SeriesLibraryScreen
 import fr.paulbr.nookmind.feature.nextup.NextUpBooksScreen
 import fr.paulbr.nookmind.feature.nextup.NextUpMoviesScreen
 import fr.paulbr.nookmind.feature.social.SocialScreen
+import fr.paulbr.nookmind.feature.tonight.TonightKind
 import fr.paulbr.nookmind.feature.tonight.TonightScreen
 import fr.paulbr.nookmind.feature.nextup.NextUpSeriesScreen
 import fr.paulbr.nookmind.feature.settings.NotificationPromptSheet
@@ -93,8 +94,16 @@ fun MainScaffold(
     var tonightOpen by rememberSaveable { mutableStateOf(false) }
     // The online evening a friend invited me to, opened from the Social tab or a notification.
     var tonightJoin by rememberSaveable { mutableStateOf<String?>(null) }
+    // Movies or series, from the home it was opened on; none (Social, a link): the last one played.
+    var tonightKind by rememberSaveable { mutableStateOf<String?>(null) }
     val openTonight: (String?) -> Unit = { session ->
         tonightJoin = session
+        tonightKind = null
+        tonightOpen = true
+    }
+    val startTonight: (TonightKind) -> Unit = { kind ->
+        tonightJoin = null
+        tonightKind = kind.key
         tonightOpen = true
     }
     val scope = rememberCoroutineScope()
@@ -184,7 +193,7 @@ fun MainScaffold(
                     Sidebar(container = container, tab = tab, onTab = { tab = it }, onOpenSettings = { settingsOpen = true }, socialBadge = socialBadge)
                     Box(Modifier.weight(1f)) {
                         RefreshableContent(refreshing, onRefresh) {
-                            key(refreshRound) { ModeContent(container, mode, tab, bottomPadding = 0.dp, onOpenTonight = openTonight) }
+                            key(refreshRound) { ModeContent(container, mode, tab, bottomPadding = 0.dp, onOpenTonight = openTonight, onStartTonight = startTonight) }
                         }
                     }
                 }
@@ -197,7 +206,7 @@ fun MainScaffold(
                         modifier = Modifier.weight(1f),
                     ) {
                         RefreshableContent(refreshing, onRefresh) {
-                            key(refreshRound) { ModeContent(container, mode, tab, bottomPadding = BOTTOM_NAV_CLEARANCE.dp, onOpenTonight = openTonight) }
+                            key(refreshRound) { ModeContent(container, mode, tab, bottomPadding = BOTTOM_NAV_CLEARANCE.dp, onOpenTonight = openTonight, onStartTonight = startTonight) }
                         }
                     }
                 }
@@ -217,7 +226,12 @@ fun MainScaffold(
 
         if (tonightOpen) {
             key(tonightJoin) {
-                TonightScreen(container, onClose = { tonightOpen = false; tonightJoin = null }, joinSessionId = tonightJoin)
+                TonightScreen(
+                    container,
+                    onClose = { tonightOpen = false; tonightJoin = null },
+                    startKind = TonightKind.fromKey(tonightKind),
+                    joinSessionId = tonightJoin,
+                )
             }
         }
 
@@ -298,13 +312,20 @@ private fun RefreshableContent(refreshing: Boolean, onRefresh: () -> Unit, conte
 const val BOTTOM_NAV_CLEARANCE = 144
 
 @Composable
-private fun ModeContent(container: AppContainer, mode: MediaMode, tab: MainTab, bottomPadding: androidx.compose.ui.unit.Dp, onOpenTonight: (String?) -> Unit) {
+private fun ModeContent(
+    container: AppContainer,
+    mode: MediaMode,
+    tab: MainTab,
+    bottomPadding: androidx.compose.ui.unit.Dp,
+    onOpenTonight: (String?) -> Unit,
+    onStartTonight: (TonightKind) -> Unit,
+) {
     val contentPadding = PaddingValues(bottom = bottomPadding)
     when (tab) {
         MainTab.SEARCH -> when (mode) {
             MediaMode.BOOKS -> BooksHomeScreen(container, contentPadding)
-            MediaMode.MOVIES -> MoviesHomeScreen(container, contentPadding, onOpenTonight = { onOpenTonight(null) })
-            MediaMode.SERIES -> SeriesHomeScreen(container, contentPadding)
+            MediaMode.MOVIES -> MoviesHomeScreen(container, contentPadding, onOpenTonight = { onStartTonight(TonightKind.MOVIE) })
+            MediaMode.SERIES -> SeriesHomeScreen(container, contentPadding, onOpenTonight = { onStartTonight(TonightKind.SERIES) })
         }
         MainTab.LIBRARY -> when (mode) {
             MediaMode.BOOKS -> BooksLibraryScreen(container, contentPadding)

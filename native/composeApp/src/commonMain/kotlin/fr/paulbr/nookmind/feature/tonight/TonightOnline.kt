@@ -22,11 +22,19 @@ import kotlinx.serialization.json.JsonElement
 /**
  * A card as both phones share it, in the deck of the session. Reasons name a player by id, so each
  * phone can say "your list" or "Léa's list".
+ *
+ * A series card names itself with [name], never [title]: the versions before series required a
+ * title, so they cannot read a deck of series and never take one for movies.
  */
 @Serializable
 internal data class SharedCard(
     val id: Int,
-    val title: String,
+    val title: String? = null,
+    val name: String? = null,
+    val kind: String = "movie",
+    val seasons: Int? = null,
+    val ended: Boolean? = null,
+    val mini: Boolean = false,
     val overview: String = "",
     @SerialName("poster_path") val posterPath: String? = null,
     val poster: String? = null,
@@ -50,8 +58,14 @@ internal fun encodeDeck(cards: List<TonightCard>, myId: String, partnerId: Strin
 
 /** The deck of a session, with the reasons said from [myId]'s side. */
 internal fun decodeDeck(deck: JsonElement, myId: String, partnerName: String): List<TonightCard> =
+    sharedCardsOf(deck).mapNotNull { it.toCard(myId, partnerName) }
+
+private fun sharedCardsOf(deck: JsonElement): List<SharedCard> =
     runCatching { AppJson.decodeFromJsonElement(ListSerializer(SharedCard.serializer()), deck) }.getOrDefault(emptyList())
-        .map { it.toCard(myId, partnerName) }
+
+/** A deck of a kind this version does not know (dealt by a newer one): the player has to update. */
+internal fun needsUpdate(deck: JsonElement): Boolean =
+    sharedCardsOf(deck).any { TonightKind.fromKey(it.kind) == null }
 
 internal fun TonightCard.toShared(myId: String, partnerId: String): SharedCard {
     val (kind, by, about) = when (val r = reason) {
@@ -63,15 +77,20 @@ internal fun TonightCard.toShared(myId: String, partnerId: String): SharedCard {
         CardReason.Trending -> Triple("trending", null, null)
         CardReason.Popular -> Triple("popular", null, null)
     }
+    val series = this.kind == TonightKind.SERIES
     return SharedCard(
-        id = tmdbId, title = title, overview = movie.overview, posterPath = movie.posterPath, poster = posterUrl,
+        id = tmdbId, title = if (series) null else title, name = if (series) title else null,
+        kind = this.kind.key, seasons = seasons, ended = ended, mini = miniseries,
+        overview = movie.overview, posterPath = movie.posterPath, poster = posterUrl,
         releaseDate = movie.releaseDate, year = year, runtime = runtime, director = director, genres = genres,
         providerId = provider?.providerId, providerName = provider?.providerName, providerLogo = provider?.logoPath,
         link = providersLink, reason = kind, by = by, about = about,
     )
 }
 
-internal fun SharedCard.toCard(myId: String, partnerName: String): TonightCard {
+internal fun SharedCard.toCard(myId: String, partnerName: String): TonightCard? {
+    val cardKind = TonightKind.fromKey(kind) ?: return null
+    val title = this.title ?: name ?: return null
     val mineToo = by == myId
     val reason = when (reason) {
         "watchlist" -> if (mineToo) CardReason.Watchlist else CardReason.PartnerWatchlist(partnerName)
@@ -89,6 +108,7 @@ internal fun SharedCard.toCard(myId: String, partnerName: String): TonightCard {
         posterUrl = poster, year = year, runtime = runtime, director = director, genres = genres,
         provider = if (providerId != null && providerName != null) WatchProvider(providerId, providerName, providerLogo.orEmpty()) else null,
         providersLink = link, reason = reason,
+        kind = cardKind, seasons = seasons, ended = ended, miniseries = mini,
     )
 }
 

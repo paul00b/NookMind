@@ -4,7 +4,7 @@ import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getMessaging } from 'firebase-admin/messaging';
 import { applyCors } from '../_lib/cors.js';
 
-// Social notifications: an invitation to « Ce soir ? », a friend request, an accepted request, a
+// Social notifications: an invitation to « On regarde quoi ? » (Ce soir ? before), a friend request, an accepted request, a
 // reaction. The app calls this route right after the matching write; every type is checked against
 // the database first, so a caller can only notify about something that really happened.
 
@@ -63,14 +63,19 @@ async function buildMessage(callerId: string, body: Record<string, unknown>): Pr
   if (type === 'tonight_invite') {
     const { data: session } = await supabase
       .from('tonight_sessions')
-      .select('id, host, guest, status, created_at')
+      .select('id, host, guest, status, created_at, deck')
       .eq('id', String(body.session_id ?? ''))
       .maybeSingle();
     if (!session || session.host !== callerId || session.status !== 'invited') return { error: 'No such invitation', status: 404 };
+    // A deck of series says so; older decks carry no kind and are movies.
+    const first = Array.isArray(session.deck) ? (session.deck[0] as { kind?: string } | undefined) : undefined;
+    const series = first?.kind === 'series';
     return {
       to: session.guest as string,
-      title: `${name} t'invite à « Ce soir ? »`,
-      body: 'Chacun swipe sur son téléphone, le match tombe à la fin.',
+      title: `${name} t'invite à « On regarde quoi ? »`,
+      body: series
+        ? 'Une série à choisir à deux : chacun swipe sur son téléphone, le match tombe à la fin.'
+        : 'Un film à choisir à deux : chacun swipe sur son téléphone, le match tombe à la fin.',
       route: `/tonight/${session.id}`,
     };
   }
@@ -106,7 +111,7 @@ async function buildMessage(callerId: string, body: Record<string, unknown>): Pr
       to = (owner?.id as string | undefined) ?? '';
     }
     if (!to || !(await areFriends(callerId, to))) return { error: 'Not friends', status: 403 };
-    return { to, title: `${name} a accepté ta demande`, body: 'Vous pouvez maintenant voir vos bibliothèques et jouer à « Ce soir ? ».', route: '/social' };
+    return { to, title: `${name} a accepté ta demande`, body: 'Vous pouvez maintenant voir vos bibliothèques et jouer à « On regarde quoi ? ».', route: '/social' };
   }
 
   if (type === 'reaction') {

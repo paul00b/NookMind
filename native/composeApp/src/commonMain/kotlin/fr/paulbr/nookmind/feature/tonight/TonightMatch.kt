@@ -98,6 +98,15 @@ import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.stringResource
 import kotlin.random.Random
 import kotlin.time.Clock
+import fr.paulbr.nookmind.resources.tonight_seasons
+import fr.paulbr.nookmind.resources.tonight_startSeries
+import fr.paulbr.nookmind.resources.tonight_ticketFormat
+import fr.paulbr.nookmind.resources.tonight_watching
+import org.jetbrains.compose.resources.pluralStringResource
+import fr.paulbr.nookmind.core.model.SeriesStatus
+import fr.paulbr.nookmind.core.model.Series
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 private val MatchBackground = Color(0xFF0B0B11)
 private val TicketShape = RoundedCornerShape(16.dp)
@@ -115,8 +124,11 @@ internal fun MatchStep(
     val card = state.winningCard ?: return
     val haptics = LocalNookHaptics.current
     val scope = rememberCoroutineScope()
-    val library by container.movies.items.collectAsState()
-    val inList = library.any { it.tmdbId == card.tmdbId }
+    val movies by container.movies.items.collectAsState()
+    val seriesLibrary by container.series.items.collectAsState()
+    val series = card.kind == TonightKind.SERIES
+    val mySeries = if (series) seriesLibrary.firstOrNull { it.tmdbId == card.tmdbId } else null
+    val inList = if (series) mySeries != null else movies.any { it.tmdbId == card.tmdbId }
     var trailerKey by remember { mutableStateOf<String?>(null) }
     var loadingTrailer by remember { mutableStateOf(false) }
     val trailerMissing = stringResource(Res.string.common_trailerNotFound)
@@ -214,22 +226,48 @@ internal fun MatchStep(
                     BigButton(stringResource(Res.string.tonight_whereToWatch), light = true, onClick = { openExternalUrl(watchLink) })
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    GhostAction(
-                        if (inList) stringResource(Res.string.tonight_inList) else stringResource(Res.string.tonight_addToList),
-                        if (inList) LucideIcons.Check else LucideIcons.Bookmark,
-                        enabled = !inList,
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        scope.launch {
-                            container.movies.add(
-                                TmdbApi.extractMovieData(card.movie).copy(status = MovieStatus.WANT_TO_WATCH, rating = null, personalNote = null, watchedDate = null),
-                            )
+                    if (series) {
+                        // A series won tonight is a series started tonight: in progress, from the first episode.
+                        val started = mySeries != null && mySeries.status != SeriesStatus.WANT_TO_WATCH
+                        GhostAction(
+                            when {
+                                mySeries?.status == SeriesStatus.WATCHING -> stringResource(Res.string.tonight_watching)
+                                started -> stringResource(Res.string.tonight_inList)
+                                else -> stringResource(Res.string.tonight_startSeries)
+                            },
+                            if (started) LucideIcons.Check else LucideIcons.Play,
+                            enabled = !started,
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            scope.launch {
+                                if (mySeries != null) {
+                                    container.series.update(mySeries.id, buildJsonObject { put("status", SeriesStatus.WATCHING.key) })
+                                } else {
+                                    val details = container.tmdb.fetchSeriesDetails(card.tmdbId)
+                                    val base = details?.let { TmdbApi.extractSeriesData(it) }
+                                        ?: Series(tmdbId = card.tmdbId, title = card.title, creator = card.director.orEmpty(), posterUrl = card.posterUrl, seasons = card.seasons)
+                                    container.series.add(base.copy(status = SeriesStatus.WATCHING, rating = null, personalNote = null, watchedSeasons = emptyList(), watchedEpisodes = emptyMap()))
+                                }
+                            }
+                        }
+                    } else {
+                        GhostAction(
+                            if (inList) stringResource(Res.string.tonight_inList) else stringResource(Res.string.tonight_addToList),
+                            if (inList) LucideIcons.Check else LucideIcons.Bookmark,
+                            enabled = !inList,
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            scope.launch {
+                                container.movies.add(
+                                    TmdbApi.extractMovieData(card.movie).copy(status = MovieStatus.WANT_TO_WATCH, rating = null, personalNote = null, watchedDate = null),
+                                )
+                            }
                         }
                     }
                     GhostAction(stringResource(Res.string.tonight_trailer), LucideIcons.Film, enabled = !loadingTrailer, modifier = Modifier.weight(1f)) {
                         loadingTrailer = true
                         scope.launch {
-                            val key = container.tmdb.fetchTrailerKey("movie", card.tmdbId)
+                            val key = container.tmdb.fetchTrailerKey(if (series) "tv" else "movie", card.tmdbId)
                             loadingTrailer = false
                             if (key != null) trailerKey = key else container.toasts.error(trailerMissing)
                         }
@@ -383,7 +421,12 @@ private fun TicketFront(card: TonightCard, names: String, showtime: String, turn
             }
             Spacer(Modifier.height(8.dp))
             Row {
-                TicketField(stringResource(Res.string.tonight_ticketLength), formatRuntime(card.runtime) ?: "–", Modifier.weight(1f))
+                if (card.kind == TonightKind.SERIES) {
+                    val seasons = card.seasons?.let { pluralStringResource(Res.plurals.tonight_seasons, it, it) }
+                    TicketField(stringResource(Res.string.tonight_ticketFormat), seasons ?: "–", Modifier.weight(1f))
+                } else {
+                    TicketField(stringResource(Res.string.tonight_ticketLength), formatRuntime(card.runtime) ?: "–", Modifier.weight(1f))
+                }
                 TicketField(stringResource(Res.string.tonight_ticketOn), card.provider?.let(::providerLabel) ?: "–", Modifier.weight(1f))
             }
             Barcode(card.tmdbId, Modifier.padding(top = 12.dp).fillMaxWidth().height(24.dp))

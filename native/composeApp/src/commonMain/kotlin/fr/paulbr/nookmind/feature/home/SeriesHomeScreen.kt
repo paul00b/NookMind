@@ -1,5 +1,6 @@
 package fr.paulbr.nookmind.feature.home
 
+import fr.paulbr.nookmind.feature.tonight.TonightEntryCard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -71,7 +72,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /** Port of SeriesHome.tsx: TMDB search (with the IMDb preview button), Discover and library sliders. */
 @Composable
-fun SeriesHomeScreen(container: AppContainer, contentPadding: PaddingValues) {
+fun SeriesHomeScreen(container: AppContainer, contentPadding: PaddingValues, onOpenTonight: () -> Unit = {}) {
     val colors = NookTheme.colors
     val allSeries by container.series.items.collectAsState()
     val sectionPrefs by container.prefs.searchSections(MediaMode.SERIES).collectAsState()
@@ -115,6 +116,10 @@ fun SeriesHomeScreen(container: AppContainer, contentPadding: PaddingValues) {
 
     val sections = SearchSections.orderSections(
         listOf(
+            // On regarde quoi ?, opened on series: the same card and the same rules as on the movies home.
+            HomeSection("tonight", visibility["tonight"] != false) {
+                TonightEntryCard(onClick = onOpenTonight)
+            },
             HomeSection("trending", visibility["trending"] != false) {
                 TrendingSlider(
                     title = stringResource(Res.string.seriesHome_trendingTitle),

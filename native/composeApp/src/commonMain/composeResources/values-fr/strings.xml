@@ -590,14 +590,14 @@
     <string name="toast_series_fetchError">Impossible de charger les séries</string>
     <string name="toast_series_updateError">Impossible de mettre à jour la série</string>
     <string name="watchProviders_availableOn">Disponible sur</string>
-    <!-- Ce soir ? -->
+    <!-- On regarde quoi ? (anciennement Ce soir ?) -->
     <string name="nav_social">Social</string>
     <string name="social_title">Social</string>
     <string name="social_subtitle">Tes amis et vos soirées</string>
-    <string name="settings_sections_movies_tonight">Ce soir ?</string>
+    <string name="settings_sections_movies_tonight">On regarde quoi ?</string>
     <string name="tonight_rules">Revoir les règles</string>
-    <string name="tonight_title">Ce soir ?</string>
-    <string name="tonight_entrySubtitle">Choisissez un film à deux.</string>
+    <string name="tonight_title">On regarde quoi ?</string>
+    <string name="tonight_entrySubtitle">Un film ou une série, choisis à deux.</string>
     <string name="tonight_withWho">Avec qui</string>
     <string name="tonight_partnerPlaceholder">Son prénom</string>
     <string name="tonight_partnerFallback">Ton binôme</string>
@@ -632,7 +632,7 @@
     <string name="tonight_handOver">Passe-lui le téléphone : les mêmes %1$d cartes.</string>
     <string name="tonight_secret">Tes choix restent cachés</string>
     <string name="tonight_final">Finale</string>
-    <string name="tonight_finalTitle">Deux matchs, un seul film ce soir.</string>
+    <string name="tonight_finalTitle">Deux matchs, un seul gagnant ce soir.</string>
     <string name="tonight_extraTime">Prolongations</string>
     <string name="tonight_maybesTitle">Pas de match, mais deux peut-être.</string>
     <string name="tonight_singleTitle">Un seul peut-être.</string>
@@ -660,7 +660,7 @@
     <string name="tonight_playAgain">Rejouer</string>
     <string name="tonight_trailer">Bande-annonce</string>
     <string name="tonight_names">%1$s &amp; %2$s</string>
-    <string name="settings_notifSocial">Amis et « Ce soir ? »</string>
+    <string name="settings_notifSocial">Amis et « On regarde quoi ? »</string>
     <string name="social_accept">Accepter</string>
     <string name="social_add">Ajouter</string>
     <string name="social_addFriends">Ajouter des amis</string>
@@ -682,7 +682,7 @@
     <string name="social_copy">Copier</string>
     <string name="social_decline">Refuser</string>
     <string name="social_emptyTitle">Invite tes amis</string>
-    <string name="social_emptyText">Vous verrez ce que l'autre regarde et lit, et vous jouerez à « Ce soir ? » chacun sur son téléphone.</string>
+    <string name="social_emptyText">Vous verrez ce que l'autre regarde et lit, et vous jouerez à « On regarde quoi ? » chacun sur son téléphone.</string>
     <string name="social_error">Impossible de charger tes amis.</string>
     <string name="social_friendRequested">Demande envoyée</string>
     <string name="social_friendAccepted">Vous êtes amis</string>
@@ -728,7 +728,7 @@
     <string name="social_badgeNow">En cours</string>
     <string name="social_percent">%1$d %</string>
     <string name="social_inYourList">Dans ta liste</string>
-    <string name="social_invitation">%1$s t'invite à « Ce soir ? »</string>
+    <string name="social_invitation">%1$s t'invite à « On regarde quoi ? »</string>
     <string name="social_join">Rejoindre</string>
     <string name="social_myCode">Ton code ami</string>
     <string name="social_notSetUp">Le social n'est pas encore activé sur le serveur.</string>
@@ -791,6 +791,30 @@
     <string name="tonight_howMany">Combien de films</string>
     <string name="tonight_cards">%1$d films</string>
     <string name="tonight_reasonPopular">Un incontournable du genre</string>
+    <string name="tonight_kindLabel">Quoi regarder</string>
+    <string name="tonight_kindMovie">Un film</string>
+    <string name="tonight_kindSeries">Une série</string>
+    <string name="tonight_howManySeries">Combien de séries</string>
+    <string name="tonight_cardsSeries">%1$d séries</string>
+    <string name="tonight_engagement">Quel engagement ?</string>
+    <string name="tonight_lengthMini">Mini-série</string>
+    <string name="tonight_lengthShort">Jusqu'à 3 saisons</string>
+    <string name="tonight_lengthAny">Peu importe</string>
+    <string name="tonight_startedLater">Les séries déjà commencées par l'un de vous passent après les nouvelles.</string>
+    <plurals name="tonight_seasons">
+        <item quantity="one">%1$d saison</item>
+        <item quantity="other">%1$d saisons</item>
+    </plurals>
+    <string name="tonight_episodeLength">épisodes de %1$s</string>
+    <string name="tonight_seriesEnded">Terminée</string>
+    <string name="tonight_seriesOngoing">Pas encore terminée</string>
+    <string name="tonight_stampSeenSeries">DÉJÀ VUE</string>
+    <string name="tonight_seenSeries">Déjà vue ou commencée</string>
+    <string name="tonight_ruleSeenSeries">Vers le bas : déjà vue ou commencée</string>
+    <string name="tonight_ticketFormat">Format</string>
+    <string name="tonight_startSeries">On commence</string>
+    <string name="tonight_watching">En cours chez toi</string>
+    <string name="tonight_updateNeeded">Cette partie demande la dernière version de NookMind. Mets l'app à jour pour jouer.</string>
     <string name="common_share">Partager</string>
     <string name="share_notFound">Ce lien ne mène nulle part.</string>
 </resources>

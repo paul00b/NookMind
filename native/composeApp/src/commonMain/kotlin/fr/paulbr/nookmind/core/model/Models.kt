@@ -276,6 +276,14 @@ data class TmdbSeries(
     @SerialName("last_episode_to_air") val lastEpisodeToAir: TmdbEpisode? = null,
     val seasons: List<TmdbSeasonSummary>? = null,
     val credits: TmdbCredits? = null,
+    /** In list results (trending, recommendations, discover), where [genres] is absent. */
+    @SerialName("genre_ids") val genreIds: List<Int>? = null,
+    @SerialName("episode_run_time") val episodeRunTime: List<Int>? = null,
+    @SerialName("number_of_episodes") val numberOfEpisodes: Int? = null,
+    /** "Returning Series", "Ended", "Canceled"… */
+    val status: String? = null,
+    /** "Scripted", "Miniseries", "Documentary"… */
+    val type: String? = null,
 )
 
 @Serializable
