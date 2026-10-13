@@ -1,0 +1,29 @@
+/* The page only hosts the canvas Compose draws in: no scrollbars, no margins, the app's own
+   night background while the WebAssembly loads. */
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #0D0E14;
+}
+
+#loading {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #F4F2EE;
+  font: 600 20px Georgia, serif;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+#loading p { margin: 0; }
+
+@keyframes pulse { 50% { opacity: .55; } }
+
+@media (prefers-reduced-motion: reduce) { #loading { animation: none; } }
