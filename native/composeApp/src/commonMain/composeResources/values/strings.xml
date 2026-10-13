@@ -594,10 +594,10 @@
     <string name="nav_social">Social</string>
     <string name="social_title">Social</string>
     <string name="social_subtitle">Your friends and your evenings</string>
-    <string name="settings_sections_movies_tonight">Tonight?</string>
+    <string name="settings_sections_movies_tonight">What are we watching?</string>
     <string name="tonight_rules">See the rules</string>
-    <string name="tonight_title">Tonight?</string>
-    <string name="tonight_entrySubtitle">Pick a movie together.</string>
+    <string name="tonight_title">What are we watching?</string>
+    <string name="tonight_entrySubtitle">A movie or a series, picked together.</string>
     <string name="tonight_withWho">With</string>
     <string name="tonight_partnerPlaceholder">Their name</string>
     <string name="tonight_partnerFallback">Your partner</string>
@@ -632,7 +632,7 @@
     <string name="tonight_handOver">Hand them the phone: the same %1$d cards.</string>
     <string name="tonight_secret">Your picks stay hidden</string>
     <string name="tonight_final">Final</string>
-    <string name="tonight_finalTitle">Two matches, one movie tonight.</string>
+    <string name="tonight_finalTitle">Two matches, one winner tonight.</string>
     <string name="tonight_extraTime">Extra time</string>
     <string name="tonight_maybesTitle">No match, but two maybes.</string>
     <string name="tonight_singleTitle">Just one maybe.</string>
@@ -660,7 +660,7 @@
     <string name="tonight_playAgain">Play again</string>
     <string name="tonight_trailer">Trailer</string>
     <string name="tonight_names">%1$s &amp; %2$s</string>
-    <string name="settings_notifSocial">Friends and Tonight?</string>
+    <string name="settings_notifSocial">Friends and What are we watching?</string>
     <string name="social_accept">Accept</string>
     <string name="social_add">Add</string>
     <string name="social_addFriends">Add friends</string>
@@ -682,7 +682,7 @@
     <string name="social_copy">Copy</string>
     <string name="social_decline">Decline</string>
     <string name="social_emptyTitle">Invite your friends</string>
-    <string name="social_emptyText">See what the other is watching and reading, and play Tonight? each on your own phone.</string>
+    <string name="social_emptyText">See what the other is watching and reading, and play What are we watching? each on your own phone.</string>
     <string name="social_error">Couldn't load your friends.</string>
     <string name="social_friendRequested">Request sent</string>
     <string name="social_friendAccepted">You are now friends</string>
@@ -728,7 +728,7 @@
     <string name="social_badgeNow">In progress</string>
     <string name="social_percent">%1$d%</string>
     <string name="social_inYourList">In your list</string>
-    <string name="social_invitation">%1$s invites you to Tonight?</string>
+    <string name="social_invitation">%1$s invites you to What are we watching?</string>
     <string name="social_join">Join</string>
     <string name="social_myCode">Your friend code</string>
     <string name="social_notSetUp">Social features are not enabled on the server yet.</string>
@@ -791,6 +791,30 @@
     <string name="tonight_howMany">How many movies</string>
     <string name="tonight_cards">%1$d movies</string>
     <string name="tonight_reasonPopular">A favourite of the genre</string>
+    <string name="tonight_kindLabel">What to watch</string>
+    <string name="tonight_kindMovie">A movie</string>
+    <string name="tonight_kindSeries">A series</string>
+    <string name="tonight_howManySeries">How many series</string>
+    <string name="tonight_cardsSeries">%1$d series</string>
+    <string name="tonight_engagement">How committed?</string>
+    <string name="tonight_lengthMini">Mini-series</string>
+    <string name="tonight_lengthShort">Up to 3 seasons</string>
+    <string name="tonight_lengthAny">Any length</string>
+    <string name="tonight_startedLater">Series one of you has started come after the new ones.</string>
+    <plurals name="tonight_seasons">
+        <item quantity="one">%1$d season</item>
+        <item quantity="other">%1$d seasons</item>
+    </plurals>
+    <string name="tonight_episodeLength">%1$s episodes</string>
+    <string name="tonight_seriesEnded">Ended</string>
+    <string name="tonight_seriesOngoing">Still running</string>
+    <string name="tonight_stampSeenSeries">SEEN IT</string>
+    <string name="tonight_seenSeries">Seen or started</string>
+    <string name="tonight_ruleSeenSeries">Down: seen or started</string>
+    <string name="tonight_ticketFormat">Format</string>
+    <string name="tonight_startSeries">Let's start</string>
+    <string name="tonight_watching">Watching</string>
+    <string name="tonight_updateNeeded">This game needs the latest NookMind. Update the app to play.</string>
     <string name="common_share">Share</string>
     <string name="share_notFound">This link leads nowhere.</string>
 </resources>

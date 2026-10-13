@@ -132,6 +132,21 @@ import fr.paulbr.nookmind.resources.tonight_genreHorror
 import fr.paulbr.nookmind.resources.tonight_genreRomance
 import fr.paulbr.nookmind.resources.tonight_genreAnimation
 import fr.paulbr.nookmind.resources.tonight_genreDocumentary
+import fr.paulbr.nookmind.resources.tonight_cardsSeries
+import fr.paulbr.nookmind.resources.tonight_engagement
+import fr.paulbr.nookmind.resources.tonight_howManySeries
+import fr.paulbr.nookmind.resources.tonight_kindLabel
+import fr.paulbr.nookmind.resources.tonight_kindMovie
+import fr.paulbr.nookmind.resources.tonight_kindSeries
+import fr.paulbr.nookmind.resources.tonight_lengthAny
+import fr.paulbr.nookmind.resources.tonight_lengthMini
+import fr.paulbr.nookmind.resources.tonight_lengthShort
+import fr.paulbr.nookmind.resources.tonight_startedLater
+import fr.paulbr.nookmind.resources.tonight_updateNeeded
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 
 /** The fixed night palette of Ce soir ?, whatever the app theme: it plays like a cinema. */
 internal object TonightColors {
@@ -171,15 +186,18 @@ internal fun rememberTonightNames(container: AppContainer, state: TonightState):
 }
 
 /**
- * Ce soir ?: on a single phone each player swipes the same ten cards in turn; online each one plays
- * on their own phone, and the first movie both say yes to wins at once. Drawn over the whole app;
- * [joinSessionId] opens an invitation; [animate] off renders each step at rest (screenshots).
+ * On regarde quoi ? (Ce soir ? before): on a single phone each player swipes the same ten cards in
+ * turn; online each one plays on their own phone, and the first movie or series both say yes to
+ * wins at once. Drawn over the whole app; [startKind] picks movies or series (the last ones played
+ * otherwise), [joinSessionId] opens an invitation; [animate] off renders each step at rest
+ * (screenshots).
  */
 @Composable
 fun TonightScreen(
     container: AppContainer,
     onClose: () -> Unit,
-    state: TonightState = rememberTonightState(container),
+    startKind: TonightKind? = null,
+    state: TonightState = rememberTonightState(container, startKind),
     animate: Boolean = true,
     joinSessionId: String? = null,
 ) {
@@ -215,6 +233,8 @@ fun TonightScreen(
         container.prefs.tonightServices = state.services.map { it.key }.toSet()
         container.prefs.tonightGenres = state.genres.map { it.key }.toSet()
         container.prefs.tonightDeckSize = state.deckSize
+        container.prefs.tonightKind = state.kind.key
+        container.prefs.tonightSeriesLength = state.seriesLength.key
         if (remote == null) {
             container.prefs.tonightFriend = friend?.userId.orEmpty()
             if (friend == null) container.prefs.tonightPartner = state.partnerName.trim() else state.partnerName = friend.firstName
@@ -224,8 +244,10 @@ fun TonightScreen(
         scope.launch {
             val started = kotlin.time.TimeSource.Monotonic.markNow()
             val partnerId = remote?.partnerId ?: friend?.userId
-            val taste = partnerId?.let { id -> partnerTasteOf(state.partnerName, container.social.library.value.filter { it.owner == id }) }
-            val cards = runCatching { dealTonightDeck(container, state.services, state.shortOnly, skip, taste, state.deckSize, state.genres) }.getOrDefault(emptyList())
+            val taste = partnerId?.let { id -> partnerTasteOf(state.partnerName, container.social.library.value.filter { it.owner == id }, state.kind) }
+            val cards = runCatching {
+                dealTonightDeck(container, state.services, state.shortOnly, skip, taste, state.deckSize, state.genres, state.kind, state.seriesLength)
+            }.getOrDefault(emptyList())
             // Let the shuffle be seen, even when everything came from the cache.
             val left = 900L - started.elapsedNow().inWholeMilliseconds
             if (left > 0) delay(left)
@@ -268,7 +290,13 @@ fun TonightScreen(
         }
         state.friend = partner
         state.partnerName = partner?.firstName?.ifBlank { null } ?: fallbackPartner
-        goOnline(row, myId, decodeDeck(row.deck, myId, state.partnerName))
+        if (needsUpdate(row.deck)) {
+            state.dealError = DealError.UPDATE
+            return@LaunchedEffect
+        }
+        val cards = decodeDeck(row.deck, myId, state.partnerName)
+        state.takeKindOf(cards)
+        goOnline(row, myId, cards)
     }
 
     // Where the other phone is: its progress, a match, its picks, a new deal, or its leaving.
@@ -322,8 +350,9 @@ private fun SetupStep(container: AppContainer, state: TonightState, onDeal: () -
             RoundIconButton(LucideIcons.X, stringResource(Res.string.tonight_close), onClose)
         }
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
-            Text(stringResource(Res.string.tonight_title), style = NookTheme.type.serif(46, lineHeight = 50), color = TonightColors.Text)
-            Spacer(Modifier.height(10.dp))
+            Text(stringResource(Res.string.tonight_title), style = NookTheme.type.serif(42, lineHeight = 46), color = TonightColors.Text)
+            Spacer(Modifier.height(16.dp))
+            KindSwitch(state.kind, onSelect = state::switchKind)
             SectionLabel(stringResource(Res.string.tonight_withWho))
             if (accepted.isNotEmpty()) {
                 Row(
@@ -364,19 +393,37 @@ private fun SetupStep(container: AppContainer, state: TonightState, onDeal: () -
             SectionLabel(stringResource(Res.string.tonight_mood))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 TonightChip(stringResource(Res.string.tonight_genreAll), selected = state.genres.isEmpty()) { state.genres = emptySet() }
-                TonightGenre.entries.forEach { genre ->
+                TonightGenre.offeredFor(state.kind).forEach { genre ->
                     TonightChip(genreLabel(genre), selected = genre in state.genres) {
                         state.genres = if (genre in state.genres) state.genres - genre else state.genres + genre
                     }
                 }
             }
-            SectionLabel(stringResource(Res.string.tonight_howMany))
+            val series = state.kind == TonightKind.SERIES
+            SectionLabel(stringResource(if (series) Res.string.tonight_howManySeries else Res.string.tonight_howMany))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 DECK_SIZES.forEach { size ->
-                    TonightChip(stringResource(Res.string.tonight_cards, size), selected = state.deckSize == size) { state.deckSize = size }
+                    TonightChip(stringResource(if (series) Res.string.tonight_cardsSeries else Res.string.tonight_cards, size), selected = state.deckSize == size) { state.deckSize = size }
                 }
-                Spacer(Modifier.width(8.dp))
-                TonightChip(stringResource(Res.string.tonight_shortOnly), selected = state.shortOnly) { state.shortOnly = !state.shortOnly }
+                if (!series) {
+                    Spacer(Modifier.width(8.dp))
+                    TonightChip(stringResource(Res.string.tonight_shortOnly), selected = state.shortOnly) { state.shortOnly = !state.shortOnly }
+                }
+            }
+            if (series) {
+                SectionLabel(stringResource(Res.string.tonight_engagement))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SeriesLength.entries.forEach { length ->
+                        val label = when (length) {
+                            SeriesLength.MINI -> Res.string.tonight_lengthMini
+                            SeriesLength.SHORT -> Res.string.tonight_lengthShort
+                            SeriesLength.ANY -> Res.string.tonight_lengthAny
+                        }
+                        TonightChip(stringResource(label), selected = state.seriesLength == length) { state.seriesLength = length }
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
+                Text(stringResource(Res.string.tonight_startedLater), style = NookTheme.type.sans(13, lineHeight = 18), color = TonightColors.Muted)
             }
             SectionLabel(stringResource(Res.string.tonight_services))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -454,10 +501,11 @@ private fun DealingStep(error: DealError?, onRetry: () -> Unit, onClose: () -> U
                     DealError.NOT_ENOUGH -> Res.string.tonight_dealError
                     DealError.ONLINE -> Res.string.tonight_onlineError
                     DealError.GONE -> Res.string.tonight_gone
+                    DealError.UPDATE -> Res.string.tonight_updateNeeded
                 }
                 Text(stringResource(message), style = NookTheme.type.sans(16, FontWeight.Medium, 24), color = TonightColors.Text, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(20.dp))
-                if (error == DealError.GONE) BigButton(stringResource(Res.string.tonight_close), onClose, Modifier.width(220.dp))
+                if (error == DealError.GONE || error == DealError.UPDATE) BigButton(stringResource(Res.string.tonight_close), onClose, Modifier.width(220.dp))
                 else BigButton(stringResource(Res.string.common_retry), onRetry, Modifier.width(220.dp))
             } else {
                 ShufflingCards()
@@ -726,6 +774,41 @@ internal fun SectionLabel(text: String) {
         color = TonightColors.Faint,
         modifier = Modifier.padding(top = 24.dp, bottom = 10.dp),
     )
+}
+
+/** "Un film" or "Une série", at the top of the setup. */
+@Composable
+private fun KindSwitch(kind: TonightKind, onSelect: (TonightKind) -> Unit) {
+    val haptics = LocalNookHaptics.current
+    val label = stringResource(Res.string.tonight_kindLabel)
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(TonightColors.Surface).padding(4.dp).semantics { contentDescription = label },
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        TonightKind.entries.forEach { option ->
+            val selected = option == kind
+            Box(
+                Modifier
+                    .weight(1f)
+                    .height(44.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(if (selected) TonightColors.Violet else Color.Transparent)
+                    .selectable(selected = selected, role = Role.Tab) {
+                        if (!selected) {
+                            haptics.perform(HapticCue.TICK)
+                            onSelect(option)
+                        }
+                    },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    stringResource(if (option == TonightKind.SERIES) Res.string.tonight_kindSeries else Res.string.tonight_kindMovie),
+                    style = NookTheme.type.sans(15, if (selected) FontWeight.SemiBold else FontWeight.Medium, 20),
+                    color = if (selected) Color.White else TonightColors.Muted,
+                )
+            }
+        }
+    }
 }
 
 @Composable

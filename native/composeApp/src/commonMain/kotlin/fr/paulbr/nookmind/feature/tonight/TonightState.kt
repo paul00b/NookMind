@@ -16,8 +16,8 @@ enum class TonightStep { SETUP, DEALING, SWIPE, HANDOFF, WAITING, DUEL, MATCH }
 /** How the movie of the evening was found, for the line above the ticket. */
 enum class MatchVia { MATCH, SHARED_LOVE, FINAL, EXTRA_TIME, CHANCE }
 
-/** Why the cards could not be dealt. */
-enum class DealError { NOT_ENOUGH, ONLINE, GONE }
+/** Why the cards could not be dealt; [UPDATE]: an invitation dealt by a newer version. */
+enum class DealError { NOT_ENOUGH, ONLINE, GONE, UPDATE }
 
 /** What the online game hears of each move, to tell the other phone. */
 interface TonightSync {
@@ -39,7 +39,7 @@ class TonightRemote(val sessionId: String, val isHost: Boolean, val partnerId: S
 }
 
 /**
- * One evening of Ce soir ?: the setup, the deck, both players' verdicts and where they lead. On a
+ * One evening of On regarde quoi ?: the setup, the deck, both players' verdicts and where they lead. On a
  * single phone both players take turns; online ([remote] set) each one plays on their own phone and
  * the partner's verdicts arrive once both went through the deck. Plain Compose state, so the
  * screenshot catalog can build any step directly.
@@ -52,6 +52,21 @@ class TonightState(partnerName: String = "", services: Set<StreamingService> = e
     var shortOnly by mutableStateOf(false)
     var deckSize by mutableIntStateOf(DECK_SIZE)
     var genres by mutableStateOf<Set<TonightGenre>>(emptySet())
+
+    /** Movies or series; switching keeps only the moods the other kind offers. */
+    var kind by mutableStateOf(TonightKind.MOVIE)
+        private set
+    var seriesLength by mutableStateOf(SeriesLength.ANY)
+
+    fun switchKind(to: TonightKind) {
+        kind = to
+        genres = genres.filter { it.idsFor(to).isNotEmpty() }.toSet()
+    }
+
+    /** An invitation's deck decides the kind, whatever the setup said. */
+    fun takeKindOf(cards: List<TonightCard>) {
+        cards.firstOrNull()?.let { kind = it.kind }
+    }
 
     /** The friend picked in the setup, to play online; null for someone on the same phone. */
     var friend by mutableStateOf<Friend?>(null)
@@ -184,11 +199,14 @@ class TonightState(partnerName: String = "", services: Set<StreamingService> = e
     }
 }
 
+/** [startKind] comes from where the game was opened (the movies or series home); none, the last one played. */
 @Composable
-fun rememberTonightState(container: AppContainer): TonightState = remember {
+fun rememberTonightState(container: AppContainer, startKind: TonightKind? = null): TonightState = remember {
     TonightState(container.prefs.tonightPartner, StreamingService.fromKeys(container.prefs.tonightServices)).apply {
         deckSize = container.prefs.tonightDeckSize.takeIf { it in DECK_SIZES } ?: DECK_SIZE
         genres = TonightGenre.fromKeys(container.prefs.tonightGenres)
+        switchKind(startKind ?: TonightKind.fromKey(container.prefs.tonightKind) ?: TonightKind.MOVIE)
+        seriesLength = SeriesLength.fromKey(container.prefs.tonightSeriesLength)
         val last = container.prefs.tonightFriend
         if (last.isNotEmpty()) friend = container.social.friends.value.firstOrNull { it.userId == last && it.accepted }
     }

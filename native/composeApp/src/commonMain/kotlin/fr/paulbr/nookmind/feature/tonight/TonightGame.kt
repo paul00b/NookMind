@@ -24,7 +24,35 @@ sealed interface CardReason {
     data object Popular : CardReason
 }
 
-/** One card of the deck: a movie, where to watch it, and why it was picked. */
+/** What a deck is made of: movies, or series. */
+enum class TonightKind(val key: String) {
+    MOVIE("movie"),
+    SERIES("series"),
+    ;
+
+    companion object {
+        fun fromKey(key: String?): TonightKind? = entries.firstOrNull { it.key == key }
+    }
+}
+
+/** How much of a series the players are up for: a mini-series, three seasons at most, or anything. */
+enum class SeriesLength(val key: String) {
+    MINI("mini"),
+    SHORT("short"),
+    ANY("any"),
+    ;
+
+    companion object {
+        fun fromKey(key: String?): SeriesLength = entries.firstOrNull { it.key == key } ?: ANY
+    }
+}
+
+/**
+ * One card of the deck: a movie or a series, where to watch it, and why it was picked. A series
+ * travels in [movie] too (its name as the title, its first air date as the release date); then
+ * [runtime] is the length of an episode, [director] its creator, and [seasons], [ended] and
+ * [miniseries] say how long it runs.
+ */
 data class TonightCard(
     val movie: TmdbMovie,
     val posterUrl: String?,
@@ -35,6 +63,10 @@ data class TonightCard(
     val provider: WatchProvider?,
     val providersLink: String?,
     val reason: CardReason,
+    val kind: TonightKind = TonightKind.MOVIE,
+    val seasons: Int? = null,
+    val ended: Boolean? = null,
+    val miniseries: Boolean = false,
 ) {
     val tmdbId: Int get() = movie.id
     val title: String get() = movie.title
@@ -69,27 +101,42 @@ fun providerLabel(provider: WatchProvider): String =
 fun pickProvider(providers: List<WatchProvider>, services: Set<StreamingService>): WatchProvider? =
     providers.firstOrNull { p -> services.any { it.matches(p) } } ?: providers.firstOrNull()
 
-/** The moods the host can pick before dealing, each one a few TMDB genres. */
-enum class TonightGenre(val key: String, val tmdbIds: Set<Int>) {
-    ACTION("action", setOf(28, 12)),
-    COMEDY("comedy", setOf(35)),
-    DRAMA("drama", setOf(18)),
-    THRILLER("thriller", setOf(53, 80, 9648)),
-    SCIFI("scifi", setOf(878, 14)),
-    HORROR("horror", setOf(27)),
-    ROMANCE("romance", setOf(10749)),
-    ANIMATION("animation", setOf(16, 10751)),
-    DOCUMENTARY("documentary", setOf(99)),
+/**
+ * The moods the host can pick before dealing, each one a few TMDB genres: [tmdbIds] for movies,
+ * [tvIds] for series, which TMDB sorts differently (no horror nor romance there).
+ */
+enum class TonightGenre(val key: String, val tmdbIds: Set<Int>, val tvIds: Set<Int>) {
+    ACTION("action", setOf(28, 12), setOf(10759)),
+    COMEDY("comedy", setOf(35), setOf(35)),
+    DRAMA("drama", setOf(18), setOf(18)),
+    THRILLER("thriller", setOf(53, 80, 9648), setOf(80, 9648)),
+    SCIFI("scifi", setOf(878, 14), setOf(10765)),
+    HORROR("horror", setOf(27), emptySet()),
+    ROMANCE("romance", setOf(10749), emptySet()),
+    ANIMATION("animation", setOf(16, 10751), setOf(16, 10751, 10762)),
+    DOCUMENTARY("documentary", setOf(99), setOf(99)),
     ;
+
+    fun idsFor(kind: TonightKind): Set<Int> = if (kind == TonightKind.SERIES) tvIds else tmdbIds
 
     companion object {
         fun fromKeys(keys: Set<String>): Set<TonightGenre> = entries.filter { it.key in keys }.toSet()
+
+        /** The moods offered for [kind]. */
+        fun offeredFor(kind: TonightKind): List<TonightGenre> = entries.filter { it.idsFor(kind).isNotEmpty() }
     }
 }
 
-/** Whether a movie of [genreIds] fits the picked [genres] (any of them; nothing picked fits all). */
-fun matchesGenres(genreIds: Collection<Int>, genres: Set<TonightGenre>): Boolean =
-    genres.isEmpty() || genres.any { genre -> genre.tmdbIds.any { it in genreIds } }
+/** Whether a title of [genreIds] fits the picked [genres] (any of them; nothing picked fits all). */
+fun matchesGenres(genreIds: Collection<Int>, genres: Set<TonightGenre>, kind: TonightKind = TonightKind.MOVIE): Boolean =
+    genres.isEmpty() || genres.any { genre -> genre.idsFor(kind).any { it in genreIds } }
+
+/** Whether a series card fits [length]: a mini-series is one season (or TMDB says so), short is three at most. */
+fun fitsLength(card: TonightCard, length: SeriesLength): Boolean = when (length) {
+    SeriesLength.ANY -> true
+    SeriesLength.MINI -> card.miniseries || card.seasons == 1
+    SeriesLength.SHORT -> (card.seasons ?: 1) <= 3
+}
 
 /** The TMDB genres of a card: from its details, or from the list it came from. */
 val TonightCard.genreIds: List<Int> get() = movie.genres?.map { it.id }?.takeIf { it.isNotEmpty() } ?: movie.genreIds.orEmpty()
@@ -98,9 +145,10 @@ val TonightCard.genreIds: List<Int> get() = movie.genres?.map { it.id }?.takeIf 
 val DECK_SIZES = listOf(10, 20)
 
 /**
- * The [size] cards of a round, from [candidates] already in order of preference: films on a ticked
- * service come first, then the rest; [maxRuntime] drops the long ones (an unknown length stays),
- * [genres] the ones of another kind.
+ * The [size] cards of a round, from [candidates] already in order of preference: titles on a ticked
+ * service come first, then the rest; [maxRuntime] drops the long movies (an unknown length stays),
+ * [length] the series too long, [genres] the ones of another kind. The ids in [later] (series one
+ * of the players has started) come after all the others.
  */
 fun pickDeck(
     candidates: List<TonightCard>,
@@ -108,11 +156,22 @@ fun pickDeck(
     maxRuntime: Int?,
     size: Int = DECK_SIZE,
     genres: Set<TonightGenre> = emptySet(),
+    kind: TonightKind = TonightKind.MOVIE,
+    length: SeriesLength = SeriesLength.ANY,
+    later: Set<Int> = emptySet(),
 ): List<TonightCard> {
-    val fitting = candidates.filter { card -> (maxRuntime == null || (card.runtime ?: 0) <= maxRuntime) && matchesGenres(card.genreIds, genres) }
-    if (services.isEmpty()) return fitting.take(size)
-    val (available, elsewhere) = fitting.partition { card -> card.provider?.let { p -> services.any { it.matches(p) } } == true }
-    return (available + elsewhere).take(size)
+    val fitting = candidates.filter { card ->
+        (maxRuntime == null || (card.runtime ?: 0) <= maxRuntime) &&
+            matchesGenres(card.genreIds, genres, kind) &&
+            (kind != TonightKind.SERIES || fitsLength(card, length))
+    }
+    val (fresh, started) = fitting.partition { it.tmdbId !in later }
+    fun ranked(cards: List<TonightCard>): List<TonightCard> {
+        if (services.isEmpty()) return cards
+        val (available, elsewhere) = cards.partition { card -> card.provider?.let { p -> services.any { it.matches(p) } } == true }
+        return available + elsewhere
+    }
+    return (ranked(fresh) + ranked(started)).take(size)
 }
 
 const val DECK_SIZE = 10

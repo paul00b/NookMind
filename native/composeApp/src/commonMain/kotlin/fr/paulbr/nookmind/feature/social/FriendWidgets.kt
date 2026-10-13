@@ -298,11 +298,12 @@ internal fun WeekRow(
             Modifier.weight(1f).clip(NookShapes.xl).clickable(onClick = onOpen).padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(Modifier.width(44.dp)) {
-                MediaImage(item.imageUrl, null, Modifier.fillMaxWidth(), mode = modeOfKind(item.kind), shape = NookShapes.lg, placeholderIconSize = 18.dp)
+            // Big enough to recognise the poster at a glance; the text takes what is left.
+            Box(Modifier.width(64.dp)) {
+                MediaImage(item.imageUrl, null, Modifier.fillMaxWidth(), mode = modeOfKind(item.kind), shape = NookShapes.xl, placeholderIconSize = 22.dp)
                 if (loading) OpeningVeil(Modifier.matchParentSize())
             }
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Text(
                     buildAnnotatedString {

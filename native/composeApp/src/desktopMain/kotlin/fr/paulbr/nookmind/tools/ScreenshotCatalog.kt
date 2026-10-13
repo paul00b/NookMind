@@ -49,6 +49,8 @@ import fr.paulbr.nookmind.feature.tonight.Outcome
 import fr.paulbr.nookmind.feature.tonight.Player
 import fr.paulbr.nookmind.feature.tonight.StreamingService
 import fr.paulbr.nookmind.feature.tonight.TonightCard
+import fr.paulbr.nookmind.feature.tonight.TonightKind
+import fr.paulbr.nookmind.feature.tonight.SeriesLength
 import fr.paulbr.nookmind.feature.tonight.TonightScreen
 import fr.paulbr.nookmind.feature.tonight.TonightState
 import fr.paulbr.nookmind.feature.tonight.TonightStep
@@ -281,6 +283,22 @@ object ScreenshotCatalog {
             preview(cards, TonightStep.MATCH, player = Player.PARTNER, winner = 2, via = MatchVia.MATCH)
         }),
         ScreenshotEntry("tablet-series-home", widthDp = 1024, heightDp = 768, content = shell(MediaMode.SERIES, MainTab.SEARCH)),
+        // On regarde quoi ? with series: the setup, a card, and a series won.
+        ScreenshotEntry("tonight-setup-series-dark", heightDp = 1100, content = tonight(TonightStep.SETUP) {
+            switchKind(TonightKind.SERIES)
+            seriesLength = SeriesLength.SHORT
+        }),
+        ScreenshotEntry("tonight-swipe-series-dark", content = tonight(TonightStep.SWIPE) {
+            val series = tonightSeriesCards()
+            switchKind(TonightKind.SERIES)
+            preview(series, TonightStep.SWIPE, index = 1)
+            mine[0] = Verdict.YES
+        }),
+        ScreenshotEntry("tonight-match-series-dark", content = tonight(TonightStep.MATCH) {
+            val series = tonightSeriesCards()
+            switchKind(TonightKind.SERIES)
+            preview(series, TonightStep.MATCH, player = Player.PARTNER, winner = 1, via = MatchVia.SHARED_LOVE)
+        }),
     )
 
     /** Ce soir ? at [step], on cards made from the fake library, with every animation at rest. */
@@ -305,6 +323,19 @@ object ScreenshotCatalog {
             posterUrl = movie.posterUrl, year = movie.releaseDate?.take(4), runtime = movie.runtime, director = movie.director,
             genres = listOfNotNull(movie.genre), provider = WatchProvider(8, "Netflix"), providersLink = null,
             reason = if (i % 2 == 0) CardReason.Watchlist else CardReason.BecauseYouLiked("Interstellar"),
+        )
+    }
+
+    private fun tonightSeriesCards(): List<TonightCard> = FakeData.series.mapIndexed { i, series ->
+        TonightCard(
+            movie = TmdbMovie(
+                id = series.tmdbId ?: i, title = series.title, releaseDate = series.firstAirDate.orEmpty(),
+                overview = series.description ?: "Un professeur de chimie apprend qu'il est malade et se lance dans une affaire dangereuse.",
+            ),
+            posterUrl = series.posterUrl, year = series.firstAirDate?.take(4), runtime = 50, director = series.creator,
+            genres = listOfNotNull(series.genre), provider = WatchProvider(8, "Netflix"), providersLink = null,
+            reason = if (i % 2 == 0) CardReason.PartnerWatchlist("Léa") else CardReason.BecauseYouLiked("Severance"),
+            kind = TonightKind.SERIES, seasons = series.seasons, ended = i % 2 == 0,
         )
     }
 

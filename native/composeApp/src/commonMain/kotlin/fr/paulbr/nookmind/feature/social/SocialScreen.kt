@@ -64,6 +64,7 @@ import fr.paulbr.nookmind.core.platform.shareText
 import fr.paulbr.nookmind.feature.common.ItemSheetsHost
 import fr.paulbr.nookmind.feature.common.LocalWideLayout
 import fr.paulbr.nookmind.feature.common.rememberItemSheets
+import fr.paulbr.nookmind.feature.tonight.TonightEntryCard
 import fr.paulbr.nookmind.resources.Res
 import fr.paulbr.nookmind.resources.common_retry
 import fr.paulbr.nookmind.resources.social_addFriends
@@ -92,7 +93,6 @@ import fr.paulbr.nookmind.resources.social_sharingNote
 import fr.paulbr.nookmind.resources.social_subtitle
 import fr.paulbr.nookmind.resources.social_thisWeek
 import fr.paulbr.nookmind.resources.social_title
-import fr.paulbr.nookmind.resources.tonight_title
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
@@ -100,8 +100,8 @@ import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Clock
 
 /**
- * The Social tab, the same in every mode. Up top the row of friends (with Ce soir ? first), then
- * how close each friend's tastes are to mine, and what they did this week, filtered by kind. A
+ * The Social tab, the same in every mode. Up top the row of friends and On regarde quoi ? under
+ * it, then how close each friend's tastes are to mine, and what they did this week, filtered by kind. A
  * friend opens their page; any title opens its sheet, to add it to mine. Requests, invitations,
  * reactions received and what I share stay where they were.
  */
@@ -276,16 +276,13 @@ fun SocialScreen(container: AppContainer, contentPadding: PaddingValues, onOpenT
                     }
                 }
 
-                // Tes amis: Ce soir ? first, then friends by their latest move, requests of mine dimmed.
+                // Tes amis: friends by their latest move, requests of mine dimmed, then a way to invite more.
                 SocialSpacer()
                 SocialTitle(stringResource(Res.string.social_friends), gutter)
                 Row(
                     Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = if (wide) 28.dp else 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    StoryBubble(stringResource(Res.string.tonight_title), onClick = { onOpenTonight(null) }, labelColor = socialAccent()) {
-                        ActionBubbleIcon(LucideIcons.Popcorn)
-                    }
                     ordered.forEach { friend ->
                         StoryBubble(
                             friend.firstName.ifBlank { "?" },
@@ -309,6 +306,9 @@ fun SocialScreen(container: AppContainer, contentPadding: PaddingValues, onOpenT
                 }
 
                 Column(gutter) {
+                    // On regarde quoi ?, right under the friends to play it with.
+                    Spacer(Modifier.height(18.dp))
+                    TonightEntryCard(onClick = { onOpenTonight(null) })
                     if (status == SocialStatus.READY && accepted.isEmpty() && incoming.isEmpty() && outgoing.isEmpty()) {
                         Spacer(Modifier.height(20.dp))
                         EmptyFriends()

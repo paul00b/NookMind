@@ -48,6 +48,7 @@ import fr.paulbr.nookmind.core.designsystem.components.StarRating
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
 import fr.paulbr.nookmind.core.domain.deriveSeriesStatus
 import fr.paulbr.nookmind.core.domain.normalizeTitle
+import fr.paulbr.nookmind.core.domain.isSameTitle
 import fr.paulbr.nookmind.core.domain.yearOf
 import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.core.model.Series
@@ -116,7 +117,7 @@ fun AddSeriesSheet(container: AppContainer, prefill: Series?, onClose: () -> Uni
     var episodeAirDates by remember { mutableStateOf<Map<String, Map<Int, String?>>>(emptyMap()) }
     var loadingEpisodesSeason by remember { mutableStateOf<Int?>(null) }
     val fromSearch = prefill != null
-    val isDuplicate = form.title.isNotBlank() && allSeries.any { normalizeTitle(it.title) == normalizeTitle(form.title) }
+    val isDuplicate = form.title.isNotBlank() && allSeries.any { isSameTitle(it.tmdbId, it.title, form.tmdbId, form.title) }
     val derivedStatus = deriveSeriesStatus(form.watchedSeasons, form.seasons, false, form.watchedEpisodes)
     val showRating = derivedStatus == SeriesStatus.WATCHED
 

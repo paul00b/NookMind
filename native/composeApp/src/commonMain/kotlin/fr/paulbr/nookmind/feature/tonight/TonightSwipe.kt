@@ -102,6 +102,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.abs
+import fr.paulbr.nookmind.resources.tonight_episodeLength
+import fr.paulbr.nookmind.resources.tonight_ruleSeenSeries
+import fr.paulbr.nookmind.resources.tonight_seasons
+import fr.paulbr.nookmind.resources.tonight_seenSeries
+import fr.paulbr.nookmind.resources.tonight_seriesEnded
+import fr.paulbr.nookmind.resources.tonight_seriesOngoing
+import fr.paulbr.nookmind.resources.tonight_stampSeenSeries
+import org.jetbrains.compose.resources.pluralStringResource
 
 private val CardShape = RoundedCornerShape(26.dp)
 
@@ -127,7 +135,9 @@ internal fun SwipeStep(container: AppContainer, state: TonightState, names: Toni
     // Stills for the long-press preview, fetched as the card comes up.
     LaunchedEffect(card?.tmdbId) {
         val id = card?.tmdbId ?: return@LaunchedEffect
-        if (id !in state.stills) state.stills[id] = container.tmdb.fetchMovieStills(id)
+        if (id !in state.stills) {
+            state.stills[id] = if (card?.kind == TonightKind.SERIES) container.tmdb.fetchSeriesStills(id) else container.tmdb.fetchMovieStills(id)
+        }
     }
 
     fun fling(verdict: Verdict) {
@@ -289,7 +299,11 @@ internal fun SwipeStep(container: AppContainer, state: TonightState, names: Toni
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 ActionButton(LucideIcons.X, stringResource(Res.string.tonight_no), TonightColors.No, 64) { fling(Verdict.NO) }
-                ActionButton(LucideIcons.Eye, stringResource(Res.string.tonight_seen), TonightColors.Seen, 52) { fling(Verdict.SEEN) }
+                ActionButton(
+                    LucideIcons.Eye,
+                    stringResource(if (state.kind == TonightKind.SERIES) Res.string.tonight_seenSeries else Res.string.tonight_seen),
+                    TonightColors.Seen, 52,
+                ) { fling(Verdict.SEEN) }
                 ActionButton(LucideIcons.Heart, stringResource(Res.string.tonight_love), TonightColors.Love, 52) { fling(Verdict.LOVE) }
                 ActionButton(LucideIcons.Check, stringResource(Res.string.tonight_yes), TonightColors.Yes, 64, filled = true) { fling(Verdict.YES) }
             }
@@ -300,7 +314,7 @@ internal fun SwipeStep(container: AppContainer, state: TonightState, names: Toni
         }
 
         if (state.showRules) {
-            RulesOverlay(onGo = {
+            RulesOverlay(series = state.kind == TonightKind.SERIES, onGo = {
                 state.showRules = false
                 container.prefs.tonightTutorialSeen = true
             })
@@ -348,7 +362,10 @@ private fun DeckCard(
                 Stamp(stringResource(Res.string.tonight_stampYes), TonightColors.Yes, -16f, Alignment.TopStart) { stampAlpha(offset(), threshold, Verdict.YES) }
                 Stamp(stringResource(Res.string.tonight_stampNo), TonightColors.No, 16f, Alignment.TopEnd) { stampAlpha(offset(), threshold, Verdict.NO) }
                 Stamp(stringResource(Res.string.tonight_stampLove), TonightColors.Love, -6f, Alignment.Center) { stampAlpha(offset(), threshold, Verdict.LOVE) }
-                Stamp(stringResource(Res.string.tonight_stampSeen), TonightColors.Seen, 4f, Alignment.Center) { stampAlpha(offset(), threshold, Verdict.SEEN) }
+                Stamp(
+                    stringResource(if (card.kind == TonightKind.SERIES) Res.string.tonight_stampSeenSeries else Res.string.tonight_stampSeen),
+                    TonightColors.Seen, 4f, Alignment.Center,
+                ) { stampAlpha(offset(), threshold, Verdict.SEEN) }
                 if (!previewing) CardInfo(card, Modifier.align(Alignment.BottomStart).padding(18.dp))
             }
         } else {
@@ -387,16 +404,30 @@ private fun BoxScope.Stamp(text: String, color: Color, angle: Float, alignment: 
 private fun CardInfo(card: TonightCard, modifier: Modifier) {
     Column(modifier) {
         Text(card.title, style = NookTheme.type.serif(30, lineHeight = 33), color = Color.White, maxLines = 3, overflow = TextOverflow.Ellipsis)
-        val meta = listOfNotNull(card.year, formatRuntime(card.runtime)).joinToString(" · ")
-        Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (meta.isNotEmpty()) Text(meta, style = NookTheme.type.sans(15, FontWeight.Medium, 20), color = Color.White.copy(alpha = 0.82f))
-            card.provider?.let {
-                if (meta.isNotEmpty()) Spacer(Modifier.width(10.dp))
-                Text(
-                    providerLabel(it),
-                    style = NookTheme.type.sans(13, FontWeight.SemiBold, 16), color = Color.White,
-                    modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color(0x29FFFFFF)).padding(horizontal = 8.dp, vertical = 3.dp),
-                )
+        val meta = cardMeta(card)
+        if (meta.isNotEmpty()) {
+            Text(meta, style = NookTheme.type.sans(15, FontWeight.Medium, 20), color = Color.White.copy(alpha = 0.82f), modifier = Modifier.padding(top = 8.dp))
+        }
+        // The platform, and for a series whether it is over: chips that wrap rather than squeeze.
+        val ended = card.ended?.takeIf { card.kind == TonightKind.SERIES }
+        if (card.provider != null || ended != null) {
+            FlowRow(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                card.provider?.let {
+                    Text(
+                        providerLabel(it),
+                        style = NookTheme.type.sans(13, FontWeight.SemiBold, 16), color = Color.White, maxLines = 1,
+                        modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color(0x29FFFFFF)).padding(horizontal = 8.dp, vertical = 3.dp),
+                    )
+                }
+                ended?.let { over ->
+                    Text(
+                        stringResource(if (over) Res.string.tonight_seriesEnded else Res.string.tonight_seriesOngoing),
+                        style = NookTheme.type.sans(13, FontWeight.SemiBold, 16),
+                        color = if (over) Color(0xFFD9DAE2) else Color(0xFF6EE7B7), maxLines = 1,
+                        modifier = Modifier.clip(RoundedCornerShape(6.dp))
+                            .background(if (over) Color(0x29FFFFFF) else Color(0x2E34D399)).padding(horizontal = 8.dp, vertical = 3.dp),
+                    )
+                }
             }
         }
         val (icon, reason) = when (val r = card.reason) {
@@ -424,7 +455,7 @@ private fun CardInfo(card: TonightCard, modifier: Modifier) {
 private fun CardBack(card: TonightCard, modifier: Modifier) {
     Column(modifier.clip(CardShape).background(TonightColors.Surface).padding(22.dp)) {
         Text(card.title, style = NookTheme.type.serif(26, lineHeight = 30), color = TonightColors.Text)
-        val by = listOfNotNull(card.director, card.year, formatRuntime(card.runtime)).joinToString(" · ")
+        val by = listOfNotNull(card.director, cardMeta(card).ifEmpty { null }).joinToString(" · ")
         if (by.isNotEmpty()) Text(by, style = NookTheme.type.sans(15, lineHeight = 20), color = TonightColors.Muted, modifier = Modifier.padding(top = 6.dp))
         if (card.genres.isNotEmpty()) {
             FlowRow(Modifier.padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -479,7 +510,7 @@ private fun StillsPreview(urls: List<String>) {
 
 /** The rules, once: the first time Ce soir ? is played on this phone. */
 @Composable
-private fun RulesOverlay(onGo: () -> Unit) {
+private fun RulesOverlay(series: Boolean, onGo: () -> Unit) {
     Box(
         Modifier.fillMaxSize().background(Color(0xD6060709)).clickable(onClick = {}, indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }),
         contentAlignment = Alignment.CenterStart,
@@ -490,7 +521,7 @@ private fun RulesOverlay(onGo: () -> Unit) {
             Rule(LucideIcons.Check, TonightColors.Yes, stringResource(Res.string.tonight_ruleYes))
             Rule(LucideIcons.X, TonightColors.No, stringResource(Res.string.tonight_ruleNo))
             Rule(LucideIcons.Heart, TonightColors.Love, stringResource(Res.string.tonight_ruleLove))
-            Rule(LucideIcons.Eye, TonightColors.Seen, stringResource(Res.string.tonight_ruleSeen))
+            Rule(LucideIcons.Eye, TonightColors.Seen, stringResource(if (series) Res.string.tonight_ruleSeenSeries else Res.string.tonight_ruleSeen))
             Rule(LucideIcons.Hand, TonightColors.Text, stringResource(Res.string.tonight_ruleHold))
             Spacer(Modifier.height(24.dp))
             Box(
@@ -511,4 +542,13 @@ private fun Rule(icon: ImageVector, color: Color, text: String) {
         Spacer(Modifier.width(14.dp))
         Text(text, style = NookTheme.type.sans(16, lineHeight = 22), color = Color(0xFFE3E4EA))
     }
+}
+
+/** "2021 · 2 h 35" for a movie, "2022 · 2 saisons · épisodes de 50 min" for a series. */
+@Composable
+internal fun cardMeta(card: TonightCard): String {
+    if (card.kind != TonightKind.SERIES) return listOfNotNull(card.year, formatRuntime(card.runtime)).joinToString(" · ")
+    val seasons = card.seasons?.let { pluralStringResource(Res.plurals.tonight_seasons, it, it) }
+    val episode = formatRuntime(card.runtime)?.let { stringResource(Res.string.tonight_episodeLength, it) }
+    return listOfNotNull(card.year, seasons, episode).joinToString(" · ")
 }

@@ -137,11 +137,21 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A screenshots/web-*.png
-          if git diff --cached --quiet; then echo "No change in the images."; exit 0; fi
-          git commit -m "chore: captures web de ${GITHUB_SHA::7}"
-          git pull --rebase origin "$GITHUB_REF_NAME"
-          git push origin "HEAD:$GITHUB_REF_NAME"
+          # The desktop captures land on the same branch at the same time: put these on top of
+          # whatever the branch holds by then, and try again if the other one pushed in between.
+          keep="$RUNNER_TEMP/web-captures"
+          mkdir -p "$keep" && cp screenshots/web-*.png "$keep"/
+          for attempt in 1 2 3; do
+            git fetch -q origin "$GITHUB_REF_NAME"
+            git reset -q --hard "origin/$GITHUB_REF_NAME"
+            mkdir -p screenshots && cp "$keep"/web-*.png screenshots/
+            git add -A screenshots/web-*.png
+            if git diff --cached --quiet; then echo "No change in the images."; exit 0; fi
+            git commit -q -m "chore: captures web de ${GITHUB_SHA::7}"
+            if git push origin "HEAD:$GITHUB_REF_NAME"; then exit 0; fi
+            sleep $((attempt * 5))
+          done
+          exit 1
 
   # main only: the checked build, as is, to GitHub Pages.
   deploy:

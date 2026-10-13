@@ -142,6 +142,16 @@ class AppPreferences(private val settings: Settings) {
         get() = settings.getStringOrNull(KEY_TONIGHT_GENRES)?.split(',')?.filter(String::isNotBlank)?.toSet().orEmpty()
         set(value) = settings.putString(KEY_TONIGHT_GENRES, value.joinToString(","))
 
+    /** Whether On regarde quoi ? was last played with movies or series ("movie", "series"). */
+    var tonightKind: String
+        get() = settings.getStringOrNull(KEY_TONIGHT_KIND).orEmpty()
+        set(value) = settings.putString(KEY_TONIGHT_KIND, value)
+
+    /** How long a series may run in On regarde quoi ? ("mini", "short", "any"). */
+    var tonightSeriesLength: String
+        get() = settings.getStringOrNull(KEY_TONIGHT_SERIES_LENGTH).orEmpty()
+        set(value) = settings.putString(KEY_TONIGHT_SERIES_LENGTH, value)
+
     /** Streaming services ticked in Ce soir ?, as their keys. */
     var tonightServices: Set<String>
         get() = settings.getStringOrNull(KEY_TONIGHT_SERVICES)?.split(',')?.filter(String::isNotBlank)?.toSet().orEmpty()
@@ -162,6 +172,8 @@ class AppPreferences(private val settings: Settings) {
         const val KEY_TONIGHT_FRIEND = "nookmind_tonight_friend"
         const val KEY_TONIGHT_DECK_SIZE = "nookmind_tonight_deck_size"
         const val KEY_TONIGHT_GENRES = "nookmind_tonight_genres"
+        const val KEY_TONIGHT_KIND = "nookmind_tonight_kind"
+        const val KEY_TONIGHT_SERIES_LENGTH = "nookmind_tonight_series_length"
         const val KEY_THEME = "bm_theme"
         const val KEY_MEDIA_MODE = "media-mode"
         const val KEY_ONBOARDING = "nookmind_onboarding_completed"

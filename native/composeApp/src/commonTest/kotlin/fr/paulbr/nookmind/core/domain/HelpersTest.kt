@@ -54,9 +54,22 @@ class HelpersTest {
     fun searchSectionSanitizeKeepsOrderAndFillsMissing() {
         val prefs = listOf(SearchSectionPreference("last_watched", false), SearchSectionPreference("bogus"), SearchSectionPreference("trending"))
         val result = SearchSections.sanitize(prefs, MediaMode.SERIES)
-        assertEquals(listOf("last_watched", "trending", "watching", "waiting", "want_to_watch"), result.map { it.id })
-        assertEquals(false, result.first().visible)
+        // On regarde quoi ?, new on the series home, goes first; the other missing ones at the end.
+        assertEquals(listOf("tonight", "last_watched", "trending", "watching", "waiting", "want_to_watch"), result.map { it.id })
+        assertEquals(false, result[1].visible)
+        val books = SearchSections.sanitize(listOf(SearchSectionPreference("last_read")), MediaMode.BOOKS)
+        assertEquals(listOf("last_read", "want_to_read"), books.map { it.id }, "only On regarde quoi ? jumps ahead")
         assertEquals(SearchSections.defaults(MediaMode.BOOKS), SearchSections.sanitize(null, MediaMode.BOOKS))
+    }
+
+    @Test
+    fun titlesWithTheSameNameStayApartWhenTmdbTellsThemApart() {
+        // Avatar: The Last Airbender, the anime (246) and the live action (82452).
+        assertEquals(false, isSameTitle(246, "Avatar : Le dernier maître de l'air", 82452, "Avatar : Le dernier maître de l'air"))
+        assertEquals(true, isSameTitle(246, "Avatar", 246, "Avatar (VO)"), "same id, whatever the name")
+        assertEquals(true, isSameTitle(null, "Dune  ", 438631, "dune"), "added by hand: the name decides")
+        assertEquals(true, isSameTitle(438631, "Dune", null, "DUNE"))
+        assertEquals(false, isSameTitle(null, "Dune", null, "Dune 2"))
     }
 
     @Test
