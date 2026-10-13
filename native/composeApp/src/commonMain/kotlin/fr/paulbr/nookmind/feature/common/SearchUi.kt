@@ -443,7 +443,7 @@ fun PosterSlideCard(
     titleLines: Int = 1,
     badge: (@Composable BoxScope.() -> Unit)? = null,
 ) {
-    Column(modifier.width(width).clip(NookShapes.lg).clickable(onClick = onClick)) {
+    Column(modifier.width(width).clip(NookShapes.lg).clickable(onClick = onClick).padding(bottom = 6.dp)) {
         MediaImage(imageUrl, title, Modifier.fillMaxWidth(), mode = mode, placeholderIconSize = 22.dp, overlay = badge)
         Spacer(Modifier.height(8.dp))
         Text(title, style = NookTheme.type.sans(12, FontWeight.Medium, 14), color = NookTheme.colors.textBody, maxLines = titleLines, overflow = TextOverflow.Ellipsis)

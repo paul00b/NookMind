@@ -5,17 +5,31 @@ import fr.paulbr.nookmind.core.config.ApiUrl
 /**
  * Links to a movie, a series or a book that anyone can open: `https://<api>/s/movie/438631`, a page
  * with the poster that adds it to NookMind (or sends to the store), and `nookmind://add/movie/438631`,
- * which the page uses to open the app.
+ * which the page uses to open the app. The same for a friend code: `https://<api>/f/K7PQ2M`, the
+ * invitation behind the QR code of the Social tab, and `nookmind://friend/K7PQ2M`.
  */
 object ShareLinks {
     private val kinds = setOf("movie", "series", "book")
     private val app = Regex("""^nookmind://add/(movie|series|book)/([A-Za-z0-9_-]+)/?(?:[?#].*)?$""")
     private val web = Regex("""^https?://[^/]+/s/(movie|series|book)/([A-Za-z0-9_-]+)/?(?:[?#].*)?$""")
+    private val appFriend = Regex("""^nookmind://friend/([A-Za-z0-9]{4,12})/?(?:[?#].*)?$""")
+    private val webFriend = Regex("""^https?://[^/]+/f/([A-Za-z0-9]{4,12})/?(?:[?#].*)?$""")
+    private val friendCode = Regex("[A-Za-z0-9]{4,12}")
 
     /** The link of an item, or null without an API domain or a usable key. */
     fun linkFor(baseUrl: String?, kind: String, key: String, sharer: String?, language: String): String? {
         if (kind !in kinds || !key.matches(Regex("[A-Za-z0-9_-]+"))) return null
-        val path = runCatching { ApiUrl.build(baseUrl, "/s/$kind/$key") }.getOrNull() ?: return null
+        return withQuery(baseUrl, "/s/$kind/$key", sharer, language)
+    }
+
+    /** The invitation link of a friend code, or null without an API domain or a usable code. */
+    fun friendLinkFor(baseUrl: String?, code: String, sharer: String?, language: String): String? {
+        if (!code.matches(friendCode)) return null
+        return withQuery(baseUrl, "/f/${code.uppercase()}", sharer, language)
+    }
+
+    private fun withQuery(baseUrl: String?, pathOnly: String, sharer: String?, language: String): String? {
+        val path = runCatching { ApiUrl.build(baseUrl, pathOnly) }.getOrNull() ?: return null
         val query = buildList {
             sharer?.trim()?.substringBefore(' ')?.takeIf { it.isNotEmpty() }?.let { add("by=${encode(it.take(24))}") }
             add("l=${if (language.lowercase().startsWith("en")) "en" else "fr"}")
@@ -23,12 +37,18 @@ object ShareLinks {
         return "$path?${query.joinToString("&")}"
     }
 
-    /** The in-app route a link leads to, `/add/movie/438631`, or null for anything else. */
+    /** The in-app route a link leads to, `/add/movie/438631` or `/friend/K7PQ2M`, or null for anything else. */
     fun routeOf(url: String): String? {
-        val match = app.find(url.trim()) ?: web.find(url.trim()) ?: return null
+        val trimmed = url.trim()
+        (appFriend.find(trimmed) ?: webFriend.find(trimmed))?.let { return "/friend/${it.groupValues[1].uppercase()}" }
+        val match = app.find(trimmed) ?: web.find(trimmed) ?: return null
         val (kind, key) = match.destructured
         return "/add/$kind/$key"
     }
+
+    /** The code of a `/friend/...` route. */
+    fun parseFriendRoute(route: String): String? =
+        route.removePrefix("/friend/").takeIf { route.startsWith("/friend/") && it.matches(friendCode) }
 
     /** `kind` and `key` of an `/add/...` route. */
     fun parseRoute(route: String): Pair<String, String>? {

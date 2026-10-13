@@ -8,6 +8,10 @@
       "destination": "/api/share?kind=:kind&id=:id"
     },
     {
+      "source": "/f/:code",
+      "destination": "/api/share?kind=friend&id=:code"
+    },
+    {
       "source": "/.well-known/assetlinks.json",
       "destination": "/api/app-links?os=android"
     },

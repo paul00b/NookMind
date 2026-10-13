@@ -155,6 +155,7 @@ kotlin {
 
                 implementation(libs.multiplatform.settings)
                 implementation(libs.haze)
+                implementation(libs.qrose)
             }
         }
 

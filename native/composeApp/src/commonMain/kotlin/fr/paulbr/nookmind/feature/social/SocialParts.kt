@@ -299,7 +299,9 @@ internal fun FriendRow(friend: Friend, onRemove: () -> Unit) {
 /** A poster tile of "En ce moment", with the friend on its corner. */
 @Composable
 internal fun NowTile(item: FriendItem, friend: Friend?, loading: Boolean, onOpen: () -> Unit, modifier: Modifier = Modifier) {
-    Column(modifier.width(96.dp).clip(NookShapes.xl).clickable(onClick = onOpen)) {
+    // The press ripple keeps a small radius and the text a margin under it: a larger radius on the
+    // whole tile ate into the title and the friend's name.
+    Column(modifier.width(96.dp).clip(NookShapes.lg).clickable(onClick = onOpen).padding(bottom = 6.dp)) {
         Box {
             MediaImage(item.imageUrl, item.title, Modifier.fillMaxWidth(), mode = modeOfKind(item.kind), shape = NookShapes.xl, placeholderIconSize = 24.dp)
             if (loading) OpeningVeil(Modifier.matchParentSize())

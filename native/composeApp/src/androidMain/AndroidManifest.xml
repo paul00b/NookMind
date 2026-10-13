@@ -26,12 +26,14 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- A shared movie, series or book: the page of the link opens nookmind://add/<kind>/<id>. -->
+            <!-- A shared movie, series or book: the page of the link opens nookmind://add/<kind>/<id>;
+                 a friend's invitation (QR code of the Social tab), nookmind://friend/<code>. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="nookmind" android:host="add" />
+                <data android:scheme="nookmind" android:host="friend" />
             </intent-filter>
             <!-- The link itself, opened straight in the app once the domain lists the app's certificate
                  in /.well-known/assetlinks.json (ANDROID_SHA256_CERT_FINGERPRINTS on Vercel). -->
@@ -40,6 +42,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="${shareHost}" android:pathPrefix="/s/" />
+                <data android:scheme="https" android:host="${shareHost}" android:pathPrefix="/f/" />
             </intent-filter>
         </activity>
 

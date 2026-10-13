@@ -190,7 +190,7 @@ fun CastAccordion(cast: List<TmdbCastMember>, label: String, onSelect: (personId
 
 @Composable
 private fun CastCard(person: TmdbCastMember, onClick: () -> Unit) {
-    Column(Modifier.width(96.dp).clip(NookShapes.lg).clickable(onClick = onClick)) {
+    Column(Modifier.width(96.dp).clip(NookShapes.lg).clickable(onClick = onClick).padding(bottom = 6.dp)) {
         PersonImage(TmdbApi.posterUrl(person.profilePath), person.name, Modifier.fillMaxWidth())
         Spacer(Modifier.height(8.dp))
         Text(person.name, style = NookTheme.type.sans(12, FontWeight.SemiBold, 14), color = NookTheme.colors.textBody, maxLines = 2, overflow = TextOverflow.Ellipsis)

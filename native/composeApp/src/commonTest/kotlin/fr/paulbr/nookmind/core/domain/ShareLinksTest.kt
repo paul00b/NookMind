@@ -37,4 +37,16 @@ class ShareLinksTest {
         assertNull(ShareLinks.parseRoute("/add/movie"))
         assertNull(ShareLinks.parseRoute("/library"))
     }
+
+    @Test
+    fun friendInvitationsLinkAndRoute() {
+        assertEquals("https://nookmind.example.app/f/K7PQ2M?by=Paul&l=fr", ShareLinks.friendLinkFor(base, "k7pq2m", "Paul B", "fr-FR"))
+        assertNull(ShareLinks.friendLinkFor(base, "K7-PQ", "Paul", "fr"))
+        assertNull(ShareLinks.friendLinkFor(null, "K7PQ2M", "Paul", "fr"))
+        assertEquals("/friend/K7PQ2M", ShareLinks.routeOf("https://nookmind.example.app/f/k7pq2m?by=Paul&l=fr"))
+        assertEquals("/friend/K7PQ2M", ShareLinks.routeOf("nookmind://friend/K7PQ2M"))
+        assertNull(ShareLinks.routeOf("nookmind://friend/K7"))
+        assertEquals("K7PQ2M", ShareLinks.parseFriendRoute("/friend/K7PQ2M"))
+        assertNull(ShareLinks.parseFriendRoute("/add/movie/1"))
+    }
 }

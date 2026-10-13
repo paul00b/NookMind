@@ -1,7 +1,15 @@
 package fr.paulbr.nookmind.feature.shell
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -34,6 +42,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -134,18 +143,28 @@ fun BottomNav(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // Mode toggle pill, left out of the Social tab, which is the same in every mode.
-        androidx.compose.animation.AnimatedVisibility(
+        // Mode toggle pill, left out of the Social tab, which is the same in every mode. It comes back
+        // from its centre: the capsule widens to both sides with a slight overshoot while its
+        // content fades in, and goes the other way, quicker, when it leaves.
+        AnimatedVisibility(
             visible = tab != MainTab.SOCIAL,
-            enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.expandVertically(),
-            exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.shrinkVertically(),
+            enter = fadeIn(tween(160)),
+            exit = fadeOut(tween(120)),
         ) {
+        val reveal by transition.animateFloat(
+            transitionSpec = {
+                if (targetState == EnterExitState.Visible) spring(dampingRatio = 0.62f, stiffness = Spring.StiffnessMediumLow)
+                else tween(140)
+            },
+            label = "modeReveal",
+        ) { state -> if (state == EnterExitState.Visible) 1f else 0.35f }
         Row(
             Modifier
                 .shadow(6.dp, NookShapes.full, ambientColor = Palette.Black.copy(alpha = 0.15f), spotColor = Palette.Black.copy(alpha = 0.15f))
                 .clip(NookShapes.full)
                 .hazeEffect(hazeState, frosted)
                 .border(1.dp, colors.border, NookShapes.full)
+                .revealFromCenter { reveal }
                 .padding(4.dp),
             horizontalArrangement = Arrangement.spacedBy(2.dp),
         ) {
@@ -337,4 +356,15 @@ fun Sidebar(
 @Composable
 private fun BadgeDot(modifier: Modifier = Modifier) {
     Box(modifier.size(9.dp).clip(NookShapes.full).background(Palette.Rose500, NookShapes.full).border(1.5.dp, NookTheme.colors.background, NookShapes.full))
+}
+
+/**
+ * Lays the rest of the chain out at its full width but reports only [fraction] of it, centred: the
+ * modifiers before this one (the capsule's shadow, clip, blur and border) take the reduced width,
+ * so the pill grows from its centre and clips its own content while it does.
+ */
+private fun Modifier.revealFromCenter(fraction: () -> Float): Modifier = layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints)
+    val width = (placeable.width * fraction()).toInt().coerceAtLeast(0)
+    layout(width, placeable.height) { placeable.place((width - placeable.width) / 2, 0) }
 }

@@ -8,7 +8,7 @@ name: iOS release
 # - Run by hand: a real release. Picks the version, archives with the paid-team entitlements (Sign in
 #   with Apple, push), signs through the App Store Connect API key, uploads, then tags the commit
 #   ios-vX.Y.Z.
-# - On a push touching the iOS host: a check. The same Release archive for a real device (arm64), not
+# - On a push touching the iOS host or the libraries: a check. The same Release archive for a real device (arm64), not
 #   signed, nothing uploaded. The simulator workflow never builds for a device nor in Release, so this
 #   is the only place the device build of the Kotlin framework and the Swift packages gets compiled.
 
@@ -24,6 +24,11 @@ on:
     paths:
       - 'native/iosApp/**'
       - '!native/iosApp/**/*.md'
+      # A library or Gradle change can break the Release link of the Kotlin framework, which only
+      # this workflow builds.
+      - 'native/gradle/**'
+      - 'native/*.gradle.kts'
+      - 'native/composeApp/build.gradle.kts'
       - '.github/workflows/ios-release.yml'
 
 permissions:
