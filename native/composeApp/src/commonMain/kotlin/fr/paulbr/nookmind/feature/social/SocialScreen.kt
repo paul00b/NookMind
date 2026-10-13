@@ -20,83 +20,90 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import fr.paulbr.nookmind.app.AppContainer
+import fr.paulbr.nookmind.core.config.AppConfig
 import fr.paulbr.nookmind.core.data.AddFriendResult
 import fr.paulbr.nookmind.core.data.FriendItem
 import fr.paulbr.nookmind.core.data.SocialStatus
 import fr.paulbr.nookmind.core.designsystem.NookShapes
 import fr.paulbr.nookmind.core.designsystem.NookTheme
+import fr.paulbr.nookmind.core.designsystem.components.Avatar
+import fr.paulbr.nookmind.core.designsystem.components.AvatarSize
 import fr.paulbr.nookmind.core.designsystem.components.BannerTone
-import fr.paulbr.nookmind.core.designsystem.components.GhostButton
 import fr.paulbr.nookmind.core.designsystem.components.HairlineDivider
 import fr.paulbr.nookmind.core.designsystem.components.IconGhostButton
 import fr.paulbr.nookmind.core.designsystem.components.InlineBanner
 import fr.paulbr.nookmind.core.designsystem.components.Spinner
 import fr.paulbr.nookmind.core.designsystem.components.TextLink
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
+import fr.paulbr.nookmind.core.domain.ShareLinks
 import fr.paulbr.nookmind.core.model.Book
 import fr.paulbr.nookmind.core.model.BookStatus
 import fr.paulbr.nookmind.core.model.Movie
 import fr.paulbr.nookmind.core.model.MovieStatus
 import fr.paulbr.nookmind.core.model.Series
 import fr.paulbr.nookmind.core.model.SeriesStatus
-import fr.paulbr.nookmind.core.config.AppConfig
-import fr.paulbr.nookmind.core.domain.ShareLinks
 import fr.paulbr.nookmind.core.network.TmdbApi
 import fr.paulbr.nookmind.core.platform.deviceLanguageTag
 import fr.paulbr.nookmind.core.platform.shareText
+import fr.paulbr.nookmind.feature.common.ItemSheetsHost
 import fr.paulbr.nookmind.feature.common.LocalWideLayout
-import fr.paulbr.nookmind.feature.tonight.TonightEntryCard
+import fr.paulbr.nookmind.feature.common.rememberItemSheets
 import fr.paulbr.nookmind.resources.Res
 import fr.paulbr.nookmind.resources.common_retry
 import fr.paulbr.nookmind.resources.social_addFriends
-import fr.paulbr.nookmind.resources.social_inviteText
+import fr.paulbr.nookmind.resources.social_affinities
 import fr.paulbr.nookmind.resources.social_codeCopied
 import fr.paulbr.nookmind.resources.social_emptyText
 import fr.paulbr.nookmind.resources.social_emptyTitle
 import fr.paulbr.nookmind.resources.social_error
-import fr.paulbr.nookmind.resources.social_friends
 import fr.paulbr.nookmind.resources.social_friendAccepted
 import fr.paulbr.nookmind.resources.social_friendAlready
 import fr.paulbr.nookmind.resources.social_friendFailed
 import fr.paulbr.nookmind.resources.social_friendNotFound
 import fr.paulbr.nookmind.resources.social_friendRequested
 import fr.paulbr.nookmind.resources.social_friendSelf
-import fr.paulbr.nookmind.resources.social_now
+import fr.paulbr.nookmind.resources.social_friends
+import fr.paulbr.nookmind.resources.social_inviteBubble
+import fr.paulbr.nookmind.resources.social_inviteText
+import fr.paulbr.nookmind.resources.social_lately
 import fr.paulbr.nookmind.resources.social_notSetUp
-import fr.paulbr.nookmind.resources.social_reactError
+import fr.paulbr.nookmind.resources.social_pending
 import fr.paulbr.nookmind.resources.social_reactions
 import fr.paulbr.nookmind.resources.social_requests
-import fr.paulbr.nookmind.resources.social_salon
 import fr.paulbr.nookmind.resources.social_shareText
 import fr.paulbr.nookmind.resources.social_sharing
 import fr.paulbr.nookmind.resources.social_sharingNote
 import fr.paulbr.nookmind.resources.social_subtitle
+import fr.paulbr.nookmind.resources.social_thisWeek
 import fr.paulbr.nookmind.resources.social_title
+import fr.paulbr.nookmind.resources.tonight_title
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import fr.paulbr.nookmind.feature.common.ItemSheetsHost
-import fr.paulbr.nookmind.feature.common.rememberItemSheets
+import kotlin.time.Clock
 
 /**
- * The Social tab, the same in every mode: invitations to Ce soir ?, what friends are watching and
- * reading, the salon of what they added or finished (with reactions and a way to add it to mine),
- * the friends themselves and what I share with them.
+ * The Social tab, the same in every mode. Up top the row of friends (with Ce soir ? first), then
+ * how close each friend's tastes are to mine, and what they did this week, filtered by kind. A
+ * friend opens their page; any title opens its sheet, to add it to mine. Requests, invitations,
+ * reactions received and what I share stay where they were.
  */
 @Composable
 fun SocialScreen(container: AppContainer, contentPadding: PaddingValues, onOpenTonight: (String?) -> Unit) {
@@ -108,9 +115,9 @@ fun SocialScreen(container: AppContainer, contentPadding: PaddingValues, onOpenT
     val friends by social.friends.collectAsState()
     val library by social.library.collectAsState()
     val received by social.received.collectAsState()
-    val sent by social.sent.collectAsState()
     val invitations by social.invitations.collectAsState()
     val pendingCode by container.pendingFriendCode.collectAsState()
+    val openProfile by container.socialProfile.collectAsState()
     val movies by container.movies.items.collectAsState()
     val series by container.series.items.collectAsState()
     val books by container.books.items.collectAsState()
@@ -125,20 +132,29 @@ fun SocialScreen(container: AppContainer, contentPadding: PaddingValues, onOpenT
             social.refreshInvitations()
         }
     }
+    // A ring on the friends who moved since the last visit; leaving the tab marks it all seen.
+    val seenAt = remember { container.prefs.socialSeenAt }
+    DisposableEffect(Unit) {
+        onDispose { container.prefs.socialSeenAt = Clock.System.now().toString() }
+    }
 
     val accepted = friends.filter { it.accepted }
     val incoming = friends.filter { !it.accepted && it.incoming }
     val outgoing = friends.filter { !it.accepted && !it.incoming }
     val byId = friends.associateBy { it.userId }
-    val mine = ownedKeys(movies, series, books)
-    val now = nowPlaying(library)
-    val salon = salonFeed(library)
+    val mine = remember(movies, series, books) { myItems(movies, series, books) }
+    val ordered = remember(accepted, library) { accepted.sortedByDescending { latestActivityOf(library, it.userId).orEmpty() } }
+    val closest = remember(library, accepted, mine) { affinities(library, accepted.map { it.userId }, mine) }
+    val week = remember(library) { weekFeed(library) }
+    var weekKind by remember { mutableStateOf<String?>(null) }
 
     // A friend's movie, series or book opens like a search result (to add it on my side), or as
     // my own sheet when I already have it.
     val sheets = rememberItemSheets(container)
-    fun open(kind: String, key: String, title: String, subtitle: String?, imageUrl: String?) = sheets.open(kind, key, title, subtitle, imageUrl)
-    fun openItem(item: FriendItem) = open(item.kind, item.itemKey, item.title, item.subtitle, item.imageUrl)
+    fun openItem(item: FriendItem) = sheets.open(item.kind, item.itemKey, item.title, item.subtitle, item.imageUrl)
+    fun addItem(item: FriendItem) {
+        scope.launch { addToMine(container, item) }
+    }
 
     // "Add friends": my invitation (QR code, link, code) and the field for a friend's code, opened
     // from the button by the title, or by an invitation link with the friend's code filled in.
@@ -146,6 +162,7 @@ fun SocialScreen(container: AppContainer, contentPadding: PaddingValues, onOpenT
     var inviteCode by remember { mutableStateOf("") }
     LaunchedEffect(pendingCode) {
         pendingCode?.let { code ->
+            container.socialProfile.value = null
             inviteCode = code
             inviteOpen = true
             container.pendingFriendCode.value = null
@@ -167,6 +184,7 @@ fun SocialScreen(container: AppContainer, contentPadding: PaddingValues, onOpenT
             }
         }
     }
+    val openInvite: () -> Unit = { inviteCode = ""; inviteOpen = true }
 
     suspend fun addFriend(code: String): Boolean {
         val result = social.addFriend(code)
@@ -183,136 +201,183 @@ fun SocialScreen(container: AppContainer, contentPadding: PaddingValues, onOpenT
         return ok
     }
 
-    Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(contentPadding), contentAlignment = Alignment.TopCenter) {
-        Column(Modifier.fillMaxWidth().widthIn(max = 720.dp).padding(horizontal = if (wide) 32.dp else 16.dp, vertical = if (wide) 32.dp else 16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(Res.string.social_title), style = NookTheme.type.h1Serif, color = socialAccent())
-                    Text(stringResource(Res.string.social_subtitle), style = NookTheme.type.sm, color = colors.textSubtle)
-                }
-                if (status != SocialStatus.NOT_SET_UP) {
-                    Spacer(Modifier.width(12.dp))
-                    IconGhostButton(
-                        LucideIcons.UserPlus,
-                        stringResource(Res.string.social_addFriends),
-                        onClick = { inviteCode = ""; inviteOpen = true },
-                        size = 20.dp,
-                        tint = socialAccent(),
-                        background = socialAccent().copy(alpha = 0.12f),
-                        padding = 10.dp,
-                    )
-                }
-            }
-            Spacer(Modifier.height(20.dp))
+    val shownProfile = openProfile?.let { id -> byId[id] }
+    if (openProfile != null && shownProfile == null && status == SocialStatus.READY) {
+        // Removed meanwhile, or no longer a friend: back to the list.
+        LaunchedEffect(openProfile) { container.socialProfile.value = null }
+    }
 
-            invitations.forEach { session ->
-                val hostId = session.host
-                InvitationCard(session, byId[hostId], onJoin = { onOpenTonight(session.id) }, onDecline = { social.decline(session) })
-                Spacer(Modifier.height(10.dp))
-            }
-            TonightEntryCard(onClick = { onOpenTonight(null) })
-
-            when (status) {
-                SocialStatus.NOT_SET_UP -> {
-                    Spacer(Modifier.height(16.dp))
-                    InlineBanner(stringResource(Res.string.social_notSetUp), tone = BannerTone.WARNING, icon = LucideIcons.AlertTriangle)
-                }
-                SocialStatus.ERROR -> {
-                    Spacer(Modifier.height(16.dp))
-                    InlineBanner(stringResource(Res.string.social_error), icon = LucideIcons.AlertTriangle, trailing = {
-                        TextLink(stringResource(Res.string.common_retry), onClick = { scope.launch { social.refresh() } })
-                    })
-                }
-                SocialStatus.LOADING -> if (profile == null) {
-                    Spacer(Modifier.height(28.dp))
-                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Spinner(size = 24.dp, color = socialAccent()) }
-                }
-                else -> Unit
-            }
-
-            if (incoming.isNotEmpty()) {
-                SocialSpacer()
-                SocialTitle(stringResource(Res.string.social_requests), count = incoming.size)
-                incoming.forEach { friend ->
-                    RequestRow(
-                        friend,
-                        onAccept = { scope.launch { social.accept(friend) } },
-                        onDecline = { scope.launch { social.remove(friend) } },
-                    )
-                }
-            }
-
-            if (received.isNotEmpty()) {
-                SocialSpacer()
-                SocialTitle(stringResource(Res.string.social_reactions))
-                received.take(5).forEach { r ->
-                    ReceivedReactionRow(r, byId[r.fromUser], onOpen = { open(r.kind, r.itemKey, r.itemTitle, null, null) })
-                }
-            }
-
-            if (now.isNotEmpty()) {
-                SocialSpacer()
-                SocialTitle(stringResource(Res.string.social_now))
-                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    now.forEach { item -> NowTile(item, byId[item.owner], loading = sheets.isOpening(item.kind, item.itemKey), onOpen = { openItem(item) }) }
-                }
-            }
-
-            if (salon.isNotEmpty()) {
-                SocialSpacer()
-                SocialTitle(stringResource(Res.string.social_salon))
-                salon.forEachIndexed { i, item ->
-                    if (i > 0) HairlineDivider()
-                    SalonItem(
-                        item = item,
-                        friend = byId[item.owner],
-                        myReaction = sent.firstOrNull { it.toUser == item.owner && it.kind == item.kind && it.itemKey == item.itemKey }?.reaction,
-                        inMyLibrary = (item.kind to item.itemKey) in mine,
-                        loading = sheets.isOpening(item.kind, item.itemKey),
-                        onOpen = { openItem(item) },
-                        onReact = { key ->
-                            scope.launch { if (!social.react(item, key)) container.toasts.error(Res.string.social_reactError) }
-                        },
-                        onAdd = { scope.launch { addToMine(container, item) } },
-                    )
-                }
-            }
-
-            SocialSpacer()
-            if (status == SocialStatus.READY && accepted.isEmpty() && incoming.isEmpty()) {
-                EmptyFriends()
-                Spacer(Modifier.height(14.dp))
-            } else {
-                SocialTitle(stringResource(Res.string.social_friends), count = accepted.size)
-            }
-            if (status != SocialStatus.NOT_SET_UP) {
-                // The code card stays inline only while there is nobody yet; afterwards the button
-                // by the title opens the same thing, wherever the page is scrolled to.
-                if (accepted.isEmpty() && outgoing.isEmpty() && incoming.isEmpty()) {
-                    FriendCodeCard(profile, onCopy = copyCode, onShare = shareInvite, onAdd = { code -> addFriend(code) })
-                    Spacer(Modifier.height(6.dp))
-                } else {
-                    (accepted + outgoing).forEach { friend ->
-                        FriendRow(friend, onRemove = { scope.launch { social.remove(friend) } })
+    if (shownProfile != null) {
+        BackHandler(enabled = true) { container.socialProfile.value = null }
+        FriendProfileScreen(
+            container = container,
+            friend = shownProfile,
+            mine = mine,
+            sheets = sheets,
+            contentPadding = contentPadding,
+            onAdd = ::addItem,
+            onBack = { container.socialProfile.value = null },
+        )
+    } else {
+        Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(contentPadding), contentAlignment = Alignment.TopCenter) {
+            Column(Modifier.fillMaxWidth().widthIn(max = 720.dp).padding(vertical = if (wide) 32.dp else 16.dp)) {
+                val gutter = Modifier.padding(horizontal = if (wide) 32.dp else 16.dp)
+                Row(gutter, verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(Res.string.social_title), style = NookTheme.type.h1Serif, color = socialAccent())
+                        Text(stringResource(Res.string.social_subtitle), style = NookTheme.type.sm, color = colors.textSubtle)
                     }
-                    Spacer(Modifier.height(8.dp))
-                    GhostButton(
-                        stringResource(Res.string.social_addFriends),
-                        onClick = { inviteCode = ""; inviteOpen = true },
-                        icon = LucideIcons.UserPlus,
-                        color = socialAccent(),
-                    )
+                    if (status != SocialStatus.NOT_SET_UP) {
+                        Spacer(Modifier.width(12.dp))
+                        IconGhostButton(
+                            LucideIcons.UserPlus,
+                            stringResource(Res.string.social_addFriends),
+                            onClick = openInvite,
+                            size = 20.dp,
+                            tint = socialAccent(),
+                            background = socialAccent().copy(alpha = 0.12f),
+                            padding = 12.dp,
+                        )
+                    }
+                }
+
+                Column(gutter) {
+                    invitations.forEach { session ->
+                        Spacer(Modifier.height(16.dp))
+                        InvitationCard(session, byId[session.host], onJoin = { onOpenTonight(session.id) }, onDecline = { social.decline(session) })
+                    }
+                    when (status) {
+                        SocialStatus.NOT_SET_UP -> {
+                            Spacer(Modifier.height(16.dp))
+                            InlineBanner(stringResource(Res.string.social_notSetUp), tone = BannerTone.WARNING, icon = LucideIcons.AlertTriangle)
+                        }
+                        SocialStatus.ERROR -> {
+                            Spacer(Modifier.height(16.dp))
+                            InlineBanner(stringResource(Res.string.social_error), icon = LucideIcons.AlertTriangle, trailing = {
+                                TextLink(stringResource(Res.string.common_retry), onClick = { scope.launch { social.refresh() } })
+                            })
+                        }
+                        SocialStatus.LOADING -> if (profile == null) {
+                            Spacer(Modifier.height(28.dp))
+                            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Spinner(size = 24.dp, color = socialAccent()) }
+                        }
+                        else -> Unit
+                    }
+                    if (incoming.isNotEmpty()) {
+                        SocialSpacer()
+                        SocialTitle(stringResource(Res.string.social_requests), count = incoming.size)
+                        incoming.forEach { friend ->
+                            RequestRow(
+                                friend,
+                                onAccept = { scope.launch { social.accept(friend) } },
+                                onDecline = { scope.launch { social.remove(friend) } },
+                            )
+                        }
+                    }
+                }
+
+                // Tes amis: Ce soir ? first, then friends by their latest move, requests of mine dimmed.
+                SocialSpacer()
+                SocialTitle(stringResource(Res.string.social_friends), gutter)
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = if (wide) 28.dp else 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    StoryBubble(stringResource(Res.string.tonight_title), onClick = { onOpenTonight(null) }, labelColor = socialAccent()) {
+                        ActionBubbleIcon(LucideIcons.Popcorn)
+                    }
+                    ordered.forEach { friend ->
+                        StoryBubble(
+                            friend.firstName.ifBlank { "?" },
+                            onClick = { container.socialProfile.value = friend.userId },
+                            news = hasNews(latestActivityOf(library, friend.userId), seenAt),
+                        ) { Avatar(friend.displayName, friend.avatarUrl, AvatarSize.XL) }
+                    }
+                    outgoing.forEach { friend ->
+                        StoryBubble(
+                            stringResource(Res.string.social_pending),
+                            onClick = { container.socialProfile.value = friend.userId },
+                            dimmed = true,
+                            description = "${friend.firstName}, ${stringResource(Res.string.social_pending)}",
+                        ) { Avatar(friend.displayName, friend.avatarUrl, AvatarSize.XL) }
+                    }
+                    if (status != SocialStatus.NOT_SET_UP) {
+                        StoryBubble(stringResource(Res.string.social_inviteBubble), onClick = openInvite, labelColor = socialAccent()) {
+                            ActionBubbleIcon(LucideIcons.UserPlus)
+                        }
+                    }
+                }
+
+                Column(gutter) {
+                    if (status == SocialStatus.READY && accepted.isEmpty() && incoming.isEmpty() && outgoing.isEmpty()) {
+                        Spacer(Modifier.height(20.dp))
+                        EmptyFriends()
+                        Spacer(Modifier.height(14.dp))
+                        FriendCodeCard(profile, onCopy = copyCode, onShare = shareInvite, onAdd = { code -> addFriend(code) })
+                    }
+                }
+
+                if (closest.isNotEmpty()) {
+                    SocialSpacer()
+                    SocialTitle(stringResource(Res.string.social_affinities), gutter)
+                    Row(
+                        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = if (wide) 32.dp else 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        closest.forEach { affinity ->
+                            val friend = byId[affinity.friendId] ?: return@forEach
+                            AffinityCard(
+                                affinity = affinity,
+                                friend = friend,
+                                opening = { sheets.isOpening(it.kind, it.itemKey) },
+                                onOpenProfile = { container.socialProfile.value = friend.userId },
+                                onOpenItem = ::openItem,
+                            )
+                        }
+                    }
+                }
+
+                Column(gutter) {
+                    if (received.isNotEmpty()) {
+                        SocialSpacer()
+                        SocialTitle(stringResource(Res.string.social_reactions))
+                        received.take(5).forEach { r ->
+                            ReceivedReactionRow(r, byId[r.fromUser], onOpen = { sheets.open(r.kind, r.itemKey, r.itemTitle) })
+                        }
+                    }
+
+                    if (week.items.isNotEmpty()) {
+                        val kinds = kindsIn(week.items)
+                        val chosen = weekKind?.takeIf { it in kinds }
+                        SocialSpacer()
+                        SocialTitle(stringResource(if (week.thisWeek) Res.string.social_thisWeek else Res.string.social_lately))
+                        if (kinds.size > 1) {
+                            KindChips(kinds, chosen, onSelect = { weekKind = it })
+                            Spacer(Modifier.height(6.dp))
+                        }
+                        week.items.ofKind(chosen).forEachIndexed { i, item ->
+                            if (i > 0) HairlineDivider()
+                            WeekRow(
+                                item = item,
+                                friend = byId[item.owner],
+                                inMyLibrary = (item.kind to item.itemKey) in mine,
+                                loading = sheets.isOpening(item.kind, item.itemKey),
+                                onOpen = { openItem(item) },
+                                onAdd = { addItem(item) },
+                            )
+                        }
+                    }
+
+                    profile?.let { me ->
+                        SocialSpacer()
+                        SocialTitle(stringResource(Res.string.social_sharing))
+                        SharingCard(me) { m, s, b, r -> scope.launch { social.updateSharing(m, s, b, r) } }
+                        Spacer(Modifier.height(8.dp))
+                        Text(stringResource(Res.string.social_sharingNote), style = NookTheme.type.xs, color = colors.textFaint, modifier = Modifier.padding(horizontal = 4.dp))
+                    }
+                    Spacer(Modifier.height(24.dp))
                 }
             }
-
-            profile?.let { me ->
-                SocialSpacer()
-                SocialTitle(stringResource(Res.string.social_sharing))
-                SharingCard(me) { m, s, b, r -> scope.launch { social.updateSharing(m, s, b, r) } }
-                Spacer(Modifier.height(8.dp))
-                Text(stringResource(Res.string.social_sharingNote), style = NookTheme.type.xs, color = colors.textFaint, modifier = Modifier.padding(horizontal = 4.dp))
-            }
-            Spacer(Modifier.height(24.dp))
         }
     }
 
@@ -351,11 +416,13 @@ private fun EmptyFriends() {
     }
 }
 
-/** What I already have, as (kind, key) pairs comparable to a friend's items. */
-private fun ownedKeys(movies: List<Movie>, series: List<Series>, books: List<Book>): Set<Pair<String, String>> =
-    movies.mapNotNull { m -> m.tmdbId?.let { "movie" to it.toString() } }.toSet() +
-        series.mapNotNull { s -> s.tmdbId?.let { "series" to it.toString() } } +
-        books.mapNotNull { b -> b.googleBooksId?.let { "book" to it } }
+/** What I have, by (kind, key) as a friend's items name them, with my rating. */
+internal fun myItems(movies: List<Movie>, series: List<Series>, books: List<Book>): Map<Pair<String, String>, MyItem> =
+    (
+        movies.mapNotNull { m -> m.tmdbId?.let { MyItem("movie", it.toString(), m.rating) } } +
+            series.mapNotNull { s -> s.tmdbId?.let { MyItem("series", it.toString(), s.rating) } } +
+            books.mapNotNull { b -> b.googleBooksId?.let { MyItem("book", it, b.rating) } }
+        ).associateBy { it.kind to it.key }
 
 /** Adds a friend's item to my "To watch" / "To read" list, with the full details when they load. */
 private suspend fun addToMine(container: AppContainer, item: FriendItem) {

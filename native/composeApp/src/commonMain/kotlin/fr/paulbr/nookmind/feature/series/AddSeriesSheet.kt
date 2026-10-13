@@ -228,6 +228,8 @@ fun AddSeriesSheet(container: AppContainer, prefill: Series?, onClose: () -> Uni
                     }
 
                     Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        // Opened from a friend: why it is here, first thing under the title.
+                        FriendsTake(container, "series", form.tmdbId?.toString())
                         form.tmdbId?.let { TrailerButton(container, "tv", it) }
                         form.description?.takeIf { it.isNotBlank() }?.let {
                             ExpandableDescription(
@@ -237,7 +239,6 @@ fun AddSeriesSheet(container: AppContainer, prefill: Series?, onClose: () -> Uni
                                 clampLines = 3,
                             )
                         }
-                        FriendsTake(container, "series", form.tmdbId?.toString())
                     }
 
                     val totalSeasons = form.seasons

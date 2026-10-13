@@ -183,6 +183,9 @@ class AppContainer(
     /** A friend code from an invitation link or QR code, for the Social tab to offer adding. */
     val pendingFriendCode = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
 
+    /** The friend whose profile the Social tab shows, kept here so a pull to refresh does not close it. */
+    val socialProfile = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
+
     /** "Update application" in Settings: drop every network cache (`sessionStorage.clear()`). */
     fun clearCaches() = cache.clear()
 }

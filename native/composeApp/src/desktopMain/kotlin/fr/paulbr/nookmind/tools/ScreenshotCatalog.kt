@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import kotlin.time.Duration.Companion.hours
 import androidx.compose.ui.unit.dp
 import fr.paulbr.nookmind.App
 import fr.paulbr.nookmind.app.AppContainer
@@ -76,6 +77,9 @@ object ScreenshotCatalog {
         c.series.seedLocal(FakeData.series)
         c.seriesCategories.seedLocal(FakeData.seriesCategories)
         c.social.seedLocal(FakeSocial.profile, FakeSocial.friends, FakeSocial.library(), FakeSocial.received(), FakeSocial.sent, FakeSocial.invitations())
+        // Last visit ten hours ago: the friends who moved since get their ring.
+        c.prefs.socialSeenAt = (kotlin.time.Clock.System.now() - 10.hours).toString()
+        c.socialProfile.value = null
     }
 
     /** The Social tab before any friend: the code to share and nothing else. */
@@ -86,6 +90,18 @@ object ScreenshotCatalog {
             container.social.seedLocal(FakeSocial.profile, emptyList(), emptyList())
         }
         NookTheme(ThemeMode.DARK, MediaMode.MOVIES) {
+            MainScaffold(container, onOpenLegal = {}, onReplayOnboarding = {}, initialTab = MainTab.SOCIAL)
+        }
+    }
+
+    /** The Social tab on a friend's page. */
+    private fun friendProfile(id: String, dark: Boolean = true): @Composable () -> Unit = {
+        remember {
+            container.prefs.setMediaMode(MediaMode.MOVIES)
+            seed(container)
+            container.socialProfile.value = id
+        }
+        NookTheme(if (dark) ThemeMode.DARK else ThemeMode.LIGHT, MediaMode.MOVIES) {
             MainScaffold(container, onOpenLegal = {}, onReplayOnboarding = {}, initialTab = MainTab.SOCIAL)
         }
     }
@@ -200,6 +216,9 @@ object ScreenshotCatalog {
         ScreenshotEntry("social-dark", heightDp = 2600, content = shell(MediaMode.MOVIES, MainTab.SOCIAL, dark = true)),
         ScreenshotEntry("social", heightDp = 2600, content = shell(MediaMode.BOOKS, MainTab.SOCIAL)),
         ScreenshotEntry("social-empty-dark", content = lonelySocial()),
+        // A friend's page: affinity, favourites, their library filtered by kind.
+        ScreenshotEntry("social-profile-dark", heightDp = 1900, content = friendProfile("u-lea")),
+        ScreenshotEntry("social-profile", heightDp = 1900, content = friendProfile("u-lea", dark = false)),
         // "Add friends", from the button by the Social title: the invitation QR code, link and code.
         ScreenshotEntry("social-invite-dark", heightDp = SHEET_HEIGHT_DP, content = shell(MediaMode.MOVIES, MainTab.SOCIAL, dark = true) {
             FriendInviteSheet(
