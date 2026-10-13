@@ -31,6 +31,7 @@ import fr.paulbr.nookmind.core.domain.SearchSections
 import fr.paulbr.nookmind.core.domain.getEffectiveSeriesStatus
 import fr.paulbr.nookmind.core.domain.isSeriesWaiting
 import fr.paulbr.nookmind.core.domain.normalizeTitle
+import fr.paulbr.nookmind.core.domain.isSameTitle
 import fr.paulbr.nookmind.core.domain.yearOf
 import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.core.model.Series
@@ -89,7 +90,7 @@ fun SeriesHomeScreen(container: AppContainer, contentPadding: PaddingValues, onO
     val trackedIds = allSeries.mapNotNull { it.tmdbId }.toSet()
 
     fun findExisting(tmdb: TmdbSeries): Series? =
-        allSeries.firstOrNull { it.tmdbId == tmdb.id || normalizeTitle(it.title) == normalizeTitle(tmdb.name) }
+        allSeries.firstOrNull { isSameTitle(it.tmdbId, it.title, tmdb.id, tmdb.name) }
 
     fun selectSeries(tmdb: TmdbSeries) {
         val existing = findExisting(tmdb)

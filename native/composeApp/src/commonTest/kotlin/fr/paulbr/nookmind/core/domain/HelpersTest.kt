@@ -63,6 +63,16 @@ class HelpersTest {
     }
 
     @Test
+    fun titlesWithTheSameNameStayApartWhenTmdbTellsThemApart() {
+        // Avatar: The Last Airbender, the anime (246) and the live action (82452).
+        assertEquals(false, isSameTitle(246, "Avatar : Le dernier maître de l'air", 82452, "Avatar : Le dernier maître de l'air"))
+        assertEquals(true, isSameTitle(246, "Avatar", 246, "Avatar (VO)"), "same id, whatever the name")
+        assertEquals(true, isSameTitle(null, "Dune  ", 438631, "dune"), "added by hand: the name decides")
+        assertEquals(true, isSameTitle(438631, "Dune", null, "DUNE"))
+        assertEquals(false, isSameTitle(null, "Dune", null, "Dune 2"))
+    }
+
+    @Test
     fun moveItemBounds() {
         assertEquals(listOf("b", "a", "c"), SearchSections.moveItem(listOf("a", "b", "c"), 0, 1))
         assertEquals(listOf("a", "b", "c"), SearchSections.moveItem(listOf("a", "b", "c"), 0, 5))

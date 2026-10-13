@@ -37,3 +37,12 @@ fun <T> addMappedIds(
 
 /** `s.toLowerCase().trim().replace(/\s+/g, ' ')` — used for duplicate detection. */
 fun normalizeTitle(s: String): String = s.lowercase().trim().replace(Regex("\\s+"), " ")
+
+/**
+ * Whether a library entry and a TMDB title are the same movie or series: by TMDB id when both have
+ * one, so two titles sharing a name (Avatar, the anime and the live action) stay apart; by name only
+ * when one side has no id (an entry added by hand).
+ */
+fun isSameTitle(entryTmdbId: Int?, entryTitle: String, tmdbId: Int?, title: String): Boolean =
+    if (entryTmdbId != null && tmdbId != null) entryTmdbId == tmdbId
+    else normalizeTitle(entryTitle) == normalizeTitle(title)

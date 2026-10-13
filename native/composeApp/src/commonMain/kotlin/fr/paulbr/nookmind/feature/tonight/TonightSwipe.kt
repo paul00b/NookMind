@@ -405,26 +405,30 @@ private fun CardInfo(card: TonightCard, modifier: Modifier) {
     Column(modifier) {
         Text(card.title, style = NookTheme.type.serif(30, lineHeight = 33), color = Color.White, maxLines = 3, overflow = TextOverflow.Ellipsis)
         val meta = cardMeta(card)
-        Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (meta.isNotEmpty()) Text(meta, style = NookTheme.type.sans(15, FontWeight.Medium, 20), color = Color.White.copy(alpha = 0.82f))
-            card.provider?.let {
-                if (meta.isNotEmpty()) Spacer(Modifier.width(10.dp))
-                Text(
-                    providerLabel(it),
-                    style = NookTheme.type.sans(13, FontWeight.SemiBold, 16), color = Color.White,
-                    modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color(0x29FFFFFF)).padding(horizontal = 8.dp, vertical = 3.dp),
-                )
-            }
+        if (meta.isNotEmpty()) {
+            Text(meta, style = NookTheme.type.sans(15, FontWeight.Medium, 20), color = Color.White.copy(alpha = 0.82f), modifier = Modifier.padding(top = 8.dp))
         }
-        // A series says whether it is over: worth knowing before starting one together.
-        card.ended?.takeIf { card.kind == TonightKind.SERIES }?.let { ended ->
-            Text(
-                stringResource(if (ended) Res.string.tonight_seriesEnded else Res.string.tonight_seriesOngoing),
-                style = NookTheme.type.sans(13, FontWeight.SemiBold, 16),
-                color = if (ended) Color(0xFFD9DAE2) else Color(0xFF6EE7B7),
-                modifier = Modifier.padding(top = 8.dp).clip(RoundedCornerShape(6.dp))
-                    .background(if (ended) Color(0x29FFFFFF) else Color(0x2E34D399)).padding(horizontal = 8.dp, vertical = 3.dp),
-            )
+        // The platform, and for a series whether it is over: chips that wrap rather than squeeze.
+        val ended = card.ended?.takeIf { card.kind == TonightKind.SERIES }
+        if (card.provider != null || ended != null) {
+            FlowRow(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                card.provider?.let {
+                    Text(
+                        providerLabel(it),
+                        style = NookTheme.type.sans(13, FontWeight.SemiBold, 16), color = Color.White, maxLines = 1,
+                        modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color(0x29FFFFFF)).padding(horizontal = 8.dp, vertical = 3.dp),
+                    )
+                }
+                ended?.let { over ->
+                    Text(
+                        stringResource(if (over) Res.string.tonight_seriesEnded else Res.string.tonight_seriesOngoing),
+                        style = NookTheme.type.sans(13, FontWeight.SemiBold, 16),
+                        color = if (over) Color(0xFFD9DAE2) else Color(0xFF6EE7B7), maxLines = 1,
+                        modifier = Modifier.clip(RoundedCornerShape(6.dp))
+                            .background(if (over) Color(0x29FFFFFF) else Color(0x2E34D399)).padding(horizontal = 8.dp, vertical = 3.dp),
+                    )
+                }
+            }
         }
         val (icon, reason) = when (val r = card.reason) {
             CardReason.Watchlist -> LucideIcons.Bookmark to stringResource(Res.string.tonight_reasonWatchlist)

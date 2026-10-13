@@ -45,6 +45,7 @@ import fr.paulbr.nookmind.core.designsystem.components.SheetCloseButton
 import fr.paulbr.nookmind.core.designsystem.components.StarRating
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
 import fr.paulbr.nookmind.core.domain.normalizeTitle
+import fr.paulbr.nookmind.core.domain.isSameTitle
 import fr.paulbr.nookmind.core.domain.todayIso
 import fr.paulbr.nookmind.core.domain.yearInt
 import fr.paulbr.nookmind.core.model.MediaMode
@@ -120,7 +121,7 @@ fun AddMovieSheet(container: AppContainer, prefill: Movie?, onClose: () -> Unit)
     var imdbId by remember { mutableStateOf<String?>(null) }
     var imdbLoading by remember { mutableStateOf(true) }
     val fromSearch = prefill != null
-    val isDuplicate = form.title.isNotBlank() && movies.any { normalizeTitle(it.title) == normalizeTitle(form.title) }
+    val isDuplicate = form.title.isNotBlank() && movies.any { isSameTitle(it.tmdbId, it.title, form.tmdbId, form.title) }
 
     LaunchedEffect(fromSearch, prefill?.tmdbId) {
         if (!fromSearch || prefill?.tmdbId == null) return@LaunchedEffect

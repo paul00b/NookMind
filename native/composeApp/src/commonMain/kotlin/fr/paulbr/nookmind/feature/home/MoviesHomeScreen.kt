@@ -17,6 +17,7 @@ import fr.paulbr.nookmind.core.designsystem.components.Spinner
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
 import fr.paulbr.nookmind.core.domain.SearchSections
 import fr.paulbr.nookmind.core.domain.normalizeTitle
+import fr.paulbr.nookmind.core.domain.isSameTitle
 import fr.paulbr.nookmind.core.domain.yearOf
 import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.core.model.Movie
@@ -133,7 +134,7 @@ fun MoviesHomeScreen(container: AppContainer, contentPadding: PaddingValues, onO
         sections = sections,
         resultKey = { it.id },
     ) { movie ->
-        val alreadyAdded = movies.any { normalizeTitle(it.title) == normalizeTitle(movie.title) }
+        val alreadyAdded = movies.any { isSameTitle(it.tmdbId, it.title, movie.id, movie.title) }
         SearchResultRow(
             imageUrl = TmdbApi.posterUrl(movie.posterPath),
             title = movie.title,

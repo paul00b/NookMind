@@ -813,7 +813,7 @@
     <string name="tonight_ruleSeenSeries">Vers le bas : déjà vue ou commencée</string>
     <string name="tonight_ticketFormat">Format</string>
     <string name="tonight_startSeries">On commence</string>
-    <string name="tonight_watching">En cours chez toi</string>
+    <string name="tonight_watching">En cours</string>
     <string name="tonight_updateNeeded">Cette partie demande la dernière version de NookMind. Mets l'app à jour pour jouer.</string>
     <string name="common_share">Partager</string>
     <string name="share_notFound">Ce lien ne mène nulle part.</string>
