@@ -188,6 +188,9 @@ fun AddBookSheet(container: AppContainer, prefill: Book?, onClose: () -> Unit) {
                                 form.pageCount?.let { MetaPill(stringResource(Res.string.bookDetail_pages, it)) }
                             }
 
+                            // Opened from a friend: why it is here, before the status to give it.
+                            FriendsTake(container, "book", form.googleBooksId)
+
                             LabeledBlock(stringResource(Res.string.addBook_statusLabel)) {
                                 StatusSegmentedControl(
                                     options = bookStatusOptions(),
@@ -228,8 +231,6 @@ fun AddBookSheet(container: AppContainer, prefill: Book?, onClose: () -> Unit) {
                                     seeLessText = stringResource(Res.string.bookDetail_seeLess),
                                 )
                             }
-
-                            FriendsTake(container, "book", form.googleBooksId)
 
                             EditableNote(
                                 note = form.personalNote,

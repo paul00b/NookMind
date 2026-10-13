@@ -234,6 +234,8 @@ fun AddMovieSheet(container: AppContainer, prefill: Movie?, onClose: () -> Unit)
                                     formatIsoDate(form.releaseDate, DateStyle.DAY_MONTH_LONG_YEAR)?.let { MetaPill(it) }
                                     form.runtime?.let { MetaPill(stringResource(Res.string.movieDetail_runtime, it)) }
                                 }
+                                // Opened from a friend: why it is here, before the status to give it.
+                                FriendsTake(container, "movie", form.tmdbId?.toString())
                                 LabeledBlock(stringResource(Res.string.addMovie_statusLabel)) {
                                     StatusSegmentedControl(
                                         options = movieStatusOptions(),
@@ -256,7 +258,6 @@ fun AddMovieSheet(container: AppContainer, prefill: Movie?, onClose: () -> Unit)
                     }
                     form.tmdbId?.let { TrailerButton(container, "movie", it) }
                     CastAccordion(cast, stringResource(Res.string.movieDetail_cast), onSelect = { selectedActorId = it })
-                    FriendsTake(container, "movie", form.tmdbId?.toString())
                     // The note reads and edits like on MovieDetailSheet; the form keeps its plain text area.
                     EditableNote(
                         note = form.personalNote,

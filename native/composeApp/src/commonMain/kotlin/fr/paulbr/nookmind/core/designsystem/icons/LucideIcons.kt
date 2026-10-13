@@ -113,4 +113,5 @@ object LucideIcons {
     val Inbox: ImageVector by lazy { lucide("Inbox", listOf("M 22 12 L 16 12 L 14 15 L 10 15 L 8 12 L 2 12", "M5.45 5.11 2 12v6a 2 2 0 0 0 2 2 h16a 2 2 0 0 0 2 -2 v-6l-3.45-6.89A 2 2 0 0 0 16.76 4 H7.24a 2 2 0 0 0 -1.79 1.11 z")) }
     val MessageCircle: ImageVector by lazy { lucide("MessageCircle", listOf("M2.992 16.342a 2 2 0 0 1 .094 1.167 l-1.065 3.29a 1 1 0 0 0 1.236 1.168 l3.413-.998a 2 2 0 0 1 1.099 .092 10 10 0 1 0 -4.777 -4.719")) }
     val Crown: ImageVector by lazy { lucide("Crown", listOf("M11.562 3.266a .5 .5 0 0 1 .876 0 L15.39 8.87a 1 1 0 0 0 1.516 .294 L21.183 5.5a .5 .5 0 0 1 .798 .519 l-2.834 10.246a 1 1 0 0 1 -.956 .734 H5.81a 1 1 0 0 1 -.957 -.734 L2.02 6.02a .5 .5 0 0 1 .798 -.519 l4.276 3.664a 1 1 0 0 0 1.516 -.294 z", "M5 21h14")) }
+    val Ellipsis: ImageVector by lazy { lucide("Ellipsis", listOf("M 11 12 A 1 1 0 1 0 13 12 A 1 1 0 1 0 11 12 Z", "M 18 12 A 1 1 0 1 0 20 12 A 1 1 0 1 0 18 12 Z", "M 4 12 A 1 1 0 1 0 6 12 A 1 1 0 1 0 4 12 Z")) }
 }

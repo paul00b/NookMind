@@ -147,7 +147,15 @@ class AppPreferences(private val settings: Settings) {
         get() = settings.getStringOrNull(KEY_TONIGHT_SERVICES)?.split(',')?.filter(String::isNotBlank)?.toSet().orEmpty()
         set(value) = settings.putString(KEY_TONIGHT_SERVICES, value.joinToString(","))
 
+    // ── Social ────────────────────────────────────────────────────────────
+
+    /** When the Social tab was last opened, ISO: a friend who moved since gets a ring. */
+    var socialSeenAt: String?
+        get() = settings.getStringOrNull(KEY_SOCIAL_SEEN)
+        set(value) = if (value == null) settings.remove(KEY_SOCIAL_SEEN) else settings.putString(KEY_SOCIAL_SEEN, value)
+
     companion object {
+        const val KEY_SOCIAL_SEEN = "nookmind_social_seen_at"
         const val KEY_TONIGHT_TUTORIAL = "nookmind_tonight_tutorial_seen"
         const val KEY_TONIGHT_PARTNER = "nookmind_tonight_partner"
         const val KEY_TONIGHT_SERVICES = "nookmind_tonight_services"

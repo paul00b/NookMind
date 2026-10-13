@@ -17,7 +17,7 @@ import fr.paulbr.nookmind.core.designsystem.NookShapes
 import fr.paulbr.nookmind.core.designsystem.NookTheme
 import fr.paulbr.nookmind.core.designsystem.Palette
 
-enum class AvatarSize(val dp: Int, val textSize: Int) { SM(32, 12), MD(40, 14), LG(48, 16) }
+enum class AvatarSize(val dp: Int, val textSize: Int) { SM(32, 12), MD(40, 14), LG(48, 16), XL(54, 19), XXL(76, 28) }
 
 private val AVATAR_COLORS = listOf(Palette.Violet500, Palette.Blue500, Palette.Emerald500, Palette.Rose500, Palette.Amber500, Palette.Indigo500)
 

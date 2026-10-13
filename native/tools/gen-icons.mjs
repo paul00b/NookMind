@@ -98,6 +98,7 @@ const ICONS = {
   Inbox: 'inbox',
   MessageCircle: 'message-circle',
   Crown: 'crown',
+  Ellipsis: 'ellipsis',
 };
 
 function num(v) {

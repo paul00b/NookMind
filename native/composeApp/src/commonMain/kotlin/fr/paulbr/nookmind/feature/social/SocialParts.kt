@@ -151,14 +151,18 @@ internal fun modeOfKind(kind: String): MediaMode = when (kind) {
     else -> MediaMode.MOVIES
 }
 
-/** Section title of the Social tab, with an optional count. */
+/** Section title of the Social tab, in small capitals, with an optional count. */
 @Composable
 internal fun SocialTitle(text: String, modifier: Modifier = Modifier, count: Int? = null) {
-    Row(modifier.padding(start = 2.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(text, style = NookTheme.type.h3Serif, color = NookTheme.colors.textStrong)
+    Row(modifier.padding(start = 2.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text.uppercase(),
+            style = NookTheme.type.sans(12, FontWeight.SemiBold, 16).copy(letterSpacing = 1.sp),
+            color = NookTheme.colors.textSubtle,
+        )
         if (count != null && count > 0) {
             Spacer(Modifier.width(8.dp))
-            Text(count.toString(), style = NookTheme.type.sans(14, FontWeight.SemiBold, 20), color = NookTheme.colors.textFaint)
+            Text(count.toString(), style = NookTheme.type.sans(12, FontWeight.SemiBold, 16), color = socialAccent())
         }
     }
 }
@@ -273,55 +277,11 @@ internal fun RequestRow(friend: Friend, onAccept: () -> Unit, onDecline: () -> U
     }
 }
 
-/** A friend, or a request of mine still waiting; removing asks once more. */
-@Composable
-internal fun FriendRow(friend: Friend, onRemove: () -> Unit) {
-    val colors = NookTheme.colors
-    var confirming by remember { mutableStateOf(false) }
-    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Avatar(friend.displayName, friend.avatarUrl, AvatarSize.MD)
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) {
-            Text(friend.displayName.ifBlank { "?" }, style = NookTheme.type.sans(15, FontWeight.SemiBold, 20), color = colors.textStrong, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (!friend.accepted) Text(stringResource(Res.string.social_pending), style = NookTheme.type.xs, color = colors.textSubtle)
-        }
-        if (confirming) {
-            GhostButton(stringResource(Res.string.social_removeConfirm), onClick = { confirming = false; onRemove() }, color = colors.redText, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp))
-            IconGhostButton(LucideIcons.X, null, { confirming = false }, size = 16.dp)
-        } else {
-            IconGhostButton(LucideIcons.Trash2, stringResource(Res.string.social_remove), { confirming = true }, size = 16.dp, tint = colors.textFaint)
-        }
-    }
-}
-
 // ── Salon ──────────────────────────────────────────────────────────────────
-
-/** A poster tile of "En ce moment", with the friend on its corner. */
-@Composable
-internal fun NowTile(item: FriendItem, friend: Friend?, loading: Boolean, onOpen: () -> Unit, modifier: Modifier = Modifier) {
-    // The press ripple keeps a small radius and the text a margin under it: a larger radius on the
-    // whole tile ate into the title and the friend's name.
-    Column(modifier.width(96.dp).clip(NookShapes.lg).clickable(onClick = onOpen).padding(bottom = 6.dp)) {
-        Box {
-            MediaImage(item.imageUrl, item.title, Modifier.fillMaxWidth(), mode = modeOfKind(item.kind), shape = NookShapes.xl, placeholderIconSize = 24.dp)
-            if (loading) OpeningVeil(Modifier.matchParentSize())
-            if (friend != null) {
-                Box(Modifier.align(Alignment.BottomStart).padding(6.dp).border(2.dp, NookTheme.colors.background, CircleShape)) {
-                    Avatar(friend.displayName, friend.avatarUrl, AvatarSize.SM)
-                }
-            }
-        }
-        Spacer(Modifier.height(6.dp))
-        Text(item.title, style = NookTheme.type.sans(13, FontWeight.Medium, 17), color = NookTheme.colors.textBody, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        if (friend != null) {
-            Text("${friend.firstName} ${verbOf(item)}", style = NookTheme.type.xs, color = NookTheme.colors.textSubtle, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-    }
-}
 
 /** Darkens a poster while its full sheet loads. */
 @Composable
-private fun OpeningVeil(modifier: Modifier) {
+internal fun OpeningVeil(modifier: Modifier) {
     Box(modifier.clip(NookShapes.xl).background(Color.Black.copy(alpha = 0.45f)), contentAlignment = Alignment.Center) {
         Spinner(size = 20.dp, color = Color.White, trackColor = Color.White.copy(alpha = 0.3f))
     }
@@ -475,8 +435,8 @@ private fun ShareToggle(icon: ImageVector, label: String, checked: Boolean, onCh
 // ── In the detail sheets ───────────────────────────────────────────────────
 
 /**
- * "Tes potes": which friends have this movie, series or book, what they did with it and their
- * rating. Nothing at all when no friend has it.
+ * "Tes amis": which friends have this movie, series or book, what they did with it and their
+ * rating, on a violet card. Nothing at all when no friend has it.
  */
 @Composable
 fun FriendsTake(container: AppContainer, kind: String, key: String?) {
@@ -487,12 +447,13 @@ fun FriendsTake(container: AppContainer, kind: String, key: String?) {
         .mapNotNull { item -> friends.firstOrNull { it.userId == item.owner }?.let { item to it } }
     if (takes.isEmpty()) return
     val colors = NookTheme.colors
-    Column(Modifier.fillMaxWidth()) {
-        Text(stringResource(Res.string.social_friendsTake), style = NookTheme.type.sm, color = colors.textSubtle)
-        Spacer(Modifier.height(8.dp))
+    val accent = socialAccent()
+    Column(Modifier.fillMaxWidth().clip(NookShapes.xl2).background(accent.copy(alpha = 0.10f)).padding(horizontal = 14.dp, vertical = 12.dp)) {
+        Text(stringResource(Res.string.social_friendsTake), style = NookTheme.type.sans(13, FontWeight.SemiBold, 18), color = accent)
+        Spacer(Modifier.height(6.dp))
         takes.forEach { (item, friend) ->
-            Row(Modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-                Avatar(friend.displayName, friend.avatarUrl, AvatarSize.SM)
+            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Avatar(friend.displayName, friend.avatarUrl, AvatarSize.SM, Modifier.size(28.dp))
                 Spacer(Modifier.width(10.dp))
                 Text(friend.firstName, style = NookTheme.type.sans(14, FontWeight.SemiBold, 20), color = colors.textStrong)
                 Spacer(Modifier.width(6.dp))

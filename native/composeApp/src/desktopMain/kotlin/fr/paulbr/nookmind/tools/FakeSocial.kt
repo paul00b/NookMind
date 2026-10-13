@@ -37,6 +37,9 @@ object FakeSocial {
         FriendItem("u-lea", "series", "1396", "Breaking Bad", "Vince Gilligan", FakeData.series[0].posterUrl, "watched", 5.0, ago(300.hours)),
         FriendItem("u-lea", "book", "g1", "Dune", "Frank Herbert", FakeData.books[0].coverUrl, "read", 4.5, ago(400.hours)),
         FriendItem("u-tom", "book", "g1", "Dune", "Frank Herbert", FakeData.books[0].coverUrl, "want_to_read", null, ago(500.hours)),
+        FriendItem("u-lea", "movie", "496243", "Parasite", "Bong Joon-ho", FakeData.movies[4].posterUrl, "watched", 5.0, ago(140.hours)),
+        FriendItem("u-lea", "book", "g4", "Piranesi", "Susanna Clarke", FakeData.books[3].coverUrl, "read", 4.5, ago(220.hours)),
+        FriendItem("u-lea", "series", "1399", "Game of Thrones", "David Benioff", FakeData.series[3].posterUrl, "watched", 3.5, ago(600.hours)),
     )
 
     fun received(): List<ReceivedReaction> = listOf(
