@@ -32,7 +32,7 @@ jobs:
               if "id" not in it: print("   NO ID:", json.dumps(it)[:300])
               walk(it.get("volumeInfo"), "volumeInfo", shapes)
           for p, t in sorted(shapes.items()):
-              if p.split(".")[1].split("[")[0] in ("title", "authors", "description", "imageLinks", "publishedDate", "pageCount", "categories") or "NoneType" in t or len(t) > 1:
+              if (p.split(".") + [""])[1].split("[")[0] in ("title", "authors", "description", "imageLinks", "publishedDate", "pageCount", "categories") or "NoneType" in t or len(t) > 1:
                   print("   ", p, sorted(t))
           PY
           for c in FR ""; do
@@ -44,6 +44,19 @@ jobs:
             done
           done
           curl -s -o thilliez-fr.json -G https://www.googleapis.com/books/v1/volumes --data-urlencode "q=Thilliez" -d maxResults=8 -d printType=books -d country=FR -d "key=$KEY"
+      - name: How often each query fails
+        run: |
+          for c in FR ""; do
+            for q in Thi Thilliez "Franck Thilliez" Musso dune; do
+              codes=""
+              for i in 1 2 3 4 5 6 7 8 9 10; do
+                codes="$codes $(curl -s -o /dev/null -w "%{http_code}" -G https://www.googleapis.com/books/v1/volumes \
+                  --data-urlencode "q=$q" -d maxResults=8 -d printType=books ${c:+-d country=$c} -d "key=$KEY")"
+                sleep 0.5
+              done
+              echo "[$c] $q:$codes"
+            done
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: thilliez-fr
