@@ -98,6 +98,11 @@ class AuthRepository(
     }
 
     suspend fun signInWithGoogle(): Result<Unit> = runCatching {
+        if (googleSignIn.redirects) {
+            // The browser goes to Google and back; the session arrives with the page that reloads.
+            client.auth.signInWith(Google)
+            return@runCatching
+        }
         val result = googleSignIn.signIn()
         client.auth.signInWith(IDToken) {
             idToken = result.idToken
