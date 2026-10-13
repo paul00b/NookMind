@@ -10,6 +10,12 @@ class GoogleSignInResult(val idToken: String, val nonce: String)
 interface GoogleSignInProvider {
     val isAvailable: Boolean
 
+    /**
+     * True in the browser: no ID token there, the page leaves for Google through Supabase and comes
+     * back with the session in its URL, which the Auth plugin picks up on start.
+     */
+    val redirects: Boolean get() = false
+
     /** Returns what `signInWithIdToken` needs. */
     suspend fun signIn(): GoogleSignInResult
 
@@ -30,6 +36,15 @@ interface PushPlatform {
     val isSupported: Boolean
     suspend fun requestPermission(): Boolean
     suspend fun getToken(): String?
+}
+
+/** The web app: Supabase's OAuth redirect, back to the page it left from. */
+object RedirectGoogleSignIn : GoogleSignInProvider {
+    override val isAvailable: Boolean = true
+    override val redirects: Boolean = true
+    override suspend fun signIn(): GoogleSignInResult =
+        throw IllegalStateException("Google sign-in goes through a redirect in the browser.")
+    override suspend fun signOut() = Unit
 }
 
 object UnavailableGoogleSignIn : GoogleSignInProvider {
