@@ -12,35 +12,39 @@ jobs:
     env:
       KEY: ${{ secrets.GOOGLE_BOOKS_API_KEY }}
     steps:
-      - name: One query at a time
+      - name: French results, field by field
         run: |
-          echo "key length: ${#KEY}"
-          ask() {
-            curl -s -o "out-$2.json" -w "$1 -> %{http_code} in %{time_total}s\n" -G https://www.googleapis.com/books/v1/volumes \
-              --data-urlencode "q=$1" -d maxResults=8 -d printType=books -d "key=$KEY"
-            python3 - "out-$2.json" <<'PY'
+          cat > shape.py <<'PY'
           import json, sys
           d = json.load(open(sys.argv[1]))
           if "error" in d:
               print("   error:", json.dumps(d["error"])[:600])
+          ids = [it.get("id") for it in d.get("items", [])]
+          print("   items:", len(ids), "duplicate ids:", len(ids) != len(set(ids)), "totalItems:", d.get("totalItems"))
+          def walk(x, path, out):
+              if isinstance(x, dict):
+                  for k, v in x.items(): walk(v, path + "." + k, out)
+              elif isinstance(x, list):
+                  for v in x: walk(v, path + "[]", out)
+              out.setdefault(path, set()).add(type(x).__name__)
+          shapes = {}
           for it in d.get("items", []):
-              v = it.get("volumeInfo", {})
-              shape = {k: type(v.get(k)).__name__ for k in ("title", "authors", "description", "imageLinks", "publishedDate", "pageCount", "categories") if k in v}
-              print("   ", it.get("id"), "|", v.get("title"), "|", shape)
+              if "id" not in it: print("   NO ID:", json.dumps(it)[:300])
+              walk(it.get("volumeInfo"), "volumeInfo", shapes)
+          for p, t in sorted(shapes.items()):
+              if p.split(".")[1].split("[")[0] in ("title", "authors", "description", "imageLinks", "publishedDate", "pageCount", "categories") or "NoneType" in t or len(t) > 1:
+                  print("   ", p, sorted(t))
           PY
-          }
-          ask Thi a; sleep 2
-          ask Thilliez b; sleep 2
-          ask "Franck Thilliez" c; sleep 2
-          ask Thilliez d
-      - name: Typing burst
-        run: |
-          for q in Thi Thil Thill Thilli Thillie Thilliez; do
-            curl -s -o /dev/null -w "$q -> %{http_code} in %{time_total}s\n" -G https://www.googleapis.com/books/v1/volumes \
-              --data-urlencode "q=$q" -d maxResults=8 -d printType=books -d "key=$KEY" &
-            sleep 0.3
+          for c in FR ""; do
+            for q in Thi Thilliez "Franck Thilliez" Thilli; do
+              curl -s -o out.json -w "[$c] $q -> %{http_code} in %{time_total}s, %{size_download} bytes\n" -G https://www.googleapis.com/books/v1/volumes \
+                --data-urlencode "q=$q" -d maxResults=8 -d printType=books ${c:+-d country=$c} -d "key=$KEY"
+              python3 shape.py out.json
+              sleep 1
+            done
           done
-          wait
-          sleep 1
-          curl -s -w "\nThilliez after the burst -> %{http_code}\n" -G https://www.googleapis.com/books/v1/volumes \
-            --data-urlencode "q=Thilliez" -d maxResults=8 -d printType=books -d "key=$KEY" | python3 -c "import sys;t=sys.stdin.read();print(t[-700:])"
+          curl -s -o thilliez-fr.json -G https://www.googleapis.com/books/v1/volumes --data-urlencode "q=Thilliez" -d maxResults=8 -d printType=books -d country=FR -d "key=$KEY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: thilliez-fr
+          path: thilliez-fr.json
