@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -147,8 +148,10 @@ import fr.paulbr.nookmind.resources.settings_theme
 import fr.paulbr.nookmind.resources.settings_tmdbNotice
 import fr.paulbr.nookmind.resources.settings_title
 import fr.paulbr.nookmind.resources.settings_version
+import fr.paulbr.nookmind.resources.tmdb_logo
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
 /** Version shown in the About section where the platform has none to give (the desktop screenshot tool). */
@@ -467,9 +470,11 @@ fun SettingsPanel(
                                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp), textAlign = TextAlign.Center,
                             )
                             HairlineDivider(Modifier.padding(top = 8.dp))
-                            // Where the details come from. TMDB asks for this notice in an About or
-                            // Credits section of any app that uses its API.
+                            // Where the details come from. TMDB asks for its logo and this notice in an
+                            // About or Credits section of any app that uses its API, the logo smaller
+                            // than the app's own branding.
                             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Image(painterResource(Res.drawable.tmdb_logo), contentDescription = "TMDB", modifier = Modifier.padding(bottom = 4.dp).height(24.dp))
                                 Text(stringResource(Res.string.settings_dataSources), style = NookTheme.type.xs, color = colors.textSubtle, textAlign = TextAlign.Center)
                                 Text(stringResource(Res.string.settings_tmdbNotice), style = NookTheme.type.xs, color = colors.textFaint, textAlign = TextAlign.Center)
                                 TextLink("themoviedb.org", onClick = { openExternalUrl("https://www.themoviedb.org") }, color = colors.textFaint)
