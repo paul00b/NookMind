@@ -1,10 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { ACCENTS, ANDROID_PACKAGE, COPY, IOS_STORE_URL, STORE_URL, loadShareItem, parseKind, parseLang, parseSharer } from './_lib/shareItem.js';
+import {
+  ACCENTS, ANDROID_PACKAGE, COPY, FRIEND_ACCENT, FRIEND_COPY, IOS_STORE_URL, STORE_URL,
+  loadShareItem, parseFriendCode, parseKind, parseLang, parseSharer, type ShareLang,
+} from './_lib/shareItem.js';
 
-// The page behind a shared link (/s/:kind/:id, rewritten here by vercel.json): Open Graph tags for
-// the preview in chats, and for whoever opens it, the poster, a few words and a button that opens
-// NookMind on the add sheet, or the store when the app is not installed: Google Play, or on an iPhone
-// the TestFlight or App Store link set in IOS_STORE_URL.
+// The page behind a shared link, rewritten here by vercel.json: a movie, a series or a book
+// (/s/:kind/:id), or a friend's invitation (/f/:code, the QR code of the Social tab). Open Graph tags
+// for the preview in chats, and for whoever opens it, a button that opens NookMind where the link
+// leads, or the store when the app is not installed: Google Play, or on an iPhone the TestFlight or
+// App Store link set in IOS_STORE_URL.
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
@@ -19,55 +23,49 @@ function scriptValue(value: unknown): string {
   return JSON.stringify(value).replace(/</g, '\\u003c');
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const kind = parseKind(req.query.kind);
-  const id = typeof req.query.id === 'string' ? req.query.id : '';
-  const lang = parseLang(req.query.l ?? req.headers['accept-language']);
-  const sharer = parseSharer(req.query.by);
-  const copy = COPY[lang];
-  const item = kind ? await loadShareItem(kind, id, lang) : null;
+interface Page {
+  lang: ShareLang;
+  title: string;
+  description: string;
+  ogDescription: string;
+  imageUrl: string;
+  pageUrl: string;
+  accent: { text: string; from: string; to: string };
+  background?: string;
+  /** The app's own path for the button, `add/movie/438631` or `friend/K7PQ2M`; none on a dead link. */
+  appPath?: string;
+  body: string;
+}
 
-  const host = (req.headers['x-forwarded-host'] as string | undefined) ?? req.headers.host ?? '';
-  const origin = `https://${host}`;
-  const query = new URLSearchParams({ kind: kind ?? 'movie', id, l: lang, ...(sharer ? { by: sharer } : {}) });
-  const imageUrl = `${origin}/api/share-image?${query}`;
-  const pageUrl = `${origin}${req.url ?? ''}`;
-  const accent = ACCENTS[item?.kind ?? 'movie'];
-
-  const appPath = item ? `add/${item.kind}/${encodeURIComponent(item.id)}` : '';
-  const appUrl = `nookmind://${appPath}`;
-  const intentUrl = `intent://${appPath}#Intent;scheme=nookmind;package=${ANDROID_PACKAGE};S.browser_fallback_url=${encodeURIComponent(STORE_URL)};end`;
-
-  const title = item ? `${item.title}${item.year ? ` (${item.year})` : ''}` : 'NookMind';
-  const description = item ? copy.description(sharer, item.title) : copy.tagline;
-  const meta = item ? [item.year, item.by, item.extra].filter(Boolean).join(' · ') : '';
-  const kicker = sharer ? copy.recommends(sharer) : copy.discover;
-  const background = item?.backdrop ?? item?.poster;
-
-  const html = `<!doctype html>
-<html lang="${lang}">
+function render(page: Page): string {
+  const copy = COPY[page.lang];
+  const intentUrl = page.appPath
+    ? `intent://${page.appPath}#Intent;scheme=nookmind;package=${ANDROID_PACKAGE};S.browser_fallback_url=${encodeURIComponent(STORE_URL)};end`
+    : null;
+  return `<!doctype html>
+<html lang="${page.lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>${escapeHtml(title)} · NookMind</title>
-<meta name="description" content="${escapeHtml(description)}">
+<title>${escapeHtml(page.title)} · NookMind</title>
+<meta name="description" content="${escapeHtml(page.description)}">
 <meta name="theme-color" content="#0D0E14">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="NookMind">
-<meta property="og:title" content="${escapeHtml(title)}">
-<meta property="og:description" content="${escapeHtml(item?.overview ? clip(item.overview, 180) : description)}">
-<meta property="og:image" content="${escapeHtml(imageUrl)}">
+<meta property="og:title" content="${escapeHtml(page.title)}">
+<meta property="og:description" content="${escapeHtml(page.ogDescription)}">
+<meta property="og:image" content="${escapeHtml(page.imageUrl)}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:url" content="${escapeHtml(pageUrl)}">
+<meta property="og:url" content="${escapeHtml(page.pageUrl)}">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="${escapeHtml(imageUrl)}">
+<meta name="twitter:image" content="${escapeHtml(page.imageUrl)}">
 <link rel="icon" href="/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <style>
-  :root { --bg: #0D0E14; --text: #F4F2EE; --muted: #A3A5B4; --accent: ${accent.text}; --from: ${accent.from}; --to: ${accent.to}; }
+  :root { --bg: #0D0E14; --text: #F4F2EE; --muted: #A3A5B4; --accent: ${page.accent.text}; --from: ${page.accent.from}; --to: ${page.accent.to}; }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--bg); color: var(--text); font-family: Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
   body { position: relative; min-height: 100vh; min-height: 100dvh; overflow-x: hidden; }
@@ -82,16 +80,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   .poster { display: block; width: 62%; max-width: 250px; aspect-ratio: 2 / 3; object-fit: cover; margin: 30px auto 0; border-radius: 18px;
     box-shadow: 0 34px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.1); animation: rise .9s cubic-bezier(.2,.8,.2,1) both; background: #171A24; }
   .poster.empty { display: grid; place-items: center; background: linear-gradient(135deg, var(--from), var(--to)); }
+  .badge { display: grid; place-items: center; width: 132px; height: 132px; margin: 40px auto 0; border-radius: 36px;
+    background: linear-gradient(135deg, var(--from), var(--to)); box-shadow: 0 30px 70px color-mix(in srgb, var(--from) 40%, transparent); animation: rise .9s cubic-bezier(.2,.8,.2,1) both; }
+  .badge img { width: 84px; height: 84px; }
   .kicker { display: inline-block; margin-top: 30px; padding: 8px 16px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--accent);
     background: rgba(255,255,255,.07); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); animation: fade .8s .25s both; }
   h1 { margin: 16px 0 0; font-family: 'Playfair Display', Georgia, serif; font-weight: 700; font-size: clamp(30px, 8.5vw, 40px); line-height: 1.1; animation: fade .8s .35s both; }
   .meta { margin-top: 10px; color: var(--muted); font-size: 15px; animation: fade .8s .45s both; }
   .overview { margin: 18px auto 0; max-width: 400px; color: #C9CAD4; font-size: 15px; line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; animation: fade .8s .55s both; }
+  .code { margin: 22px auto 0; display: inline-block; padding: 12px 22px; border-radius: 16px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); animation: fade .8s .5s both; }
+  .code small { display: block; color: var(--muted); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+  .code strong { display: block; margin-top: 4px; font-size: 30px; letter-spacing: .3em; padding-left: .3em; }
   .cta { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 30px; height: 58px; border-radius: 18px; color: #fff; text-decoration: none;
     font-weight: 600; font-size: 17px; background: linear-gradient(120deg, var(--from), var(--to)); box-shadow: 0 14px 40px color-mix(in srgb, var(--from) 45%, transparent);
     transition: transform .15s ease; animation: fade .8s .65s both; }
   .cta:active { transform: scale(.97); }
   .store { display: inline-block; margin-top: 16px; color: var(--muted); font-size: 14px; text-decoration: none; border-bottom: 1px solid rgba(163,165,180,.35); padding-bottom: 2px; }
+  .hint { margin: 18px auto 0; max-width: 360px; color: var(--muted); font-size: 14px; line-height: 1.5; }
   footer { margin-top: 40px; color: #6F7283; font-size: 13px; }
   @keyframes rise { from { opacity: 0; transform: translateY(18px) scale(.97); } to { opacity: 1; transform: none; } }
   @keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
@@ -100,21 +105,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 </head>
 <body>
 <div class="stage">
-${background ? `<div class="backdrop" style="background-image:url('${escapeHtml(background)}')"></div>` : ''}
+${page.background ? `<div class="backdrop" style="background-image:url('${escapeHtml(page.background)}')"></div>` : ''}
 <div class="shade"></div>
 </div>
 <main>
   <a class="brand" data-store href="${escapeHtml(STORE_URL)}"><img src="/logo.png" alt="">NookMind</a>
-  ${item
-    ? `${item.poster ? `<img class="poster" src="${escapeHtml(item.poster)}" alt="">` : `<div class="poster empty"><img src="/logo.png" alt="" width="80" height="80"></div>`}
-  <div class="kicker">${escapeHtml(kicker)}</div>
-  <h1>${escapeHtml(item.title)}</h1>
-  ${meta ? `<div class="meta">${escapeHtml(meta)}</div>` : ''}
-  ${item.overview ? `<p class="overview">${escapeHtml(item.overview)}</p>` : ''}
-  <a class="cta" id="open" href="${escapeHtml(appUrl)}">${escapeHtml(copy.cta)}</a>
-  <a class="store" data-store href="${escapeHtml(STORE_URL)}">${escapeHtml(copy.store)}</a>`
-    : `<h1 style="margin-top:40px">${escapeHtml(copy.notFound)}</h1>
-  <a class="cta" data-store href="${escapeHtml(STORE_URL)}">${escapeHtml(copy.storeOnly)}</a>`}
+  ${page.body}
   <footer>${escapeHtml(copy.tagline)}</footer>
 </main>
 <script>
@@ -122,7 +118,7 @@ ${background ? `<div class="backdrop" style="background-image:url('${escapeHtml(
     var ua = navigator.userAgent;
     var open = document.getElementById('open');
     // Android opens the app through an intent, which falls back to the store when it is missing.
-    if (/android/i.test(ua)) { if (open) open.href = ${scriptValue(intentUrl)}; return; }
+    if (/android/i.test(ua)) { if (open && ${scriptValue(intentUrl)}) open.href = ${scriptValue(intentUrl)}; return; }
     // An iPhone or an iPad (which says it is a Mac) gets the TestFlight or App Store link instead of
     // Google Play, or no download at all while there is none.
     var ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -137,7 +133,89 @@ ${background ? `<div class="backdrop" style="background-image:url('${escapeHtml(
 </script>
 </body>
 </html>`;
+}
 
+function origin(req: VercelRequest): string {
+  const host = (req.headers['x-forwarded-host'] as string | undefined) ?? req.headers.host ?? '';
+  return `https://${host}`;
+}
+
+/** A friend's invitation: who invites, the code, and the button that adds them in the app. */
+function friendPage(req: VercelRequest, res: VercelResponse) {
+  const lang = parseLang(req.query.l ?? req.headers['accept-language']);
+  const sharer = parseSharer(req.query.by);
+  const code = parseFriendCode(req.query.id);
+  const copy = COPY[lang];
+  const friend = FRIEND_COPY[lang];
+  const query = new URLSearchParams({ kind: 'friend', id: code ?? '', l: lang, ...(sharer ? { by: sharer } : {}) });
+
+  const body = code
+    ? `<div class="badge"><img src="/logo.png" alt=""></div>
+  <div class="kicker">${escapeHtml(friend.kicker(sharer))}</div>
+  <h1>${escapeHtml(friend.title(sharer))}</h1>
+  <div class="code"><small>${escapeHtml(friend.code)}</small><strong>${escapeHtml(code)}</strong></div>
+  <a class="cta" id="open" href="nookmind://friend/${escapeHtml(code)}">${escapeHtml(friend.cta(sharer))}</a>
+  <p class="hint">${escapeHtml(friend.hint)}</p>
+  <a class="store" data-store href="${escapeHtml(STORE_URL)}">${escapeHtml(copy.storeOnly)}</a>`
+    : `<h1 style="margin-top:40px">${escapeHtml(copy.notFound)}</h1>
+  <a class="cta" data-store href="${escapeHtml(STORE_URL)}">${escapeHtml(copy.storeOnly)}</a>`;
+
+  const html = render({
+    lang,
+    title: code ? friend.title(sharer) : 'NookMind',
+    description: code ? friend.description(sharer) : copy.tagline,
+    ogDescription: code ? friend.description(sharer) : copy.tagline,
+    imageUrl: `${origin(req)}/api/share-image?${query}`,
+    pageUrl: `${origin(req)}${req.url ?? ''}`,
+    accent: FRIEND_ACCENT,
+    appPath: code ? `friend/${code}` : undefined,
+    body,
+  });
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Cache-Control', code ? 'public, max-age=3600, s-maxage=86400' : 'public, max-age=60');
+  return res.status(code ? 200 : 404).send(html);
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.query.kind === 'friend') return friendPage(req, res);
+
+  const kind = parseKind(req.query.kind);
+  const id = typeof req.query.id === 'string' ? req.query.id : '';
+  const lang = parseLang(req.query.l ?? req.headers['accept-language']);
+  const sharer = parseSharer(req.query.by);
+  const copy = COPY[lang];
+  const item = kind ? await loadShareItem(kind, id, lang) : null;
+
+  const query = new URLSearchParams({ kind: kind ?? 'movie', id, l: lang, ...(sharer ? { by: sharer } : {}) });
+  const title = item ? `${item.title}${item.year ? ` (${item.year})` : ''}` : 'NookMind';
+  const description = item ? copy.description(sharer, item.title) : copy.tagline;
+  const meta = item ? [item.year, item.by, item.extra].filter(Boolean).join(' · ') : '';
+  const kicker = sharer ? copy.recommends(sharer) : copy.discover;
+  const appPath = item ? `add/${item.kind}/${encodeURIComponent(item.id)}` : undefined;
+
+  const body = item
+    ? `${item.poster ? `<img class="poster" src="${escapeHtml(item.poster)}" alt="">` : `<div class="poster empty"><img src="/logo.png" alt="" width="80" height="80"></div>`}
+  <div class="kicker">${escapeHtml(kicker)}</div>
+  <h1>${escapeHtml(item.title)}</h1>
+  ${meta ? `<div class="meta">${escapeHtml(meta)}</div>` : ''}
+  ${item.overview ? `<p class="overview">${escapeHtml(item.overview)}</p>` : ''}
+  <a class="cta" id="open" href="${escapeHtml(`nookmind://${appPath}`)}">${escapeHtml(copy.cta)}</a>
+  <a class="store" data-store href="${escapeHtml(STORE_URL)}">${escapeHtml(copy.store)}</a>`
+    : `<h1 style="margin-top:40px">${escapeHtml(copy.notFound)}</h1>
+  <a class="cta" data-store href="${escapeHtml(STORE_URL)}">${escapeHtml(copy.storeOnly)}</a>`;
+
+  const html = render({
+    lang,
+    title,
+    description,
+    ogDescription: item?.overview ? clip(item.overview, 180) : description,
+    imageUrl: `${origin(req)}/api/share-image?${query}`,
+    pageUrl: `${origin(req)}${req.url ?? ''}`,
+    accent: ACCENTS[item?.kind ?? 'movie'],
+    background: item?.backdrop ?? item?.poster,
+    appPath,
+    body,
+  });
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', item ? 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800' : 'public, max-age=60');
   return res.status(item ? 200 : 404).send(html);

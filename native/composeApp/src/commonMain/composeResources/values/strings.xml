@@ -663,6 +663,13 @@
     <string name="settings_notifSocial">Friends and Tonight?</string>
     <string name="social_accept">Accept</string>
     <string name="social_add">Add</string>
+    <string name="social_addFriends">Add friends</string>
+    <string name="social_inviteHint">Have a friend scan this code, or send them your link.</string>
+    <string name="social_shareLink">Share my link</string>
+    <string name="social_inviteText">Add me on NookMind: %1$s</string>
+    <string name="social_or">or</string>
+    <string name="social_addWithCode">Add with a code</string>
+    <string name="social_qrDescription">QR code of your NookMind invitation</string>
     <string name="social_addToList">Add to my watchlist</string>
     <string name="social_addToReadList">Add to my reading list</string>
     <string name="social_agoNow">just now</string>

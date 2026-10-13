@@ -56,6 +56,7 @@ object Palette {
     val Purple400 = Color(0xFFC084FC)
     val Purple500 = Color(0xFFA855F7)
     val Purple600 = Color(0xFF9333EA)
+    val Purple800 = Color(0xFF6B21A8)
 
     val Sky500 = Color(0xFF0EA5E9)
 

@@ -180,6 +180,9 @@ class AppContainer(
     /** Route requested from outside the UI (notification tap), consumed by the main scaffold. */
     val pendingRoute = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
 
+    /** A friend code from an invitation link or QR code, for the Social tab to offer adding. */
+    val pendingFriendCode = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
+
     /** "Update application" in Settings: drop every network cache (`sessionStorage.clear()`). */
     fun clearCaches() = cache.clear()
 }

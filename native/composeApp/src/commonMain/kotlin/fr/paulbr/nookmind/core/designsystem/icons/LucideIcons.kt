@@ -73,7 +73,7 @@ object LucideIcons {
     val User: ImageVector by lazy { lucide("User", listOf("M19 21v-2a 4 4 0 0 0 -4 -4 H9a 4 4 0 0 0 -4 4 v2", "M 8 7 A 4 4 0 1 0 16 7 A 4 4 0 1 0 8 7 Z")) }
     val Sun: ImageVector by lazy { lucide("Sun", listOf("M 8 12 A 4 4 0 1 0 16 12 A 4 4 0 1 0 8 12 Z", "M12 2v2", "M12 20v2", "m4.93 4.93 1.41 1.41", "m17.66 17.66 1.41 1.41", "M2 12h2", "M20 12h2", "m6.34 17.66-1.41 1.41", "m19.07 4.93-1.41 1.41")) }
     val Moon: ImageVector by lazy { lucide("Moon", listOf("M20.985 12.486a 9 9 0 1 1 -9.473 -9.472 c.405-.022.617.46.402.803a 6 6 0 0 0 8.268 8.268 c.344-.215.825-.004.803.401")) }
-    val Monitor: ImageVector by lazy { lucide("Monitor", listOf("M 4 3 H 20 A 2 2 0 0 1 22 5 V 15 A 2 2 0 0 1 20 17 H 4 A 2 2 0 0 1 2 15 V 5 A 2 2 0 0 1 4 3 Z", "M 0 0 L 0 0", "M 0 0 L 0 0")) }
+    val Monitor: ImageVector by lazy { lucide("Monitor", listOf("M 4 3 H 20 A 2 2 0 0 1 22 5 V 15 A 2 2 0 0 1 20 17 H 4 A 2 2 0 0 1 2 15 V 5 A 2 2 0 0 1 4 3 Z", "M 8 21 L 16 21", "M 12 17 L 12 21")) }
     val RefreshCw: ImageVector by lazy { lucide("RefreshCw", listOf("M3 12a 9 9 0 0 1 9 -9 9.75 9.75 0 0 1 6.74 2.74 L21 8", "M21 3v5h-5", "M21 12a 9 9 0 0 1 -9 9 9.75 9.75 0 0 1 -6.74 -2.74 L3 16", "M8 16H3v5")) }
     val RotateCcw: ImageVector by lazy { lucide("RotateCcw", listOf("M3 12a 9 9 0 1 0 9 -9 9.75 9.75 0 0 0 -6.74 2.74 L3 8", "M3 3v5h5")) }
     val Bell: ImageVector by lazy { lucide("Bell", listOf("M10.268 21a 2 2 0 0 0 3.464 0", "M3.262 15.326A 1 1 0 0 0 4 17 h16a 1 1 0 0 0 .74 -1.673 C19.41 13.956 18 12.499 18 8A 6 6 0 0 0 6 8 c0 4.499-1.411 5.956-2.738 7.326")) }
@@ -106,7 +106,7 @@ object LucideIcons {
     val Popcorn: ImageVector by lazy { lucide("Popcorn", listOf("M18 8a 2 2 0 0 0 0 -4 2 2 0 0 0 -4 0 2 2 0 0 0 -4 0 2 2 0 0 0 -4 0 2 2 0 0 0 0 4", "M10 22 9 8", "m14 22 1-14", "M20 8c.5 0 .9.4.8 1l-2.6 12c-.1.5-.7 1-1.2 1H7c-.6 0-1.1-.4-1.2-1L3.2 9c-.1-.6.3-1 .8-1Z")) }
     val Users: ImageVector by lazy { lucide("Users", listOf("M16 21v-2a 4 4 0 0 0 -4 -4 H6a 4 4 0 0 0 -4 4 v2", "M16 3.128a 4 4 0 0 1 0 7.744", "M22 21v-2a 4 4 0 0 0 -3 -3.87", "M 5 7 A 4 4 0 1 0 13 7 A 4 4 0 1 0 5 7 Z")) }
     val CircleHelp: ImageVector by lazy { lucide("CircleHelp", listOf("M 2 12 A 10 10 0 1 0 22 12 A 10 10 0 1 0 2 12 Z", "M9.09 9a 3 3 0 0 1 5.83 1 c0 2-3 3-3 3", "M12 17h.01")) }
-    val UserPlus: ImageVector by lazy { lucide("UserPlus", listOf("M16 21v-2a 4 4 0 0 0 -4 -4 H6a 4 4 0 0 0 -4 4 v2", "M 5 7 A 4 4 0 1 0 13 7 A 4 4 0 1 0 5 7 Z", "M 0 0 L 0 0", "M 0 0 L 0 0")) }
+    val UserPlus: ImageVector by lazy { lucide("UserPlus", listOf("M16 21v-2a 4 4 0 0 0 -4 -4 H6a 4 4 0 0 0 -4 4 v2", "M 5 7 A 4 4 0 1 0 13 7 A 4 4 0 1 0 5 7 Z", "M 19 8 L 19 14", "M 22 11 L 16 11")) }
     val Copy: ImageVector by lazy { lucide("Copy", listOf("M 10 8 H 20 A 2 2 0 0 1 22 10 V 20 A 2 2 0 0 1 20 22 H 10 A 2 2 0 0 1 8 20 V 10 A 2 2 0 0 1 10 8 Z", "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2")) }
     val Link: ImageVector by lazy { lucide("Link", listOf("M10 13a 5 5 0 0 0 7.54 .54 l3-3a 5 5 0 0 0 -7.07 -7.07 l-1.72 1.71", "M14 11a 5 5 0 0 0 -7.54 -.54 l-3 3a 5 5 0 0 0 7.07 7.07 l1.71-1.71")) }
     val Wifi: ImageVector by lazy { lucide("Wifi", listOf("M12 20h.01", "M2 8.82a 15 15 0 0 1 20 0", "M5 12.859a 10 10 0 0 1 14 0", "M8.5 16.429a 5 5 0 0 1 7 0")) }

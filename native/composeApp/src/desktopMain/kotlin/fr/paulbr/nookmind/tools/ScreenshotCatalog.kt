@@ -32,6 +32,7 @@ import fr.paulbr.nookmind.feature.common.SearchResultRow
 import fr.paulbr.nookmind.feature.common.rememberSearchController
 import fr.paulbr.nookmind.feature.shell.MainScaffold
 import fr.paulbr.nookmind.feature.shell.MainTab
+import fr.paulbr.nookmind.feature.social.FriendInviteSheet
 import fr.paulbr.nookmind.feature.auth.LoginScreen
 import fr.paulbr.nookmind.feature.legal.LegalKind
 import fr.paulbr.nookmind.feature.legal.LegalScreen
@@ -199,6 +200,18 @@ object ScreenshotCatalog {
         ScreenshotEntry("social-dark", heightDp = 2600, content = shell(MediaMode.MOVIES, MainTab.SOCIAL, dark = true)),
         ScreenshotEntry("social", heightDp = 2600, content = shell(MediaMode.BOOKS, MainTab.SOCIAL)),
         ScreenshotEntry("social-empty-dark", content = lonelySocial()),
+        // "Add friends", from the button by the Social title: the invitation QR code, link and code.
+        ScreenshotEntry("social-invite-dark", heightDp = SHEET_HEIGHT_DP, content = shell(MediaMode.MOVIES, MainTab.SOCIAL, dark = true) {
+            FriendInviteSheet(
+                profile = FakeSocial.profile,
+                link = "https://bookmind.paulbr.fr/f/${FakeSocial.profile.friendCode}?by=Paul&l=fr",
+                initialCode = "",
+                onCopy = {},
+                onShare = {},
+                onAdd = { true },
+                onClose = {},
+            )
+        }),
         // A movie of Tom's opened from the salon: the add sheet, with what friends did with it.
         ScreenshotEntry("social-friend-movie-dark", heightDp = SHEET_HEIGHT_DP, content = shell(MediaMode.BOOKS, MainTab.SOCIAL, dark = true) {
             NookTheme(ThemeMode.DARK, MediaMode.MOVIES) { AddMovieSheet(container, FakeData.newMovie, onClose = {}) }

@@ -37,7 +37,9 @@ import fr.paulbr.nookmind.core.data.SocialStatus
 import fr.paulbr.nookmind.core.designsystem.NookShapes
 import fr.paulbr.nookmind.core.designsystem.NookTheme
 import fr.paulbr.nookmind.core.designsystem.components.BannerTone
+import fr.paulbr.nookmind.core.designsystem.components.GhostButton
 import fr.paulbr.nookmind.core.designsystem.components.HairlineDivider
+import fr.paulbr.nookmind.core.designsystem.components.IconGhostButton
 import fr.paulbr.nookmind.core.designsystem.components.InlineBanner
 import fr.paulbr.nookmind.core.designsystem.components.Spinner
 import fr.paulbr.nookmind.core.designsystem.components.TextLink
@@ -48,12 +50,17 @@ import fr.paulbr.nookmind.core.model.Movie
 import fr.paulbr.nookmind.core.model.MovieStatus
 import fr.paulbr.nookmind.core.model.Series
 import fr.paulbr.nookmind.core.model.SeriesStatus
+import fr.paulbr.nookmind.core.config.AppConfig
+import fr.paulbr.nookmind.core.domain.ShareLinks
 import fr.paulbr.nookmind.core.network.TmdbApi
+import fr.paulbr.nookmind.core.platform.deviceLanguageTag
 import fr.paulbr.nookmind.core.platform.shareText
 import fr.paulbr.nookmind.feature.common.LocalWideLayout
 import fr.paulbr.nookmind.feature.tonight.TonightEntryCard
 import fr.paulbr.nookmind.resources.Res
 import fr.paulbr.nookmind.resources.common_retry
+import fr.paulbr.nookmind.resources.social_addFriends
+import fr.paulbr.nookmind.resources.social_inviteText
 import fr.paulbr.nookmind.resources.social_codeCopied
 import fr.paulbr.nookmind.resources.social_emptyText
 import fr.paulbr.nookmind.resources.social_emptyTitle
@@ -103,6 +110,7 @@ fun SocialScreen(container: AppContainer, contentPadding: PaddingValues, onOpenT
     val received by social.received.collectAsState()
     val sent by social.sent.collectAsState()
     val invitations by social.invitations.collectAsState()
+    val pendingCode by container.pendingFriendCode.collectAsState()
     val movies by container.movies.items.collectAsState()
     val series by container.series.items.collectAsState()
     val books by container.books.items.collectAsState()
@@ -132,6 +140,34 @@ fun SocialScreen(container: AppContainer, contentPadding: PaddingValues, onOpenT
     fun open(kind: String, key: String, title: String, subtitle: String?, imageUrl: String?) = sheets.open(kind, key, title, subtitle, imageUrl)
     fun openItem(item: FriendItem) = open(item.kind, item.itemKey, item.title, item.subtitle, item.imageUrl)
 
+    // "Add friends": my invitation (QR code, link, code) and the field for a friend's code, opened
+    // from the button by the title, or by an invitation link with the friend's code filled in.
+    var inviteOpen by remember { mutableStateOf(false) }
+    var inviteCode by remember { mutableStateOf("") }
+    LaunchedEffect(pendingCode) {
+        pendingCode?.let { code ->
+            inviteCode = code
+            inviteOpen = true
+            container.pendingFriendCode.value = null
+        }
+    }
+    val inviteLink = profile?.friendCode?.let { code ->
+        ShareLinks.friendLinkFor(AppConfig.apiBaseUrl, code, container.auth.currentUser?.displayName(""), deviceLanguageTag())
+    }
+    val copyCode: () -> Unit = {
+        profile?.friendCode?.let {
+            clipboard.setText(AnnotatedString(it))
+            container.toasts.success(Res.string.social_codeCopied)
+        }
+    }
+    val shareInvite: () -> Unit = {
+        profile?.friendCode?.let { code ->
+            scope.launch {
+                shareText(if (inviteLink != null) getString(Res.string.social_inviteText, inviteLink) else getString(Res.string.social_shareText, code))
+            }
+        }
+    }
+
     suspend fun addFriend(code: String): Boolean {
         val result = social.addFriend(code)
         val message = when (result) {
@@ -149,8 +185,24 @@ fun SocialScreen(container: AppContainer, contentPadding: PaddingValues, onOpenT
 
     Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(contentPadding), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.fillMaxWidth().widthIn(max = 720.dp).padding(horizontal = if (wide) 32.dp else 16.dp, vertical = if (wide) 32.dp else 16.dp)) {
-            Text(stringResource(Res.string.social_title), style = NookTheme.type.h1Serif, color = socialAccent())
-            Text(stringResource(Res.string.social_subtitle), style = NookTheme.type.sm, color = colors.textSubtle)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(Res.string.social_title), style = NookTheme.type.h1Serif, color = socialAccent())
+                    Text(stringResource(Res.string.social_subtitle), style = NookTheme.type.sm, color = colors.textSubtle)
+                }
+                if (status != SocialStatus.NOT_SET_UP) {
+                    Spacer(Modifier.width(12.dp))
+                    IconGhostButton(
+                        LucideIcons.UserPlus,
+                        stringResource(Res.string.social_addFriends),
+                        onClick = { inviteCode = ""; inviteOpen = true },
+                        size = 20.dp,
+                        tint = socialAccent(),
+                        background = socialAccent().copy(alpha = 0.12f),
+                        padding = 10.dp,
+                    )
+                }
+            }
             Spacer(Modifier.height(20.dp))
 
             invitations.forEach { session ->
@@ -234,22 +286,22 @@ fun SocialScreen(container: AppContainer, contentPadding: PaddingValues, onOpenT
                 SocialTitle(stringResource(Res.string.social_friends), count = accepted.size)
             }
             if (status != SocialStatus.NOT_SET_UP) {
-                FriendCodeCard(
-                    profile,
-                    onCopy = {
-                        profile?.friendCode?.let {
-                            clipboard.setText(AnnotatedString(it))
-                            container.toasts.success(Res.string.social_codeCopied)
-                        }
-                    },
-                    onShare = {
-                        profile?.friendCode?.let { code -> scope.launch { shareText(getString(Res.string.social_shareText, code)) } }
-                    },
-                    onAdd = { code -> addFriend(code) },
-                )
-                Spacer(Modifier.height(6.dp))
-                (accepted + outgoing).forEach { friend ->
-                    FriendRow(friend, onRemove = { scope.launch { social.remove(friend) } })
+                // The code card stays inline only while there is nobody yet; afterwards the button
+                // by the title opens the same thing, wherever the page is scrolled to.
+                if (accepted.isEmpty() && outgoing.isEmpty() && incoming.isEmpty()) {
+                    FriendCodeCard(profile, onCopy = copyCode, onShare = shareInvite, onAdd = { code -> addFriend(code) })
+                    Spacer(Modifier.height(6.dp))
+                } else {
+                    (accepted + outgoing).forEach { friend ->
+                        FriendRow(friend, onRemove = { scope.launch { social.remove(friend) } })
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    GhostButton(
+                        stringResource(Res.string.social_addFriends),
+                        onClick = { inviteCode = ""; inviteOpen = true },
+                        icon = LucideIcons.UserPlus,
+                        color = socialAccent(),
+                    )
                 }
             }
 
@@ -265,6 +317,18 @@ fun SocialScreen(container: AppContainer, contentPadding: PaddingValues, onOpenT
     }
 
     ItemSheetsHost(container, sheets)
+
+    if (inviteOpen) {
+        FriendInviteSheet(
+            profile = profile,
+            link = inviteLink,
+            initialCode = inviteCode,
+            onCopy = copyCode,
+            onShare = shareInvite,
+            onAdd = { code -> addFriend(code) },
+            onClose = { inviteOpen = false },
+        )
+    }
 }
 
 @Composable

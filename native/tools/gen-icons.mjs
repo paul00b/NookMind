@@ -220,7 +220,8 @@ function parseSvg(svg) {
   let m;
   while ((m = re.exec(body)) !== null) {
     const attrs = {};
-    const attrRe = /([a-zA-Z-]+)="([^"]*)"/g;
+    // Names may hold digits (x1, y2): without them every <line> came out as "M 0 0 L 0 0".
+    const attrRe = /([a-zA-Z][a-zA-Z0-9-]*)="([^"]*)"/g;
     let a;
     while ((a = attrRe.exec(m[2])) !== null) attrs[a[1]] = a[2];
     const d = elementToPath(m[1], attrs);

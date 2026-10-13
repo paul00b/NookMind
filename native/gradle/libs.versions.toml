@@ -16,6 +16,8 @@ supabase = "3.8.0"
 coil = "3.3.0"
 multiplatform-settings = "1.3.0"
 haze = "1.6.10"
+# 1.0.1 is the last one built on a Compose older than 1.10: later ones pull Compose 1.10+ in.
+qrose = "1.0.1"
 
 # Android only
 androidx-activity = "1.11.0"
@@ -50,6 +52,7 @@ coil-network-ktor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.re
 multiplatform-settings = { module = "com.russhwolf:multiplatform-settings", version.ref = "multiplatform-settings" }
 multiplatform-settings-test = { module = "com.russhwolf:multiplatform-settings-test", version.ref = "multiplatform-settings" }
 haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
+qrose = { module = "io.github.alexzhirkevich:qrose", version.ref = "qrose" }
 
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "androidx-core-splashscreen" }

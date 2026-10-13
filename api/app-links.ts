@@ -29,7 +29,10 @@ function android() {
 function ios() {
   const team = (process.env.APPLE_TEAM_ID || APPLE_TEAM_ID).trim().toUpperCase();
   const details = /^[A-Z0-9]{10}$/.test(team)
-    ? [{ appIDs: [`${team}.${IOS_BUNDLE_ID}`], components: [{ '/': '/s/*', comment: 'A shared movie, series or book' }] }]
+    ? [{ appIDs: [`${team}.${IOS_BUNDLE_ID}`], components: [
+      { '/': '/s/*', comment: 'A shared movie, series or book' },
+      { '/': '/f/*', comment: 'A friend\'s invitation' },
+    ] }]
     : [];
   return { applinks: { details } };
 }

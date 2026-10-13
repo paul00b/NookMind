@@ -152,6 +152,35 @@ export const COPY = {
   },
 };
 
+/** A friend's invitation (/f/:code, the QR code of the Social tab), in the purple of Social. */
+export const FRIEND_ACCENT = { text: '#D8B4FE', from: '#7E22CE', to: '#A855F7' };
+
+/** A friend code: letters and digits, upper case as the database stores it. */
+export function parseFriendCode(value: unknown): string | null {
+  return typeof value === 'string' && /^[A-Za-z0-9]{4,12}$/.test(value) ? value.toUpperCase() : null;
+}
+
+export const FRIEND_COPY = {
+  fr: {
+    kicker: (name: string | undefined) => (name ? `${name} t’invite` : 'Une invitation'),
+    title: (name: string | undefined) => (name ? `Ajoute ${name} sur NookMind` : 'Rejoins-moi sur NookMind'),
+    description: (name: string | undefined) =>
+      `${name ?? 'Un ami'} t’invite sur NookMind : partagez vos films, séries et livres, et choisissez votre film du soir à deux.`,
+    cta: (name: string | undefined) => (name ? `Ajouter ${name}` : 'Ajouter en ami'),
+    code: 'Code ami',
+    hint: 'Pas encore l’app ? Installe NookMind, puis entre ce code dans l’onglet Social.',
+  },
+  en: {
+    kicker: (name: string | undefined) => (name ? `${name} invites you` : 'An invitation'),
+    title: (name: string | undefined) => (name ? `Add ${name} on NookMind` : 'Join me on NookMind'),
+    description: (name: string | undefined) =>
+      `${name ?? 'A friend'} invites you to NookMind: share your movies, series and books, and pick tonight’s movie together.`,
+    cta: (name: string | undefined) => (name ? `Add ${name}` : 'Add as a friend'),
+    code: 'Friend code',
+    hint: 'Don’t have the app yet? Install NookMind, then enter this code in the Social tab.',
+  },
+};
+
 export const ANDROID_PACKAGE = 'fr.paulbr.nookmind';
 export const STORE_URL = `https://play.google.com/store/apps/details?id=${ANDROID_PACKAGE}`;
 export const IOS_BUNDLE_ID = 'fr.paulbr.nookmind.app';

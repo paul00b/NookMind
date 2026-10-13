@@ -15,11 +15,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -55,6 +59,7 @@ import fr.paulbr.nookmind.feature.tonight.TonightScreen
 import fr.paulbr.nookmind.feature.nextup.NextUpSeriesScreen
 import fr.paulbr.nookmind.feature.settings.NotificationPromptSheet
 import fr.paulbr.nookmind.feature.settings.SettingsPanel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -127,6 +132,10 @@ fun MainScaffold(
             route.startsWith("/add/") -> ShareLinks.parseRoute(route)?.let { (kind, key) ->
                 linkSheets.open(kind, key, onMissing = { container.toasts.error(linkMissing) })
             }
+            route.startsWith("/friend/") -> ShareLinks.parseFriendRoute(route)?.let { code ->
+                tab = MainTab.SOCIAL
+                container.pendingFriendCode.value = code
+            }
             route.startsWith("/tonight/") -> {
                 tab = MainTab.SOCIAL
                 openTonight(route.removePrefix("/tonight/").ifBlank { null })
@@ -134,6 +143,21 @@ fun MainScaffold(
             else -> tab = MainTab.SEARCH
         }
         if (pendingRoute != null) container.pendingRoute.value = null
+    }
+
+    // Pull to refresh, on every tab: my library and my friends again from Supabase, and the screens
+    // that read TMDB or Google Books rebuilt on fresh data (their caches dropped).
+    var refreshing by remember { mutableStateOf(false) }
+    var refreshRound by remember { mutableIntStateOf(0) }
+    val onRefresh: () -> Unit = {
+        if (!refreshing) {
+            scope.launch {
+                refreshing = true
+                refreshTab(container, tab, mode)
+                if (tab == MainTab.SEARCH || tab == MainTab.NEXT_UP) refreshRound++
+                refreshing = false
+            }
+        }
     }
 
     // Hardware back: close settings, then go back to Search, then leave the app.
@@ -159,7 +183,9 @@ fun MainScaffold(
                 Row(Modifier.fillMaxSize()) {
                     Sidebar(container = container, tab = tab, onTab = { tab = it }, onOpenSettings = { settingsOpen = true }, socialBadge = socialBadge)
                     Box(Modifier.weight(1f)) {
-                        ModeContent(container, mode, tab, bottomPadding = 0.dp, onOpenTonight = openTonight)
+                        RefreshableContent(refreshing, onRefresh) {
+                            key(refreshRound) { ModeContent(container, mode, tab, bottomPadding = 0.dp, onOpenTonight = openTonight) }
+                        }
                     }
                 }
             } else {
@@ -170,7 +196,9 @@ fun MainScaffold(
                         onModeChange = { container.prefs.setMediaMode(it) },
                         modifier = Modifier.weight(1f),
                     ) {
-                        ModeContent(container, mode, tab, bottomPadding = BOTTOM_NAV_CLEARANCE.dp, onOpenTonight = openTonight)
+                        RefreshableContent(refreshing, onRefresh) {
+                            key(refreshRound) { ModeContent(container, mode, tab, bottomPadding = BOTTOM_NAV_CLEARANCE.dp, onOpenTonight = openTonight) }
+                        }
                     }
                 }
             }
@@ -223,6 +251,47 @@ fun MainScaffold(
     }
     // Keep the coroutine scope referenced for future shell-level work.
     remember { scope }
+}
+
+/** What a pull refreshes on each tab. Lasts at least half a second, so the spinner never just blinks. */
+private suspend fun refreshTab(container: AppContainer, tab: MainTab, mode: MediaMode) = coroutineScope {
+    launch { delay(500) }
+    val library = when (mode) {
+        MediaMode.BOOKS -> container.books
+        MediaMode.MOVIES -> container.movies
+        MediaMode.SERIES -> container.series
+    }
+    when (tab) {
+        MainTab.SOCIAL -> container.social.refresh()
+        MainTab.LIBRARY -> library.refetch()
+        MainTab.SEARCH, MainTab.NEXT_UP -> {
+            container.clearCaches()
+            library.refetch()
+        }
+    }
+}
+
+/** The tab's content under a pull-to-refresh, with the spinner in the colours of the navigation. */
+@Composable
+private fun RefreshableContent(refreshing: Boolean, onRefresh: () -> Unit, content: @Composable () -> Unit) {
+    val state = rememberPullToRefreshState()
+    PullToRefreshBox(
+        isRefreshing = refreshing,
+        onRefresh = onRefresh,
+        modifier = Modifier.fillMaxSize(),
+        state = state,
+        indicator = {
+            PullToRefreshDefaults.Indicator(
+                state = state,
+                isRefreshing = refreshing,
+                modifier = Modifier.align(Alignment.TopCenter),
+                containerColor = NookTheme.colors.surface,
+                color = NookTheme.colors.amberText,
+            )
+        },
+    ) {
+        content()
+    }
 }
 
 /** Space reserved under the content for the floating bottom navigation (`pb-36` ≈ 144 px). */
