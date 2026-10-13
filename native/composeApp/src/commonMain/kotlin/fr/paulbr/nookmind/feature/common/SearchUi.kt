@@ -83,7 +83,9 @@ import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.core.platform.logDebug
 import fr.paulbr.nookmind.feature.shell.TABLET_BREAKPOINT_DP
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 
 /**
@@ -104,6 +106,7 @@ class SearchController<T> internal constructor(private val minLength: Int) {
     fun close() {
         query = ""
         results = emptyList()
+        error = null
         dropdownOpen = false
     }
 
@@ -119,6 +122,7 @@ class SearchController<T> internal constructor(private val minLength: Int) {
     internal suspend fun run(q: String, search: suspend (String) -> List<T>, timeoutText: String) {
         if (q.trim().length < minLength) {
             results = emptyList()
+            error = null
             dropdownOpen = false
             return
         }
@@ -130,6 +134,9 @@ class SearchController<T> internal constructor(private val minLength: Int) {
         } catch (e: CancellationException) {
             throw e
         } catch (t: Throwable) {
+            // A search the next keystroke cancelled can fail with a network error rather than a
+            // cancellation, depending on the engine: it is not this query's failure.
+            currentCoroutineContext().ensureActive()
             // The web app shows the same message whatever went wrong, so the real cause is logged:
             // a rejected API key reads exactly like a network timeout otherwise.
             logDebug("search", "search failed for \"$q\"", t)
