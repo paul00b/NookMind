@@ -410,6 +410,9 @@ fun SearchSectionStack(sections: List<HomeSection>, modifier: Modifier = Modifie
     }
 }
 
+/** The horizontal padding of the search home, which the sliders scroll through. */
+internal val SLIDER_BLEED = 16.dp
+
 /** Horizontal poster slider with its uppercase section title. */
 @Composable
 fun PosterSlider(
@@ -426,7 +429,12 @@ fun PosterSlider(
             trailing?.invoke()
         }
         Spacer(Modifier.height(12.dp))
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(bottom = 8.dp)) { content() }
+        // Through the page padding: the posters scroll out to the screen edges, not to the margin.
+        LazyRow(
+            Modifier.horizontalBleed(SLIDER_BLEED),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(start = SLIDER_BLEED, end = SLIDER_BLEED, bottom = 8.dp),
+        ) { content() }
     }
 }
 
