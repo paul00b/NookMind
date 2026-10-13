@@ -3,7 +3,7 @@ package fr.paulbr.nookmind.core.platform
 import com.russhwolf.settings.Settings
 import kotlinx.datetime.LocalDate
 
-enum class PlatformKind { ANDROID, IOS, DESKTOP }
+enum class PlatformKind { ANDROID, IOS, DESKTOP, WEB }
 
 /** Which platform the shared code runs on (`Capacitor.getPlatform()` equivalent). */
 expect val platformKind: PlatformKind

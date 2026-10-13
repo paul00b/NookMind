@@ -1,0 +1,140 @@
+name: Web app
+
+# Builds the shared app for the browser (Compose Multiplatform on Kotlin/Wasm, Beta) and checks
+# that it starts: the same screens as Android and iOS, served on nookmind.paulbr.fr in place of
+# the old React app once deployment is wired.
+#
+# A commit message with [screenshots] also commits a capture of the running page under
+# screenshots/, like the Screenshots workflow does for the desktop renders.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, 'claude/**']
+    paths:
+      - 'native/**'
+      - '!native/**/*.md'
+      - '!native/distribution/**'
+      - '!native/iosApp/**'
+      - '.github/workflows/web.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: web-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    # The same keys as the other builds: they are compiled into the app (AppSecrets), exactly as
+    # the VITE_ variables were into the React bundle.
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      API_BASE_URL: ${{ secrets.API_BASE_URL }}
+      GOOGLE_BOOKS_API_KEY: ${{ secrets.GOOGLE_BOOKS_API_KEY }}
+      TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+      GOOGLE_AUTH_WEB_CLIENT_ID: ${{ secrets.GOOGLE_AUTH_WEB_CLIENT_ID }}
+      COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # The web app shows the version of the last Android release, the one the testers have.
+      - name: Version
+        id: version
+        run: |
+          last=$(git tag --list 'android-v*' --sort=-v:refname | head -1)
+          v=${last#android-v}
+          echo "name=${v:-2.0.0}" >> "$GITHUB_OUTPUT"
+          echo "Version ${v:-2.0.0}"
+
+      - name: Build
+        working-directory: native
+        run: ./gradlew :composeApp:wasmJsBrowserDistribution -PappVersionName=${{ steps.version.outputs.name }} --stacktrace
+
+      - name: Size
+        run: |
+          dist=native/composeApp/build/dist/wasmJs/productionExecutable
+          {
+            echo "### NookMind web ${{ steps.version.outputs.name }}"
+            echo
+            echo '```'
+            ls -la "$dist"
+            echo
+            du -sh "$dist"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nookmind-web
+          path: native/composeApp/build/dist/wasmJs/productionExecutable
+          retention-days: 14
+
+      # Opens the build in Chromium and fails when the page throws before drawing anything, which
+      # is how a missing browser API or a bad import shows up in Kotlin/Wasm.
+      - name: Start in a browser
+        run: |
+          dist="$PWD/native/composeApp/build/dist/wasmJs/productionExecutable"
+          python3 -m http.server 8080 --directory "$dist" > /dev/null 2>&1 &
+          mkdir -p "$RUNNER_TEMP/shot" && cd "$RUNNER_TEMP/shot"
+          npm init -y > /dev/null
+          npm install --no-audit --no-fund playwright@1.63.0 > /dev/null
+          npx playwright install --with-deps chromium > /dev/null
+          cat > shot.mjs <<'EOF'
+          import { chromium } from 'playwright';
+          const out = process.argv[2];
+          const browser = await chromium.launch();
+          const errors = [];
+          for (const [name, viewport, locale] of [
+            ['web-phone-fr', { width: 430, height: 932 }, 'fr-FR'],
+            ['web-desktop-en', { width: 1280, height: 800 }, 'en-US'],
+          ]) {
+            const page = await browser.newPage({ viewport, locale, deviceScaleFactor: 2 });
+            page.on('pageerror', (e) => errors.push(`${name}: ${e.message}`));
+            page.on('console', (m) => { if (m.type() === 'error') console.log(`[${name}] ${m.text()}`); });
+            await page.goto('http://localhost:8080/', { waitUntil: 'load' });
+            await page.waitForSelector('canvas', { timeout: 60000 });
+            await page.waitForTimeout(12000);
+            await page.screenshot({ path: `${out}/${name}.png` });
+            await page.close();
+          }
+          await browser.close();
+          if (errors.length) { console.log(errors.join('\n')); process.exit(1); }
+          EOF
+          mkdir -p "$GITHUB_WORKSPACE/screenshots"
+          node shot.mjs "$GITHUB_WORKSPACE/screenshots"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nookmind-web-screenshots
+          path: screenshots/web-*.png
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Commit the captures
+        if: contains(env.COMMIT_MESSAGE, '[screenshots') && startsWith(github.ref_name, 'claude/')
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A screenshots/web-*.png
+          if git diff --cached --quiet; then echo "No change in the images."; exit 0; fi
+          git commit -m "chore: captures web de ${GITHUB_SHA::7}"
+          git pull --rebase origin "$GITHUB_REF_NAME"
+          git push origin "HEAD:$GITHUB_REF_NAME"

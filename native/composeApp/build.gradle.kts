@@ -83,6 +83,31 @@ val generateAppSecrets by tasks.registering {
     }
 }
 
+// The version the web app shows in Settings, the one the stores show elsewhere: the same
+// -PappVersionName as the Android build (see below), which the web workflow passes.
+val generatedWebDir = layout.buildDirectory.dir("generated/nookmind/wasmJsMain/kotlin")
+
+val generateWebBuildInfo by tasks.registering {
+    group = "nookmind"
+    description = "Generates fr.paulbr.nookmind.web.WEB_VERSION_NAME for the web app"
+    val outDir = generatedWebDir
+    val version = providers.gradleProperty("appVersionName").orElse("2.0.0")
+    inputs.property("version", version)
+    outputs.dir(outDir)
+    doLast {
+        val file = outDir.get().file("fr/paulbr/nookmind/web/WebBuild.kt").asFile
+        file.parentFile.mkdirs()
+        file.writeText(
+            """
+            |// GENERATED FILE — do not edit. Source: -PappVersionName.
+            |package fr.paulbr.nookmind.web
+            |
+            |internal const val WEB_VERSION_NAME: String = "${version.get()}"
+            |""".trimMargin(),
+        )
+    }
+}
+
 kotlin {
     compilerOptions {
         freeCompilerArgs.addAll(
@@ -104,6 +129,18 @@ kotlin {
     }
 
     jvm("desktop")
+
+    // The web app: the same UI drawn by Compose in the browser (Kotlin/Wasm, Beta), served by
+    // Vercel under nookmind.paulbr.fr. See .github/workflows/web.yml.
+    @OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
+    wasmJs {
+        browser {
+            commonWebpackConfig {
+                outputFileName = "composeApp.js"
+            }
+        }
+        binaries.executable()
+    }
 
     // iOS targets are only configured on macOS hosts (Kotlin/Native for Apple needs Xcode).
     val isMacOs = System.getProperty("os.name").lowercase().contains("mac")
@@ -182,6 +219,16 @@ kotlin {
                 implementation(compose.desktop.currentOs)
                 implementation(libs.kotlinx.coroutines.swing)
                 implementation(libs.ktor.client.java)
+            }
+        }
+
+        wasmJsMain {
+            kotlin.srcDir(generateWebBuildInfo)
+            dependencies {
+                implementation(libs.ktor.client.js)
+                implementation(libs.kotlinx.browser)
+                // Time zone rules for kotlinx-datetime in the browser (core/platform/TimeZones.kt).
+                implementation(npm("@js-joda/timezone", libs.versions.js.joda.timezone.get()))
             }
         }
 
