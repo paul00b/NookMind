@@ -1,0 +1,46 @@
+# Temporary: what Google Books answers the app's key, to explain a "search timed out" on book search.
+name: Books probe
+on:
+  push:
+    branches: ['claude/**']
+    paths: ['.github/workflows/books-probe.yml']
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    env:
+      KEY: ${{ secrets.GOOGLE_BOOKS_API_KEY }}
+    steps:
+      - name: One query at a time
+        run: |
+          echo "key length: ${#KEY}"
+          ask() {
+            curl -s -o "out-$2.json" -w "$1 -> %{http_code} in %{time_total}s\n" -G https://www.googleapis.com/books/v1/volumes \
+              --data-urlencode "q=$1" -d maxResults=8 -d printType=books -d "key=$KEY"
+            python3 - "out-$2.json" <<'PY'
+          import json, sys
+          d = json.load(open(sys.argv[1]))
+          if "error" in d:
+              print("   error:", json.dumps(d["error"])[:600])
+          for it in d.get("items", []):
+              v = it.get("volumeInfo", {})
+              shape = {k: type(v.get(k)).__name__ for k in ("title", "authors", "description", "imageLinks", "publishedDate", "pageCount", "categories") if k in v}
+              print("   ", it.get("id"), "|", v.get("title"), "|", shape)
+          PY
+          }
+          ask Thi a; sleep 2
+          ask Thilliez b; sleep 2
+          ask "Franck Thilliez" c; sleep 2
+          ask Thilliez d
+      - name: Typing burst
+        run: |
+          for q in Thi Thil Thill Thilli Thillie Thilliez; do
+            curl -s -o /dev/null -w "$q -> %{http_code} in %{time_total}s\n" -G https://www.googleapis.com/books/v1/volumes \
+              --data-urlencode "q=$q" -d maxResults=8 -d printType=books -d "key=$KEY" &
+            sleep 0.3
+          done
+          wait
+          sleep 1
+          curl -s -w "\nThilliez after the burst -> %{http_code}\n" -G https://www.googleapis.com/books/v1/volumes \
+            --data-urlencode "q=Thilliez" -d maxResults=8 -d printType=books -d "key=$KEY" | python3 -c "import sys;t=sys.stdin.read();print(t[-700:])"
