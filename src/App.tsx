@@ -21,6 +21,7 @@ import SeriesHome from './pages/SeriesHome';
 import SeriesLibrary from './pages/SeriesLibrary';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
+import Support from './pages/Support';
 import NativeNavigationHandler from './components/NativeNavigationHandler';
 
 function HomeSwitch() {
@@ -67,6 +68,7 @@ export default function App() {
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/delete-account" element={<Privacy section="delete-account" />} />
           <Route path="/terms" element={<Terms />} />
+          <Route path="/support" element={<Support />} />
           <Route
             path="/"
             element={
