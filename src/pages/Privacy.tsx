@@ -1,7 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-
-const CONTACT_EMAIL = 'broussolle.paul@gmail.com';
+import { CONTACT_EMAIL } from '../lib/contact';
 
 type Lang = 'fr' | 'en';
 
