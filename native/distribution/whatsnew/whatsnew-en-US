@@ -1,3 +1,3 @@
-Fix: book search sometimes said "The search timed out" when Google Books simply missed a beat. The app now asks again on its own, and the message goes away when you clear the field.
+In "What are we watching?", a movie swiped down (seen it) goes straight to your watched movies: no need to search for it afterwards, and it will not be dealt again. If it was on your watchlist, it moves to watched. Undoing the swipe takes it back out.
 
 Found a bug or an odd screen? Tell me, that is what this test is for.

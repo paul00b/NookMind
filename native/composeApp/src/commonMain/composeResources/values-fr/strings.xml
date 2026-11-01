@@ -614,7 +614,7 @@
     <string name="tonight_ruleYes">Glisse à droite : oui</string>
     <string name="tonight_ruleNo">À gauche : non</string>
     <string name="tonight_ruleLove">Vers le haut : coup de cœur</string>
-    <string name="tonight_ruleSeen">Vers le bas : déjà vu</string>
+    <string name="tonight_ruleSeen">Vers le bas : déjà vu, il file dans tes films vus</string>
     <string name="tonight_ruleHold">Maintiens pour l'aperçu, touche pour le résumé</string>
     <string name="tonight_go">C'est parti</string>
     <string name="tonight_stampYes">OUI</string>

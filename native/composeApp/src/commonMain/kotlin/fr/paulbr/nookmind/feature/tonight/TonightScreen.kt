@@ -37,6 +37,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -203,6 +204,15 @@ fun TonightScreen(
 ) {
     val scope = rememberCoroutineScope()
     var link by remember { mutableStateOf<TonightLink?>(null) }
+    val seenToLibrary = remember { SeenToLibrary(container) }
+    DisposableEffect(state) {
+        state.onSeen = seenToLibrary::seen
+        state.onUnseen = seenToLibrary::unseen
+        onDispose {
+            state.onSeen = null
+            state.onUnseen = null
+        }
+    }
     val fallbackPartner = stringResource(Res.string.tonight_partnerFallback)
 
     /** Leaving an online evening before the end calls it off for the other phone too. */
