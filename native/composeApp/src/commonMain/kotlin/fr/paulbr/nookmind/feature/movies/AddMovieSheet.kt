@@ -65,7 +65,9 @@ import fr.paulbr.nookmind.feature.common.formatIsoDate
 import fr.paulbr.nookmind.resources.Res
 import fr.paulbr.nookmind.resources.addMovie_addAnyway
 import fr.paulbr.nookmind.resources.addMovie_addToWatchlist
+import fr.paulbr.nookmind.resources.addMovie_alreadyInLibrary
 import fr.paulbr.nookmind.resources.addMovie_alreadyInWatchlist
+import fr.paulbr.nookmind.resources.addMovie_updateExisting
 import fr.paulbr.nookmind.resources.addMovie_cancel
 import fr.paulbr.nookmind.resources.addMovie_descriptionLabel
 import fr.paulbr.nookmind.resources.addMovie_descriptionPlaceholder
@@ -99,6 +101,8 @@ import fr.paulbr.nookmind.resources.movieDetail_save
 import fr.paulbr.nookmind.resources.movieDetail_seeLess
 import fr.paulbr.nookmind.resources.movieDetail_seeMore
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.jetbrains.compose.resources.stringResource
 import fr.paulbr.nookmind.feature.social.FriendsTake
 import fr.paulbr.nookmind.feature.common.ShareItemButton
@@ -121,7 +125,10 @@ fun AddMovieSheet(container: AppContainer, prefill: Movie?, onClose: () -> Unit)
     var imdbId by remember { mutableStateOf<String?>(null) }
     var imdbLoading by remember { mutableStateOf(true) }
     val fromSearch = prefill != null
-    val isDuplicate = form.title.isNotBlank() && movies.any { isSameTitle(it.tmdbId, it.title, form.tmdbId, form.title) }
+    // The very movie (same TMDB id) is updated in place rather than added twice: marking a movie of
+    // the watchlist as watched from the search moves it, it does not leave a copy in "To watch".
+    val sameMovie = form.tmdbId?.let { id -> movies.firstOrNull { it.tmdbId == id } }
+    val isDuplicate = sameMovie == null && form.title.isNotBlank() && movies.any { isSameTitle(it.tmdbId, it.title, form.tmdbId, form.title) }
 
     LaunchedEffect(fromSearch, prefill?.tmdbId) {
         if (!fromSearch || prefill?.tmdbId == null) return@LaunchedEffect
@@ -143,7 +150,20 @@ fun AddMovieSheet(container: AppContainer, prefill: Movie?, onClose: () -> Unit)
         if (form.title.isBlank() || saving) return
         saving = true
         scope.launch {
-            val stored = container.movies.add(form)
+            val existing = sameMovie
+            val stored = if (existing != null) {
+                container.movies.update(
+                    existing.id,
+                    buildJsonObject {
+                        put("status", form.status.key)
+                        put("rating", form.rating)
+                        put("watched_date", form.watchedDate)
+                        form.personalNote?.let { put("personal_note", it) }
+                    },
+                )
+            } else {
+                container.movies.add(form)
+            }
             saving = false
             if (stored != null) onClose()
         }
@@ -166,6 +186,7 @@ fun AddMovieSheet(container: AppContainer, prefill: Movie?, onClose: () -> Unit)
         PrimaryButton(
             text = when {
                 saving -> stringResource(Res.string.addMovie_saving)
+                sameMovie != null -> stringResource(Res.string.addMovie_updateExisting)
                 isDuplicate -> stringResource(Res.string.addMovie_addAnyway)
                 else -> stringResource(Res.string.addMovie_addToWatchlist)
             },
@@ -177,7 +198,8 @@ fun AddMovieSheet(container: AppContainer, prefill: Movie?, onClose: () -> Unit)
         )
     }
     val duplicateWarning: @Composable () -> Unit = {
-        if (isDuplicate) InlineBanner(stringResource(Res.string.addMovie_alreadyInWatchlist), tone = BannerTone.WARNING, icon = LucideIcons.AlertTriangle)
+        if (sameMovie != null) InlineBanner(stringResource(Res.string.addMovie_alreadyInLibrary), tone = BannerTone.NEUTRAL, icon = LucideIcons.Check)
+        else if (isDuplicate) InlineBanner(stringResource(Res.string.addMovie_alreadyInWatchlist), tone = BannerTone.WARNING, icon = LucideIcons.AlertTriangle)
     }
     val statusSelector: @Composable () -> Unit = {
         LabeledField(stringResource(Res.string.addMovie_statusLabel), muted = true) {
@@ -202,13 +224,13 @@ fun AddMovieSheet(container: AppContainer, prefill: Movie?, onClose: () -> Unit)
     }
 
     if (fromSearch && !editing) {
-        val duplicateText = stringResource(Res.string.addMovie_alreadyInWatchlist)
+        val duplicateText = stringResource(if (sameMovie != null) Res.string.addMovie_alreadyInLibrary else Res.string.addMovie_alreadyInWatchlist)
         NookSheet(
             onClose = onClose,
             maxWidth = 672.dp,
             footer = {
                 AddSheetFooter(
-                    duplicateWarning = if (isDuplicate) duplicateText else null,
+                    duplicateWarning = if (isDuplicate || sameMovie != null) duplicateText else null,
                     editText = stringResource(Res.string.addMovie_edit),
                     onEdit = { editing = true },
                     addButton = addButton,

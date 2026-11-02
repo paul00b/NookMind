@@ -39,6 +39,7 @@
     <string name="addBook_wantToRead">À lire</string>
     <string name="addMovie_addAnyway">Ajouter quand même</string>
     <string name="addMovie_addToWatchlist">Ajouter</string>
+    <string name="addMovie_alreadyInLibrary">Ce film est déjà dans ta bibliothèque : il sera mis à jour, sans doublon.</string>
     <string name="addMovie_alreadyInWatchlist">Un film avec ce titre est déjà dans votre liste.</string>
     <string name="addMovie_alreadyWatched">Déjà vu</string>
     <string name="addMovie_cancel">Annuler</string>
@@ -65,6 +66,7 @@
     <string name="addMovie_titleLabel">Titre *</string>
     <string name="addMovie_titlePlaceholder">Titre du film</string>
     <string name="addMovie_wantToWatch">À voir</string>
+    <string name="addMovie_updateExisting">Mettre à jour</string>
     <string name="addMovie_watchedDateLabel">Vu le</string>
     <string name="addSeries_addAnyway">Ajouter quand même</string>
     <string name="addSeries_addToList">Ajouter</string>
