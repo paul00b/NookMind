@@ -614,7 +614,7 @@
     <string name="tonight_ruleYes">Swipe right: yes</string>
     <string name="tonight_ruleNo">Left: no</string>
     <string name="tonight_ruleLove">Up: favourite</string>
-    <string name="tonight_ruleSeen">Down: seen it</string>
+    <string name="tonight_ruleSeen">Down: seen it, it goes to your watched movies</string>
     <string name="tonight_ruleHold">Hold for a preview, tap for the synopsis</string>
     <string name="tonight_go">Let's go</string>
     <string name="tonight_stampYes">YES</string>

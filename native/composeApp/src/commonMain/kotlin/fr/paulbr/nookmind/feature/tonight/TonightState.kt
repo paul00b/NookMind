@@ -114,20 +114,26 @@ class TonightState(partnerName: String = "", services: Set<StreamingService> = e
         step = TonightStep.SWIPE
     }
 
+    /** Told when I swipe a card "seen", and when I take it back (the library follows, see [SeenToLibrary]). */
+    var onSeen: ((TonightCard) -> Unit)? = null
+    var onUnseen: ((TonightCard) -> Unit)? = null
+
     fun decide(verdict: Verdict) {
         if (index >= deck.size) return
         val card = index
         (if (player == Player.ME) mine else theirs)[card] = verdict
         index++
         sync?.vote(card, verdict)
+        if (player == Player.ME && verdict == Verdict.SEEN) deck.getOrNull(card)?.let { onSeen?.invoke(it) }
         if (index >= deck.size) finishTurn()
     }
 
     fun undo() {
         if (index == 0) return
         index--
-        (if (player == Player.ME) mine else theirs).remove(index)
+        val was = (if (player == Player.ME) mine else theirs).remove(index)
         sync?.undo(index)
+        if (player == Player.ME && was == Verdict.SEEN) deck.getOrNull(index)?.let { onUnseen?.invoke(it) }
         // Online, waiting for the other one is left by taking a card back.
         if (step == TonightStep.WAITING) step = TonightStep.SWIPE
     }
