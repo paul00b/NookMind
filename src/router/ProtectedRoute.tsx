@@ -1,5 +1,7 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { isWeb } from '../lib/platform';
+import Landing from '../pages/Landing';
 
 interface Props {
   children: React.ReactNode;
@@ -7,6 +9,7 @@ interface Props {
 
 export default function ProtectedRoute({ children }: Props) {
   const { user, loading } = useAuth();
+  const { pathname } = useLocation();
 
   if (loading) {
     return (
@@ -19,7 +22,9 @@ export default function ProtectedRoute({ children }: Props) {
     );
   }
 
-  if (!user) return <Navigate to="/login" replace />;
+  // Visitors of the site who are not signed in land on the presentation of the app, the page
+  // the store listings and shared links point to; the sign-in is one tap from there.
+  if (!user) return isWeb() && pathname === '/' ? <Landing /> : <Navigate to="/login" replace />;
 
   return <>{children}</>;
 }
