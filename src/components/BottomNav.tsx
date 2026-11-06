@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Search, Library, Compass, BookOpen, Film, Tv } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useMediaMode } from '../context/MediaModeContext';
+import { useAuth } from '../context/AuthContext';
 
 // Pages outside the app shell: no tabs to navigate between, and /privacy is read by
 // store reviewers who are not signed in.
@@ -12,7 +13,9 @@ export default function BottomNav() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { mode, setMode } = useMediaMode();
-  if (HIDDEN_ON.has(pathname)) return null;
+  const { user } = useAuth();
+  // Signed out, there is no library to navigate: "/" shows the landing page then.
+  if (HIDDEN_ON.has(pathname) || !user) return null;
 
   const TABS = [
     { to: '/', label: t('nav.home'), icon: Search, end: true },
