@@ -6,6 +6,7 @@ name: Screenshots
 #
 # Opt-in: a push runs it only when its last commit message asks for it. [screenshots] renders the
 # default list below, [screenshots: a,b] those catalog entries, [screenshots: all] the whole catalog.
+# French by default; [locales: fr,en] renders each language into its own folder, screenshots/<lang>/.
 # Covers and posters are real ones, fetched from TMDB and Google Books with the repository's keys.
 # The images are review material, not part of the app: delete screenshots/ before the branch is merged.
 
@@ -57,11 +58,20 @@ jobs:
           # This workflow's images only: the web-*.png ones belong to the Web app workflow, which
           # commits them to the same branch at the same time.
           find "$GITHUB_WORKSPACE/screenshots" -maxdepth 1 -type f ! -name 'web-*' -delete 2>/dev/null || true
+          rm -rf "$GITHUB_WORKSPACE/screenshots/fr" "$GITHUB_WORKSPACE/screenshots/en"
           asked=$(printf '%s' "$COMMIT_MESSAGE" | sed -n 's/.*\[screenshots: *\([^]]*\)\].*/\1/p' | head -n 1)
           only=()
           if [ -z "$asked" ]; then only=(-Ponly="$ONLY"); elif [ "$asked" != "all" ]; then only=(-Ponly="$asked"); fi
-          ./gradlew :composeApp:screenshots --console=plain \
-            -PoutDir="$GITHUB_WORKSPACE/screenshots" -Plocale=fr -Pcovers -PsettleMs=3000 "${only[@]}"
+          locales=$(printf '%s' "$COMMIT_MESSAGE" | sed -n 's/.*\[locales: *\([^]]*\)\].*/\1/p' | head -n 1 | tr -d ' ')
+          if [ -z "$locales" ]; then
+            ./gradlew :composeApp:screenshots --console=plain \
+              -PoutDir="$GITHUB_WORKSPACE/screenshots" -Plocale=fr -Pcovers -PsettleMs=3000 "${only[@]}"
+          else
+            for lang in ${locales//,/ }; do
+              ./gradlew :composeApp:screenshots --console=plain \
+                -PoutDir="$GITHUB_WORKSPACE/screenshots/$lang" -Plocale="$lang" -Pcovers -PsettleMs=3000 "${only[@]}"
+            done
+          fi
 
       - name: Commit to the branch
         run: |
