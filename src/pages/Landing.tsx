@@ -17,9 +17,9 @@ const copy = {
     tonightBody: "Chacun swipe sur son téléphone : oui, non, coup de cœur, déjà vu. Le film que vous aimez tous les deux sort à la fin. Ça marche aussi avec les séries.",
     featuresTitle: 'Tout ce que tu lis et regardes, enfin rangé',
     features: [
-      { img: '/landing/books.webp', title: 'Tes lectures', body: 'Livres lus, en cours ou à lire. Ta page actuelle, ta note, tes impressions et tes collections.' },
-      { img: '/landing/movies.webp', title: 'Tes films', body: 'Ta liste à voir, tes films vus, où les regarder en streaming, et les sorties à ne pas rater.' },
-      { img: '/landing/series.webp', title: 'Tes séries', body: 'Épisode par épisode, avec le compte à rebours jusqu’au prochain et une alerte à chaque nouvelle saison.' },
+      { img: '/landing/fr/books.webp', title: 'Tes lectures', body: 'Livres lus, en cours ou à lire. Ta page actuelle, ta note, tes impressions et tes collections.' },
+      { img: '/landing/fr/movies.webp', title: 'Tes films', body: 'Ta liste à voir, tes films vus, où les regarder en streaming, et les sorties à ne pas rater.' },
+      { img: '/landing/fr/series.webp', title: 'Tes séries', body: 'Épisode par épisode, avec le compte à rebours jusqu’au prochain et une alerte à chaque nouvelle saison.' },
     ],
     friendsTitle: 'Avec tes amis',
     friendsBody: "Ajoute un ami avec son code ou un QR code, vois ce qu'il lit et regarde cette semaine, réagis à ses titres et ajoute les siens en un geste.",
@@ -40,9 +40,9 @@ const copy = {
     tonightBody: 'Each of you swipes on your own phone: yes, no, love it, seen it. The movie you both like comes out at the end. It works with series too.',
     featuresTitle: 'Everything you read and watch, finally in order',
     features: [
-      { img: '/landing/books.webp', title: 'Your books', body: 'Read, reading or to read. Your current page, your rating, your thoughts and your collections.' },
-      { img: '/landing/movies.webp', title: 'Your movies', body: 'Your watchlist, the movies you have seen, where to stream them, and the releases not to miss.' },
-      { img: '/landing/series.webp', title: 'Your series', body: 'Episode by episode, with a countdown to the next one and an alert for every new season.' },
+      { img: '/landing/en/books.webp', title: 'Your books', body: 'Read, reading or to read. Your current page, your rating, your thoughts and your collections.' },
+      { img: '/landing/en/movies.webp', title: 'Your movies', body: 'Your watchlist, the movies you have seen, where to stream them, and the releases not to miss.' },
+      { img: '/landing/en/series.webp', title: 'Your series', body: 'Episode by episode, with a countdown to the next one and an alert for every new season.' },
     ],
     friendsTitle: 'With your friends',
     friendsBody: 'Add a friend with their code or a QR code, see what they read and watch this week, react to their titles and add theirs in one tap.',
@@ -110,7 +110,7 @@ export default function Landing() {
           <p className="mt-5 text-lg text-gray-400 max-w-xl">{t.lead}</p>
           <div className="mt-8"><StoreButtons t={t} /></div>
         </div>
-        <Phone src="/landing/swipe.webp" alt={t.tonightKicker} className="w-64 md:w-72 mx-auto md:rotate-2" />
+        <Phone src={`/landing/${lang}/swipe.webp`} alt={t.tonightKicker} className="w-64 md:w-72 mx-auto md:rotate-2" />
       </Section>
 
       <div className="bg-gradient-to-b from-[#241d3d] to-[#1d2130]">
@@ -121,7 +121,7 @@ export default function Landing() {
             <p className="mt-4 text-gray-400 text-lg">{t.tonightBody}</p>
           </div>
           <div className="flex gap-4 justify-center md:order-1">
-            <Phone src="/landing/match.webp" alt={t.tonightKicker} className="w-48 md:w-56 -rotate-3" />
+            <Phone src={`/landing/${lang}/match.webp`} alt={t.tonightKicker} className="w-48 md:w-56 -rotate-3" />
           </div>
         </Section>
       </div>
@@ -139,10 +139,13 @@ export default function Landing() {
         </div>
       </Section>
 
-      <Section className="pb-20 text-center">
-        <h2 className="font-serif text-3xl md:text-4xl font-bold">{t.friendsTitle}</h2>
-        <p className="mt-4 text-gray-400 text-lg max-w-2xl mx-auto">{t.friendsBody}</p>
-        <div className="mt-8 flex justify-center"><StoreButtons t={t} /></div>
+      <Section className="pb-20 grid md:grid-cols-2 gap-10 items-center">
+        <div>
+          <h2 className="font-serif text-3xl md:text-4xl font-bold">{t.friendsTitle}</h2>
+          <p className="mt-4 text-gray-400 text-lg">{t.friendsBody}</p>
+          <div className="mt-8"><StoreButtons t={t} /></div>
+        </div>
+        <Phone src={`/landing/${lang}/social.webp`} alt={t.friendsTitle} className="w-48 md:w-56 mx-auto rotate-2" />
       </Section>
 
       <footer className="border-t border-white/10">
