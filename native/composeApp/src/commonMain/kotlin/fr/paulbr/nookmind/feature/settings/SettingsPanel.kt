@@ -153,6 +153,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import fr.paulbr.nookmind.resources.wrapped_entrySub
+import fr.paulbr.nookmind.resources.wrapped_entry
+import fr.paulbr.nookmind.core.domain.todayLocal
+import androidx.compose.ui.graphics.Brush
 
 /** Version shown in the About section where the platform has none to give (the desktop screenshot tool). */
 const val APP_VERSION = "2.0.0"
@@ -166,6 +170,7 @@ fun SettingsPanel(
     onClose: () -> Unit,
     onOpenLegal: (LegalKind) -> Unit,
     onReplayOnboarding: () -> Unit,
+    onOpenWrapped: () -> Unit = {},
 ) {
     val colors = NookTheme.colors
     val scope = rememberCoroutineScope()
@@ -288,6 +293,9 @@ fun SettingsPanel(
                         }
                     }
                 }
+
+                // ── Year in review ───────────────────────────────────────
+                WrappedEntryCard(todayLocal().year, onOpenWrapped)
 
                 // ── Appearance ───────────────────────────────────────────
                 SettingsSection(stringResource(Res.string.settings_appearance)) {
@@ -618,5 +626,24 @@ private fun ActionRow(icon: ImageVector, text: String, onClick: () -> Unit, enab
     ) {
         Icon(icon, null, iconModifier.size(14.dp), tint = colors.textMuted)
         Text(text, style = NookTheme.type.sans(14, FontWeight.Medium, 20), color = colors.textMuted)
+    }
+}
+
+/** The way into "Ton année": the year in a few full-screen stories. */
+@Composable
+private fun WrappedEntryCard(year: Int, onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clip(NookShapes.xl3)
+            .background(Brush.linearGradient(listOf(Color(0xFF6D28D9), Color(0xFF2E1065))))
+            .clickable(onClick = onClick).padding(horizontal = 18.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Icon(LucideIcons.Sparkles, null, Modifier.size(22.dp), tint = Color(0xFFFCD34D))
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(Res.string.wrapped_entry, year), style = NookTheme.type.serif(19, FontWeight.Bold, 24), color = Color.White)
+            Text(stringResource(Res.string.wrapped_entrySub), style = NookTheme.type.sm, color = Color(0xFFDDD6FE))
+        }
+        Icon(LucideIcons.ChevronRight, null, Modifier.size(18.dp), tint = Color.White)
     }
 }

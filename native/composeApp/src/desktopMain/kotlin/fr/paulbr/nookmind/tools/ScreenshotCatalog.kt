@@ -55,6 +55,7 @@ import fr.paulbr.nookmind.feature.tonight.TonightScreen
 import fr.paulbr.nookmind.feature.tonight.TonightState
 import fr.paulbr.nookmind.feature.tonight.TonightStep
 import fr.paulbr.nookmind.feature.tonight.Verdict
+import fr.paulbr.nookmind.feature.wrapped.WrappedScreen
 
 class ScreenshotEntry(
     val name: String,
@@ -105,6 +106,14 @@ object ScreenshotCatalog {
         }
         NookTheme(if (dark) ThemeMode.DARK else ThemeMode.LIGHT, MediaMode.MOVIES) {
             MainScaffold(container, onOpenLegal = {}, onReplayOnboarding = {}, initialTab = MainTab.SOCIAL)
+        }
+    }
+
+    /** "Ton année" on one of its pages, over the fake library and friends. */
+    private fun wrapped(page: Int): @Composable () -> Unit = {
+        remember { seed(container) }
+        NookTheme(ThemeMode.DARK, MediaMode.MOVIES) {
+            WrappedScreen(container, onClose = {}, year = 2026, startPage = page)
         }
     }
 
@@ -218,6 +227,12 @@ object ScreenshotCatalog {
         ScreenshotEntry("social-dark", heightDp = 2600, content = shell(MediaMode.MOVIES, MainTab.SOCIAL, dark = true)),
         ScreenshotEntry("social", heightDp = 2600, content = shell(MediaMode.BOOKS, MainTab.SOCIAL)),
         ScreenshotEntry("social-empty-dark", content = lonelySocial()),
+        // "Ton année": the year in review, one story each.
+        ScreenshotEntry("wrapped-intro-dark", content = wrapped(0)),
+        ScreenshotEntry("wrapped-numbers-dark", content = wrapped(1)),
+        ScreenshotEntry("wrapped-favs-dark", content = wrapped(2)),
+        ScreenshotEntry("wrapped-soulmate-dark", content = wrapped(3)),
+        ScreenshotEntry("wrapped-share-dark", content = wrapped(4)),
         // A friend's page: affinity, favourites, their library filtered by kind.
         ScreenshotEntry("social-profile-dark", heightDp = 1900, content = friendProfile("u-lea")),
         ScreenshotEntry("social-profile", heightDp = 1900, content = friendProfile("u-lea", dark = false)),

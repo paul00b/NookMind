@@ -49,6 +49,7 @@ import fr.paulbr.nookmind.feature.home.BooksHomeScreen
 import fr.paulbr.nookmind.feature.home.MoviesHomeScreen
 import fr.paulbr.nookmind.feature.home.SeriesHomeScreen
 import fr.paulbr.nookmind.feature.legal.LegalKind
+import fr.paulbr.nookmind.feature.wrapped.WrappedScreen
 import fr.paulbr.nookmind.feature.library.BooksLibraryScreen
 import fr.paulbr.nookmind.feature.library.MoviesLibraryScreen
 import fr.paulbr.nookmind.feature.library.SeriesLibraryScreen
@@ -90,6 +91,7 @@ fun MainScaffold(
     val mode by container.prefs.mediaMode.collectAsState()
     var tab by rememberSaveable { mutableStateOf(initialTab) }
     var settingsOpen by rememberSaveable { mutableStateOf(false) }
+    var wrappedOpen by rememberSaveable { mutableStateOf(false) }
     var notifPromptOpen by remember { mutableStateOf(false) }
     var tonightOpen by rememberSaveable { mutableStateOf(false) }
     // The online evening a friend invited me to, opened from the Social tab or a notification.
@@ -249,7 +251,12 @@ fun MainScaffold(
                 onClose = { settingsOpen = false },
                 onOpenLegal = { settingsOpen = false; onOpenLegal(it) },
                 onReplayOnboarding = { settingsOpen = false; onReplayOnboarding() },
+                onOpenWrapped = { settingsOpen = false; wrappedOpen = true },
             )
+        }
+
+        if (wrappedOpen) {
+            WrappedScreen(container, onClose = { wrappedOpen = false })
         }
 
         if (notifPromptOpen) {
