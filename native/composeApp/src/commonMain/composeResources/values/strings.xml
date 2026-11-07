@@ -855,4 +855,6 @@
     <string name="wrapped_profileMovieBuff">Proud movie buff</string>
     <string name="wrapped_profileAllRounder">Jack of all screens</string>
     <string name="wrapped_profileFresh">A blank page</string>
+    <string name="tonight_inCinemas">In cinemas</string>
+    <string name="tonight_reasonInCinemas">In cinemas now</string>
 </resources>

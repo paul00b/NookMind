@@ -24,10 +24,24 @@ final class PushBridge: NSObject, IosPushBridge {
     }
 
     func fetchToken(onResult: @escaping (String?) -> Void) {
-        Messaging.messaging().token { token, error in
-            // Fails when APNs has not handed a device token yet, typically on a build without the
-            // push entitlement. The shared code reports "token unavailable", which is the truth.
-            onResult(error == nil ? token : nil)
+        waitForApnsToken(attemptsLeft: 20) {
+            Messaging.messaging().token { token, error in
+                // Fails when APNs never handed a device token, typically on a build without the
+                // push entitlement. The shared code reports "token unavailable", which is the truth.
+                onResult(error == nil ? token : nil)
+            }
+        }
+    }
+
+    /// The FCM token needs the APNs one, which arrives a moment after registering: right after the
+    /// permission is granted, asking straight away failed with "no APNS token". Waits up to 5 s.
+    private func waitForApnsToken(attemptsLeft: Int, then: @escaping () -> Void) {
+        if Messaging.messaging().apnsToken != nil || attemptsLeft == 0 {
+            then()
+            return
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+            self.waitForApnsToken(attemptsLeft: attemptsLeft - 1, then: then)
         }
     }
 }

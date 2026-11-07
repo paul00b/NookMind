@@ -76,6 +76,7 @@ internal fun TonightCard.toShared(myId: String, partnerId: String): SharedCard {
         is CardReason.PartnerLiked -> Triple("liked", partnerId, r.title)
         CardReason.Trending -> Triple("trending", null, null)
         CardReason.Popular -> Triple("popular", null, null)
+        CardReason.InCinemas -> Triple("cinema", null, null)
     }
     val series = this.kind == TonightKind.SERIES
     return SharedCard(
@@ -97,6 +98,7 @@ internal fun SharedCard.toCard(myId: String, partnerName: String): TonightCard? 
         "both" -> CardReason.BothWatchlists
         "liked" -> if (mineToo) CardReason.BecauseYouLiked(about.orEmpty()) else CardReason.PartnerLiked(partnerName, about.orEmpty())
         "popular" -> CardReason.Popular
+        "cinema" -> CardReason.InCinemas
         else -> CardReason.Trending
     }
     return TonightCard(

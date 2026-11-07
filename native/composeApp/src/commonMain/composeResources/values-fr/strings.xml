@@ -855,4 +855,6 @@
     <string name="wrapped_profileMovieBuff">Cinéphile assumé</string>
     <string name="wrapped_profileAllRounder">Touche-à-tout</string>
     <string name="wrapped_profileFresh">Tout reste à écrire</string>
+    <string name="tonight_inCinemas">Au ciné</string>
+    <string name="tonight_reasonInCinemas">Au ciné en ce moment</string>
 </resources>

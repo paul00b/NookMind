@@ -51,5 +51,14 @@ expect fun openExternalUrl(url: String)
 /** Opens the system share sheet with [text] (a friend code, an invitation). */
 expect fun shareText(text: String)
 
+/**
+ * Opens the system share sheet with a PNG image, [text] as its caption, so a story or a chat gets the
+ * picture itself. Where an image cannot be shared (desktop, some browsers), only the text goes.
+ */
+expect fun shareImage(png: ByteArray, text: String)
+
+/** The PNG bytes of a bitmap drawn by Compose, or null when it cannot be encoded. */
+expect fun androidx.compose.ui.graphics.ImageBitmap.encodePng(): ByteArray?
+
 /** The version the store shows (versionName, CFBundleShortVersionString), or null where there is none. */
 expect fun appVersionName(): String?

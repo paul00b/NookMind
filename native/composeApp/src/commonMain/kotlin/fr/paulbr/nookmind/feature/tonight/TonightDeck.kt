@@ -86,9 +86,10 @@ suspend fun dealTonightDeck(
     genres: Set<TonightGenre> = emptySet(),
     kind: TonightKind = TonightKind.MOVIE,
     length: SeriesLength = SeriesLength.ANY,
+    cinema: Boolean = false,
 ): List<TonightCard> =
     if (kind == TonightKind.SERIES) dealSeriesDeck(container, services, length, skip, partner, size, genres)
-    else dealMovieDeck(container, services, shortOnly, skip, partner, size, genres)
+    else dealMovieDeck(container, services, shortOnly, skip, partner, size, genres, cinema)
 
 private suspend fun dealMovieDeck(
     container: AppContainer,
@@ -98,9 +99,11 @@ private suspend fun dealMovieDeck(
     partner: PartnerTaste?,
     size: Int,
     genres: Set<TonightGenre>,
+    cinema: Boolean,
 ): List<TonightCard> = coroutineScope {
     val wanted = candidatesFor(size, genres)
     val big = size > DECK_SIZE
+    val inCinemas = async { container.tmdb.fetchInCinemas() }
     val library = container.movies.items.value
     val inLibrary = library.mapNotNull { it.tmdbId }.toSet()
     val myWatchlist = library.filter { it.status == MovieStatus.WANT_TO_WATCH && it.tmdbId != null && it.tmdbId !in skip }.map { it.tmdbId!! }.shuffled()
@@ -110,17 +113,21 @@ private suspend fun dealMovieDeck(
         .map { Triple(it.tmdbId!!, it.title, null as String?) }
     val theirSeeds = partner?.favourites?.take(if (big) 10 else 6)?.shuffled()?.take(if (big) 3 else 2)?.map { Triple(it.first, it.second, partner.name) }.orEmpty()
 
+    val showing = inCinemas.await()
+    // Out of the cinema filter, what is showing now stays out, from the watchlists too.
+    val notNow = if (cinema) emptySet() else showing.map { it.id }.toSet()
     val candidates = LinkedHashMap<Int, Pair<TmdbMovie?, CardReason>>()
     val watchlistLimit = if (big) 14 else 8
     if (partner == null) {
-        myWatchlist.take(watchlistLimit).forEach { candidates[it] = null to CardReason.Watchlist }
+        myWatchlist.filter { it !in notNow }.take(watchlistLimit).forEach { candidates[it] = null to CardReason.Watchlist }
     } else {
         val myWatched = library.filter { it.status == MovieStatus.WATCHED }.mapNotNull { it.tmdbId }.toSet()
         val theirWatchlist = partner.watchlist.filter { it !in skip }.shuffled()
         mergeWatchlists(myWatchlist, theirWatchlist, myWatched, partner.watched, partner.name, watchlistLimit)
+            .filter { (id, _) -> id !in notNow }
             .forEach { (id, reason) -> candidates[id] = null to reason }
     }
-    val known = inLibrary + partner?.library.orEmpty() + skip
+    val known = inLibrary + partner?.library.orEmpty() + skip + notNow
     fun fits(movie: TmdbMovie) = movie.id !in known && !movie.posterPath.isNullOrBlank() && matchesGenres(movie.genreIds.orEmpty(), genres)
 
     // Recommendations of each seed, taken in turn so one movie does not fill the deck.
@@ -130,6 +137,10 @@ private suspend fun dealMovieDeck(
             container.tmdb.fetchMovieRecommendations(id).filter(::fits).map { it to reason }
         }
     }.awaitAll()
+    // Asked for: a third of the deck from the cinemas, before the recommendations.
+    if (cinema) {
+        showing.filter(::fits).take(wanted / 3).forEach { if (it.id !in candidates) candidates[it.id] = it to CardReason.InCinemas }
+    }
     var rank = 0
     while (candidates.size < wanted && recommended.any { rank < it.size }) {
         recommended.forEach { list -> list.getOrNull(rank)?.let { (movie, reason) -> if (movie.id !in candidates) candidates[movie.id] = movie to reason } }

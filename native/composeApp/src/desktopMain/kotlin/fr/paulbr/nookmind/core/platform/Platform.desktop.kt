@@ -3,6 +3,7 @@ package fr.paulbr.nookmind.core.platform
 import com.russhwolf.settings.PreferencesSettings
 import com.russhwolf.settings.Settings
 import java.util.prefs.Preferences
+import androidx.compose.ui.graphics.asSkiaBitmap
 
 actual val platformKind: PlatformKind = PlatformKind.DESKTOP
 
@@ -29,6 +30,14 @@ actual fun openExternalUrl(url: String) {
 
 /** The screenshot tool has no packaged version: the About section falls back to APP_VERSION. */
 actual fun appVersionName(): String? = null
+
+/** No share sheet on desktop: the caption goes to the clipboard, like [shareText]. */
+actual fun shareImage(png: ByteArray, text: String) = shareText(text)
+
+actual fun androidx.compose.ui.graphics.ImageBitmap.encodePng(): ByteArray? = runCatching {
+    org.jetbrains.skia.Image.makeFromBitmap(this.asSkiaBitmap())
+        .encodeToData(org.jetbrains.skia.EncodedImageFormat.PNG)?.bytes
+}.getOrNull()
 
 actual fun shareText(text: String) {
     runCatching {

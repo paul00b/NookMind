@@ -18,6 +18,12 @@ import platform.UIKit.UIActivityViewController
 import platform.UIKit.UIApplication
 // Declared in a category of UIViewController (UIPopoverPresentationControllerAdditions): imported by name.
 import platform.UIKit.popoverPresentationController
+import androidx.compose.ui.graphics.asSkiaBitmap
+import kotlinx.cinterop.usePinned
+import kotlinx.cinterop.addressOf
+import platform.UIKit.UIImage
+import platform.Foundation.dataWithBytes
+import platform.Foundation.NSData
 
 actual val platformKind: PlatformKind = PlatformKind.IOS
 
@@ -77,6 +83,22 @@ actual fun openExternalUrl(url: String) {
 
 actual fun appVersionName(): String? =
     NSBundle.mainBundle.objectForInfoDictionaryKey("CFBundleShortVersionString") as? String
+
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
+actual fun shareImage(png: ByteArray, text: String) {
+    val data: NSData = png.usePinned { pinned -> NSData.dataWithBytes(pinned.addressOf(0), png.size.toULong()) }
+    val image = UIImage(data = data)
+    var top = UIApplication.sharedApplication.keyWindow?.rootViewController ?: return
+    while (true) top = top.presentedViewController ?: break
+    val sheet = UIActivityViewController(activityItems = listOf(image, text), applicationActivities = null)
+    sheet.popoverPresentationController?.sourceView = top.view
+    top.presentViewController(sheet, animated = true, completion = null)
+}
+
+actual fun androidx.compose.ui.graphics.ImageBitmap.encodePng(): ByteArray? = runCatching {
+    org.jetbrains.skia.Image.makeFromBitmap(this.asSkiaBitmap())
+        .encodeToData(org.jetbrains.skia.EncodedImageFormat.PNG)?.bytes
+}.getOrNull()
 
 actual fun shareText(text: String) {
     var top = UIApplication.sharedApplication.keyWindow?.rootViewController ?: return

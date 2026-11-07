@@ -50,6 +50,8 @@ class TonightState(partnerName: String = "", services: Set<StreamingService> = e
     var partnerName by mutableStateOf(partnerName)
     var services by mutableStateOf(services)
     var shortOnly by mutableStateOf(false)
+    /** Movies showing in cinemas are left out unless asked for: nobody goes on a whim. */
+    var cinema by mutableStateOf(false)
     var deckSize by mutableIntStateOf(DECK_SIZE)
     var genres by mutableStateOf<Set<TonightGenre>>(emptySet())
 

@@ -109,6 +109,7 @@ import fr.paulbr.nookmind.resources.tonight_seenSeries
 import fr.paulbr.nookmind.resources.tonight_seriesEnded
 import fr.paulbr.nookmind.resources.tonight_seriesOngoing
 import fr.paulbr.nookmind.resources.tonight_stampSeenSeries
+import fr.paulbr.nookmind.resources.tonight_reasonInCinemas
 import org.jetbrains.compose.resources.pluralStringResource
 
 private val CardShape = RoundedCornerShape(26.dp)
@@ -438,6 +439,7 @@ private fun CardInfo(card: TonightCard, modifier: Modifier) {
             is CardReason.PartnerLiked -> LucideIcons.Sparkles to stringResource(Res.string.tonight_reasonPartnerLiked, r.name, r.title)
             CardReason.Trending -> LucideIcons.Flame to stringResource(Res.string.tonight_reasonTrending)
             CardReason.Popular -> LucideIcons.Star to stringResource(Res.string.tonight_reasonPopular)
+            CardReason.InCinemas -> LucideIcons.Clapperboard to stringResource(Res.string.tonight_reasonInCinemas)
         }
         Row(
             Modifier.padding(top = 12.dp).clip(CircleShape).background(Color(0x8C6D28D9)).border(1.dp, Color(0x59C4B5FD), CircleShape)
