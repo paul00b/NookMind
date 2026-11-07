@@ -21,6 +21,9 @@ import platform.UIKit.popoverPresentationController
 import androidx.compose.ui.graphics.asSkiaBitmap
 import kotlinx.cinterop.usePinned
 import kotlinx.cinterop.addressOf
+import platform.UIKit.UIImage
+import platform.Foundation.dataWithBytes
+import platform.Foundation.NSData
 
 actual val platformKind: PlatformKind = PlatformKind.IOS
 
@@ -83,8 +86,8 @@ actual fun appVersionName(): String? =
 
 @OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 actual fun shareImage(png: ByteArray, text: String) {
-    val data = png.usePinned { pinned -> platform.Foundation.NSData.dataWithBytes(pinned.addressOf(0), png.size.toULong()) }
-    val image = platform.UIKit.UIImage.imageWithData(data) ?: return shareText(text)
+    val data: NSData = png.usePinned { pinned -> NSData.dataWithBytes(pinned.addressOf(0), png.size.toULong()) }
+    val image = UIImage(data = data)
     var top = UIApplication.sharedApplication.keyWindow?.rootViewController ?: return
     while (true) top = top.presentedViewController ?: break
     val sheet = UIActivityViewController(activityItems = listOf(image, text), applicationActivities = null)
