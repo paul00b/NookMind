@@ -72,6 +72,13 @@ import fr.paulbr.nookmind.core.domain.yearReview
 import fr.paulbr.nookmind.core.model.MediaMode
 import fr.paulbr.nookmind.core.model.SeriesStatus
 import fr.paulbr.nookmind.core.platform.shareText
+import fr.paulbr.nookmind.core.platform.shareImage
+import fr.paulbr.nookmind.core.platform.encodePng
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.draw.drawWithContent
 import fr.paulbr.nookmind.feature.social.Affinity
 import fr.paulbr.nookmind.feature.social.affinities
 import fr.paulbr.nookmind.feature.social.myItems
@@ -429,50 +436,68 @@ private fun SoulmatePage(myName: String, myAvatar: String?, soulmate: Soulmate) 
 private fun SharePage(review: YearReview, soulmate: Soulmate?) {
     val shareMessage = stringResource(Res.string.wrapped_shareText, review.year, review.movies.size, review.series.size, review.books.size)
     val covers = listOfNotNull(review.topMovie?.posterUrl, review.topSeries?.posterUrl, review.topBook?.coverUrl).ifEmpty { review.posters.take(3) }
+    // The card is recorded as it draws, so the picture shared is the one on screen, posters included.
+    val card = rememberGraphicsLayer()
+    val scope = rememberCoroutineScope()
+    val shareCaption = "$shareMessage\nhttps://nookmind.paulbr.fr"
     Box(Modifier.fillMaxSize().background(Color(0xFF111318))) {
         Confetti()
         Column(
             Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(start = 30.dp, end = 30.dp, top = 92.dp, bottom = 40.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Column(
-                Modifier.weight(1f, fill = false).fillMaxWidth().rotate(-2f).clip(RoundedCornerShape(28.dp))
-                    .background(Brush.linearGradient(listOf(Color(0xFF6D28D9), WrappedColors.VioletDeep, WrappedColors.Background), start = Offset.Zero, end = Offset(600f, 1400f)))
-                    .border(1.dp, Color(0x2EFFFFFF), RoundedCornerShape(28.dp)).padding(24.dp),
-            ) {
-                Text(stringResource(Res.string.wrapped_shareTitle, review.year).uppercase(), style = NookTheme.type.sans(12, FontWeight.Bold), color = Color.White.copy(alpha = 0.8f))
-                Spacer(Modifier.height(12.dp))
-                Text(stringResource(profileTitle(review.profile)), style = NookTheme.type.serif(30, FontWeight.ExtraBold, 32), color = WrappedColors.Text)
-                Spacer(Modifier.height(20.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.Bottom) {
-                    covers.forEachIndexed { i, url ->
-                        val rot = if (covers.size == 3) listOf(-10f, 0f, 10f)[i] else 0f
-                        MediaImage(url, null, Modifier.width(88.dp).padding(horizontal = 2.dp).offset(y = if (i == 1) 0.dp else 8.dp).rotate(rot), shape = RoundedCornerShape(12.dp), placeholderIconSize = 18.dp)
+            Box(
+                Modifier.weight(1f, fill = false).fillMaxWidth()
+                    .drawWithContent {
+                        card.record { this@drawWithContent.drawContent() }
+                        drawLayer(card)
                     }
-                }
-                Spacer(Modifier.height(24.dp))
-                Row(Modifier.fillMaxWidth()) {
-                    ShareStat(review.movies.size, stringResource(Res.string.wrapped_movies), WrappedColors.Movies, Modifier.weight(1f))
-                    ShareStat(review.series.size, stringResource(Res.string.wrapped_series), WrappedColors.Series, Modifier.weight(1f))
-                    ShareStat(review.books.size, stringResource(Res.string.wrapped_books), WrappedColors.Books, Modifier.weight(1f))
-                }
-                if (soulmate != null) {
-                    Spacer(Modifier.height(18.dp))
-                    Text(
-                        stringResource(Res.string.wrapped_soulmateLine, soulmate.name, soulmate.percent),
-                        style = NookTheme.type.sans(14, FontWeight.SemiBold),
-                        color = WrappedColors.Text,
-                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color(0x14FFFFFF)).padding(horizontal = 14.dp, vertical = 12.dp),
-                    )
-                }
-                Spacer(Modifier.height(22.dp))
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-                    Text("NookMind", style = NookTheme.type.serif(16, FontWeight.Bold), color = WrappedColors.Text, modifier = Modifier.weight(1f))
-                    Text("nookmind.paulbr.fr", style = NookTheme.type.sans(11), color = Color.White.copy(alpha = 0.55f))
+                    .background(Color(0xFF111318)).padding(14.dp),
+            ) {
+                Column(
+                    Modifier.fillMaxWidth().rotate(-2f).clip(RoundedCornerShape(28.dp))
+                        .background(Brush.linearGradient(listOf(Color(0xFF6D28D9), WrappedColors.VioletDeep, WrappedColors.Background), start = Offset.Zero, end = Offset(600f, 1400f)))
+                        .border(1.dp, Color(0x2EFFFFFF), RoundedCornerShape(28.dp)).padding(24.dp),
+                ) {
+                    Text(stringResource(Res.string.wrapped_shareTitle, review.year).uppercase(), style = NookTheme.type.sans(12, FontWeight.Bold), color = Color.White.copy(alpha = 0.8f))
+                    Spacer(Modifier.height(12.dp))
+                    Text(stringResource(profileTitle(review.profile)), style = NookTheme.type.serif(30, FontWeight.ExtraBold, 32), color = WrappedColors.Text)
+                    Spacer(Modifier.height(20.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.Bottom) {
+                        covers.forEachIndexed { i, url ->
+                            val rot = if (covers.size == 3) listOf(-10f, 0f, 10f)[i] else 0f
+                            MediaImage(url, null, Modifier.width(88.dp).padding(horizontal = 2.dp).offset(y = if (i == 1) 0.dp else 8.dp).rotate(rot), shape = RoundedCornerShape(12.dp), placeholderIconSize = 18.dp)
+                        }
+                    }
+                    Spacer(Modifier.height(24.dp))
+                    Row(Modifier.fillMaxWidth()) {
+                        ShareStat(review.movies.size, stringResource(Res.string.wrapped_movies), WrappedColors.Movies, Modifier.weight(1f))
+                        ShareStat(review.series.size, stringResource(Res.string.wrapped_series), WrappedColors.Series, Modifier.weight(1f))
+                        ShareStat(review.books.size, stringResource(Res.string.wrapped_books), WrappedColors.Books, Modifier.weight(1f))
+                    }
+                    if (soulmate != null) {
+                        Spacer(Modifier.height(18.dp))
+                        Text(
+                            stringResource(Res.string.wrapped_soulmateLine, soulmate.name, soulmate.percent),
+                            style = NookTheme.type.sans(14, FontWeight.SemiBold),
+                            color = WrappedColors.Text,
+                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color(0x14FFFFFF)).padding(horizontal = 14.dp, vertical = 12.dp),
+                        )
+                    }
+                    Spacer(Modifier.height(22.dp))
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+                        Text("NookMind", style = NookTheme.type.serif(16, FontWeight.Bold), color = WrappedColors.Text, modifier = Modifier.weight(1f))
+                        Text("nookmind.paulbr.fr", style = NookTheme.type.sans(11), color = Color.White.copy(alpha = 0.55f))
+                    }
                 }
             }
             Spacer(Modifier.height(24.dp))
-            PillButton(stringResource(Res.string.wrapped_share)) { shareText("$shareMessage\nhttps://nookmind.paulbr.fr") }
+            PillButton(stringResource(Res.string.wrapped_share)) {
+                scope.launch {
+                    val png = runCatching { card.toImageBitmap().encodePng() }.getOrNull()
+                    if (png != null) shareImage(png, shareCaption) else shareText(shareCaption)
+                }
+            }
         }
     }
 }

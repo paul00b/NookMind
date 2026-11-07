@@ -6,6 +6,7 @@ import android.net.Uri
 import android.util.Log
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.SharedPreferencesSettings
+import androidx.compose.ui.graphics.asAndroidBitmap
 
 /** Application context holder, initialised by `NookMindApplication`. */
 object AndroidContextHolder {
@@ -41,6 +42,33 @@ actual fun appVersionName(): String? = runCatching {
     val context = AndroidContextHolder.appContext
     @Suppress("DEPRECATION")
     context.packageManager.getPackageInfo(context.packageName, 0).versionName
+}.getOrNull()
+
+actual fun shareImage(png: ByteArray, text: String) {
+    runCatching {
+        val context = AndroidContextHolder.appContext
+        // The cache folder FileProvider exposes (res/xml/shared_files.xml), one file overwritten each time.
+        val dir = java.io.File(context.cacheDir, "shared").apply { mkdirs() }
+        val file = java.io.File(dir, "nookmind.png").apply { writeBytes(png) }
+        val uri = androidx.core.content.FileProvider.getUriForFile(context, context.packageName + ".fileprovider", file)
+        val send = Intent(Intent.ACTION_SEND).setType("image/png")
+            .putExtra(Intent.EXTRA_STREAM, uri)
+            .putExtra(Intent.EXTRA_TEXT, text)
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        val chooser = Intent.createChooser(send, null)
+        val activity = fr.paulbr.nookmind.android.ActivityTracker.current
+        if (activity != null) activity.startActivity(chooser)
+        else context.startActivity(chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }.onFailure {
+        Log.w("platform", "cannot share the image", it)
+        shareText(text)
+    }
+}
+
+actual fun androidx.compose.ui.graphics.ImageBitmap.encodePng(): ByteArray? = runCatching {
+    val out = java.io.ByteArrayOutputStream()
+    this.asAndroidBitmap().compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)
+    out.toByteArray()
 }.getOrNull()
 
 actual fun shareText(text: String) {

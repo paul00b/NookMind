@@ -4,6 +4,7 @@ import com.russhwolf.settings.Settings
 import fr.paulbr.nookmind.web.WEB_VERSION_NAME
 import kotlinx.browser.window
 import kotlinx.datetime.LocalDate
+import androidx.compose.ui.graphics.asSkiaBitmap
 
 actual val platformKind: PlatformKind = PlatformKind.WEB
 
@@ -51,6 +52,15 @@ actual fun openExternalUrl(url: String) {
 
 /** The system share sheet where the browser has one (phones, Safari), else the clipboard. */
 actual fun shareText(text: String) = jsShare(text)
+
+/** Sharing files from the web needs a user gesture the async capture loses: the text goes. */
+actual fun shareImage(png: ByteArray, text: String) = shareText(text)
+
+actual fun androidx.compose.ui.graphics.ImageBitmap.encodePng(): ByteArray? = runCatching {
+    org.jetbrains.skia.Image.makeFromBitmap(this.asSkiaBitmap())
+        .encodeToData(org.jetbrains.skia.EncodedImageFormat.PNG)?.bytes
+}.getOrNull()
+
 
 private fun jsShare(text: String): Unit = js(
     """{
