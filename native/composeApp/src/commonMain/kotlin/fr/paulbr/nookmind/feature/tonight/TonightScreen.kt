@@ -108,6 +108,7 @@ import fr.paulbr.nookmind.resources.tonight_redeal
 import fr.paulbr.nookmind.resources.tonight_samePhone
 import fr.paulbr.nookmind.resources.tonight_secret
 import fr.paulbr.nookmind.resources.tonight_services
+import fr.paulbr.nookmind.resources.tonight_inCinemas
 import fr.paulbr.nookmind.resources.tonight_shortOnly
 import fr.paulbr.nookmind.resources.tonight_singleTitle
 import fr.paulbr.nookmind.resources.tonight_tapPoster
@@ -256,7 +257,7 @@ fun TonightScreen(
             val partnerId = remote?.partnerId ?: friend?.userId
             val taste = partnerId?.let { id -> partnerTasteOf(state.partnerName, container.social.library.value.filter { it.owner == id }, state.kind) }
             val cards = runCatching {
-                dealTonightDeck(container, state.services, state.shortOnly, skip, taste, state.deckSize, state.genres, state.kind, state.seriesLength)
+                dealTonightDeck(container, state.services, state.shortOnly, skip, taste, state.deckSize, state.genres, state.kind, state.seriesLength, state.cinema)
             }.getOrDefault(emptyList())
             // Let the shuffle be seen, even when everything came from the cache.
             val left = 900L - started.elapsedNow().inWholeMilliseconds
@@ -442,6 +443,7 @@ private fun SetupStep(container: AppContainer, state: TonightState, onDeal: () -
                         state.services = if (service in state.services) state.services - service else state.services + service
                     }
                 }
+                if (!series) TonightChip(stringResource(Res.string.tonight_inCinemas), selected = state.cinema) { state.cinema = !state.cinema }
             }
             Spacer(Modifier.height(24.dp))
         }

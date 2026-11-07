@@ -121,6 +121,14 @@ class TmdbApi(
     suspend fun fetchTrendingMoviesPaged(page: Int = 1): Page<TmdbMovie> = fetchList("/trending/movie/week", page)
     suspend fun fetchNowPlayingMoviesPaged(page: Int = 1): Page<TmdbMovie> = fetchList("/movie/now_playing", page)
 
+    /** What the cinemas of the device's country show this week, from TMDB's "now playing" in that region. */
+    suspend fun fetchInCinemas(pages: Int = 2): List<TmdbMovie> = (1..pages).flatMap { page ->
+        runCatching {
+            val res = getJson("/movie/now_playing", mapOf("language" to tmdbLocale(), "region" to watchRegion(), "page" to page.toString()))
+            if (!res.ok) emptyList() else res.body<PagedResults<TmdbMovie>>().results.orEmpty()
+        }.getOrDefault(emptyList())
+    }.distinctBy { it.id }
+
     suspend fun fetchUpcomingMovies(maxResults: Int = 10): List<TmdbMovie> = runCatching {
         val today = todayLocal()
         fetchMovieListPages("/movie/upcoming", maxResults) { movie ->

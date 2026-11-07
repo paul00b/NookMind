@@ -22,6 +22,8 @@ sealed interface CardReason {
     data object Trending : CardReason
     /** A favourite of the genres picked in the setup. */
     data object Popular : CardReason
+    /** Showing in cinemas now: only dealt when "In cinemas" is ticked. */
+    data object InCinemas : CardReason
 }
 
 /** What a deck is made of: movies, or series. */
