@@ -120,6 +120,16 @@ import fr.paulbr.nookmind.resources.wrapped_soulmatePct
 import fr.paulbr.nookmind.resources.wrapped_soulmateSub
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
+import fr.paulbr.nookmind.core.platform.rememberDeviceTilt
+import coil3.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Animatable
 
 private object WrappedColors {
     val Background = Color(0xFF1D2130)
@@ -195,7 +205,15 @@ fun WrappedScreen(container: AppContainer, onClose: () -> Unit, year: Int = toda
                 detectTapGestures { offset -> if (offset.x < size.width / 3f) previous() else next() }
             },
     ) {
-        AnimatedContent(current, transitionSpec = { fadeIn(tween(260)) togetherWith fadeOut(tween(200)) }, label = "wrapped") { page ->
+        AnimatedContent(
+            current,
+            transitionSpec = {
+                val forward = targetState.ordinal > initialState.ordinal
+                (fadeIn(tween(320)) + slideInHorizontally(tween(380)) { w -> if (forward) w / 5 else -w / 5 } + scaleIn(tween(380), initialScale = 0.96f)) togetherWith
+                    (fadeOut(tween(220)) + slideOutHorizontally(tween(320)) { w -> if (forward) -w / 6 else w / 6 })
+            },
+            label = "wrapped",
+        ) { page ->
             Box(Modifier.fillMaxSize()) {
                 when (page) {
                     WrappedPage.INTRO -> IntroPage(review, onSee = ::next)
@@ -243,12 +261,18 @@ private fun StoryHeader(year: Int, count: Int, index: Int, onClose: () -> Unit, 
 
 @Composable
 private fun IntroPage(review: YearReview, onSee: () -> Unit) {
+    val tilt by rememberDeviceTilt()
+    val appear = entrance(150)
     Box(Modifier.fillMaxSize().background(Brush.radialGradient(listOf(WrappedColors.Violet, WrappedColors.Background), center = Offset(0f, 0f), radius = 1400f))) {
-        if (review.posters.isNotEmpty()) PosterWall(review.posters)
+        // The wall follows the phone a little: tilt it and the posters slide behind the year.
+        if (review.posters.isNotEmpty()) {
+            Box(Modifier.fillMaxSize().graphicsLayer { translationX = tilt.x * 28.dp.toPx(); translationY = tilt.y * 28.dp.toPx() }) { PosterWall(review.posters) }
+        }
         Box(
             Modifier.fillMaxSize().background(
                 Brush.verticalGradient(
-                    0f to WrappedColors.Background.copy(alpha = 0.5f),
+                    0f to WrappedColors.Background.copy(alpha = 0.92f),
+                    0.1f to WrappedColors.Background.copy(alpha = 0.35f),
                     0.25f to WrappedColors.Background.copy(alpha = 0.1f),
                     0.45f to WrappedColors.Background.copy(alpha = 0.35f),
                     0.6f to WrappedColors.Background.copy(alpha = 0.92f),
@@ -257,7 +281,19 @@ private fun IntroPage(review: YearReview, onSee: () -> Unit) {
             ),
         )
         Column(Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(start = 28.dp, end = 28.dp, bottom = 48.dp)) {
-            Text(review.year.toString(), style = NookTheme.type.serif(96, FontWeight.ExtraBold, 92), color = WrappedColors.Text)
+            Text(
+                review.year.toString(),
+                style = NookTheme.type.serif(96, FontWeight.ExtraBold, 92),
+                color = WrappedColors.Text,
+                modifier = Modifier.graphicsLayer {
+                    alpha = appear
+                    val s = 0.8f + 0.2f * appear
+                    scaleX = s; scaleY = s
+                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 1f)
+                    translationX = -tilt.x * 10.dp.toPx()
+                    translationY = -tilt.y * 10.dp.toPx()
+                },
+            )
             Spacer(Modifier.height(10.dp))
             Text(
                 if (review.isEmpty) stringResource(Res.string.wrapped_empty) else stringResource(Res.string.wrapped_introSub),
@@ -288,20 +324,58 @@ private fun PosterWall(posters: List<String>) {
             horizontalArrangement = Arrangement.spacedBy(gap),
         ) {
             repeat(columns) { c ->
-                val column = List(perColumn) { r -> posters[(c * perColumn + r * 3 + c) % posters.size] }
+                // In reading order: a poster comes back only after all the others, far from itself.
+                val column = List(perColumn) { r -> posters[(c * perColumn + r) % posters.size] }
                 val speed = 1f + (c % 3) * 0.25f
                 val shift = ((progress * speed + c * 0.17f) % 1f) * loopPx
                 Column(
                     Modifier.width(itemWidth).graphicsLayer { translationY = if (c % 2 == 0) -shift else shift - loopPx },
                     verticalArrangement = Arrangement.spacedBy(gap),
                 ) {
-                    (column + column).forEach { url ->
-                        MediaImage(url, null, Modifier.width(itemWidth).height(itemHeight), mode = MediaMode.MOVIES, shape = RoundedCornerShape(8.dp), placeholderIconSize = 16.dp)
-                    }
+                    (column + column).forEach { url -> WallPoster(url, Modifier.width(itemWidth).height(itemHeight)) }
                 }
             }
         }
     }
+}
+
+/**
+ * A poster of the wall: nothing while it loads and fades in once there, so the wall never shows
+ * grey boxes; one that fails to load stays an empty gap. TMDB posters load in a small size.
+ */
+@Composable
+private fun WallPoster(url: String, modifier: Modifier) {
+    var loaded by remember(url) { mutableStateOf(false) }
+    val alpha by animateFloatAsState(if (loaded) 1f else 0f, tween(500), label = "poster")
+    AsyncImage(
+        model = url.replace(Regex("/t/p/w\\d+/"), "/t/p/w185/"),
+        contentDescription = null,
+        contentScale = ContentScale.Crop,
+        onSuccess = { loaded = true },
+        modifier = modifier.graphicsLayer { this.alpha = alpha }.clip(RoundedCornerShape(8.dp)),
+    )
+}
+
+/** 0 to 1 once, when the page shows: the entrance of an element, [delayMs] after the page. */
+@Composable
+private fun entrance(delayMs: Int, durationMs: Int = 520): Float {
+    val progress = remember { Animatable(0f) }
+    LaunchedEffect(Unit) { progress.animateTo(1f, tween(durationMs, delayMs, FastOutSlowInEasing)) }
+    return progress.value
+}
+
+/** A number counting up from zero to [target] when the page shows. */
+@Composable
+private fun countUp(target: Int, delayMs: Int = 200): Int {
+    val progress = remember(target) { Animatable(0f) }
+    LaunchedEffect(target) { progress.animateTo(1f, tween(1100, delayMs, FastOutSlowInEasing)) }
+    return (target * progress.value).toInt()
+}
+
+/** Comes in from below and fades in. */
+private fun Modifier.rise(progress: Float): Modifier = graphicsLayer {
+    alpha = progress
+    translationY = (1f - progress) * 28.dp.toPx()
 }
 
 // ── 2. Numbers ──────────────────────────────────────────────────────────────
@@ -315,23 +389,23 @@ private fun NumbersPage(review: YearReview, hours: Int, episodes: Int) {
         Title(stringResource(Res.string.wrapped_numbers))
         Spacer(Modifier.height(10.dp))
         val moreThanLast = review.movies.size - review.moviesLastYear
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            StatTile(review.movies.size.toString(), stringResource(Res.string.wrapped_movies), if (review.moviesLastYear > 0 && moreThanLast > 0) stringResource(Res.string.wrapped_moreThanLast, moreThanLast, review.year - 1) else null, WrappedColors.Movies, Modifier.weight(1f))
+        Row(Modifier.rise(entrance(100)), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            StatTile(countUp(review.movies.size).toString(), stringResource(Res.string.wrapped_movies), if (review.moviesLastYear > 0 && moreThanLast > 0) stringResource(Res.string.wrapped_moreThanLast, moreThanLast, review.year - 1) else null, WrappedColors.Movies, Modifier.weight(1f))
             val finished = review.series.count { it.status == SeriesStatus.WATCHED }
-            StatTile(review.series.size.toString(), stringResource(Res.string.wrapped_series), if (finished > 0) stringResource(Res.string.wrapped_seriesSub, finished) else null, WrappedColors.Series, Modifier.weight(1f))
+            StatTile(countUp(review.series.size).toString(), stringResource(Res.string.wrapped_series), if (finished > 0) stringResource(Res.string.wrapped_seriesSub, finished) else null, WrappedColors.Series, Modifier.weight(1f))
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            StatTile(review.books.size.toString(), stringResource(Res.string.wrapped_books), if (review.pages > 0) stringResource(Res.string.wrapped_pages, groupThousands(review.pages)) else null, WrappedColors.Books, Modifier.weight(1f))
-            StatTile(if (episodes > 0) episodes.toString() else "…", stringResource(Res.string.wrapped_episodes), if (review.series.isNotEmpty()) stringResource(Res.string.wrapped_episodesSub, review.series.size) else null, WrappedColors.Episodes, Modifier.weight(1f))
+        Row(Modifier.rise(entrance(260)), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            StatTile(countUp(review.books.size, 360).toString(), stringResource(Res.string.wrapped_books), if (review.pages > 0) stringResource(Res.string.wrapped_pages, groupThousands(review.pages)) else null, WrappedColors.Books, Modifier.weight(1f))
+            StatTile(if (episodes > 0) countUp(episodes, 360).toString() else "…", stringResource(Res.string.wrapped_episodes), if (review.series.isNotEmpty()) stringResource(Res.string.wrapped_episodesSub, review.series.size) else null, WrappedColors.Episodes, Modifier.weight(1f))
         }
         if (hours > 0) {
             Column(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp))
+                Modifier.rise(entrance(440)).fillMaxWidth().clip(RoundedCornerShape(22.dp))
                     .background(Brush.linearGradient(listOf(Color(0x598B5CF6), Color(0x40EC4899))))
                     .border(1.dp, WrappedColors.Line, RoundedCornerShape(22.dp)).padding(20.dp),
             ) {
                 Text(stringResource(Res.string.wrapped_screen), style = NookTheme.type.sans(13, FontWeight.SemiBold), color = WrappedColors.Lilac)
-                Text(stringResource(Res.string.wrapped_hours, hours), style = NookTheme.type.serif(40, FontWeight.ExtraBold, 46), color = WrappedColors.Text)
+                Text(stringResource(Res.string.wrapped_hours, countUp(hours, 540)), style = NookTheme.type.serif(40, FontWeight.ExtraBold, 46), color = WrappedColors.Text)
                 if (hours >= 24) Text(stringResource(Res.string.wrapped_days, hours / 24), style = NookTheme.type.sans(14), color = WrappedColors.Text)
             }
         }
@@ -357,10 +431,16 @@ private fun FavouritesPage(review: YearReview) {
     ) {
         Title(stringResource(Res.string.wrapped_favs))
         Spacer(Modifier.height(10.dp))
-        review.topMovie?.let { FavouriteRow(it.posterUrl, stringResource(Res.string.wrapped_favMovie), it.title, it.rating, WrappedColors.Movies, MediaMode.MOVIES) }
-        review.topSeries?.let { FavouriteRow(it.posterUrl, stringResource(Res.string.wrapped_favSeries), it.title, it.rating, WrappedColors.Series, MediaMode.SERIES) }
-        review.topBook?.let { FavouriteRow(it.coverUrl, stringResource(Res.string.wrapped_favBook), it.title, it.rating, WrappedColors.Books, MediaMode.BOOKS) }
+        review.topMovie?.let { Box(Modifier.slideFrom(entrance(120))) { FavouriteRow(it.posterUrl, stringResource(Res.string.wrapped_favMovie), it.title, it.rating, WrappedColors.Movies, MediaMode.MOVIES) } }
+        review.topSeries?.let { Box(Modifier.slideFrom(entrance(300))) { FavouriteRow(it.posterUrl, stringResource(Res.string.wrapped_favSeries), it.title, it.rating, WrappedColors.Series, MediaMode.SERIES) } }
+        review.topBook?.let { Box(Modifier.slideFrom(entrance(480))) { FavouriteRow(it.coverUrl, stringResource(Res.string.wrapped_favBook), it.title, it.rating, WrappedColors.Books, MediaMode.BOOKS) } }
     }
+}
+
+/** Comes in from the right and fades in. */
+private fun Modifier.slideFrom(progress: Float): Modifier = graphicsLayer {
+    alpha = progress
+    translationX = (1f - progress) * 60.dp.toPx()
 }
 
 @Composable
@@ -389,20 +469,22 @@ private fun SoulmatePage(myName: String, myAvatar: String?, soulmate: Soulmate) 
     ) {
         Text(stringResource(Res.string.wrapped_soulmate).uppercase(), style = NookTheme.type.sans(13, FontWeight.Bold), color = WrappedColors.Lilac)
         Spacer(Modifier.height(22.dp))
+        val meet = entrance(100, 700)
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Avatar(myName, myAvatar, AvatarSize.XXL)
+            Avatar(myName, myAvatar, AvatarSize.XXL, Modifier.graphicsLayer { translationX = -(1f - meet) * 90.dp.toPx(); alpha = meet })
             Spacer(Modifier.width(4.dp))
-            Avatar(soulmate.name, soulmate.avatarUrl, AvatarSize.XXL)
+            Avatar(soulmate.name, soulmate.avatarUrl, AvatarSize.XXL, Modifier.graphicsLayer { translationX = (1f - meet) * 90.dp.toPx(); alpha = meet })
         }
         Spacer(Modifier.height(16.dp))
-        Text(stringResource(Res.string.wrapped_soulmatePct, soulmate.name, soulmate.percent), style = NookTheme.type.serif(38, FontWeight.ExtraBold, 42), color = WrappedColors.Text)
+        Text(stringResource(Res.string.wrapped_soulmatePct, soulmate.name, countUp(soulmate.percent, 500)), style = NookTheme.type.serif(38, FontWeight.ExtraBold, 42), color = WrappedColors.Text)
         Text(stringResource(Res.string.wrapped_soulmateSub), style = NookTheme.type.sans(15), color = WrappedColors.Text.copy(alpha = 0.9f))
         Spacer(Modifier.height(20.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             soulmate.loved.forEachIndexed { i, item ->
+                val pop = entrance(700 + i * 120, 420)
                 MediaImage(
                     item.imageUrl, item.title,
-                    Modifier.width(74.dp).rotate(listOf(-5f, 0f, 5f)[i % 3]),
+                    Modifier.width(74.dp).rotate(listOf(-5f, 0f, 5f)[i % 3]).graphicsLayer { alpha = pop; val s = 0.7f + 0.3f * pop; scaleX = s; scaleY = s },
                     mode = if (item.kind == "book") MediaMode.BOOKS else if (item.kind == "series") MediaMode.SERIES else MediaMode.MOVIES,
                     shape = RoundedCornerShape(10.dp), placeholderIconSize = 18.dp,
                 )
@@ -434,6 +516,8 @@ private fun SoulmatePage(myName: String, myAvatar: String?, soulmate: Soulmate) 
 
 @Composable
 private fun SharePage(review: YearReview, soulmate: Soulmate?) {
+    val tilt by rememberDeviceTilt()
+    val appear = entrance(80, 650)
     val shareMessage = stringResource(Res.string.wrapped_shareText, review.year, review.movies.size, review.series.size, review.books.size)
     val covers = listOfNotNull(review.topMovie?.posterUrl, review.topSeries?.posterUrl, review.topBook?.coverUrl).ifEmpty { review.posters.take(3) }
     // The card is recorded as it draws, so the picture shared is the one on screen, posters included.
@@ -448,6 +532,16 @@ private fun SharePage(review: YearReview, soulmate: Soulmate?) {
         ) {
             Box(
                 Modifier.weight(1f, fill = false).fillMaxWidth()
+                    // Tilts with the phone like a card held in the hand. The recording below sits
+                    // inside this layer, so the picture shared stays flat.
+                    .graphicsLayer {
+                        rotationY = tilt.x * 10f
+                        rotationX = -tilt.y * 10f
+                        cameraDistance = 14f * density
+                        alpha = appear
+                        val s = 0.85f + 0.15f * appear
+                        scaleX = s; scaleY = s
+                    }
                     .drawWithContent {
                         card.record { this@drawWithContent.drawContent() }
                         drawLayer(card)
