@@ -119,6 +119,7 @@ import fr.paulbr.nookmind.resources.wrapped_soulmateLine
 import fr.paulbr.nookmind.resources.wrapped_soulmatePct
 import fr.paulbr.nookmind.resources.wrapped_soulmateSub
 import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import fr.paulbr.nookmind.core.platform.rememberDeviceTilt
 import coil3.compose.AsyncImage
@@ -392,7 +393,7 @@ private fun NumbersPage(review: YearReview, hours: Int, episodes: Int) {
         Row(Modifier.rise(entrance(100)), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatTile(countUp(review.movies.size).toString(), stringResource(Res.string.wrapped_movies), if (review.moviesLastYear > 0 && moreThanLast > 0) stringResource(Res.string.wrapped_moreThanLast, moreThanLast, review.year - 1) else null, WrappedColors.Movies, Modifier.weight(1f))
             val finished = review.series.count { it.status == SeriesStatus.WATCHED }
-            StatTile(countUp(review.series.size).toString(), stringResource(Res.string.wrapped_series), if (finished > 0) stringResource(Res.string.wrapped_seriesSub, finished) else null, WrappedColors.Series, Modifier.weight(1f))
+            StatTile(countUp(review.series.size).toString(), stringResource(Res.string.wrapped_series), if (finished > 0) pluralStringResource(Res.plurals.wrapped_seriesSub, finished, finished) else null, WrappedColors.Series, Modifier.weight(1f))
         }
         Row(Modifier.rise(entrance(260)), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatTile(countUp(review.books.size, 360).toString(), stringResource(Res.string.wrapped_books), if (review.pages > 0) stringResource(Res.string.wrapped_pages, groupThousands(review.pages)) else null, WrappedColors.Books, Modifier.weight(1f))
