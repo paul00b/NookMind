@@ -829,7 +829,6 @@
     <string name="wrapped_numbers">Ton année en chiffres</string>
     <string name="wrapped_movies">films vus</string>
     <string name="wrapped_series">séries suivies</string>
-    <string name="wrapped_seriesSub">%1$d terminées</string>
     <string name="wrapped_books">livres lus</string>
     <string name="wrapped_pages">%1$s pages</string>
     <string name="wrapped_moreThanLast">%1$d de plus qu'en %2$d</string>
@@ -857,4 +856,8 @@
     <string name="wrapped_profileFresh">Tout reste à écrire</string>
     <string name="tonight_inCinemas">Au ciné</string>
     <string name="tonight_reasonInCinemas">Au ciné en ce moment</string>
+    <plurals name="wrapped_seriesSub">
+        <item quantity="one">%1$d terminée</item>
+        <item quantity="other">%1$d terminées</item>
+    </plurals>
 </resources>
