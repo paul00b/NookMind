@@ -10,7 +10,7 @@ class NookMindApplication : Application() {
     val push = AndroidPushPlatform()
 
     val container: AppContainer by lazy {
-        AppContainer(googleSignIn = AndroidGoogleSignIn(), pushPlatform = push)
+        AppContainer(googleSignIn = AndroidGoogleSignIn(), pushPlatform = push, barcodeScanner = AndroidBarcodeScanner())
     }
 
     override fun onCreate() {

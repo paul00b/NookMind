@@ -38,6 +38,16 @@ import fr.paulbr.nookmind.resources.home_title
 import fr.paulbr.nookmind.resources.home_unknownAuthor
 import fr.paulbr.nookmind.resources.home_wantToRead
 import org.jetbrains.compose.resources.stringResource
+import fr.paulbr.nookmind.core.designsystem.components.Spinner
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Box
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import fr.paulbr.nookmind.resources.home_scanNotFound
+import fr.paulbr.nookmind.resources.home_scan
 
 /** Port of Home.tsx: Google Books search, "Want to read" and "Last read" sliders. */
 @Composable
@@ -48,6 +58,9 @@ fun BooksHomeScreen(container: AppContainer, contentPadding: PaddingValues) {
         container.googleBooks.searchBooks(it)
     }
     var prefill by remember { mutableStateOf<Book?>(null) }
+    var scanning by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val scanNotFound = stringResource(Res.string.home_scanNotFound)
     var selected by remember { mutableStateOf<Book?>(null) }
     val unknownAuthor = stringResource(Res.string.home_unknownAuthor)
     val inLibrary = stringResource(Res.string.addBook_inLibrary)
@@ -75,6 +88,16 @@ fun BooksHomeScreen(container: AppContainer, contentPadding: PaddingValues) {
         noResultsText = stringResource(Res.string.home_noBooksFound, search.query),
         sections = sections,
         resultKey = { it.id },
+        onScan = if (container.barcodeScanner.isAvailable) ({
+            scope.launch {
+                val code = runCatching { container.barcodeScanner.scan() }.getOrNull() ?: return@launch
+                scanning = true
+                val book = container.googleBooks.findByIsbn(code)
+                scanning = false
+                if (book != null) prefill = book else container.toasts.error(scanNotFound)
+            }
+        }) else null,
+        scanLabel = stringResource(Res.string.home_scan),
     ) { volume ->
         val info = volume.volumeInfo
         val firstAuthor = info.authors?.firstOrNull() ?: ""
@@ -92,6 +115,9 @@ fun BooksHomeScreen(container: AppContainer, contentPadding: PaddingValues) {
         )
     }
 
+    if (scanning) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Spinner(size = 28.dp) }
+    }
     prefill?.let { AddBookSheet(container, it, onClose = { prefill = null }) }
     selected?.let { BookDetailSheet(container, it, onClose = { selected = null }) }
 }

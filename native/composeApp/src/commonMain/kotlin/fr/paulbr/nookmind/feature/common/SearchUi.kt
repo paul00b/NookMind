@@ -180,6 +180,8 @@ fun <T> HomeScreenScaffold(
     noResultsText: String,
     sections: List<HomeSection>,
     resultKey: (T) -> Any,
+    onScan: (() -> Unit)? = null,
+    scanLabel: String? = null,
     resultRow: @Composable (T) -> Unit,
 ) {
     val density = LocalDensity.current
@@ -219,6 +221,8 @@ fun <T> HomeScreenScaffold(
                         .fillMaxWidth()
                         .widthIn(max = 576.dp)
                         .onGloballyPositioned { fieldBottom = it.boundsInRoot().bottom },
+                    onScan = onScan,
+                    scanLabel = scanLabel,
                 )
                 search.error?.let {
                     Spacer(Modifier.height(12.dp))
@@ -273,6 +277,8 @@ fun HomeSearchField(
     onClear: () -> Unit,
     modifier: Modifier = Modifier,
     onFocused: () -> Unit = {},
+    onScan: (() -> Unit)? = null,
+    scanLabel: String? = null,
 ) {
     val colors = NookTheme.colors
     NookTextField(
@@ -285,9 +291,12 @@ fun HomeSearchField(
         shape = NookShapes.full,
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
         leading = { Icon(LucideIcons.Search, null, Modifier.size(18.dp), tint = colors.textFaint) },
-        trailing = if (query.isNotEmpty()) {
-            { Icon(LucideIcons.X, null, Modifier.size(16.dp).clickable(onClick = onClear), tint = colors.textFaint) }
-        } else null,
+        trailing = when {
+            query.isNotEmpty() -> { { Icon(LucideIcons.X, null, Modifier.size(16.dp).clickable(onClick = onClear), tint = colors.textFaint) } }
+            // Empty field: the barcode scanner, where the platform has one (books only).
+            onScan != null -> { { Icon(LucideIcons.ScanBarcode, scanLabel, Modifier.size(20.dp).clickable(onClick = onScan), tint = colors.textMuted) } }
+            else -> null
+        },
     )
 }
 

@@ -49,6 +49,8 @@
 	<true/>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>NookMind uses the camera to read the barcode on the back of a book and find it for you.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NookMindAppleSignInEnabled</key>

@@ -19,7 +19,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNU
         IosApp.shared.initialize(
             appleSignIn: Self.flag("NookMindAppleSignInEnabled") ? AppleSignInBridge() : nil,
             googleSignIn: Self.googleSignIn(),
-            push: setUpPush(application)
+            push: setUpPush(application),
+            scanner: ScanBridge()
         )
         return true
     }

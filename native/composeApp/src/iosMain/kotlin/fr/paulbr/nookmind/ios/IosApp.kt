@@ -21,12 +21,13 @@ object IosApp {
     val container: AppContainer
         get() = built ?: error("IosApp.initialize() must run in the AppDelegate before the UI is built.")
 
-    fun initialize(appleSignIn: IosAppleSignInBridge?, googleSignIn: IosGoogleSignInBridge?, push: IosPushBridge?) {
+    fun initialize(appleSignIn: IosAppleSignInBridge?, googleSignIn: IosGoogleSignInBridge?, push: IosPushBridge?, scanner: IosScanBridge?) {
         if (built != null) return
         built = AppContainer(
             googleSignIn = googleSignIn?.let(::IosGoogleSignIn) ?: UnavailableGoogleSignIn,
             appleSignIn = appleSignIn?.let(::IosAppleSignIn) ?: UnavailableAppleSignIn,
             pushPlatform = push?.let(::IosPushPlatform) ?: UnsupportedPushPlatform,
+            barcodeScanner = scanner?.let(::IosBarcodeScanner) ?: fr.paulbr.nookmind.core.platform.UnavailableBarcodeScanner,
         )
     }
 

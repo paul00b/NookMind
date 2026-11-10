@@ -45,6 +45,46 @@ class GoogleBooksApi(private val client: HttpClient) {
         }
     }.getOrNull()
 
+    /**
+     * The book behind a scanned barcode: Google Books first (`isbn:`), then Open Library, which knows
+     * some editions Google does not. Null when neither has it.
+     */
+    suspend fun findByIsbn(code: String): Book? {
+        val isbn = code.filter { it.isDigit() || it == 'X' }
+        if (isbn.length != 10 && isbn.length != 13) return null
+        runCatching { searchBooks("isbn:$isbn", 1).firstOrNull() }.getOrNull()?.let { return extractBookData(it) }
+        return runCatching { openLibraryBook(isbn) }.getOrNull()
+    }
+
+    @Serializable
+    private data class OpenLibrarySearch(val docs: List<OpenLibraryDoc> = emptyList())
+
+    @Serializable
+    private data class OpenLibraryDoc(
+        val title: String = "",
+        @kotlinx.serialization.SerialName("author_name") val authorName: List<String>? = null,
+        @kotlinx.serialization.SerialName("cover_i") val coverId: Long? = null,
+        @kotlinx.serialization.SerialName("number_of_pages_median") val pages: Int? = null,
+        @kotlinx.serialization.SerialName("first_publish_year") val year: Int? = null,
+    )
+
+    private suspend fun openLibraryBook(isbn: String): Book? {
+        val response = client.get("https://openlibrary.org/search.json") {
+            parameter("isbn", isbn)
+            parameter("fields", "title,author_name,cover_i,number_of_pages_median,first_publish_year")
+            timeout { requestTimeoutMillis = 8_000 }
+        }
+        if (response.status.value !in 200..299) return null
+        val doc = response.body<OpenLibrarySearch>().docs.firstOrNull()?.takeIf { it.title.isNotBlank() } ?: return null
+        return Book(
+            title = doc.title,
+            author = doc.authorName?.joinToString(", ")?.ifBlank { null } ?: "Unknown Author",
+            coverUrl = doc.coverId?.let { "https://covers.openlibrary.org/b/id/$it-L.jpg" },
+            publishedDate = doc.year?.toString(),
+            pageCount = doc.pages?.takeIf { it > 0 },
+        )
+    }
+
     private fun HttpResponse.ensureOk() {
         val code = status.value
         if (code == 429 || code in 500..599) throw BusyException(code)

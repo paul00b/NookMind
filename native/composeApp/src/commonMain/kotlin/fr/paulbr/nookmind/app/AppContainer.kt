@@ -25,7 +25,9 @@ import fr.paulbr.nookmind.core.network.TmdbApi
 import fr.paulbr.nookmind.core.network.createHttpClient
 import fr.paulbr.nookmind.core.platform.AppleSignInProvider
 import fr.paulbr.nookmind.core.platform.GoogleSignInProvider
+import fr.paulbr.nookmind.core.platform.BarcodeScanner
 import fr.paulbr.nookmind.core.platform.PushPlatform
+import fr.paulbr.nookmind.core.platform.UnavailableBarcodeScanner
 import fr.paulbr.nookmind.core.platform.UnavailableAppleSignIn
 import fr.paulbr.nookmind.core.platform.UnavailableGoogleSignIn
 import fr.paulbr.nookmind.core.platform.UnsupportedPushPlatform
@@ -72,6 +74,8 @@ class AppContainer(
     googleSignIn: GoogleSignInProvider = UnavailableGoogleSignIn,
     appleSignIn: AppleSignInProvider = UnavailableAppleSignIn,
     pushPlatform: PushPlatform = UnsupportedPushPlatform,
+    /** Where the platform has one: a book's barcode, read with the camera. */
+    val barcodeScanner: BarcodeScanner = UnavailableBarcodeScanner,
 ) {
     val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
