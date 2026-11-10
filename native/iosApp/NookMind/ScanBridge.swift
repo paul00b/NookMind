@@ -13,7 +13,8 @@ final class ScanBridge: NSObject, IosScanBridge {
     var isAvailable: Bool {
         if #available(iOS 16.0, *) {
             // isAvailable stays false until the camera is allowed, so it is checked after asking.
-            return DataScannerViewController.isSupported
+            // Kotlin reads this from the UI, on the main thread.
+            return MainActor.assumeIsolated { DataScannerViewController.isSupported }
         }
         return false
     }
@@ -24,11 +25,14 @@ final class ScanBridge: NSObject, IosScanBridge {
         // The camera permission first: the scanner shows nothing without it.
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:
-            present(onResult: onResult)
+            // Kotlin calls scan from the UI, on the main thread.
+            MainActor.assumeIsolated { present(onResult: onResult) }
         case .notDetermined:
             AVCaptureDevice.requestAccess(for: .video) { granted in
                 DispatchQueue.main.async {
-                    if granted { self.present(onResult: onResult) } else { onResult(nil) }
+                    MainActor.assumeIsolated {
+                        if granted { self.present(onResult: onResult) } else { onResult(nil) }
+                    }
                 }
             }
         default:
@@ -36,6 +40,7 @@ final class ScanBridge: NSObject, IosScanBridge {
         }
     }
 
+    @MainActor
     private func present(onResult: @escaping (String?) -> Void) {
         guard #available(iOS 16.0, *), DataScannerViewController.isAvailable, let top = Self.topController() else {
             onResult(nil)
@@ -62,6 +67,7 @@ final class ScanBridge: NSObject, IosScanBridge {
     }
 
     /// Calls back once, then closes the scanner.
+    @MainActor
     fileprivate func finish(with code: String?) {
         guard let callback = onResult else { return }
         onResult = nil
@@ -70,6 +76,7 @@ final class ScanBridge: NSObject, IosScanBridge {
         callback(code)
     }
 
+    @MainActor
     private static func topController() -> UIViewController? {
         let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
         var top = scene?.windows.first(where: { $0.isKeyWindow })?.rootViewController
@@ -80,6 +87,7 @@ final class ScanBridge: NSObject, IosScanBridge {
 
 @available(iOS 16.0, *)
 extension ScanBridge: DataScannerViewControllerDelegate {
+    @MainActor
     func dataScanner(_ dataScanner: DataScannerViewController, didAdd addedItems: [RecognizedItem], allItems: [RecognizedItem]) {
         for item in addedItems {
             if case let .barcode(barcode) = item, let code = barcode.payloadStringValue, !code.isEmpty {
@@ -94,6 +102,7 @@ extension ScanBridge: DataScannerViewControllerDelegate {
 
 extension ScanBridge: UIAdaptivePresentationControllerDelegate {
     /// Swiped down: the scan ends without a code.
+    @MainActor
     func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
         guard let callback = onResult else { return }
         onResult = nil
