@@ -63,6 +63,21 @@ interface IosGoogleSignInBridge {
     fun signOut()
 }
 
+/** A book's barcode, read in Swift with VisionKit's DataScannerViewController (iOS 16 and later). */
+interface IosScanBridge {
+    /** False before iOS 16, or on a device without a capable camera: the scan button stays hidden. */
+    val isAvailable: Boolean
+    /** Calls back once, with the digits read or null when the scanner was closed. */
+    fun scan(onResult: (code: String?) -> Unit)
+}
+
+internal class IosBarcodeScanner(private val bridge: IosScanBridge) : fr.paulbr.nookmind.core.platform.BarcodeScanner {
+    override val isAvailable: Boolean get() = bridge.isAvailable
+    override suspend fun scan(): String? = suspendCancellableCoroutine { continuation ->
+        bridge.scan { code -> if (continuation.isActive) continuation.resume(code) }
+    }
+}
+
 /** Push transport, implemented in Swift with UserNotifications and Firebase Messaging (APNs -> FCM token). */
 interface IosPushBridge {
     fun requestPermission(onResult: (granted: Boolean) -> Unit)

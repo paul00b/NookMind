@@ -860,4 +860,6 @@
         <item quantity="one">%1$d finished</item>
         <item quantity="other">%1$d finished</item>
     </plurals>
+    <string name="home_scan">Scan a book</string>
+    <string name="home_scanNotFound">No book found for this barcode. Search it by its title.</string>
 </resources>

@@ -860,4 +860,6 @@
         <item quantity="one">%1$d terminée</item>
         <item quantity="other">%1$d terminées</item>
     </plurals>
+    <string name="home_scan">Scanner un livre</string>
+    <string name="home_scanNotFound">Livre introuvable avec ce code. Cherche-le par son titre.</string>
 </resources>

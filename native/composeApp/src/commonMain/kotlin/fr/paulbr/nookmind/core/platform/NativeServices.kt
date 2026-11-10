@@ -65,3 +65,16 @@ object UnsupportedPushPlatform : PushPlatform {
     override suspend fun requestPermission(): Boolean = false
     override suspend fun getToken(): String? = null
 }
+
+/** The system camera scanner, reading the barcode on the back of a book (its ISBN). */
+interface BarcodeScanner {
+    val isAvailable: Boolean
+
+    /** The digits of the barcode read, or null when the reader closed the scanner. */
+    suspend fun scan(): String?
+}
+
+object UnavailableBarcodeScanner : BarcodeScanner {
+    override val isAvailable: Boolean = false
+    override suspend fun scan(): String? = null
+}
