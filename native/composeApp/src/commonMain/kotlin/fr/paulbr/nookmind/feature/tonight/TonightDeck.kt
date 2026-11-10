@@ -2,6 +2,8 @@ package fr.paulbr.nookmind.feature.tonight
 
 import fr.paulbr.nookmind.app.AppContainer
 import fr.paulbr.nookmind.core.data.FriendItem
+import fr.paulbr.nookmind.core.domain.parseDateOnly
+import fr.paulbr.nookmind.core.domain.todayLocal
 import fr.paulbr.nookmind.core.model.Movie
 import fr.paulbr.nookmind.core.model.MovieStatus
 import fr.paulbr.nookmind.core.model.Series
@@ -13,6 +15,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.datetime.LocalDate
 
 private const val CARD_TIMEOUT_MS = 8_000L
 
@@ -128,7 +131,8 @@ private suspend fun dealMovieDeck(
             .forEach { (id, reason) -> candidates[id] = null to reason }
     }
     val known = inLibrary + partner?.library.orEmpty() + skip + notNow
-    fun fits(movie: TmdbMovie) = movie.id !in known && !movie.posterPath.isNullOrBlank() && matchesGenres(movie.genreIds.orEmpty(), genres)
+    fun fits(movie: TmdbMovie) = movie.id !in known && !movie.posterPath.isNullOrBlank() && matchesGenres(movie.genreIds.orEmpty(), genres) &&
+        movie.releaseDate.isNotBlank() && !isUpcoming(movie.releaseDate)
 
     // Recommendations of each seed, taken in turn so one movie does not fill the deck.
     val recommended = (mySeeds + theirSeeds).map { (id, title, by) ->
@@ -161,6 +165,8 @@ private suspend fun dealMovieDeck(
     val cards = candidates.entries.map { (id, entry) ->
         async { withTimeoutOrNull(CARD_TIMEOUT_MS) { cardFor(container, id, entry.first, byTmdbId[id], entry.second, services) } }
     }.awaitAll().filterNotNull()
+        // A movie of the watchlist not out yet cannot be watched tonight either.
+        .filterNot { isUpcoming(it.movie.releaseDate) }
     pickDeck(cards, services, if (shortOnly) 120 else null, size, genres)
 }
 
@@ -316,3 +322,7 @@ internal fun seriesCard(
         miniseries = series.type == "Miniseries",
     )
 }
+
+/** Not out yet: its release date is after [today]. An unknown date is not "upcoming". */
+internal fun isUpcoming(releaseDate: String?, today: LocalDate = todayLocal()): Boolean =
+    parseDateOnly(releaseDate)?.let { it > today } ?: false

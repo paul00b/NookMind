@@ -267,7 +267,7 @@ private fun IntroPage(review: YearReview, onSee: () -> Unit) {
     Box(Modifier.fillMaxSize().background(Brush.radialGradient(listOf(WrappedColors.Violet, WrappedColors.Background), center = Offset(0f, 0f), radius = 1400f))) {
         // The wall follows the phone a little: tilt it and the posters slide behind the year.
         if (review.posters.isNotEmpty()) {
-            Box(Modifier.fillMaxSize().graphicsLayer { translationX = tilt.x * 28.dp.toPx(); translationY = tilt.y * 28.dp.toPx() }) { PosterWall(review.posters) }
+            Box(Modifier.fillMaxSize().graphicsLayer { translationX = tilt.x * 70.dp.toPx(); translationY = tilt.y * 70.dp.toPx() }) { PosterWall(review.posters) }
         }
         Box(
             Modifier.fillMaxSize().background(
@@ -291,8 +291,8 @@ private fun IntroPage(review: YearReview, onSee: () -> Unit) {
                     val s = 0.8f + 0.2f * appear
                     scaleX = s; scaleY = s
                     transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 1f)
-                    translationX = -tilt.x * 10.dp.toPx()
-                    translationY = -tilt.y * 10.dp.toPx()
+                    translationX = -tilt.x * 24.dp.toPx()
+                    translationY = -tilt.y * 24.dp.toPx()
                 },
             )
             Spacer(Modifier.height(10.dp))
@@ -536,8 +536,8 @@ private fun SharePage(review: YearReview, soulmate: Soulmate?) {
                     // Tilts with the phone like a card held in the hand. The recording below sits
                     // inside this layer, so the picture shared stays flat.
                     .graphicsLayer {
-                        rotationY = tilt.x * 10f
-                        rotationX = -tilt.y * 10f
+                        rotationY = tilt.x * 22f
+                        rotationX = -tilt.y * 22f
                         cameraDistance = 14f * density
                         alpha = appear
                         val s = 0.85f + 0.15f * appear
