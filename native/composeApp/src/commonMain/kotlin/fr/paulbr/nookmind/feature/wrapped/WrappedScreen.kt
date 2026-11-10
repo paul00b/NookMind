@@ -125,6 +125,7 @@ import fr.paulbr.nookmind.core.platform.rememberDeviceTilt
 import coil3.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.scaleIn
@@ -310,8 +311,12 @@ private fun IntroPage(review: YearReview, onSee: () -> Unit) {
 /** Every poster of the year in tilted columns that drift up and down, a column each way. */
 @Composable
 private fun PosterWall(posters: List<String>) {
+    // Posters that would not load are dropped and the others take their place: no hole in the wall.
+    val failed = remember { mutableStateListOf<String>() }
+    val shown = posters.filter { it !in failed }.ifEmpty { return }
     val columns = 8
-    val perColumn = 8
+    // Room for every poster of the year, between 8 and 14 a column.
+    val perColumn = ((shown.size + columns - 1) / columns).coerceIn(8, 14)
     val itemWidth = 66.dp
     val itemHeight = 99.dp
     val gap = 8.dp
@@ -326,14 +331,16 @@ private fun PosterWall(posters: List<String>) {
         ) {
             repeat(columns) { c ->
                 // In reading order: a poster comes back only after all the others, far from itself.
-                val column = List(perColumn) { r -> posters[(c * perColumn + r) % posters.size] }
+                val column = List(perColumn) { r -> shown[(c * perColumn + r) % shown.size] }
                 val speed = 1f + (c % 3) * 0.25f
                 val shift = ((progress * speed + c * 0.17f) % 1f) * loopPx
                 Column(
                     Modifier.width(itemWidth).graphicsLayer { translationY = if (c % 2 == 0) -shift else shift - loopPx },
                     verticalArrangement = Arrangement.spacedBy(gap),
                 ) {
-                    (column + column).forEach { url -> WallPoster(url, Modifier.width(itemWidth).height(itemHeight)) }
+                    (column + column).forEach { url ->
+                        WallPoster(url, Modifier.width(itemWidth).height(itemHeight), onFailed = { if (url !in failed) failed += url })
+                    }
                 }
             }
         }
@@ -342,17 +349,19 @@ private fun PosterWall(posters: List<String>) {
 
 /**
  * A poster of the wall: nothing while it loads and fades in once there, so the wall never shows
- * grey boxes; one that fails to load stays an empty gap. TMDB posters load in a small size.
+ * grey boxes; one that fails to load is reported and the wall drops it. TMDB posters load small.
  */
 @Composable
-private fun WallPoster(url: String, modifier: Modifier) {
+private fun WallPoster(url: String, modifier: Modifier, onFailed: () -> Unit) {
     var loaded by remember(url) { mutableStateOf(false) }
     val alpha by animateFloatAsState(if (loaded) 1f else 0f, tween(500), label = "poster")
     AsyncImage(
-        model = url.replace(Regex("/t/p/w\\d+/"), "/t/p/w185/"),
+        // Small sizes load fast and fail less: w185 for TMDB, zoom=1 for Google Books covers.
+        model = url.replace(Regex("/t/p/w\\d+/"), "/t/p/w185/").replace("zoom=2", "zoom=1").replace("http://", "https://"),
         contentDescription = null,
         contentScale = ContentScale.Crop,
         onSuccess = { loaded = true },
+        onError = { onFailed() },
         modifier = modifier.graphicsLayer { this.alpha = alpha }.clip(RoundedCornerShape(8.dp)),
     )
 }
