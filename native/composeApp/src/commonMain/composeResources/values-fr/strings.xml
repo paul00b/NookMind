@@ -861,5 +861,7 @@
         <item quantity="other">%1$d terminées</item>
     </plurals>
     <string name="home_scan">Scanner un livre</string>
-    <string name="home_scanNotFound">Livre introuvable avec ce code. Cherche-le par son titre.</string>
+    <string name="home_scanNotFound">Aucun livre trouvé pour le code %1$s. Cherche-le par son titre.</string>
+    <string name="home_scanFailed">Le scan n'a pas marché. Réessaie.</string>
+    <string name="home_scanAlreadyIn">Déjà dans ta bibliothèque : le voilà.</string>
 </resources>

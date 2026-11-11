@@ -861,5 +861,7 @@
         <item quantity="other">%1$d finished</item>
     </plurals>
     <string name="home_scan">Scan a book</string>
-    <string name="home_scanNotFound">No book found for this barcode. Search it by its title.</string>
+    <string name="home_scanNotFound">No book found for code %1$s. Search it by its title.</string>
+    <string name="home_scanFailed">The scan did not work. Try again.</string>
+    <string name="home_scanAlreadyIn">Already in your library: here it is.</string>
 </resources>

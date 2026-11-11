@@ -190,6 +190,9 @@ class AppContainer(
     /** The friend whose profile the Social tab shows, kept here so a pull to refresh does not close it. */
     val socialProfile = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
 
+    /** Scanning a book's barcode: lives here so that the code read survives the camera screen. */
+    val bookScan by lazy { fr.paulbr.nookmind.feature.books.BookScan(this) }
+
     /** "Update application" in Settings: drop every network cache (`sessionStorage.clear()`). */
     fun clearCaches() = cache.clear()
 }
