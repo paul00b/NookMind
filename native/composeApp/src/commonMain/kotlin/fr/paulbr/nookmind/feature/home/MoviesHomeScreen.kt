@@ -88,7 +88,8 @@ fun MoviesHomeScreen(container: AppContainer, contentPadding: PaddingValues, onO
 
     val sections = SearchSections.orderSections(
         listOf(
-            HomeSection("tonight", visibility["tonight"] != false) {
+            // Not next to the "Ton année" banner: one big call to action at a time.
+            HomeSection("tonight", visibility["tonight"] != false && fr.paulbr.nookmind.feature.common.LocalHomeBanner.current == null) {
                 TonightEntryCard(onClick = onOpenTonight)
             },
             HomeSection("trending", visibility["trending"] != false) {

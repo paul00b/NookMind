@@ -10,6 +10,9 @@ import androidx.compose.ui.unit.dp
 /** True above Tailwind's `md:` breakpoint (768 dp): sidebar layout, wider posters, inline dialogs. */
 val LocalWideLayout = compositionLocalOf { false }
 
+/** Shown above the title of the home pages when set: "Ton année" in December and January. */
+val LocalHomeBanner = compositionLocalOf<(@Composable () -> Unit)?> { null }
+
 /** `w-20 md:w-28` of the poster sliders. */
 @Composable
 fun posterSlideWidth(): Dp = if (LocalWideLayout.current) 112.dp else 80.dp

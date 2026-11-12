@@ -117,6 +117,10 @@ class AppPreferences(private val settings: Settings) {
 
     // ── Ce soir ? ─────────────────────────────────────────────────────────
 
+    /** The home banner of "Ton année", closed for [year]: it does not come back that season. */
+    fun wrapBannerClosed(year: Int): Boolean = settings.hasKey("nookmind_wrap_banner_closed_$year")
+    fun closeWrapBanner(year: Int) = settings.putString("nookmind_wrap_banner_closed_$year", "1")
+
     /** Personal build only: the Jellyseerr server and its API key, kept on this phone alone. */
     var jellyseerrUrl: String
         get() = settings.getStringOrNull("nookmind_jellyseerr_url").orEmpty()

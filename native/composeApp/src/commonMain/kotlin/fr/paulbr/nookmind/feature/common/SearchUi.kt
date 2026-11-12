@@ -206,6 +206,10 @@ fun <T> HomeScreenScaffold(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
+                LocalHomeBanner.current?.let { banner ->
+                    banner()
+                    Spacer(Modifier.height(32.dp))
+                }
                 HomeHeading(title, subtitle, titleColor, wide)
                 Spacer(Modifier.height(40.dp))
                 HomeSearchField(

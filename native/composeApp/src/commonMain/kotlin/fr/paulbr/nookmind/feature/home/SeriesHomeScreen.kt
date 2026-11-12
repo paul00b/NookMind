@@ -118,7 +118,8 @@ fun SeriesHomeScreen(container: AppContainer, contentPadding: PaddingValues, onO
     val sections = SearchSections.orderSections(
         listOf(
             // On regarde quoi ?, opened on series: the same card and the same rules as on the movies home.
-            HomeSection("tonight", visibility["tonight"] != false) {
+            // Not next to the "Ton année" banner: one big call to action at a time.
+            HomeSection("tonight", visibility["tonight"] != false && fr.paulbr.nookmind.feature.common.LocalHomeBanner.current == null) {
                 TonightEntryCard(onClick = onOpenTonight)
             },
             HomeSection("trending", visibility["trending"] != false) {

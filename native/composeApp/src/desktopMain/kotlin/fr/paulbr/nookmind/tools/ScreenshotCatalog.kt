@@ -118,10 +118,10 @@ object ScreenshotCatalog {
     }
 
     /** The main shell on a given mode / tab, with an optional sheet on top. */
-    private fun shell(mode: MediaMode, tab: MainTab, dark: Boolean = false, overlay: (@Composable () -> Unit)? = null): @Composable () -> Unit = {
+    private fun shell(mode: MediaMode, tab: MainTab, dark: Boolean = false, reviewYear: Int? = null, overlay: (@Composable () -> Unit)? = null): @Composable () -> Unit = {
         remember { container.prefs.setMediaMode(mode); seed(container) }
         NookTheme(if (dark) ThemeMode.DARK else ThemeMode.LIGHT, mode) {
-            MainScaffold(container, onOpenLegal = {}, onReplayOnboarding = {}, initialTab = tab)
+            MainScaffold(container, onOpenLegal = {}, onReplayOnboarding = {}, initialTab = tab, reviewYear = reviewYear)
             overlay?.invoke()
         }
     }
@@ -228,6 +228,9 @@ object ScreenshotCatalog {
         ScreenshotEntry("social", heightDp = 2600, content = shell(MediaMode.BOOKS, MainTab.SOCIAL)),
         ScreenshotEntry("social-empty-dark", content = lonelySocial()),
         // "Ton année": the year in review, one story each.
+        // The home page in December: the banner into "Ton année".
+        ScreenshotEntry("home-wrap-banner-dark", content = shell(MediaMode.MOVIES, MainTab.SEARCH, dark = true, reviewYear = 2026)),
+        ScreenshotEntry("home-wrap-banner", content = shell(MediaMode.BOOKS, MainTab.SEARCH, reviewYear = 2026)),
         ScreenshotEntry("wrapped-intro-dark", content = wrapped(0)),
         ScreenshotEntry("wrapped-numbers-dark", content = wrapped(1)),
         ScreenshotEntry("wrapped-favs-dark", content = wrapped(2)),
