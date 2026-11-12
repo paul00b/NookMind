@@ -35,8 +35,8 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * The way into "Ton année": on the home page from December to January, for everyone, with a few
- * posters of the year fanned out on its right; in Settings of the personal build, plain.
- * [onClose] hides it for the season.
+ * posters of the year fanned out on its right, until the review has been opened once; then in
+ * Settings (the profile), plain.
  */
 @Composable
 fun WrappedBanner(
@@ -44,7 +44,6 @@ fun WrappedBanner(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     posters: List<String> = emptyList(),
-    onClose: (() -> Unit)? = null,
 ) {
     val fan = posters.take(3)
     Box(
@@ -54,7 +53,7 @@ fun WrappedBanner(
     ) {
         if (fan.isNotEmpty()) {
             // Small posters fanned out behind the right edge.
-            Box(Modifier.align(Alignment.CenterEnd).padding(end = if (onClose != null) 44.dp else 18.dp).width(92.dp).height(84.dp)) {
+            Box(Modifier.align(Alignment.CenterEnd).padding(end = 18.dp).width(92.dp).height(84.dp)) {
                 fan.forEachIndexed { i, url ->
                     AsyncImage(
                         model = url.replace(Regex("/t/p/w\\d+/"), "/t/p/w185/").replace("http://", "https://"),
@@ -72,7 +71,7 @@ fun WrappedBanner(
             }
         }
         Row(
-            Modifier.fillMaxWidth().padding(start = 18.dp, end = if (fan.isNotEmpty()) 146.dp else 18.dp, top = 28.dp, bottom = 28.dp),
+            Modifier.fillMaxWidth().padding(start = 18.dp, end = if (fan.isNotEmpty()) 120.dp else 18.dp, top = 28.dp, bottom = 28.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
@@ -83,14 +82,6 @@ fun WrappedBanner(
                 modifier = Modifier.weight(1f),
             )
             if (fan.isEmpty()) Icon(LucideIcons.ChevronRight, null, Modifier.size(18.dp), tint = Color.White)
-        }
-        if (onClose != null) {
-            Icon(
-                LucideIcons.X, null,
-                Modifier.align(Alignment.TopEnd).padding(6.dp).size(28.dp).clip(RoundedCornerShape(14.dp))
-                    .clickable(onClick = onClose).padding(7.dp),
-                tint = Color.White.copy(alpha = 0.75f),
-            )
         }
     }
 }

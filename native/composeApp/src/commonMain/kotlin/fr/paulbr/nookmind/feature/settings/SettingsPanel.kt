@@ -296,8 +296,9 @@ fun SettingsPanel(
                 }
 
                 // ── Year in review ───────────────────────────────────────
-                // In December and January for everyone (the home banner goes once seen); any day in the personal build.
-                val wrapYear = fr.paulbr.nookmind.core.domain.reviewYearOn(todayLocal()) ?: todayLocal().year.takeIf { container.personalFeatures }
+                // Once the review has been opened from the home banner (December and January); any day in the personal build.
+                val wrapYear = fr.paulbr.nookmind.core.domain.reviewYearOn(todayLocal())?.takeIf { container.prefs.wrapBannerClosed(it) }
+                    ?: todayLocal().year.takeIf { container.personalFeatures }
                 if (wrapYear != null) fr.paulbr.nookmind.feature.wrapped.WrappedBanner(wrapYear, onClick = { onOpenWrapped(wrapYear) })
 
                 // ── Appearance ───────────────────────────────────────────

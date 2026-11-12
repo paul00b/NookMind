@@ -108,10 +108,9 @@ fun MainScaffold(
         {
             fr.paulbr.nookmind.feature.wrapped.WrappedBanner(
                 review.year,
-                // Seen once, it leaves the home page to "On regarde quoi ?"; Settings keeps a way back.
+                // Seen once, it leaves the home page to "On regarde quoi ?" and moves to Settings.
                 onClick = { wrappedYear = review.year; wrappedOpen = true; container.prefs.closeWrapBanner(review.year); bannerClosed = true },
                 posters = review.posters,
-                onClose = { container.prefs.closeWrapBanner(review.year); bannerClosed = true },
             )
         }
     }
@@ -167,6 +166,8 @@ fun MainScaffold(
                 tab = MainTab.SEARCH
                 wrappedYear = reviewYear ?: fr.paulbr.nookmind.core.domain.todayLocal().year
                 wrappedOpen = true
+                // Opened from the notification: seen, like from the banner.
+                reviewYear?.let { container.prefs.closeWrapBanner(it); bannerClosed = true }
             }
             route.startsWith("/add/") -> ShareLinks.parseRoute(route)?.let { (kind, key) ->
                 linkSheets.open(kind, key, onMissing = { container.toasts.error(linkMissing) })
