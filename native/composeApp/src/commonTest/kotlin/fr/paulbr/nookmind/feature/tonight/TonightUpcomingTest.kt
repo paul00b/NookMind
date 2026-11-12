@@ -25,4 +25,17 @@ class TonightUpcomingTest {
         assertFalse(isUpcoming(null, today))
         assertFalse(isUpcoming("", today))
     }
+
+    @Test
+    fun aRecentMovieOnNoPlatformIsStillACinemaFilm() {
+        assertTrue(onlyInCinemas("2026-10-22", digital = false, today = today))
+        assertFalse(onlyInCinemas("2026-10-22", digital = true, today = today))
+    }
+
+    @Test
+    fun anOlderOrUnknownMovieIsNotRuledOutForLackOfPlatform() {
+        assertFalse(onlyInCinemas("2024-03-01", digital = false, today = today))
+        assertFalse(onlyInCinemas(null, digital = false, today = today))
+        assertFalse(onlyInCinemas("2026-12-17", digital = false, today = today))
+    }
 }

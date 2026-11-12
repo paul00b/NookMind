@@ -189,7 +189,12 @@ class TmdbApi(
     // ── Watch providers ─────────────────────────────────────────────────────
 
     @Serializable
-    private data class CountryProviders(val flatrate: List<WatchProvider>? = null, val link: String? = null)
+    private data class CountryProviders(
+        val flatrate: List<WatchProvider>? = null,
+        val rent: List<WatchProvider>? = null,
+        val buy: List<WatchProvider>? = null,
+        val link: String? = null,
+    )
 
     @Serializable
     private data class WatchProvidersResponse(val results: Map<String, CountryProviders>? = null)
@@ -201,13 +206,14 @@ class TmdbApi(
     }
 
     private suspend fun fetchWatchProviders(kind: String, tmdbId: Int): WatchProvidersResult {
-        val cacheKey = "nookmind_tmdb_${kind}_wp_$tmdbId"
+        val cacheKey = "nookmind_tmdb_${kind}_wp2_$tmdbId"
         cache.get(cacheKey, WatchProvidersResult.serializer(), TMDB_CACHE_TTL_MS)?.let { return it }
         return runCatching {
             val res = getJson("/$kind/$tmdbId/watch/providers")
             if (!res.ok) return WatchProvidersResult()
             val country = res.body<WatchProvidersResponse>().results?.get(watchRegion())
-            val result = WatchProvidersResult(filterProviders(country?.flatrate ?: emptyList()), country?.link)
+            val digital = !country?.flatrate.isNullOrEmpty() || !country?.rent.isNullOrEmpty() || !country?.buy.isNullOrEmpty()
+            val result = WatchProvidersResult(filterProviders(country?.flatrate ?: emptyList()), country?.link, digital)
             cache.put(cacheKey, WatchProvidersResult.serializer(), result)
             result
         }.getOrDefault(WatchProvidersResult())
