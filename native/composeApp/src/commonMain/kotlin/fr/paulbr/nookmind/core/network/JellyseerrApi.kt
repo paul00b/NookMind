@@ -10,6 +10,10 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -30,8 +34,48 @@ class JellyseerrApi(private val client: HttpClient, private val prefs: AppPrefer
 
     val isConfigured: Boolean get() = prefs.jellyseerrUrl.isNotBlank() && prefs.jellyseerrKey.isNotBlank()
 
+    private val _states = MutableStateFlow<Map<String, State>>(emptyMap())
+    /** Everything the server knows of, by [key]: asked for, downloading, there. For the posters. */
+    val states: StateFlow<Map<String, State>> = _states
+
+    /** Reads every title the server has, a page of 100 at a time. Keeps the old list on failure. */
+    suspend fun refreshAll() {
+        if (!isConfigured) { _states.value = emptyMap(); return }
+        runCatching {
+            val found = mutableMapOf<String, State>()
+            var page = 0
+            var pages = 1
+            while (page < pages && page < 50) {
+                val response = call(prefs.jellyseerrUrl, prefs.jellyseerrKey) { base, key ->
+                    client.get("$base/api/v1/media?take=100&skip=${page * 100}&filter=all&sort=added") {
+                        header(KEY_HEADER, key); timeout { requestTimeoutMillis = TIMEOUT }
+                    }
+                }
+                if (response.status.value !in 200..299) return
+                val body = AppJson.parseToJsonElement(response.bodyAsText()).jsonObject
+                pages = (body["pageInfo"] as? JsonObject)?.get("pages")?.jsonPrimitive?.intOrNull ?: 1
+                (body["results"] as? JsonArray).orEmpty().forEach { item ->
+                    val media = item as? JsonObject ?: return@forEach
+                    val id = media["tmdbId"]?.jsonPrimitive?.intOrNull ?: return@forEach
+                    val type = media["mediaType"]?.jsonPrimitive?.contentOrNull ?: return@forEach
+                    val state = stateOf(media["status"]?.jsonPrimitive?.intOrNull)
+                    if (state != State.NOT_REQUESTED) found[key(type, id)] = state
+                }
+                page++
+            }
+            _states.value = found
+        }.onFailure { logDebug("jellyseerr", "refreshAll failed", it) }
+    }
+
+    private fun record(type: String, tmdbId: Int, state: State?) {
+        if (state == null) return
+        _states.update { if (state == State.NOT_REQUESTED) it - key(type, tmdbId) else it + (key(type, tmdbId) to state) }
+    }
+
     /** Where [tmdbId] stands on the server, or null when the server does not answer. */
-    suspend fun state(type: String, tmdbId: Int): State? = runCatching {
+    suspend fun state(type: String, tmdbId: Int): State? = fetchState(type, tmdbId).also { record(type, tmdbId, it) }
+
+    private suspend fun fetchState(type: String, tmdbId: Int): State? = runCatching {
         val response = call(prefs.jellyseerrUrl, prefs.jellyseerrKey) { base, key ->
             client.get("$base/api/v1/${mediaType(type)}/$tmdbId") { header(KEY_HEADER, key); timeout { requestTimeoutMillis = TIMEOUT } }
         }
@@ -84,6 +128,9 @@ class JellyseerrApi(private val client: HttpClient, private val prefs: AppPrefer
         private const val TIMEOUT = 10_000L
 
         private fun mediaType(type: String) = if (type == "movie") "movie" else "tv"
+
+        /** "movie:603", "tv:1396": how [states] files a title. */
+        fun key(type: String, tmdbId: Int) = "${mediaType(type)}:$tmdbId"
 
         /** "host:5055/" and the like: a scheme added when missing, no trailing slash. */
         fun normalize(url: String): String {

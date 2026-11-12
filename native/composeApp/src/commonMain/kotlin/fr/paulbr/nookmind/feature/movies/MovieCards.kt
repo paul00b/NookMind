@@ -60,6 +60,7 @@ fun MovieCard(movie: Movie, onClick: () -> Unit, modifier: Modifier = Modifier, 
         Box {
             MediaImage(movie.posterUrl, movie.title, Modifier.fillMaxWidth(), mode = MediaMode.MOVIES) {
                 if (showStatus) StatusBadge(movieStatusLabel(movie.status), movieStatusColor(movie.status), Modifier.align(Alignment.TopEnd).padding(8.dp))
+                fr.paulbr.nookmind.feature.common.JellyfinBadge("movie", movie.tmdbId, Modifier.align(Alignment.BottomStart).padding(8.dp))
             }
             if (onRemove != null) CardRemoveButton(onRemove, Modifier.align(Alignment.TopStart))
         }
@@ -76,5 +77,6 @@ fun MovieListRow(movie: Movie, onClick: () -> Unit, onRemove: (() -> Unit)? = nu
         if (wide && !movie.genre.isNullOrBlank()) GenrePill(movie.genre, small = true)
         if ((wide || !showStatus) && movie.status == MovieStatus.WATCHED && movie.rating != null) StarRating(movie.rating, size = 12.dp)
         if (showStatus) SolidPill(movieStatusLabel(movie.status), movieStatusColor(movie.status), small = true)
+        fr.paulbr.nookmind.feature.common.JellyfinBadge("movie", movie.tmdbId, size = 20.dp)
     }
 }

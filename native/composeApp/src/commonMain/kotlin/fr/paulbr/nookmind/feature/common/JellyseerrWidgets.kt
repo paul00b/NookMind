@@ -3,7 +3,9 @@ package fr.paulbr.nookmind.feature.common
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -131,6 +133,7 @@ fun JellyseerrSettingsCard(container: AppContainer) {
                             container.prefs.jellyseerrUrl = url.trim()
                             container.prefs.jellyseerrKey = key.trim()
                             container.toasts.success(Res.string.jellyseerr_connected, name)
+                            container.jellyseerr.refreshAll()
                         } else {
                             container.toasts.error(Res.string.jellyseerr_wrong)
                         }
@@ -141,5 +144,31 @@ fun JellyseerrSettingsCard(container: AppContainer) {
                 loading = busy,
             )
         }
+    }
+}
+
+/** What the owner's Jellyseerr has, by [fr.paulbr.nookmind.core.network.JellyseerrApi.key]. Empty outside the personal build. */
+val LocalJellyseerrStates = androidx.compose.runtime.compositionLocalOf<Map<String, State>> { emptyMap() }
+
+/**
+ * A small mark on a poster: a tick once the title is on Jellyfin, a clock while it is asked for or
+ * downloading. Nothing when the server does not know it, or outside the personal build.
+ */
+@Composable
+fun JellyfinBadge(type: String, tmdbId: Int?, modifier: Modifier = Modifier, size: androidx.compose.ui.unit.Dp = 24.dp) {
+    if (tmdbId == null) return
+    val state = LocalJellyseerrStates.current[fr.paulbr.nookmind.core.network.JellyseerrApi.key(type, tmdbId)] ?: return
+    val (icon, tint) = when (state) {
+        State.AVAILABLE -> LucideIcons.Check to fr.paulbr.nookmind.core.designsystem.Palette.Teal500
+        State.PARTIAL -> LucideIcons.Check to fr.paulbr.nookmind.core.designsystem.Palette.Amber500
+        else -> LucideIcons.Clock to fr.paulbr.nookmind.core.designsystem.Palette.Amber500
+    }
+    androidx.compose.foundation.layout.Box(
+        modifier
+            .size(size)
+            .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.65f), androidx.compose.foundation.shape.CircleShape),
+        contentAlignment = androidx.compose.ui.Alignment.Center,
+    ) {
+        androidx.compose.material3.Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(size * 0.6f))
     }
 }

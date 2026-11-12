@@ -156,6 +156,9 @@ fun MainScaffold(
         if (pendingRoute != null) container.pendingRoute.value = null
     }
 
+    // Personal build: what the Jellyseerr server already has, for the marks on the posters.
+    LaunchedEffect(Unit) { if (container.personalFeatures) container.jellyseerr.refreshAll() }
+
     // Pull to refresh, on every tab: my library and my friends again from Supabase, and the screens
     // that read TMDB or Google Books rebuilt on fresh data (their caches dropped).
     var refreshing by remember { mutableStateOf(false) }
@@ -187,7 +190,8 @@ fun MainScaffold(
         // it would blur its own reflection.
         val hazeState = rememberHazeState()
 
-        CompositionLocalProvider(LocalWideLayout provides wide) {
+        val jellyseerrStates by container.jellyseerr.states.collectAsState()
+        CompositionLocalProvider(LocalWideLayout provides wide, fr.paulbr.nookmind.feature.common.LocalJellyseerrStates provides jellyseerrStates) {
         Box(Modifier.fillMaxSize().hazeSource(hazeState)) {
             ModeAmbianceBackground(mode)
             if (wide) {
@@ -277,6 +281,7 @@ fun MainScaffold(
 /** What a pull refreshes on each tab. Lasts at least half a second, so the spinner never just blinks. */
 private suspend fun refreshTab(container: AppContainer, tab: MainTab, mode: MediaMode) = coroutineScope {
     launch { delay(500) }
+    if (container.personalFeatures) launch { container.jellyseerr.refreshAll() }
     val library = when (mode) {
         MediaMode.BOOKS -> container.books
         MediaMode.MOVIES -> container.movies
