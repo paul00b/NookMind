@@ -864,4 +864,20 @@
     <string name="home_scanNotFound">Aucun livre trouvé pour le code %1$s. Cherche-le par son titre.</string>
     <string name="home_scanFailed">Le scan n'a pas marché. Réessaie.</string>
     <string name="home_scanAlreadyIn">Déjà dans ta bibliothèque : le voilà.</string>
+    <string name="jellyseerr_title">Jellyseerr</string>
+    <string name="jellyseerr_hint">Version perso : demande un film ou une série à ton Jellyseerr depuis sa fiche. L'adresse et la clé restent sur ce téléphone.</string>
+    <string name="jellyseerr_urlPlaceholder">http://serveur:5055</string>
+    <string name="jellyseerr_keyPlaceholder">Clé API (Paramètres de Jellyseerr)</string>
+    <string name="jellyseerr_save">Enregistrer et tester</string>
+    <string name="jellyseerr_connected">Connecté à Jellyseerr (%1$s).</string>
+    <string name="jellyseerr_wrong">Jellyseerr ne répond pas avec cette adresse et cette clé. Tailscale est bien allumé ?</string>
+    <string name="jellyseerr_checking">Jellyseerr…</string>
+    <string name="jellyseerr_unreachable">Jellyseerr injoignable, réessayer</string>
+    <string name="jellyseerr_request">Demander sur Jellyseerr</string>
+    <string name="jellyseerr_pending">Demandé, en attente de validation</string>
+    <string name="jellyseerr_processing">Demandé, en cours de téléchargement</string>
+    <string name="jellyseerr_partial">En partie dispo, demander le reste</string>
+    <string name="jellyseerr_available">Déjà dispo sur Jellyfin</string>
+    <string name="jellyseerr_requested">Demandé sur Jellyseerr.</string>
+    <string name="jellyseerr_failed">Jellyseerr a refusé : %1$s</string>
 </resources>

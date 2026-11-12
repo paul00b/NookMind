@@ -10,7 +10,13 @@ class NookMindApplication : Application() {
     val push = AndroidPushPlatform()
 
     val container: AppContainer by lazy {
-        AppContainer(googleSignIn = AndroidGoogleSignIn(), pushPlatform = push, barcodeScanner = AndroidBarcodeScanner())
+        AppContainer(
+            googleSignIn = AndroidGoogleSignIn(),
+            pushPlatform = push,
+            barcodeScanner = AndroidBarcodeScanner(),
+            // The .debug build is the owner's own, installed by hand next to the Play one.
+            personalFeatures = packageName.endsWith(".debug"),
+        )
     }
 
     override fun onCreate() {

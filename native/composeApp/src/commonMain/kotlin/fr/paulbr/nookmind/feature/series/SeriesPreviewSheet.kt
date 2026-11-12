@@ -182,6 +182,7 @@ fun SeriesPreviewSheet(
 
                 Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     tmdbId?.let { TrailerButton(container, "tv", it) }
+                    tmdbId?.let { fr.paulbr.nookmind.feature.common.JellyseerrButton(container, "tv", it) }
                     description?.takeIf { it.isNotBlank() }?.let {
                         ExpandableDescription(
                             it,

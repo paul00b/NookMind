@@ -76,6 +76,8 @@ class AppContainer(
     pushPlatform: PushPlatform = UnsupportedPushPlatform,
     /** Where the platform has one: a book's barcode, read with the camera. */
     val barcodeScanner: BarcodeScanner = UnavailableBarcodeScanner,
+    /** The owner's own Android build (the .debug one, never on a store): Jellyseerr requests. */
+    val personalFeatures: Boolean = false,
 ) {
     val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -104,6 +106,7 @@ class AppContainer(
     val tmdb = TmdbApi(httpClient, cache, nookMindApi)
     val googleBooks = GoogleBooksApi(httpClient)
     val imdb = ImdbApi(nookMindApi, cache)
+    val jellyseerr = fr.paulbr.nookmind.core.network.JellyseerrApi(httpClient, prefs)
 
     val supabase: SupabaseClient = createSupabaseClient(AppConfig.supabaseUrl, AppConfig.supabaseAnonKey) {
         install(Auth) {

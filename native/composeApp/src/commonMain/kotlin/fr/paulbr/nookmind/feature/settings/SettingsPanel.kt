@@ -82,6 +82,7 @@ import fr.paulbr.nookmind.core.ui.HapticCue
 import fr.paulbr.nookmind.core.ui.nookHaptics
 import fr.paulbr.nookmind.feature.legal.LegalKind
 import fr.paulbr.nookmind.resources.Res
+import fr.paulbr.nookmind.resources.jellyseerr_title
 import fr.paulbr.nookmind.resources.common_defaultDisplayName
 import fr.paulbr.nookmind.resources.nav_books
 import fr.paulbr.nookmind.resources.nav_movies
@@ -354,6 +355,13 @@ fun SettingsPanel(
                                 modifier = Modifier.fillMaxWidth(),
                             )
                         }
+                    }
+                }
+
+                // ── Jellyseerr (personal build) ──────────────────────────
+                if (container.personalFeatures) {
+                    SettingsSection(stringResource(Res.string.jellyseerr_title)) {
+                        fr.paulbr.nookmind.feature.common.JellyseerrSettingsCard(container)
                     }
                 }
 

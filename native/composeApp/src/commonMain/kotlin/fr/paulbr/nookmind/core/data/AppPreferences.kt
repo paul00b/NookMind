@@ -117,6 +117,15 @@ class AppPreferences(private val settings: Settings) {
 
     // ── Ce soir ? ─────────────────────────────────────────────────────────
 
+    /** Personal build only: the Jellyseerr server and its API key, kept on this phone alone. */
+    var jellyseerrUrl: String
+        get() = settings.getStringOrNull("nookmind_jellyseerr_url").orEmpty()
+        set(value) = settings.putString("nookmind_jellyseerr_url", value)
+
+    var jellyseerrKey: String
+        get() = settings.getStringOrNull("nookmind_jellyseerr_key").orEmpty()
+        set(value) = settings.putString("nookmind_jellyseerr_key", value)
+
     /** The rules of Ce soir ? show once, then never again. */
     var tonightTutorialSeen: Boolean
         get() = settings.hasKey(KEY_TONIGHT_TUTORIAL)

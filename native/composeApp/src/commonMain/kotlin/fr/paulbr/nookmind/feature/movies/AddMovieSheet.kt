@@ -280,6 +280,7 @@ fun AddMovieSheet(container: AppContainer, prefill: Movie?, onClose: () -> Unit)
                         }
                     }
                     form.tmdbId?.let { TrailerButton(container, "movie", it) }
+                    form.tmdbId?.let { fr.paulbr.nookmind.feature.common.JellyseerrButton(container, "movie", it) }
                     CastAccordion(cast, stringResource(Res.string.movieDetail_cast), onSelect = { selectedActorId = it })
                     // The note reads and edits like on MovieDetailSheet; the form keeps its plain text area.
                     EditableNote(

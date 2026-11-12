@@ -864,4 +864,20 @@
     <string name="home_scanNotFound">No book found for code %1$s. Search it by its title.</string>
     <string name="home_scanFailed">The scan did not work. Try again.</string>
     <string name="home_scanAlreadyIn">Already in your library: here it is.</string>
+    <string name="jellyseerr_title">Jellyseerr</string>
+    <string name="jellyseerr_hint">Personal build: ask your Jellyseerr for a movie or series from its page. The address and key stay on this phone.</string>
+    <string name="jellyseerr_urlPlaceholder">http://server:5055</string>
+    <string name="jellyseerr_keyPlaceholder">API key (Jellyseerr settings)</string>
+    <string name="jellyseerr_save">Save and test</string>
+    <string name="jellyseerr_connected">Connected to Jellyseerr (%1$s).</string>
+    <string name="jellyseerr_wrong">Jellyseerr does not answer with this address and key. Is Tailscale on?</string>
+    <string name="jellyseerr_checking">Jellyseerr…</string>
+    <string name="jellyseerr_unreachable">Jellyseerr unreachable, try again</string>
+    <string name="jellyseerr_request">Request on Jellyseerr</string>
+    <string name="jellyseerr_pending">Requested, awaiting approval</string>
+    <string name="jellyseerr_processing">Requested, downloading</string>
+    <string name="jellyseerr_partial">Partly available, request the rest</string>
+    <string name="jellyseerr_available">Already on Jellyfin</string>
+    <string name="jellyseerr_requested">Requested on Jellyseerr.</string>
+    <string name="jellyseerr_failed">Jellyseerr said no: %1$s</string>
 </resources>
