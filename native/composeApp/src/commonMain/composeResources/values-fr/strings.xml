@@ -820,7 +820,6 @@
     <string name="common_share">Partager</string>
     <string name="share_notFound">Ce lien ne mène nulle part.</string>
     <string name="wrapped_entry">Ton année %1$d</string>
-    <string name="wrapped_bannerTitle">Ton année %1$d est prête</string>
     <string name="wrapped_entrySub">Ce que tu as lu et regardé, en quelques écrans</string>
     <string name="wrapped_header">Ton année %1$d</string>
     <string name="wrapped_close">Fermer</string>

@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -30,9 +29,7 @@ import fr.paulbr.nookmind.core.designsystem.NookShapes
 import fr.paulbr.nookmind.core.designsystem.NookTheme
 import fr.paulbr.nookmind.core.designsystem.icons.LucideIcons
 import fr.paulbr.nookmind.resources.Res
-import fr.paulbr.nookmind.resources.wrapped_bannerTitle
 import fr.paulbr.nookmind.resources.wrapped_entry
-import fr.paulbr.nookmind.resources.wrapped_entrySub
 import androidx.compose.foundation.shape.RoundedCornerShape
 import org.jetbrains.compose.resources.stringResource
 
@@ -75,18 +72,16 @@ fun WrappedBanner(
             }
         }
         Row(
-            Modifier.fillMaxWidth().padding(start = 18.dp, end = if (fan.isNotEmpty()) 120.dp else 18.dp, top = 16.dp, bottom = 16.dp),
+            Modifier.fillMaxWidth().padding(start = 18.dp, end = if (fan.isNotEmpty()) 120.dp else 18.dp, top = 28.dp, bottom = 28.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Icon(LucideIcons.Sparkles, null, Modifier.size(22.dp), tint = Color(0xFFFCD34D))
-            Column(Modifier.weight(1f)) {
-                Text(
-                    stringResource(if (onClose != null) Res.string.wrapped_bannerTitle else Res.string.wrapped_entry, year),
-                    style = NookTheme.type.serif(19, FontWeight.Bold, 24), color = Color.White,
-                )
-                Text(stringResource(Res.string.wrapped_entrySub), style = NookTheme.type.sm, color = Color(0xFFDDD6FE))
-            }
+            Text(
+                stringResource(Res.string.wrapped_entry, year),
+                style = NookTheme.type.serif(22, FontWeight.Bold, 28), color = Color.White,
+                modifier = Modifier.weight(1f),
+            )
             if (fan.isEmpty()) Icon(LucideIcons.ChevronRight, null, Modifier.size(18.dp), tint = Color.White)
         }
         if (onClose != null) {
