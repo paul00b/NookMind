@@ -15,7 +15,9 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
 
 private const val CARD_TIMEOUT_MS = 8_000L
 
@@ -335,7 +337,7 @@ internal fun seriesCard(
 internal fun onlyInCinemas(releaseDate: String?, digital: Boolean, today: LocalDate = todayLocal(), days: Int = 180): Boolean {
     if (digital) return false
     val date = parseDateOnly(releaseDate) ?: return false
-    return date <= today && date > today.minus(days, kotlinx.datetime.DateTimeUnit.DAY)
+    return date <= today && date > today.minus(days, DateTimeUnit.DAY)
 }
 
 /** Not out yet: its release date is after [today]. An unknown date is not "upcoming". */
