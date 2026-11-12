@@ -296,7 +296,8 @@ fun SettingsPanel(
                 }
 
                 // ── Year in review ───────────────────────────────────────
-                WrappedEntryCard(todayLocal().year, onOpenWrapped)
+                // Everyone gets it on the home page in December; the personal build can open it any day.
+                if (container.personalFeatures) fr.paulbr.nookmind.feature.wrapped.WrappedBanner(todayLocal().year, onOpenWrapped)
 
                 // ── Appearance ───────────────────────────────────────────
                 SettingsSection(stringResource(Res.string.settings_appearance)) {
@@ -637,21 +638,3 @@ private fun ActionRow(icon: ImageVector, text: String, onClick: () -> Unit, enab
     }
 }
 
-/** The way into "Ton année": the year in a few full-screen stories. */
-@Composable
-private fun WrappedEntryCard(year: Int, onClick: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().clip(NookShapes.xl3)
-            .background(Brush.linearGradient(listOf(Color(0xFF6D28D9), Color(0xFF2E1065))))
-            .clickable(onClick = onClick).padding(horizontal = 18.dp, vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        Icon(LucideIcons.Sparkles, null, Modifier.size(22.dp), tint = Color(0xFFFCD34D))
-        Column(Modifier.weight(1f)) {
-            Text(stringResource(Res.string.wrapped_entry, year), style = NookTheme.type.serif(19, FontWeight.Bold, 24), color = Color.White)
-            Text(stringResource(Res.string.wrapped_entrySub), style = NookTheme.type.sm, color = Color(0xFFDDD6FE))
-        }
-        Icon(LucideIcons.ChevronRight, null, Modifier.size(18.dp), tint = Color.White)
-    }
-}

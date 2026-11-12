@@ -820,6 +820,7 @@
     <string name="common_share">Share</string>
     <string name="share_notFound">This link leads nowhere.</string>
     <string name="wrapped_entry">Your %1$d</string>
+    <string name="wrapped_bannerTitle">Your %1$d is ready</string>
     <string name="wrapped_entrySub">What you read and watched, in a few screens</string>
     <string name="wrapped_header">Your %1$d</string>
     <string name="wrapped_close">Close</string>

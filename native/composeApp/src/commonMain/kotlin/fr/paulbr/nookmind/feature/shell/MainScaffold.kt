@@ -87,11 +87,33 @@ fun MainScaffold(
     onOpenLegal: (LegalKind) -> Unit,
     onReplayOnboarding: () -> Unit,
     initialTab: MainTab = MainTab.SEARCH,
+    /** The year whose review the home page offers today, if any (December and January). */
+    reviewYear: Int? = remember { fr.paulbr.nookmind.core.domain.reviewYearOn(fr.paulbr.nookmind.core.domain.todayLocal()) },
 ) {
     val mode by container.prefs.mediaMode.collectAsState()
     var tab by rememberSaveable { mutableStateOf(initialTab) }
     var settingsOpen by rememberSaveable { mutableStateOf(false) }
     var wrappedOpen by rememberSaveable { mutableStateOf(false) }
+    var wrappedYear by rememberSaveable { mutableStateOf(reviewYear ?: fr.paulbr.nookmind.core.domain.todayLocal().year) }
+    var bannerClosed by remember(reviewYear) { mutableStateOf(reviewYear == null || container.prefs.wrapBannerClosed(reviewYear)) }
+    val wrapMovies by container.movies.items.collectAsState()
+    val wrapSeries by container.series.items.collectAsState()
+    val wrapBooks by container.books.items.collectAsState()
+    // Only for someone with something in that year: an empty review is not worth a banner.
+    val bannerReview = remember(reviewYear, bannerClosed, wrapMovies, wrapSeries, wrapBooks) {
+        if (reviewYear == null || bannerClosed) null
+        else fr.paulbr.nookmind.core.domain.yearReview(reviewYear, wrapMovies, wrapSeries, wrapBooks).takeUnless { it.isEmpty }
+    }
+    val homeBanner: (@Composable () -> Unit)? = bannerReview?.let { review ->
+        {
+            fr.paulbr.nookmind.feature.wrapped.WrappedBanner(
+                review.year,
+                onClick = { wrappedYear = review.year; wrappedOpen = true },
+                posters = review.posters,
+                onClose = { container.prefs.closeWrapBanner(review.year); bannerClosed = true },
+            )
+        }
+    }
     var notifPromptOpen by remember { mutableStateOf(false) }
     var tonightOpen by rememberSaveable { mutableStateOf(false) }
     // The online evening a friend invited me to, opened from the Social tab or a notification.
@@ -140,6 +162,11 @@ fun MainScaffold(
             route == "/library" -> tab = MainTab.LIBRARY
             route == "/discover" -> tab = MainTab.NEXT_UP
             route == "/social" -> tab = MainTab.SOCIAL
+            route == "/wrapped" -> {
+                tab = MainTab.SEARCH
+                wrappedYear = reviewYear ?: fr.paulbr.nookmind.core.domain.todayLocal().year
+                wrappedOpen = true
+            }
             route.startsWith("/add/") -> ShareLinks.parseRoute(route)?.let { (kind, key) ->
                 linkSheets.open(kind, key, onMissing = { container.toasts.error(linkMissing) })
             }
@@ -191,7 +218,11 @@ fun MainScaffold(
         val hazeState = rememberHazeState()
 
         val jellyseerrStates by container.jellyseerr.states.collectAsState()
-        CompositionLocalProvider(LocalWideLayout provides wide, fr.paulbr.nookmind.feature.common.LocalJellyseerrStates provides jellyseerrStates) {
+        CompositionLocalProvider(
+            LocalWideLayout provides wide,
+            fr.paulbr.nookmind.feature.common.LocalJellyseerrStates provides jellyseerrStates,
+            fr.paulbr.nookmind.feature.common.LocalHomeBanner provides homeBanner,
+        ) {
         Box(Modifier.fillMaxSize().hazeSource(hazeState)) {
             ModeAmbianceBackground(mode)
             if (wide) {
@@ -255,12 +286,12 @@ fun MainScaffold(
                 onClose = { settingsOpen = false },
                 onOpenLegal = { settingsOpen = false; onOpenLegal(it) },
                 onReplayOnboarding = { settingsOpen = false; onReplayOnboarding() },
-                onOpenWrapped = { settingsOpen = false; wrappedOpen = true },
+                onOpenWrapped = { settingsOpen = false; wrappedYear = fr.paulbr.nookmind.core.domain.todayLocal().year; wrappedOpen = true },
             )
         }
 
         if (wrappedOpen) {
-            WrappedScreen(container, onClose = { wrappedOpen = false })
+            WrappedScreen(container, onClose = { wrappedOpen = false }, year = wrappedYear)
         }
 
         if (notifPromptOpen) {

@@ -7,6 +7,8 @@ import fr.paulbr.nookmind.core.model.MovieStatus
 import fr.paulbr.nookmind.core.model.Series
 import fr.paulbr.nookmind.core.model.SeriesStatus
 import kotlin.random.Random
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.Month
 
 /** What the year-in-review screens show, from the library alone. */
 data class YearReview(
@@ -78,4 +80,14 @@ fun yearReview(year: Int, movies: List<Movie>, series: List<Series>, books: List
             .filter { it.isNotBlank() }.distinct().shuffled(random),
         profile = profile,
     )
+}
+
+/**
+ * The year whose review is out on [today], for everyone: from 1 December to the end of January,
+ * then it goes away until next December. Null outside that window.
+ */
+fun reviewYearOn(today: LocalDate): Int? = when (today.month) {
+    Month.DECEMBER -> today.year
+    Month.JANUARY -> today.year - 1
+    else -> null
 }
