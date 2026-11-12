@@ -98,6 +98,7 @@ fun SeriesCard(series: Series, onClick: () -> Unit, modifier: Modifier = Modifie
         Box {
             MediaImage(series.posterUrl, series.title, Modifier.fillMaxWidth(), mode = MediaMode.SERIES) {
                 if (showStatus || !badge.isStatus) StatusBadge(badge.label, badge.color, Modifier.align(Alignment.TopEnd).padding(8.dp))
+                fr.paulbr.nookmind.feature.common.JellyfinBadge("tv", series.tmdbId, Modifier.align(Alignment.BottomStart).padding(8.dp))
             }
             if (onRemove != null) CardRemoveButton(onRemove, Modifier.align(Alignment.TopStart))
         }
@@ -116,5 +117,6 @@ fun SeriesListRow(series: Series, onClick: () -> Unit, onRemove: (() -> Unit)? =
         if (wide && !series.genre.isNullOrBlank()) GenrePill(series.genre, small = true)
         if ((wide || !showStatus) && effective == SeriesStatus.WATCHED && series.rating != null) StarRating(series.rating, size = 12.dp)
         if (showStatus || !badge.isStatus) SolidPill(badge.label, badge.color, small = true)
+        fr.paulbr.nookmind.feature.common.JellyfinBadge("tv", series.tmdbId, size = 20.dp)
     }
 }

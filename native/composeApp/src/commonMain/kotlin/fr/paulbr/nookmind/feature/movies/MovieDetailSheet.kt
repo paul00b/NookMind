@@ -225,6 +225,7 @@ fun MovieDetailSheet(container: AppContainer, movie: Movie, onClose: () -> Unit)
                 WatchProvidersRow(container, providers, local.title, loading = loadingProviders)
 
                 movie.tmdbId?.let { TrailerButton(container, "movie", it) }
+                movie.tmdbId?.let { fr.paulbr.nookmind.feature.common.JellyseerrButton(container, "movie", it) }
 
                 CastAccordion(cast, stringResource(Res.string.movieDetail_cast), onSelect = { selectedActorId = it })
 

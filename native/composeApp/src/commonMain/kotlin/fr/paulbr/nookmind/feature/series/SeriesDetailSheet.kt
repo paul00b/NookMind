@@ -231,6 +231,7 @@ fun SeriesDetailSheet(container: AppContainer, series: Series, onClose: () -> Un
                 Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     WatchProvidersRow(container, providers, local.title, loading = loadingProviders)
                     local.tmdbId?.let { TrailerButton(container, "tv", it) }
+                    local.tmdbId?.let { fr.paulbr.nookmind.feature.common.JellyseerrButton(container, "tv", it) }
                     local.description?.takeIf { it.isNotBlank() }?.let {
                         ExpandableDescription(
                             it,

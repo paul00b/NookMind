@@ -286,6 +286,8 @@ android {
         versionName = appVersionName
         // The domain of the shared links (the Vercel API), for the https intent filter.
         manifestPlaceholders["shareHost"] = runCatching { URI(secret("API_BASE_URL")).host }.getOrNull() ?: "nookmind.invalid"
+        // Plain http stays off in the store build.
+        manifestPlaceholders["cleartext"] = "false"
     }
 
     val keystorePropertiesFile = rootProject.file("keystore.properties")
@@ -324,6 +326,8 @@ android {
         getByName("debug") {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
+            // The owner's own build reaches a Jellyseerr on the tailnet, often over plain http.
+            manifestPlaceholders["cleartext"] = "true"
         }
     }
 

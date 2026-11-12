@@ -315,6 +315,7 @@ fun MoviePreviewSheet(container: AppContainer, movie: TmdbMovie, existing: Movie
                 )
                 Spacer(Modifier.height(16.dp))
                 TrailerButton(container, "movie", movie.id)
+                fr.paulbr.nookmind.feature.common.JellyseerrButton(container, "movie", movie.id, Modifier.padding(top = 8.dp))
                 Spacer(Modifier.height(16.dp))
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     if (existing != null) {
