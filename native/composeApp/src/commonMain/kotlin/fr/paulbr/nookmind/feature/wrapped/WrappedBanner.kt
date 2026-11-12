@@ -54,7 +54,7 @@ fun WrappedBanner(
     ) {
         if (fan.isNotEmpty()) {
             // Small posters fanned out behind the right edge.
-            Box(Modifier.align(Alignment.CenterEnd).padding(end = 18.dp).width(92.dp).height(84.dp)) {
+            Box(Modifier.align(Alignment.CenterEnd).padding(end = if (onClose != null) 44.dp else 18.dp).width(92.dp).height(84.dp)) {
                 fan.forEachIndexed { i, url ->
                     AsyncImage(
                         model = url.replace(Regex("/t/p/w\\d+/"), "/t/p/w185/").replace("http://", "https://"),
@@ -72,7 +72,7 @@ fun WrappedBanner(
             }
         }
         Row(
-            Modifier.fillMaxWidth().padding(start = 18.dp, end = if (fan.isNotEmpty()) 120.dp else 18.dp, top = 28.dp, bottom = 28.dp),
+            Modifier.fillMaxWidth().padding(start = 18.dp, end = if (fan.isNotEmpty()) 146.dp else 18.dp, top = 28.dp, bottom = 28.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
