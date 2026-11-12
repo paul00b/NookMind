@@ -171,7 +171,7 @@ fun SettingsPanel(
     onClose: () -> Unit,
     onOpenLegal: (LegalKind) -> Unit,
     onReplayOnboarding: () -> Unit,
-    onOpenWrapped: () -> Unit = {},
+    onOpenWrapped: (year: Int) -> Unit = {},
 ) {
     val colors = NookTheme.colors
     val scope = rememberCoroutineScope()
@@ -296,8 +296,9 @@ fun SettingsPanel(
                 }
 
                 // ── Year in review ───────────────────────────────────────
-                // Everyone gets it on the home page in December; the personal build can open it any day.
-                if (container.personalFeatures) fr.paulbr.nookmind.feature.wrapped.WrappedBanner(todayLocal().year, onOpenWrapped)
+                // In December and January for everyone (the home banner goes once seen); any day in the personal build.
+                val wrapYear = fr.paulbr.nookmind.core.domain.reviewYearOn(todayLocal()) ?: todayLocal().year.takeIf { container.personalFeatures }
+                if (wrapYear != null) fr.paulbr.nookmind.feature.wrapped.WrappedBanner(wrapYear, onClick = { onOpenWrapped(wrapYear) })
 
                 // ── Appearance ───────────────────────────────────────────
                 SettingsSection(stringResource(Res.string.settings_appearance)) {

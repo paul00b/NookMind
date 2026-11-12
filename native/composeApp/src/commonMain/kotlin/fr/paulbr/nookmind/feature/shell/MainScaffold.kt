@@ -108,7 +108,8 @@ fun MainScaffold(
         {
             fr.paulbr.nookmind.feature.wrapped.WrappedBanner(
                 review.year,
-                onClick = { wrappedYear = review.year; wrappedOpen = true },
+                // Seen once, it leaves the home page to "On regarde quoi ?"; Settings keeps a way back.
+                onClick = { wrappedYear = review.year; wrappedOpen = true; container.prefs.closeWrapBanner(review.year); bannerClosed = true },
                 posters = review.posters,
                 onClose = { container.prefs.closeWrapBanner(review.year); bannerClosed = true },
             )
@@ -286,7 +287,7 @@ fun MainScaffold(
                 onClose = { settingsOpen = false },
                 onOpenLegal = { settingsOpen = false; onOpenLegal(it) },
                 onReplayOnboarding = { settingsOpen = false; onReplayOnboarding() },
-                onOpenWrapped = { settingsOpen = false; wrappedYear = fr.paulbr.nookmind.core.domain.todayLocal().year; wrappedOpen = true },
+                onOpenWrapped = { year -> settingsOpen = false; wrappedYear = year; wrappedOpen = true },
             )
         }
 
