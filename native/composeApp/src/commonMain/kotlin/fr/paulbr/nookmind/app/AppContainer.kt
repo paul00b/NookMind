@@ -65,6 +65,8 @@ import io.github.jan.supabase.postgrest.Postgrest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 
 /**
  * Composition root ("AppProviders" of the web app). Built once per process by the platform
@@ -76,8 +78,10 @@ class AppContainer(
     pushPlatform: PushPlatform = UnsupportedPushPlatform,
     /** Where the platform has one: a book's barcode, read with the camera. */
     val barcodeScanner: BarcodeScanner = UnavailableBarcodeScanner,
-    /** The owner's own Android build (the .debug one, never on a store): Jellyseerr requests. */
-    val personalFeatures: Boolean = false,
+    /** The owner's own Android build (the .debug one, never on a store): every personal feature, any day. */
+    val personalBuild: Boolean = false,
+    /** Whether features turned on per account (`user_features`) are read: Android only, never iOS. */
+    accountFlags: Boolean = false,
 ) {
     val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -180,6 +184,13 @@ class AppContainer(
 
     val push = PushRepository(supabase, auth, nookMindApi, pushPlatform)
 
+    val featureFlags = fr.paulbr.nookmind.core.data.FeatureFlags(supabase, auth, scope, accountFlags)
+
+    /** Jellyseerr requests: in the personal build, or for an account it was turned on for. */
+    val jellyseerrAllowed: kotlinx.coroutines.flow.StateFlow<Boolean> =
+        if (personalBuild) kotlinx.coroutines.flow.MutableStateFlow(true)
+        else featureFlags.features.mapState { fr.paulbr.nookmind.core.data.FeatureFlags.JELLYSEERR in it }
+
     val social = SocialRepository(supabase, auth, nookMindApi, scope)
 
     val seriesRefresh = SeriesRefreshJob(series, tmdb, prefs, scope)
@@ -198,4 +209,7 @@ class AppContainer(
 
     /** "Update application" in Settings: drop every network cache (`sessionStorage.clear()`). */
     fun clearCaches() = cache.clear()
+
+    private fun <T, R> kotlinx.coroutines.flow.StateFlow<T>.mapState(transform: (T) -> R): kotlinx.coroutines.flow.StateFlow<R> =
+        map(transform).stateIn(scope, kotlinx.coroutines.flow.SharingStarted.Eagerly, transform(value))
 }

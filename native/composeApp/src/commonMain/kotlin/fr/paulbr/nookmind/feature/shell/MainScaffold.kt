@@ -186,7 +186,8 @@ fun MainScaffold(
     }
 
     // Personal build: what the Jellyseerr server already has, for the marks on the posters.
-    LaunchedEffect(Unit) { if (container.personalFeatures) container.jellyseerr.refreshAll() }
+    val jellyseerrAllowed by container.jellyseerrAllowed.collectAsState()
+    LaunchedEffect(jellyseerrAllowed) { if (jellyseerrAllowed) container.jellyseerr.refreshAll() }
 
     // Pull to refresh, on every tab: my library and my friends again from Supabase, and the screens
     // that read TMDB or Google Books rebuilt on fresh data (their caches dropped).
@@ -314,7 +315,7 @@ fun MainScaffold(
 /** What a pull refreshes on each tab. Lasts at least half a second, so the spinner never just blinks. */
 private suspend fun refreshTab(container: AppContainer, tab: MainTab, mode: MediaMode) = coroutineScope {
     launch { delay(500) }
-    if (container.personalFeatures) launch { container.jellyseerr.refreshAll() }
+    if (container.jellyseerrAllowed.value) launch { container.jellyseerr.refreshAll() }
     val library = when (mode) {
         MediaMode.BOOKS -> container.books
         MediaMode.MOVIES -> container.movies
