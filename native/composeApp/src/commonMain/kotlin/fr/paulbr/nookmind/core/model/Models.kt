@@ -322,6 +322,8 @@ data class WatchProvider(
 data class WatchProvidersResult(
     val flatrate: List<WatchProvider> = emptyList(),
     val link: String? = null,
+    /** Out on a platform in the region at all, to stream, rent or buy: no longer only in cinemas. */
+    val digital: Boolean = false,
 )
 
 // ── IMDb (via the Vercel proxy) ───────────────────────────────────────────────

@@ -15,7 +15,9 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
 
 private const val CARD_TIMEOUT_MS = 8_000L
 
@@ -185,6 +187,8 @@ private suspend fun cardFor(
         ?: saved?.let { TmdbMovie(id = tmdbId, title = it.title, overview = it.description.orEmpty(), releaseDate = it.releaseDate.orEmpty(), runtime = it.runtime) }
         ?: return@coroutineScope null
     val watch = providers.await()
+    // Out in cinemas a few months ago and on no platform yet: it cannot be watched at home tonight.
+    if (reason != CardReason.InCinemas && onlyInCinemas(movie.releaseDate, watch.digital)) return@coroutineScope null
     TonightCard(
         movie = movie,
         posterUrl = TmdbApi.posterUrl(movie.posterPath, "w780") ?: saved?.posterUrl,
@@ -236,7 +240,8 @@ private suspend fun dealSeriesDeck(
             .forEach { (id, reason) -> candidates[id] = null to reason }
     }
     val known = inLibrary + partner?.library.orEmpty() + skip
-    fun fits(series: TmdbSeries) = series.id !in known && !series.posterPath.isNullOrBlank() && matchesGenres(series.genreIds.orEmpty(), genres, TonightKind.SERIES)
+    fun fits(series: TmdbSeries) = series.id !in known && !series.posterPath.isNullOrBlank() && matchesGenres(series.genreIds.orEmpty(), genres, TonightKind.SERIES) &&
+        series.firstAirDate.isNotBlank() && !isUpcoming(series.firstAirDate)
 
     val recommended = (mySeeds + theirSeeds).map { (id, title, by) ->
         async {
@@ -264,6 +269,8 @@ private suspend fun dealSeriesDeck(
     val cards = candidates.entries.map { (id, entry) ->
         async { withTimeoutOrNull(CARD_TIMEOUT_MS) { seriesCardFor(container, id, entry.first, byTmdbId[id], entry.second, services) } }
     }.awaitAll().filterNotNull()
+        // A series of the watchlist not started airing yet: nothing to watch tonight.
+        .filterNot { it.movie.releaseDate.isBlank() || isUpcoming(it.movie.releaseDate) }
     pickDeck(cards, services, null, size, genres, TonightKind.SERIES, length, later = myStarted + partner?.started.orEmpty())
 }
 
@@ -321,6 +328,16 @@ internal fun seriesCard(
         ended = series.status?.let { it == "Ended" || it == "Canceled" },
         miniseries = series.type == "Miniseries",
     )
+}
+
+/**
+ * Still a cinema film: released less than [days] days ago and on no platform in the region yet,
+ * to stream, rent or buy. An older movie without any platform is not ruled out.
+ */
+internal fun onlyInCinemas(releaseDate: String?, digital: Boolean, today: LocalDate = todayLocal(), days: Int = 180): Boolean {
+    if (digital) return false
+    val date = parseDateOnly(releaseDate) ?: return false
+    return date <= today && date > today.minus(days, DateTimeUnit.DAY)
 }
 
 /** Not out yet: its release date is after [today]. An unknown date is not "upcoming". */
