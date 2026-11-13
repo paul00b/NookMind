@@ -211,6 +211,7 @@ kotlin {
             implementation(libs.androidx.credentials.play.services)
             implementation(libs.googleid)
             implementation(libs.play.services.code.scanner)
+            implementation(libs.installreferrer)
             implementation(project.dependencies.platform(libs.firebase.bom))
             implementation(libs.firebase.messaging)
         }

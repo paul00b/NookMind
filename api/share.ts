@@ -37,11 +37,23 @@ interface Page {
   body: string;
 }
 
+/**
+ * Google Play with the app's path as install referrer: someone without the app installs it from
+ * here, and its first launch reads `route=/friend/K7PQ2M` back (Play Install Referrer) to open
+ * the invitation or the item instead of the plain home page.
+ */
+function storeUrlFor(appPath?: string): string {
+  return appPath ? `${STORE_URL}&referrer=${encodeURIComponent(`route=/${appPath}`)}` : STORE_URL;
+}
+
 function render(page: Page): string {
   const copy = COPY[page.lang];
+  const store = storeUrlFor(page.appPath);
   const intentUrl = page.appPath
-    ? `intent://${page.appPath}#Intent;scheme=nookmind;package=${ANDROID_PACKAGE};S.browser_fallback_url=${encodeURIComponent(STORE_URL)};end`
+    ? `intent://${page.appPath}#Intent;scheme=nookmind;package=${ANDROID_PACKAGE};S.browser_fallback_url=${encodeURIComponent(store)};end`
     : null;
+  // The pages' store links carry the referrer too.
+  const body = page.body.split(escapeHtml(STORE_URL)).join(escapeHtml(store));
   return `<!doctype html>
 <html lang="${page.lang}">
 <head>
@@ -109,8 +121,8 @@ ${page.background ? `<div class="backdrop" style="background-image:url('${escape
 <div class="shade"></div>
 </div>
 <main>
-  <a class="brand" data-store href="${escapeHtml(STORE_URL)}"><img src="/logo.png" alt="">NookMind</a>
-  ${page.body}
+  <a class="brand" data-store href="${escapeHtml(store)}"><img src="/logo.png" alt="">NookMind</a>
+  ${body}
   <footer>${escapeHtml(copy.tagline)}</footer>
 </main>
 <script>

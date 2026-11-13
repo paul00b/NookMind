@@ -42,6 +42,10 @@ class MainActivity : ComponentActivity() {
             }
         }
         consumeRoute(intent)
+        // First launch after an install from a shared link's page: open what was shared.
+        InstallReferrer.read(this) { route ->
+            runOnUiThread { if (app.container.pendingRoute.value == null) app.container.pendingRoute.value = route }
+        }
 
         setContent { App(app.container) }
     }
