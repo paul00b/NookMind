@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,7 +53,8 @@ import org.jetbrains.compose.resources.stringResource
  */
 @Composable
 fun JellyseerrButton(container: AppContainer, type: String, tmdbId: Int, modifier: Modifier = Modifier) {
-    if (!container.personalFeatures || !container.jellyseerr.isConfigured) return
+    val allowed by container.jellyseerrAllowed.collectAsState()
+    if (!allowed || !container.jellyseerr.isConfigured) return
     val scope = rememberCoroutineScope()
     var state by remember(type, tmdbId) { mutableStateOf<State?>(null) }
     var checked by remember(type, tmdbId) { mutableStateOf(false) }

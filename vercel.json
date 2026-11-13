@@ -34,7 +34,7 @@
       "schedule": "0 9 * * *"
     },
     {
-      "path": "/api/push/send-wrapped",
+      "path": "/api/push/send-daily?job=wrapped",
       "schedule": "0 18 1 12 *"
     }
   ],

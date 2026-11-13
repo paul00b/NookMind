@@ -177,6 +177,7 @@ fun SettingsPanel(
     val scope = rememberCoroutineScope()
     val rawHaptics = LocalHapticFeedback.current
     val authState by container.auth.state.collectAsState()
+    val jellyseerrAllowed by container.jellyseerrAllowed.collectAsState()
     val user = (authState as? AuthState.SignedIn)?.user
     val fallbackName = stringResource(Res.string.common_defaultDisplayName)
     val theme by container.prefs.theme.collectAsState()
@@ -298,7 +299,7 @@ fun SettingsPanel(
                 // ── Year in review ───────────────────────────────────────
                 // Once the review has been opened from the home banner (December and January); any day in the personal build.
                 val wrapYear = fr.paulbr.nookmind.core.domain.reviewYearOn(todayLocal())?.takeIf { container.prefs.wrapBannerClosed(it) }
-                    ?: todayLocal().year.takeIf { container.personalFeatures }
+                    ?: todayLocal().year.takeIf { container.personalBuild }
                 if (wrapYear != null) fr.paulbr.nookmind.feature.wrapped.WrappedBanner(wrapYear, onClick = { onOpenWrapped(wrapYear) })
 
                 // ── Appearance ───────────────────────────────────────────
@@ -362,7 +363,7 @@ fun SettingsPanel(
                 }
 
                 // ── Jellyseerr (personal build) ──────────────────────────
-                if (container.personalFeatures) {
+                if (jellyseerrAllowed) {
                     SettingsSection(stringResource(Res.string.jellyseerr_title)) {
                         fr.paulbr.nookmind.feature.common.JellyseerrSettingsCard(container)
                     }
