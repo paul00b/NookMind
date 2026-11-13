@@ -8,7 +8,8 @@ import { getMessaging } from 'firebase-admin/messaging';
  * app user with notifications on and a few titles added this year. The tap opens the review
  * (route /wrapped). Native apps only: the web app has no review.
  *
- * Manual runs, with the cron secret: `?dry=1` counts without sending, `?user=<uuid>` sends to that
+ * Served by /api/push/send-daily?job=wrapped: the Hobby plan allows 12 functions a deployment, so
+ * this one lives in _lib (not a route of its own). Manual runs, with the cron secret: `?dry=1` counts without sending, `?user=<uuid>` sends to that
  * account alone (to try it), `?year=2026` picks the year.
  */
 
@@ -47,7 +48,7 @@ async function titlesByUser(userIds: string[], year: number): Promise<Map<string
   return counts;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export async function sendWrapped(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST' && req.method !== 'GET') return res.status(405).end();
 
   const secret = process.env.CRON_SECRET;

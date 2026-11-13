@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
 import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
 import { getMessaging } from 'firebase-admin/messaging';
+import { sendWrapped } from '../_lib/wrapped.js';
 
 function getFirebaseApp(): App {
   if (getApps().length > 0) return getApps()[0]!;
@@ -138,6 +139,9 @@ async function sendPush(subscription: PushSubscriptionJSON, payload: object): Pr
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // "Ton année est prête", once a year (vercel.json): checks the cron secret itself.
+  if (req.query.job === 'wrapped') return sendWrapped(req, res);
+
   try {
     configureWebPush();
   } catch (err: unknown) {
